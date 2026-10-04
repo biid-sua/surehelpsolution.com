@@ -3,6 +3,7 @@
 namespace App\Services\Scheduling;
 
 use App\Models\Appointment;
+use App\Models\CalendarBusyBlock;
 use App\Models\Organization;
 use App\Services\Business\BusinessHours;
 use App\Services\Rules\BusinessRules;
@@ -14,7 +15,8 @@ use Carbon\CarbonInterface;
  * later, the chatbot and AI assistant.
  *
  * Considers: business hours (split shifts, holidays, temporary closure), service duration and buffer,
- * existing appointments, minimum notice, and the business's booking rules (cutoff time, booking window). Phase 3 adds connected-calendar busy times behind the same API.
+ * existing appointments, busy times in connected Google/Microsoft calendars, minimum notice, and the
+ * business's booking rules (cutoff time, booking window).
  * Everything is reasoned in the business's timezone, so DST days have the right number of hours.
  */
 class Availability
@@ -147,6 +149,9 @@ class Availability
             ->when($ignore, fn ($q) => $q->whereKeyNot($ignore))
             ->get(['starts_at', 'blocked_until'])
             ->map(fn (Appointment $a) => [CarbonImmutable::instance($a->starts_at), CarbonImmutable::instance($a->blocked_until)])
+            // Busy times mirrored from connected calendars (spec §19.6–7).
+            ->concat(CalendarBusyBlock::query()->forOrganization($organization)->overlapping($from->utc(), $to->utc())->get(['starts_at', 'ends_at'])
+                ->map(fn (CalendarBusyBlock $b) => [CarbonImmutable::instance($b->starts_at), CarbonImmutable::instance($b->ends_at)]))
             ->all();
     }
 

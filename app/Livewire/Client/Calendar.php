@@ -3,6 +3,7 @@
 namespace App\Livewire\Client;
 
 use App\Livewire\Concerns\ScopedToOrganization;
+use App\Models\CalendarConnection;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -25,6 +26,11 @@ class Calendar extends Component
 
     public function render(): View
     {
-        return view('livewire.client.calendar', ['organization' => $this->organization()]);
+        $organization = $this->organization();
+
+        return view('livewire.client.calendar', [
+            'organization' => $organization,
+            'connections' => CalendarConnection::query()->forOrganization($organization)->get(['id', 'provider', 'status', 'account_email', 'last_synced_at']),
+        ]);
     }
 }

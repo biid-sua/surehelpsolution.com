@@ -4,7 +4,9 @@ namespace App\Actions\Appointments;
 
 use App\Exceptions\SlotUnavailable;
 use App\Models\Appointment;
+use App\Models\CalendarBusyBlock;
 use App\Models\Organization;
+use App\Services\Calendar\CalendarManager;
 use App\Services\Scheduling\Availability;
 use Carbon\CarbonImmutable;
 use Closure;
@@ -52,6 +54,13 @@ class BookingGuard
 
                 if ($conflicts->isNotEmpty()) {
                     throw new SlotUnavailable($conflicts);
+                }
+
+                // Busy in the business's own Google / Microsoft calendar (mirrored, spec §17).
+                $external = CalendarBusyBlock::query()->forOrganization($organization)
+                    ->overlapping($start->utc(), $blockedUntil->utc())->with('connection:id,provider')->first();
+                if ($external) {
+                    throw new SlotUnavailable(collect(), externalCalendar: app(CalendarManager::class)->provider($external->connection->provider ?? 'google')->label());
                 }
 
                 return $write();

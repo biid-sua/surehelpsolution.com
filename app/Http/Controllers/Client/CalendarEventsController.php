@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Client;
 use App\Enums\AppointmentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
+use App\Models\CalendarBusyBlock;
 use App\Models\CallLog;
 use App\Support\Tenancy\CurrentOrganization;
 use Carbon\CarbonImmutable;
@@ -68,6 +69,21 @@ class CalendarEventsController extends Controller
                 'extendedProps' => ['window' => $call->service_window, 'status' => $call->statusLabel()],
             ]);
 
-        return response()->json($appointments->concat($visits)->values());
+        // Busy times from connected calendars, shown as shaded background (no details are stored).
+        $busy = CalendarBusyBlock::query()->forOrganization($organization)
+            ->overlapping(CarbonImmutable::parse($start, $timezone)->startOfDay()->utc(), CarbonImmutable::parse($end, $timezone)->endOfDay()->utc())
+            ->limit(self::MAX_EVENTS)->get()
+            ->map(fn (CalendarBusyBlock $b) => [
+                'id' => 'busy-'.$b->id,
+                'title' => 'Busy',
+                'start' => $b->all_day ? $b->starts_at->format('Y-m-d') : $b->starts_at->setTimezone($timezone)->format('Y-m-d\TH:i:s'),
+                'end' => $b->all_day ? $b->ends_at->format('Y-m-d') : $b->ends_at->setTimezone($timezone)->format('Y-m-d\TH:i:s'),
+                'allDay' => $b->all_day,
+                'display' => 'background',
+                'classNames' => ['busy-block'],
+                'extendedProps' => ['kind' => 'busy'],
+            ]);
+
+        return response()->json($appointments->concat($visits)->concat($busy)->values());
     }
 }
