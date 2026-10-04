@@ -132,7 +132,21 @@ Ordered. Each step is releasable and backward compatible.
 
 ---
 
-## 4. Later phases (outline, in spec order)
+## 4. Phase 2 — Core business operations
+
+Started 2026-10-04 on `develop`, one feature branch per step.
+
+| Step | Scope (spec §) | Status |
+|---|---|---|
+| P2-1 | Business profile (§9), locations, business hours with split shifts, closed days, holidays/special hours, temporary closure, emergency availability (§10); `BusinessHours` engine (timezone + DST aware); client *Business* pages; `GET /api/v1/client/business` | in progress |
+| P2-2 | Services (§11): duration, buffer, price in minor units + price type (fixed / from / quote / hidden), location, booking flag, required customer info, agent instructions; client *Services* page; API | planned |
+| P2-3 | Customers CRM (§12–13): E.164 phone normalisation, DB-enforced dedupe per business, statuses, tags, consent, timeline events; calls linked to customers (auto-match by phone, then email); backfill from existing calls; client *Customers* list + detail timeline; API | planned |
+| P2-4 | Configurable call outcomes (§14), tasks and follow-ups (§24), escalations (§25) | planned |
+| P2-5 | Appointments (§16) with double-booking prevention in the database (§88) | planned |
+| P2-6 | Knowledge base (§22) and business rules (§23) | planned |
+| P2-7 | Agent workspace (§20–21) on the new shell: assigned clients, client workspace, call entry with customer matching and booking | planned |
+
+## 5. Later phases (outline, in spec order)
 
 | Phase | Scope (spec §) | First steps | Main external dependency |
 |---|---|---|---|
@@ -149,7 +163,7 @@ Each later phase starts with its own short plan (affected files, tables, API cha
 
 ---
 
-## 5. Mapping to `task.md`
+## 6. Mapping to `task.md`
 
 | task.md | Where it lands |
 |---|---|

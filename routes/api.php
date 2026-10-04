@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AdminDashboardController;
 use App\Http\Controllers\Api\AgentDashboardController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ClientBusinessController;
 use App\Http\Controllers\Api\ClientDashboardController;
 use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\DutyScheduleController;
@@ -35,6 +36,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
             Route::get('/service-requests', [ClientDashboardController::class, 'getServiceRequests']);
             Route::get('/calendar', [ClientDashboardController::class, 'getCalendarData']);
         });
+        Route::get('/business', [ClientBusinessController::class, 'show'])->middleware('can:organization.view');
         Route::get('/profile', [ClientDashboardController::class, 'getProfile']);
         Route::put('/profile', [ClientDashboardController::class, 'updateProfile']);
     });

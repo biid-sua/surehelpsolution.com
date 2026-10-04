@@ -26,6 +26,7 @@ class PortalNavigation
                 $this->soon('Appointments', 'list'),
                 $this->soon('Customers', 'users'),
                 $this->soon('Messages', 'chat'),
+                $this->item('Business', 'building', 'app.business.profile', 'app.business.*', 'organization.view'),
                 $this->item('Notifications', 'bell', 'app.settings.notifications', 'app.settings.*', null),
             ],
             'admin' => [

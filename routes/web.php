@@ -15,6 +15,8 @@ use App\Livewire\Admin\Calls\Review as CallReview;
 use App\Livewire\Admin\Home as AdminHome;
 use App\Livewire\Admin\Organizations\Index as OrganizationIndex;
 use App\Livewire\Admin\Organizations\Show as OrganizationShow;
+use App\Livewire\Client\Business\Hours as BusinessHoursPage;
+use App\Livewire\Client\Business\Profile as BusinessProfilePage;
 use App\Livewire\Client\Calendar as ClientCalendar;
 use App\Livewire\Client\Calls\Index as ClientCalls;
 use App\Livewire\Client\Calls\Show as ClientCallShow;
@@ -88,6 +90,10 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/calendar/events', CalendarEventsController::class)->name('calendar.events');
     });
     Route::get('/settings/notifications', NotificationSettings::class)->name('settings.notifications');
+    Route::middleware('can:organization.view')->group(function () {
+        Route::get('/business', BusinessProfilePage::class)->name('business.profile');
+        Route::get('/business/hours', BusinessHoursPage::class)->name('business.hours');
+    });
 });
 
 // Admin console (new shell)

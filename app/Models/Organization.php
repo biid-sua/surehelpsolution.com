@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -87,6 +88,54 @@ class Organization extends Model
     public function callLogs(): HasMany
     {
         return $this->hasMany(CallLog::class);
+    }
+
+    /**
+     * @return HasOne<BusinessProfile, $this>
+     */
+    public function profile(): HasOne
+    {
+        return $this->hasOne(BusinessProfile::class);
+    }
+
+    /**
+     * @return HasMany<BusinessLocation, $this>
+     */
+    public function locations(): HasMany
+    {
+        return $this->hasMany(BusinessLocation::class);
+    }
+
+    /**
+     * @return HasOne<BusinessLocation, $this>
+     */
+    public function primaryLocation(): HasOne
+    {
+        return $this->hasOne(BusinessLocation::class)->ofMany(['is_primary' => 'max', 'id' => 'min']);
+    }
+
+    /**
+     * @return HasMany<BusinessHour, $this>
+     */
+    public function hours(): HasMany
+    {
+        return $this->hasMany(BusinessHour::class);
+    }
+
+    /**
+     * @return HasMany<BusinessHoliday, $this>
+     */
+    public function holidays(): HasMany
+    {
+        return $this->hasMany(BusinessHoliday::class);
+    }
+
+    /**
+     * The organization's IANA timezone, falling back to the app timezone until it is set.
+     */
+    public function timezoneOrDefault(): string
+    {
+        return $this->timezone ?: (string) config('app.timezone');
     }
 
     public function hasAgent(User $agent): bool

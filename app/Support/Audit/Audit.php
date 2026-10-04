@@ -62,8 +62,11 @@ class Audit
      */
     public function changes(string $action, Model $subject, ?array $only = null, ?Organization $organization = null): ?AuditLog
     {
-        $changed = array_keys($subject->getChanges());
-        $changed = array_values(array_diff($changed, ['updated_at']));
+        // A record created by this save has no "changes"; its initial values are the change.
+        $changed = $subject->wasRecentlyCreated
+            ? array_keys($subject->getAttributes())
+            : array_keys($subject->getChanges());
+        $changed = array_values(array_diff($changed, ['id', 'created_at', 'updated_at', 'organization_id']));
 
         if ($only !== null) {
             $changed = array_values(array_intersect($changed, $only));
@@ -78,7 +81,9 @@ class Audit
         $old = [];
         $new = [];
         foreach ($changed as $key) {
-            $old[$key] = $previous[$key] ?? null;
+            if (! $subject->wasRecentlyCreated) {
+                $old[$key] = $previous[$key] ?? null;
+            }
             $value = $subject->getAttribute($key);
             $new[$key] = $value instanceof \BackedEnum ? $value->value : $value;
         }
