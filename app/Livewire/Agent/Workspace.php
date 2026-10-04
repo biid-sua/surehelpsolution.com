@@ -14,6 +14,7 @@ use App\Livewire\Concerns\AgentWorkspaceOnly;
 use App\Models\Appointment;
 use App\Models\BusinessProfile;
 use App\Models\BusinessService;
+use App\Models\CalendarConnection;
 use App\Models\CallLog;
 use App\Models\Customer;
 use App\Models\Escalation;
@@ -314,6 +315,7 @@ class Workspace extends Component
             'todaysAppointments' => Appointment::query()->forOrganization($organization)->blocking()
                 ->whereBetween('starts_at', [now($timezone)->startOfDay()->utc(), now($timezone)->endOfDay()->utc()])->orderBy('starts_at')->get(),
             'activeEscalations' => Escalation::query()->forOrganization($organization)->active()->count(),
+            'calendarBroken' => CalendarConnection::query()->forOrganization($organization)->where('status', CalendarConnection::STATUS_NEEDS_REAUTH)->exists(),
             'priceLabel' => fn (BusinessService $s) => $s->price_type->display($s->price_cents, $s->currency),
             'timezone' => $timezone,
         ])->title($organization->name.' · Agent workspace');

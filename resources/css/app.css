@@ -144,3 +144,7 @@
 .fc .fc-list-event.tone-success .fc-list-event-dot,
 .fc .fc-list-event.tone-completed .fc-list-event-dot { border-color: #10b981; }
 .fc .fc-list-event.tone-danger .fc-list-event-dot { border-color: #ef4444; }
+
+/* Busy time from a connected calendar: shaded, not clickable. */
+.fc .fc-bg-event.busy-block { background: rgb(148 163 184 / 0.18); opacity: 1; }
+.fc .fc-bg-event.busy-block .fc-event-title { color: var(--color-subtle); font-size: 0.7rem; font-style: normal; }

@@ -13,9 +13,16 @@ use App\Http\Controllers\Api\EscalationController;
 use App\Http\Controllers\Api\KnowledgeController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\TaskController;
+use App\Http\Controllers\Webhooks\CalendarWebhookController;
 use Illuminate\Support\Facades\Route;
 
 // Public API routes (no authentication required)
+// Calendar change notifications (no auth: verified by a per-connection secret, docs/calendar-sync.md).
+Route::prefix('webhooks/calendar')->name('webhooks.calendar.')->middleware('throttle:240,1')->group(function () {
+    Route::post('/google', [CalendarWebhookController::class, 'google'])->name('google');
+    Route::post('/microsoft', [CalendarWebhookController::class, 'microsoft'])->name('microsoft');
+});
+
 Route::prefix('v1')->middleware('throttle:api')->group(function () {
     // Authentication routes
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');

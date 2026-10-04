@@ -147,6 +147,27 @@ The audit log is visible to Super Admin and Operations Manager only, never to bu
 - All new tables store times in UTC whatever timezone a value carries (`StoresUtc`). This was found while building the workspace: Eloquent writes a date in its own timezone.
 **Why:** On a live call the agent must not hunt through pages, and must not create duplicate customers or bookings the business can't honour. One screen, confirmed matches and atomic saves deliver both.
 
+## D21 — How calendar sync works (2026-10-09)
+**Decision:**
+- **One OAuth app per provider, registered by SureHelp.** Each business connects its own account. Scopes are the minimum that works: Google `calendar.readonly` + `calendar.events`, Microsoft `Calendars.ReadWrite` (+ sign-in basics). Tokens are encrypted at rest and never reach the browser or the API.
+- **Plain HTTPS adapters instead of the Google/Microsoft SDKs.** That means far smaller deploys on cPanel, everything is testable with faked responses, and provider details stay in two classes behind one interface (spec §17).
+- **Busy times are mirrored, not looked up live.** During a call, availability and the double-booking guard read the local copy (fast, works if Google is slow). The copy is refreshed by push notifications within seconds and by polling every 10 minutes. Only times are stored, never what the events are. Busy times from a connection that needs reconnecting still count, which is safer than double-booking.
+- **Our events in their calendar:** we write and update only events we created, and every update carries the version we last saw. If someone edited the event in Google/Outlook, we stop touching it and flag the booking for a person; we never overwrite their change (spec §16). Cancelling a booking removes our event; completed and no-show bookings stay as a record.
+- A busy time in the business's calendar blocks bookings from everyone, including the business's own portal, the same as an existing appointment.
+- **Lost access** (revoked, password change, expired) flags the connection once, alerts the owner (`integration.disconnected`), and shows agents "Calendar not synced: confirm before booking" on that business.
+**Why:** The calendar the owner already lives in has to be the source of truth for when they're busy, and SureHelp must never be the reason a booking or a personal appointment gets silently changed.
+
+## D22 — Billing through Payoneer, confirmed by a person (2026-10-10)
+**Decision:**
+- **SureHelp keeps its own billing records** for plans, subscriptions, invoices and payments. The payment provider only moves money. Changing provider later therefore changes one class (`PaymentGateway`), not the data.
+- **Payoneer, the account already active, takes the payments.** Clients pay each invoice on a Payoneer payment-request page, by card or from a US bank account (ACH), or by bank transfer to the Payoneer receiving account.
+- **Payoneer Checkout (automatic card capture with webhooks) is not used.** It currently requires a Hong Kong entity and roughly $20k a month in volume. So payments are **recorded by a person** in *Admin › Billing*, with the Payoneer transaction ID. Clients can press *I've paid* to tell us. Stripe, the original Phase 5 plan, waits for a US entity.
+- **No automatic charging, no automatic suspension.** Invoices go out on the billing day, then up to three reminders a week apart. Whether to pause service stays a human decision.
+- Money is stored in cents. Invoice numbers are gap-free per year (`INV-2026-0001`) and reserved under a lock. Each invoice keeps a copy of the client's billing details at the time it was issued. PDFs are made with dompdf (no external service).
+- Plan changes apply at renewal (immediately during a trial). Cancellation applies at the end of the paid period. Billing days don't drift: the 31st becomes the last day in shorter months and comes back.
+- No separate Billing Admin role yet (D9 planned one): Super Admin manages billing, and Operations Manager and Support Agent can view it. The role can be added as data when someone needs billing access without full admin rights.
+**Why:** It lets SureHelp invoice and collect from US clients today with the account the owner already has, and the effort is limited to a minute of record-keeping per payment. Automation can be added later without migrating any data.
+
 ## D10 — Telephony
 **Decision:** **Twilio** (Programmable Voice, TaskRouter, Voice JS SDK, Messaging) behind a `TelephonyProvider` interface, so the vendor can be swapped. Calls stay manually logged until then, but the Phase 2 `calls` table is designed for provider data (call SID, direction, timings, recording/transcript references). Telephony becomes **Phase 3b**, right after Calendar, because live call handling is the core of a receptionist product.
 **Action needed from you (long lead time):** create a Twilio account and start **A2P 10DLC** brand and campaign registration now. US SMS cannot go live without it, and approval takes weeks.

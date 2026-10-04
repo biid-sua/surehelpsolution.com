@@ -7,6 +7,7 @@
         'app.business.knowledge' => 'Knowledge',
         'app.business.rules' => 'Rules',
         'app.business.outcomes' => 'Call outcomes',
+        'app.business.calendars' => 'Calendar sync',
     ];
 @endphp
 <nav class="mb-6 flex gap-1 overflow-x-auto border-b border-line" aria-label="Business settings">

@@ -20,12 +20,17 @@ class SlotUnavailable extends RuntimeException
     public function __construct(
         public readonly Collection $conflicts,
         public array $suggestions = [],
+        public readonly ?string $externalCalendar = null,
     ) {
         parent::__construct('That time is already booked.');
     }
 
     public function describe(): string
     {
+        if ($this->externalCalendar) {
+            return 'That time is busy in the business\'s '.$this->externalCalendar.'.';
+        }
+
         $first = $this->conflicts->first();
 
         return $first

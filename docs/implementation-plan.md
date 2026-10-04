@@ -148,6 +148,18 @@ Started 2026-10-04 on `develop`, one feature branch per step.
 | P2-6 | Knowledge base (§22): the eight content types, category, linked service, visibility (callers / agents and team / team only), pinned, active, updated by and when; *Business › Knowledge* tab with search and type filter. Business rules (§23) stored as data: instructions for agents plus enforced rules (latest booking time per service, booking window, service area by ZIP, details to collect before booking, automatic escalation by call reason); *Business › Rules* tab with each rule written as a sentence; rules shape the free times offered and bind agent/automated bookings; read-only API | **done** 2026-10-08 |
 | P2-7 | Agent workspace (§20–21) on the new shell at `/agent` (agents land here after login): assigned businesses with open/closed status and local time, escalations, call-backs due and the next 24 hours across them; per-business workspace with the briefing (rules, agent-visible knowledge with search, services and prices with agent instructions, hours, today's appointments, customer history) next to guided call entry (§15): caller details, customer match by phone/email **confirmed by the agent before merging** (or "different person"), reason, the business's own outcomes, escalation type, booking against live free times under the business's hours and rules, follow-up task; call, booking and follow-up saved in one transaction. The previous form stays as *Classic call form* | **done** 2026-10-08 |
 
+## 4b. Phase 3 — Calendar
+
+| Step | Scope (spec §) | Status |
+|---|---|---|
+| P3-1 | Google and Microsoft calendar sync (§17–18, CAL-01..06): `CalendarProvider` interface with Google (Calendar API v3) and Microsoft (Graph) adapters over plain HTTPS; OAuth connect / reconnect / disconnect with least-privilege scopes, state check, encrypted tokens never sent to the browser; choose the calendar bookings go to and the calendars that count as busy; appointments pushed on every change (create, move, cancel) without overwriting events edited externally (etag / If-Match → flagged); busy times mirrored (times only) and used by availability and the double-booking guard; push notifications (Google watch channels, Graph subscriptions) with a 10-minute polling safety net; lost access flagged once with owner alert and an agent warning; busy times shaded on the calendar. Setup: [calendar-sync.md](calendar-sync.md) | **done** 2026-10-09 (needs the Google / Microsoft app registrations to go live) |
+
+## 4c. Phase 5 — Billing (started early, D22)
+
+| Step | Scope (spec §) | Status |
+|---|---|---|
+| P5-1 | Plans as data (monthly/yearly, trial, feature keys, limits), subscriptions (trial → active → past due → cancelled; plan change at renewal; cancel at period end; billing day kept), invoices (gap-free numbers per year, billing-details snapshot, PDF via dompdf, printable page), payments ledger (partial payments, duplicate-reference guard, receipts), daily `billing:run` (trial conversion, renewals with catch-up, overdue reminders ×3 a week apart), Payoneer gateway (per-invoice or default payment link for card/ACH, receiving-account bank details), client *Billing* page ("I've paid", plan-switch request), *Admin › Billing* (needs-attention queue, record payment, void, one-off invoices, subscriptions, plans, payment settings, MRR/outstanding/overdue/collected), billing notifications, `Entitlements` service. Setup: [billing.md](billing.md) | **done** 2026-10-10 (payments confirmed by a person; automatic gateway later) |
+
 ## 5. Later phases (outline, in spec order)
 
 | Phase | Scope (spec §) | First steps | Main external dependency |
@@ -155,7 +167,7 @@ Started 2026-10-04 on `develop`, one feature branch per step.
 | 2 Core operations | §9–16, 20–25 | `business_profiles`, `business_locations`, `business_hours` (split shifts, holidays), `business_services` (money in minor units, §75), `customers` with phone normalisation (E.164) and dedupe, `customer_timeline_events`, `calls` (successor to `call_logs`, configurable `call_outcomes`), `appointments` with DB-level double-booking protection (§88), `tasks`, `escalations`, agent client workspace, knowledge base | none |
 | 3 Calendar | §17–19 | `CalendarProvider` interface + Internal adapter first; `AvailabilityService` (heavily unit-tested: timezones, DST, buffers, holidays); then Google, then Microsoft adapters; watch/subscription renewal jobs | Google Cloud + Azure app registrations, OAuth verification |
 | 4 Communication | §26–27, 42–43, 72–73 | conversations/messages abstraction, email + SMS templates, reminders, simple workflow engine | SMS provider + A2P 10DLC registration (long lead time; start early) |
-| 5 Billing | §28–32 | Cashier on `Organization`, plans/add-ons as data, entitlements service, usage records, Stripe webhooks (idempotent) | Stripe account, US entity, tax advice |
+| 5 Billing | §28–32 | P5-1 done with Payoneer (D22). Next: usage records, add-ons, automatic gateway with idempotent webhooks | for automatic payments: Stripe (US entity) or Payoneer Checkout; tax advice |
 | 6 AI foundation | §33–34, 38 | `AiService` provider adapter, tool registry with org-scoped authorization, Business Brain read model, usage metering, audit of tool calls | LLM vendor + DPA/BAA decisions |
 | 7 AI products | §35–37 | website chatbot, copilot, call summaries | phase 6 |
 | 8–9 Growth / social | §39–41 | provider adapters per platform | Google Business Profile, Meta app review |

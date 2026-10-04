@@ -17,6 +17,10 @@
         @endif
     </div>
 
+    @if ($calendarBroken)
+        <x-ui.alert tone="warning" class="mb-6" title="Calendar not synced">This business's calendar connection is broken: their latest busy times may be missing. Confirm the time with the owner before booking.</x-ui.alert>
+    @endif
+
     @if ($profile?->closed_until && $profile->closed_until->isFuture())
         <x-ui.alert tone="warning" class="mb-6" title="Temporarily closed until {{ $profile->closed_until->format('M j') }}">{{ $profile->closure_message ?: 'Take a message and offer a call back.' }}</x-ui.alert>
     @endif

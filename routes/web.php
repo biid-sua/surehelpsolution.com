@@ -6,12 +6,15 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Client\CalendarEventsController;
+use App\Http\Controllers\Client\CalendarOAuthController;
 use App\Http\Controllers\Client\CallExportController;
 use App\Http\Controllers\Client\CustomerExportController;
+use App\Http\Controllers\Client\InvoiceController as ClientInvoiceController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PasswordChangeController;
 use App\Livewire\Admin\AuditLogs;
+use App\Livewire\Admin\Billing\Index as AdminBilling;
 use App\Livewire\Admin\Calls\Review as CallReview;
 use App\Livewire\Admin\Escalations\Index as AdminEscalations;
 use App\Livewire\Admin\Home as AdminHome;
@@ -20,6 +23,8 @@ use App\Livewire\Admin\Organizations\Show as OrganizationShow;
 use App\Livewire\Agent\Home as AgentHome;
 use App\Livewire\Agent\Workspace as AgentWorkspace;
 use App\Livewire\Client\Appointments\Index as AppointmentsIndex;
+use App\Livewire\Client\Billing\Index as ClientBilling;
+use App\Livewire\Client\Business\Calendars as BusinessCalendarsPage;
 use App\Livewire\Client\Business\Hours as BusinessHoursPage;
 use App\Livewire\Client\Business\Knowledge as BusinessKnowledgePage;
 use App\Livewire\Client\Business\Outcomes as BusinessOutcomesPage;
@@ -104,6 +109,15 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
     });
     Route::get('/settings/notifications', NotificationSettings::class)->name('settings.notifications');
     Route::get('/tasks', TasksIndex::class)->middleware('can:tasks.view')->name('tasks.index');
+    Route::middleware('can:billing.view')->group(function () {
+        Route::get('/billing', ClientBilling::class)->name('billing');
+        Route::get('/billing/invoices/{invoice}', [ClientInvoiceController::class, 'show'])->name('billing.invoice');
+        Route::get('/billing/invoices/{invoice}/pdf', [ClientInvoiceController::class, 'pdf'])->name('billing.invoice.pdf');
+    });
+    Route::middleware('can:integrations.manage')->whereIn('provider', ['google', 'microsoft'])->group(function () {
+        Route::get('/integrations/calendar/{provider}/connect', [CalendarOAuthController::class, 'redirect'])->name('integrations.calendar.connect');
+        Route::get('/integrations/calendar/{provider}/callback', [CalendarOAuthController::class, 'callback'])->name('integrations.calendar.callback');
+    });
     Route::get('/appointments', AppointmentsIndex::class)->middleware('can:appointments.view')->name('appointments.index');
     Route::get('/escalations', EscalationsIndex::class)->middleware('can:escalations.view')->name('escalations.index');
     Route::middleware('can:customers.view')->group(function () {
@@ -118,6 +132,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/business/outcomes', BusinessOutcomesPage::class)->name('business.outcomes');
         Route::get('/business/knowledge', BusinessKnowledgePage::class)->middleware('can:knowledge_base.view')->name('business.knowledge');
         Route::get('/business/rules', BusinessRulesPage::class)->name('business.rules');
+        Route::get('/business/calendars', BusinessCalendarsPage::class)->middleware('can:integrations.view')->name('business.calendars');
     });
 });
 
@@ -134,5 +149,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth.home', 'force.password
     Route::get('/organizations/{organization}', OrganizationShow::class)->name('organizations.show');
     Route::get('/calls/review', CallReview::class)->name('calls.review');
     Route::get('/escalations', AdminEscalations::class)->middleware('can:escalations.view')->name('escalations');
+    Route::get('/billing', AdminBilling::class)->middleware('can:billing.view')->name('billing');
     Route::get('/audit', AuditLogs::class)->middleware('can:audit_logs.view')->name('audit');
 });

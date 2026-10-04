@@ -29,3 +29,10 @@ Schedule::command('tasks:notify-overdue')->everyFiveMinutes()->withoutOverlappin
 
 // Urgent escalations nobody acknowledged: one more push (spec §25).
 Schedule::command('escalations:remind')->everyMinute()->withoutOverlapping(5);
+
+// Connected calendars: busy times every 10 minutes even if push notifications fail; push renewed twice a day.
+Schedule::command('calendar:sync')->everyTenMinutes()->withoutOverlapping(10);
+Schedule::command('calendar:sync', ['--renew-push'])->twiceDaily(4, 16)->withoutOverlapping(30);
+
+// Billing: renewals, invoices and overdue reminders once a day (docs/billing.md).
+Schedule::command('billing:run')->dailyAt('06:05')->withoutOverlapping(60);

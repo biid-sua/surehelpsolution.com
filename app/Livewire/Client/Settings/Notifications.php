@@ -27,7 +27,7 @@ class Notifications extends Component
     {
         $user = auth()->user()->load('notificationPreferences');
 
-        foreach (NotificationEvent::available() as $event) {
+        foreach ($this->events() as $event) {
             $chosen = $user->notificationChannelsFor($event);
             foreach ($this->enabledChannels() as $channel) {
                 $this->preferences[$event->name][$channel] = in_array($channel, $chosen, true);
@@ -39,7 +39,7 @@ class Notifications extends Component
     {
         $user = auth()->user();
 
-        foreach (NotificationEvent::available() as $event) {
+        foreach ($this->events() as $event) {
             $channels = array_values(array_filter(
                 $this->enabledChannels(),
                 fn (string $channel) => (bool) ($this->preferences[$event->name][$channel] ?? false),
@@ -55,6 +55,19 @@ class Notifications extends Component
     }
 
     /**
+     * Events this person can receive in this business (no billing alerts for staff, for example).
+     *
+     * @return list<NotificationEvent>
+     */
+    private function events(): array
+    {
+        $user = auth()->user();
+
+        return array_values(array_filter(NotificationEvent::available(),
+            fn (NotificationEvent $e) => $e->requiredPermission() === null || $user->hasPermissionIn($e->requiredPermission(), $this->organization())));
+    }
+
+    /**
      * @return list<string>
      */
     private function enabledChannels(): array
@@ -65,7 +78,7 @@ class Notifications extends Component
     public function render(): View
     {
         return view('livewire.client.settings.notifications', [
-            'events' => NotificationEvent::available(),
+            'events' => $this->events(),
             'channels' => config('notifications.channels'),
         ]);
     }

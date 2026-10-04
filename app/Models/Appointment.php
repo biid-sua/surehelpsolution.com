@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AppointmentStatus;
+use App\Jobs\PushAppointmentToCalendars;
 use App\Models\Concerns\BelongsToOrganization;
 use App\Models\Concerns\StoresUtc;
 use Carbon\CarbonImmutable;
@@ -60,6 +61,16 @@ class Appointment extends Model
     {
         static::creating(function (Appointment $appointment) {
             $appointment->ulid ??= (string) Str::ulid();
+        });
+
+        // Connected calendars follow every booking change, once the booking has committed (spec §17).
+        static::saved(function (Appointment $appointment) {
+            $relevant = $appointment->wasRecentlyCreated || $appointment->wasChanged(['starts_at', 'ends_at', 'status', 'title', 'notes', 'address']);
+
+            if ($relevant && CalendarConnection::withoutGlobalScopes()->where('organization_id', $appointment->organization_id)
+                ->where('status', CalendarConnection::STATUS_ACTIVE)->whereNotNull('write_calendar_id')->exists()) {
+                PushAppointmentToCalendars::dispatch($appointment->id)->afterCommit();
+            }
         });
     }
 
