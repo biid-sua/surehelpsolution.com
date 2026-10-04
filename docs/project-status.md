@@ -1,8 +1,12 @@
 # Project status
 
-_As of 2026-10-04. Detailed tracker: [implementation-plan.md](implementation-plan.md). Reasons behind decisions: [decisions.md](decisions.md)._
+_As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-plan.md). Reasons behind decisions: [decisions.md](decisions.md)._
 
-**Summary:** Phase 0 (audit), Phase 1 (foundation) and Phase 2 (core business operations) are built, tested and merged into `develop` (196 automated tests passing). **Nothing from Phase 1 or 2 is live in production yet.** The next big step is a production deploy, then Phase 3 (Calendar).
+**Summary:** Phases 0–2 are merged and **deployed to production** (2026-10-04). Since then, on branch `claude/phase-2-development-1yiwc2`:
+- **Google / Microsoft calendar sync (P3-1)** is built. It goes live once the two OAuth apps are registered ([calendar-sync.md](calendar-sync.md)).
+- **Billing through Payoneer (P5-1)** is built and usable as soon as it's deployed and the payment settings are filled in ([billing.md](billing.md)).
+
+215 automated tests pass.
 
 ---
 
@@ -35,6 +39,16 @@ _As of 2026-10-04. Detailed tracker: [implementation-plan.md](implementation-pla
 | P2-6 Knowledge base and rules | Business knowledge for agents; enforced rules (booking windows, service areas, required details) |
 | P2-7 Agent workspace | New `/agent` workspace: business briefing next to a guided call form that saves call, booking and follow-up together |
 
+### Phase 3: Calendar
+| Step | What it delivered |
+|---|---|
+| P3-1 Calendar sync | Businesses connect Google Calendar or Outlook / Microsoft 365. Bookings appear in their calendar and follow every change. Their busy times block double-booking, by agents and in the portal. An event they edit themselves is never overwritten. Lost access alerts the owner and warns agents. |
+
+### Phase 5: Billing (started early, decision D22)
+| Step | What it delivered |
+|---|---|
+| P5-1 Billing with Payoneer | Plans, subscriptions with free trials, automatic monthly or yearly invoices with PDF, reminders for overdue invoices, and a client *Billing* page with Payoneer card/ACH payment links and bank details. *Admin › Billing* to record payments, void invoices, issue one-off invoices and manage plans, with revenue figures. |
+
 ### Merge of the cloud session (2026-10-04)
 - Branch `claude/phase-2-development-1yiwc2` merged into `develop` and pushed.
 - Two deploy-blocking bugs found by rehearsing the production upgrade on MariaDB and fixed: the appointments table couldn't be created on MySQL/MariaDB, and an older data backfill read a table that a later migration creates. Full upgrade and rollback now verified on a copy of real data.
@@ -51,12 +65,14 @@ _As of 2026-10-04. Detailed tracker: [implementation-plan.md](implementation-pla
 | Two-factor authentication for platform staff and agents, plus idle session timeouts | Decision D8; not built yet |
 | Customer duplicate merge (CRM-04) | Merge two customer records with a person confirming |
 | Content-Security-Policy header | Only possible after the classic screens stop loading scripts from CDNs |
-| Phase 3 (internal part): calendar views, availability refinements | The internal calendar and availability engine already exist from P2-5 |
+| Phase 4 (email part): appointment reminders and confirmation emails, message templates | SMS waits for A2P 10DLC |
+| Billing extras | Usage records, paid add-ons, plan limits enforced through `Entitlements` |
 
 ### B. Needs action from you (operations)
 | Item | Notes |
 |---|---|
-| **Deploy Phase 1 and 2 to production** | Follow [deployment.md](deployment.md). Run the deploy rehearsal in [testing.md](testing.md) first |
+| **Deploy calendar sync and billing** | Merge `claude/phase-2-development-1yiwc2` into `develop`. Then: `composer install --no-dev -o` (new PDF library), `php artisan migrate --force`, `npm ci && npm run build`, `php artisan optimize` |
+| **Billing setup** | *Admin › Billing › Payment settings*: Payoneer payment link and receiving-account bank details. Then create plans and subscribe businesses ([billing.md](billing.md)) |
 | Production clean-up from P1-0 | Confirm `/.env` returns 403, rotate secrets if it was ever reachable, delete old `storage/logs/*.log` (they contain passwords), move `.zip`/old backups off the server, run `php artisan audit:call-ownership --details` |
 | Staging environment | Not set up yet; recommended before larger releases |
 | Delete branch `feature/p2-4b-tasks` | A superseded local draft; the cloud version is merged |
@@ -64,12 +80,12 @@ _As of 2026-10-04. Detailed tracker: [implementation-plan.md](implementation-pla
 ### C. Blocked on outside accounts or approvals
 | Item | Waiting for | Lead time |
 |---|---|---|
-| Phase 3: Google and Microsoft calendar sync | Google Cloud and Azure app registrations, OAuth verification | Weeks (Google verification) |
+| Calendar sync going live (built) | Google Cloud and Microsoft Entra app registrations ([calendar-sync.md](calendar-sync.md)). Google's verification of the calendar scopes takes weeks; until then up to 100 test users can connect | Days, then weeks for verification |
 | Phase 3b: Telephony (live calls) | Twilio account | Days |
 | SMS (reminders, urgent escalation SMS, Phase 4 messaging) | Twilio **A2P 10DLC** brand and campaign registration | **Several weeks, so start now** |
 | Mobile push notifications | Firebase service-account key (FCM v1) | Days |
 | Real-time updates and a background worker that keeps running (Reverb, Horizon) | Hosting move off cPanel (D6: Laravel Cloud / Forge) | Days |
-| Phase 5: Billing | Stripe account, US legal entity, tax advice | Weeks |
+| Automatic card payments (billing works today with Payoneer and manual confirmation) | Payoneer Checkout (Hong Kong entity, ~$20k/month volume) or Stripe (US entity); tax advice | Weeks |
 | Phase 6: AI foundation | Choice of LLM vendor, data-processing agreements (DPA/BAA) | Weeks |
 | Phase 8–9: Growth and social | Google Business Profile API access, Meta app review | Weeks |
 | Phase 10: Mobile apps | Apple and Google developer accounts | Days to weeks |
@@ -86,8 +102,8 @@ Classic screens → new console ─► inline role checks removed ─► Phase 1
                               └─► CSP header
 
 Phase 3 Calendar
-  ├─ internal calendar ............ ready (built on P2-5)
-  └─ Google / Microsoft sync ...... needs OAuth app registrations
+  ├─ internal calendar ............ done (P2-5)
+  └─ Google / Microsoft sync ...... built (P3-1); live after OAuth app registrations
 
 Phase 3b Telephony ............... needs Twilio account
   └─ call recordings / transcripts feed later AI features (Phase 7)
@@ -97,8 +113,9 @@ Phase 4 Communication
   └─ SMS .......................... needs A2P 10DLC approval
         └─ urgent-escalation SMS (finishes P2-4c)
 
-Phase 5 Billing .................. needs Stripe + US entity + tax advice
-  └─ plan limits and add-ons gate Phases 6–9 features
+Phase 5 Billing .................. P5-1 done with Payoneer (manual confirmation)
+  ├─ automatic payments ........... needs Payoneer Checkout or Stripe
+  └─ plan limits and add-ons gate Phases 6–9 features (Entitlements service ready)
 
 Phase 6 AI foundation ............ needs LLM vendor + DPA/BAA
   └─ Phase 7 AI products (chatbot, copilot, call summaries)
@@ -112,4 +129,9 @@ Phase 10 Mobile .................. needs Apple/Google developer accounts + Fireb
 Hosting move (D6) ................ unlocks real-time updates (Reverb) and a long-running worker (Horizon)
 ```
 
-**Suggested order:** deploy Phases 1–2 → start the long-lead registrations today (A2P 10DLC, Google OAuth verification, Stripe) → build what isn't blocked (classic screens, 2FA, duplicate merge, Phase 3 internal calendar, Phase 4 email) while the approvals come through.
+**Suggested order:**
+1. Deploy calendar sync and billing.
+2. Fill in the Payoneer settings and start invoicing.
+3. Register the Google and Microsoft apps, and submit Google verification.
+4. Start A2P 10DLC.
+5. While approvals come through, build what isn't blocked: classic screens, 2FA, duplicate merge, Phase 4 email.

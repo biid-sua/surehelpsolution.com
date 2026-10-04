@@ -6,6 +6,10 @@ use App\Http\Middleware\ResolveOrganization;
 use App\Http\Middleware\RoleMiddleware;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\Billing\BillingSettings;
+use App\Services\Billing\Entitlements;
+use App\Services\Billing\Gateways\PaymentGateway;
+use App\Services\Billing\Gateways\PayoneerGateway;
 use App\Services\Calls\CallOutcomes;
 use App\Services\Rules\BusinessRules;
 use App\Support\Authorization\RoleCatalog;
@@ -32,6 +36,11 @@ class AppServiceProvider extends ServiceProvider
         // Call outcomes are memoised per request (call lists ask about every row).
         $this->app->scoped(CallOutcomes::class);
         $this->app->scoped(BusinessRules::class);
+        $this->app->scoped(BillingSettings::class);
+        $this->app->scoped(Entitlements::class);
+        $this->app->bind(PaymentGateway::class, fn () => match (config('billing.gateway')) {
+            default => $this->app->make(PayoneerGateway::class),
+        });
     }
 
     /**

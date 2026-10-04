@@ -19,6 +19,8 @@ enum NotificationEvent: string
     case MessageReceived = 'message.received';
     case EscalationCreated = 'escalation.created';
     case PaymentFailed = 'payment.failed';
+    case InvoiceIssued = 'invoice.issued';
+    case PaymentReceived = 'payment.received';
     case SubscriptionUpdated = 'subscription.updated';
     case IntegrationDisconnected = 'integration.disconnected';
     case AiEscalation = 'ai.escalation';
@@ -28,7 +30,7 @@ enum NotificationEvent: string
      */
     public static function available(): array
     {
-        return [self::CallLogged, self::CallMissed, self::FollowUpCreated, self::FollowUpOverdue, self::TaskAssigned, self::EscalationCreated, self::AppointmentCreated, self::AppointmentUpdated, self::AppointmentCancelled, self::IntegrationDisconnected];
+        return [self::CallLogged, self::CallMissed, self::FollowUpCreated, self::FollowUpOverdue, self::TaskAssigned, self::EscalationCreated, self::AppointmentCreated, self::AppointmentUpdated, self::AppointmentCancelled, self::IntegrationDisconnected, self::InvoiceIssued, self::PaymentReceived, self::PaymentFailed];
     }
 
     public function isAvailable(): bool
@@ -49,7 +51,9 @@ enum NotificationEvent: string
             self::AppointmentCancelled => 'Appointment cancelled',
             self::MessageReceived => 'New message',
             self::EscalationCreated => 'Escalation raised',
-            self::PaymentFailed => 'Payment failed',
+            self::PaymentFailed => 'Payment overdue',
+            self::InvoiceIssued => 'New invoice',
+            self::PaymentReceived => 'Payment received',
             self::SubscriptionUpdated => 'Subscription changed',
             self::IntegrationDisconnected => 'Integration disconnected',
             self::AiEscalation => 'AI needs your attention',
@@ -66,6 +70,9 @@ enum NotificationEvent: string
             self::TaskAssigned => 'A teammate gave you a task.',
             self::AppointmentCreated => 'Someone booked an appointment with you.',
             self::IntegrationDisconnected => 'A connected calendar stopped syncing and needs reconnecting.',
+            self::InvoiceIssued => 'Your SureHelp invoice, with a link to pay.',
+            self::PaymentReceived => 'A receipt when we receive your payment.',
+            self::PaymentFailed => 'An invoice is past its due date.',
             self::AppointmentUpdated => 'An appointment was moved to a new time.',
             self::AppointmentCancelled => 'An appointment was cancelled.',
             self::EscalationCreated => 'Something needs you now. Urgent escalations always reach you in the app and by email.',
@@ -83,6 +90,21 @@ enum NotificationEvent: string
         return match ($this) {
             self::CallLogged => ['database'],
             default => ['database', 'mail'],
+        };
+    }
+
+    /**
+     * Who can receive it: settings only offer events a person can actually get.
+     */
+    public function requiredPermission(): ?string
+    {
+        return match ($this) {
+            self::InvoiceIssued, self::PaymentReceived, self::PaymentFailed, self::SubscriptionUpdated => 'billing.view',
+            self::IntegrationDisconnected => 'integrations.manage',
+            self::EscalationCreated => 'escalations.view',
+            self::TaskAssigned, self::FollowUpOverdue => 'tasks.view',
+            self::AppointmentCreated, self::AppointmentUpdated, self::AppointmentCancelled => 'appointments.view',
+            default => null,
         };
     }
 }

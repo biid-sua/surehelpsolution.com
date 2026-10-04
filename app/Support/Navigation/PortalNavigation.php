@@ -29,6 +29,7 @@ class PortalNavigation
                 $this->item('Escalations', 'alert', 'app.escalations.index', 'app.escalations.*', 'escalations.view'),
                 $this->soon('Messages', 'chat'),
                 $this->item('Business', 'building', 'app.business.profile', 'app.business.*', 'organization.view'),
+                $this->item('Billing', 'card', 'app.billing', 'app.billing*', 'billing.view'),
                 $this->item('Notifications', 'bell', 'app.settings.notifications', 'app.settings.*', null),
             ],
             'admin' => [
@@ -36,6 +37,7 @@ class PortalNavigation
                 $this->item('Organizations', 'building', 'admin.organizations.index', 'admin.organizations.*', 'organization.view'),
                 $this->item('Call review', 'inbox', 'admin.calls.review', 'admin.calls.review', 'calls.update'),
                 $this->item('Escalations', 'alert', 'admin.escalations', 'admin.escalations', 'escalations.view'),
+                $this->item('Billing', 'card', 'admin.billing', 'admin.billing', 'billing.view'),
                 $this->item('Audit log', 'shield', 'admin.audit', 'admin.audit', 'audit_logs.view'),
                 $this->classic('Dashboard & new users', 'chart', 'admin.dashboard', 'users.create'),
                 $this->classic('Users', 'user', 'admin.users.index', 'users.view'),
