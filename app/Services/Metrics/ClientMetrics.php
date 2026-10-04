@@ -5,7 +5,7 @@ namespace App\Services\Metrics;
 use App\Enums\OutcomeCategory;
 use App\Models\CallLog;
 use App\Models\Organization;
-use App\Queries\CallLogFilters;
+use App\Models\Task;
 use App\Services\Calls\CallOutcomes;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonPeriod;
@@ -60,7 +60,7 @@ class ClientMetrics
 
         // Follow-ups are a live backlog, not a period figure.
         $kpis['follow_ups'] = [
-            'value' => CallLogFilters::pendingFollowUps(CallLog::query()->forOrganization($organization), $organization)->count(),
+            'value' => Task::query()->forOrganization($organization)->open()->followUps()->count(),
             'change' => null,
         ];
 

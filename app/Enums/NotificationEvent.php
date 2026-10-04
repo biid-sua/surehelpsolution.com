@@ -12,6 +12,7 @@ enum NotificationEvent: string
     case CallMissed = 'call.missed';
     case FollowUpCreated = 'followup.created';
     case FollowUpOverdue = 'followup.overdue';
+    case TaskAssigned = 'task.assigned';
     case AppointmentCreated = 'appointment.created';
     case AppointmentUpdated = 'appointment.updated';
     case AppointmentCancelled = 'appointment.cancelled';
@@ -27,7 +28,7 @@ enum NotificationEvent: string
      */
     public static function available(): array
     {
-        return [self::CallLogged, self::CallMissed, self::FollowUpCreated];
+        return [self::CallLogged, self::CallMissed, self::FollowUpCreated, self::FollowUpOverdue, self::TaskAssigned];
     }
 
     public function isAvailable(): bool
@@ -42,6 +43,7 @@ enum NotificationEvent: string
             self::CallMissed => 'Missed or dropped call',
             self::FollowUpCreated => 'Caller asked for a call back',
             self::FollowUpOverdue => 'Follow-up overdue',
+            self::TaskAssigned => 'Task assigned to you',
             self::AppointmentCreated => 'Appointment booked',
             self::AppointmentUpdated => 'Appointment changed',
             self::AppointmentCancelled => 'Appointment cancelled',
@@ -60,6 +62,8 @@ enum NotificationEvent: string
             self::CallLogged => 'Every call our team answers for you, with the outcome.',
             self::CallMissed => 'A caller hung up or couldn\'t be reached.',
             self::FollowUpCreated => 'Someone is waiting for you to call them back.',
+            self::FollowUpOverdue => 'A call-back or task is past its due time.',
+            self::TaskAssigned => 'A teammate gave you a task.',
             default => '',
         };
     }

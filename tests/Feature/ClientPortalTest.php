@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Actions\Organizations\ProvisionUserTenancy;
+use App\Actions\Tasks\CreateCallbackTask;
+use App\Enums\OutcomeCategory;
 use App\Livewire\Client\Calls\Index as CallsIndex;
 use App\Livewire\Client\Dashboard;
 use App\Models\CallLog;
@@ -59,6 +61,11 @@ class ClientPortalTest extends TestCase
             'status' => 'new',
             'user_id' => $this->agent->id,
         ], $attributes));
+
+        // A logged call-back creates its task (LogCall does this in production).
+        if ($call->outcomeCategory() === OutcomeCategory::Callback) {
+            app(CreateCallbackTask::class)->handle($call, $organization);
+        }
 
         if ($createdAt) {
             // created_at isn't mass assignable; set it explicitly for time-based tests.

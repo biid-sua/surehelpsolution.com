@@ -27,6 +27,7 @@ use App\Livewire\Client\Customers\Index as CustomerIndex;
 use App\Livewire\Client\Customers\Show as CustomerShow;
 use App\Livewire\Client\Dashboard as ClientDashboard;
 use App\Livewire\Client\Settings\Notifications as NotificationSettings;
+use App\Livewire\Client\Tasks\Index as TasksIndex;
 use Illuminate\Support\Facades\Route;
 
 // Landing page
@@ -95,6 +96,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/calendar/events', CalendarEventsController::class)->name('calendar.events');
     });
     Route::get('/settings/notifications', NotificationSettings::class)->name('settings.notifications');
+    Route::get('/tasks', TasksIndex::class)->middleware('can:tasks.view')->name('tasks.index');
     Route::middleware('can:customers.view')->group(function () {
         Route::get('/customers', CustomerIndex::class)->name('customers.index');
         Route::get('/customers/export', CustomerExportController::class)->name('customers.export');

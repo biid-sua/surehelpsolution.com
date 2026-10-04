@@ -88,15 +88,14 @@ class CallLogFilters
     }
 
     /**
-     * Callbacks / follow-ups that nobody has closed yet.
+     * Calls whose call-back or follow-up task is still open (P2-4b: tasks are the source of truth).
      *
      * @param  Builder<CallLog>  $query
      * @return Builder<CallLog>
      */
     public static function pendingFollowUps(Builder $query, Organization $organization): Builder
     {
-        return $query->whereIn('call_outcome', app(CallOutcomes::class)->keys($organization, OutcomeCategory::Callback))
-            ->whereNotIn('status', ['completed', 'cancelled', 'spam']);
+        return $query->whereHas('tasks', fn (Builder $t) => $t->forOrganization($organization)->open()->followUps());
     }
 
     private static function date(mixed $value): ?string

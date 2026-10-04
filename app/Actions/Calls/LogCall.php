@@ -5,6 +5,7 @@ namespace App\Actions\Calls;
 use App\Actions\Customers\MatchOrCreateCustomer;
 use App\Actions\Customers\RecordTimelineEvent;
 use App\Actions\Notifications\NotifyOrganization;
+use App\Actions\Tasks\CreateCallbackTask;
 use App\Enums\CallOwnershipSource;
 use App\Enums\NotificationEvent;
 use App\Enums\OutcomeCategory;
@@ -32,6 +33,7 @@ class LogCall
         private readonly NotifyOrganization $notify,
         private readonly MatchOrCreateCustomer $customers,
         private readonly RecordTimelineEvent $timeline,
+        private readonly CreateCallbackTask $callbacks,
     ) {}
 
     /**
@@ -95,6 +97,7 @@ class LogCall
 
         if ($organization) {
             $this->linkCustomer($call, $organization, $agent);
+            $this->createCallbackTask($call, $organization, $agent);
             $this->notify->handle($organization, new CallActivity($call, self::eventFor($call)), 'calls.view');
         }
 
@@ -136,6 +139,23 @@ class LogCall
                 $agent->getKey(),
                 $call->created_at,
             );
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    /**
+     * A caller who wants a call back gets a task the business can work and close (spec §24).
+     * Like the customer link, a failure here must never lose the call.
+     */
+    private function createCallbackTask(CallLog $call, Organization $organization, User $agent): void
+    {
+        if ($call->outcomeCategory() !== OutcomeCategory::Callback) {
+            return;
+        }
+
+        try {
+            $this->callbacks->handle($call, $organization, $agent);
         } catch (\Throwable $e) {
             report($e);
         }

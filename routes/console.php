@@ -23,3 +23,6 @@ Schedule::command('model:prune', ['--model' => [AuditLog::class]])->dailyAt('03:
 
 // Failed jobs are kept a week for inspection, then removed.
 Schedule::command('queue:prune-failed', ['--hours' => 168])->dailyAt('03:20');
+
+// Overdue call-backs and tasks: one reminder each (spec §24).
+Schedule::command('tasks:notify-overdue')->everyFiveMinutes()->withoutOverlapping(10);

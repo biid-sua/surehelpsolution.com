@@ -49,6 +49,10 @@
                 </x-ui.card>
             @endif
 
+            @if ($callTasks !== null && $callTasks->isNotEmpty())
+                @include('livewire.client.tasks._card', ['cardTasks' => $callTasks])
+            @endif
+
             <x-ui.card title="Service visit">
                 @if ($call->hasScheduledService())
                     <dl class="space-y-4">

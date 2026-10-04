@@ -65,6 +65,14 @@
                 @endif
             </x-ui.card>
 
+            @if ($openTasks !== null)
+                @include('livewire.client.tasks._card', [
+                    'cardTasks' => $openTasks,
+                    'emptyText' => 'No open tasks for this customer.',
+                    'addUrl' => $canCreateTask ? route('app.tasks.index', ['new' => 1, 'customer' => $customer->ulid]) : null,
+                ])
+            @endif
+
             @if ($customer->notes)
                 <x-ui.card title="About this customer">
                     <p class="whitespace-pre-line text-sm text-ink">{{ $customer->notes }}</p>

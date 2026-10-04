@@ -43,6 +43,7 @@ class Show extends Component
         return view('livewire.client.calls.show', [
             'call' => $call,
             'timezone' => $organization->timezone ?: config('app.timezone'),
+            'callTasks' => auth()->user()->can('tasks.view', $organization) ? $call->tasks()->latest('id')->get() : null,
         ])->title('Call '.$call->call_id);
     }
 }

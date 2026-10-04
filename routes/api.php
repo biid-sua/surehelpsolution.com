@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\DutyScheduleController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\TaskController;
 use Illuminate\Support\Facades\Route;
 
 // Public API routes (no authentication required)
@@ -43,6 +44,10 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
             Route::get('/customers', [CustomerController::class, 'index']);
             Route::get('/customers/{ulid}', [CustomerController::class, 'show']);
         });
+        Route::get('/tasks', [TaskController::class, 'index'])->middleware('can:tasks.view');
+        Route::post('/tasks', [TaskController::class, 'store'])->middleware('can:tasks.create');
+        Route::get('/tasks/{ulid}', [TaskController::class, 'show'])->middleware('can:tasks.view');
+        Route::patch('/tasks/{ulid}', [TaskController::class, 'update'])->middleware('can:tasks.update');
         Route::get('/profile', [ClientDashboardController::class, 'getProfile']);
         Route::put('/profile', [ClientDashboardController::class, 'updateProfile']);
     });

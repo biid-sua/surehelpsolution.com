@@ -183,6 +183,10 @@ class Show extends Component
             'contactMethods' => Customer::CONTACT_METHODS,
             'allTags' => Tag::query()->forOrganization($organization)->orderBy('name')->pluck('name'),
             'canUpdate' => auth()->user()->can('customers.update', $organization),
+            'openTasks' => auth()->user()->can('tasks.view', $organization)
+                ? $customer->tasks()->open()->byUrgency()->limit(5)->get()
+                : null,
+            'canCreateTask' => auth()->user()->can('tasks.create', $organization),
             'timezone' => $organization->timezoneOrDefault(),
         ])->title($customer->fullName());
     }

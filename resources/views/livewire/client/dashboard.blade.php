@@ -19,7 +19,7 @@
         <div class="mb-6 space-y-3">
             @if ($kpis['follow_ups']['value'] > 0)
                 <x-ui.alert tone="warning" title="{{ $kpis['follow_ups']['value'] }} {{ \Illuminate\Support\Str::plural('caller', $kpis['follow_ups']['value']) }} waiting for a follow-up">
-                    Callers asked to be called back. <a href="{{ route('app.calls.index', ['view' => 'follow_up']) }}" class="font-semibold underline underline-offset-2">Review follow-ups</a>
+                    Callers asked to be called back. <a href="{{ route('app.tasks.index') }}" class="font-semibold underline underline-offset-2">Open tasks</a>
                 </x-ui.alert>
             @endif
             @if ($period === 'today' && $kpis['missed']['value'] > 0)
@@ -46,7 +46,7 @@
             <x-ui.stat label="Missed / dropped" icon="phone-x" :value="number_format($kpis['missed']['value'])" :change="$kpis['missed']['change']"
                 :invert="true" hint="vs previous" :href="route('app.calls.index', ['view' => 'missed'])" />
             <x-ui.stat label="Pending follow-ups" icon="callback" :value="number_format($kpis['follow_ups']['value'])"
-                hint="open right now" :href="route('app.calls.index', ['view' => 'follow_up'])" class="col-span-2 lg:col-span-1" />
+                hint="open right now" :href="route('app.tasks.index')" class="col-span-2 lg:col-span-1" />
         </div>
 
         <div class="mt-6 grid gap-6 lg:grid-cols-3">

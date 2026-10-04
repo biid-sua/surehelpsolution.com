@@ -84,6 +84,7 @@ Current host: cPanel (PHP 8.3), deployed by uploading files. Target hosting: [de
 | `queue:work --stop-when-empty` (notifications, emails) | every minute |
 | `model:prune` (audit retention) | daily 03:10 |
 | `queue:prune-failed --hours=168` | daily 03:20 |
+| `tasks:notify-overdue` (one reminder per overdue task) | every 5 minutes |
 
 Failed jobs: `php artisan queue:failed`, retry with `php artisan queue:retry all`.
 

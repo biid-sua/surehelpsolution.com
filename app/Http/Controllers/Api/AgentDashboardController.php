@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Actions\Calls\LogCall;
+use App\Actions\Tasks\CreateCallbackTask;
+use App\Enums\OutcomeCategory;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCallLogRequest;
 use App\Models\CallLog;
@@ -287,6 +289,16 @@ class AgentDashboardController extends Controller
             ]));
 
             app(Audit::class)->changes('call.updated', $callLog);
+
+            // Changed to an outcome that needs a call back: the business gets a task (once per call).
+            if ($callLog->wasChanged('call_outcome') && $callLog->organization
+                && $callLog->outcomeCategory() === OutcomeCategory::Callback) {
+                try {
+                    app(CreateCallbackTask::class)->handle($callLog, $callLog->organization, $user);
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+            }
 
             return response()->json([
                 'success' => true,
