@@ -1,0 +1,274 @@
+<?php
+
+namespace App\Models;
+
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Support\Authorization\RoleCatalog;
+use App\Support\Tenancy\CurrentOrganization;
+use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Traits\HasRoles;
+
+class User extends Authenticatable
+{
+    /** @use HasFactory<UserFactory> */
+    use HasApiTokens, HasFactory, HasRoles, Notifiable;
+
+    /**
+     * Per-instance memo of organization roles, keyed by organization id.
+     *
+     * @var array<int, string|null>
+     */
+    private array $organizationRoleCache = [];
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var list<string>
+     */
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'role',
+        'phone',
+        'is_active',
+        'unique_id',
+        'must_change_password',
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'is_active' => 'boolean',
+            'must_change_password' => 'boolean',
+        ];
+    }
+
+    /**
+     * Check if user is admin
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Check if user is agent
+     */
+    public function isAgent(): bool
+    {
+        return $this->role === 'agent';
+    }
+
+    /**
+     * Check if user is client
+     */
+    public function isClient(): bool
+    {
+        return $this->role === 'client';
+    }
+
+    /**
+     * Organizations this user belongs to as a member (business owner, manager, staff).
+     *
+     * @return BelongsToMany<Organization, $this>
+     */
+    public function organizations(): BelongsToMany
+    {
+        return $this->belongsToMany(Organization::class)
+            ->withPivot(['role', 'status', 'invited_at', 'joined_at'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Organizations this agent is assigned to serve.
+     *
+     * @return BelongsToMany<Organization, $this>
+     */
+    public function assignedOrganizations(): BelongsToMany
+    {
+        return $this->belongsToMany(Organization::class, 'agent_assignments', 'agent_user_id', 'organization_id')
+            ->withPivot(['is_primary', 'source'])
+            ->withTimestamps();
+    }
+
+    /**
+     * The organization a client user works in. Clients have exactly one for now (docs/decisions.md D1).
+     */
+    public function primaryOrganization(): ?Organization
+    {
+        return $this->organizations()
+            ->wherePivot('status', 'active')
+            ->orderBy('organizations.id')
+            ->first();
+    }
+
+    /**
+     * The user's role inside an organization (owner, manager, staff), or null if not an active member.
+     */
+    public function organizationRole(Organization $organization): ?string
+    {
+        $key = $organization->getKey();
+
+        if (! array_key_exists($key, $this->organizationRoleCache)) {
+            $this->organizationRoleCache[$key] = $this->organizations()
+                ->wherePivot('status', 'active')
+                ->whereKey($key)
+                ->first()?->getRelationValue('pivot')?->getAttribute('role');
+        }
+
+        return $this->organizationRoleCache[$key];
+    }
+
+    /**
+     * The single permission check (docs/permissions.md).
+     *
+     * - Global roles with scope "platform" grant their permissions everywhere.
+     * - Global roles with scope "assigned" (agents) grant them only in assigned organizations.
+     * - Organization roles grant their permissions inside that organization only.
+     *
+     * Without an organization, answers whether the user holds the permission at all;
+     * data access must still be checked against the specific organization.
+     */
+    public function hasPermissionIn(string $permission, ?Organization $organization = null): bool
+    {
+        $organization ??= app(CurrentOrganization::class)->get();
+        $catalog = app(RoleCatalog::class);
+        $this->loadMissing('roles.permissions');
+
+        /** @var Role $role */
+        foreach ($this->roles as $role) {
+            if (! $role->getRelationValue('permissions')->contains('name', $permission)) {
+                continue;
+            }
+
+            if ($catalog->roleScope($role->name) === 'platform' || $organization === null) {
+                return true;
+            }
+
+            if ($this->assignedOrganizations()->whereKey($organization->getKey())->exists()) {
+                return true;
+            }
+        }
+
+        if ($organization === null) {
+            return $this->organizations()->wherePivot('status', 'active')->get()
+                ->contains(fn (Organization $org) => in_array($permission, $catalog->organizationRolePermissions($org->getRelationValue('pivot')?->getAttribute('role')), true));
+        }
+
+        return in_array($permission, $catalog->organizationRolePermissions($this->organizationRole($organization)), true);
+    }
+
+    /**
+     * Client accounts the given user may log calls for: all for admins,
+     * only clients of assigned organizations for agents, none otherwise.
+     */
+    public function scopeClientsVisibleTo(Builder $query, User $viewer): Builder
+    {
+        $query->where('role', 'client');
+
+        if ($viewer->isAdmin()) {
+            return $query;
+        }
+
+        if (! $viewer->isAgent()) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        $organizationIds = $viewer->assignedOrganizations()->pluck('organizations.id');
+
+        return $query->whereHas('organizations', fn (Builder $q) => $q->whereIn('organizations.id', $organizationIds));
+    }
+
+    public function requiresPasswordChange(): bool
+    {
+        return $this->must_change_password && in_array($this->role, ['agent', 'client'], true);
+    }
+
+    /**
+     * Generate a unique ID for the user based on their role
+     */
+    public static function generateUniqueId($role): string
+    {
+        $prefix = match ($role) {
+            'admin' => 'ADM',
+            'agent' => 'AGT',
+            'client' => 'CLT',
+            default => 'USR'
+        };
+
+        // Generate a 6-digit number
+        $number = str_pad((string) random_int(1, 999999), 6, '0', STR_PAD_LEFT);
+
+        $uniqueId = $prefix.$number;
+
+        // Check if this ID already exists
+        while (static::where('unique_id', $uniqueId)->exists()) {
+            $number = str_pad((string) random_int(1, 999999), 6, '0', STR_PAD_LEFT);
+            $uniqueId = $prefix.$number;
+        }
+
+        return $uniqueId;
+    }
+
+    /**
+     * Boot method to automatically generate unique_id when creating a user
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($user) {
+            if (empty($user->unique_id)) {
+                $user->unique_id = static::generateUniqueId($user->role ?? 'client');
+            }
+        });
+
+        // Keep the global role in step with the portal type on every code path,
+        // so e.g. demoting an admin can never leave Super Admin behind.
+        static::created(fn (User $user) => $user->syncDefaultRole());
+        static::updated(function (User $user) {
+            if ($user->wasChanged('role')) {
+                $user->syncDefaultRole(replace: true);
+            }
+        });
+    }
+
+    /**
+     * Give the default global role for the portal type (admin → super_admin, agent → agent; clients none).
+     */
+    public function syncDefaultRole(bool $replace = false): void
+    {
+        $default = config("authorization.portal_defaults.{$this->role}");
+
+        if ($replace) {
+            $this->syncRoles($default ? [$default] : []);
+        } elseif ($default && ! $this->roles()->exists()) {
+            $this->assignRole($default);
+        }
+    }
+}

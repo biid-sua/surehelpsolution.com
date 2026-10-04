@@ -1,0 +1,11 @@
+{
+    "preset": "laravel",
+    "exclude": [
+        "old 19 Sept",
+        "old before 12sep2025",
+        "Old Resource & Public 1 oct 2025",
+        "SHS RAW",
+        "storage",
+        "bootstrap/cache"
+    ]
+}

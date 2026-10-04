@@ -1,0 +1,133 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Admin/AgentDutyScheduleController.php
+
+		-
+			message: '#^Offset ''all'' on array\{daily\: array\<mixed\>, weekly\: array\<mixed\>, monthly\: array\<mixed\>, all\: array\<mixed\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Http/Controllers/AdminController.php
+
+		-
+			message: '#^Offset ''daily''\|''monthly''\|''weekly'' on array\{daily\: array\{totalCalls\: int\<0, max\>, serviceRequests\: int\<0, max\>, totalScheduled\: int\<0, max\>, inProgress\: int\<0, max\>\}, weekly\: array\{totalCalls\: int\<0, max\>, serviceRequests\: int\<0, max\>, totalScheduled\: int\<0, max\>, inProgress\: int\<0, max\>\}, monthly\: array\{totalCalls\: int\<0, max\>, serviceRequests\: int\<0, max\>, totalScheduled\: int\<0, max\>, inProgress\: int\<0, max\>\}\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Http/Controllers/AdminController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\CallLog\:\:\$service_requests\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/AdminDashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\CallLog\:\:\$total_calls\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/AdminDashboardController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\CallLog\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Api/AdminDashboardController.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/Api/AuthController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$agent_name\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Http/Controllers/Api/ClientDashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$call_outcome\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/ClientDashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$caller_name\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Api/ClientDashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$caller_phone\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Api/ClientDashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Api/ClientDashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 7
+			path: app/Http/Controllers/Api/ClientDashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$notes\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Http/Controllers/Api/ClientDashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$reason_for_call\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Api/ClientDashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$service_date\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Http/Controllers/Api/ClientDashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$service_location\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Http/Controllers/Api/ClientDashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$service_window\.$#'
+			identifier: property.notFound
+			count: 6
+			path: app/Http/Controllers/Api/ClientDashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/ClientDashboardController.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/Api/ClientDashboardController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 3
+			path: app/Http/Controllers/Api/ClientDashboardController.php
+
+		-
+			message: '#^Parameter \#1 \$log of method App\\Http\\Controllers\\Api\\ClientDashboardController\:\:mapScheduledStatus\(\) expects App\\Models\\CallLog, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 3
+			path: app/Http/Controllers/Api/ClientDashboardController.php

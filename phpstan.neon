@@ -1,0 +1,12 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - phpstan-baseline.neon
+
+parameters:
+    paths:
+        - app
+        - routes
+        - database
+    # Start at 5 and raise as the codebase is cleaned up (docs/decisions.md D12).
+    level: 5
+    tmpDir: storage/framework/cache/phpstan
