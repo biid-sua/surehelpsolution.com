@@ -21,9 +21,11 @@ return new class extends Migration
             $table->foreignId('location_id')->nullable()->constrained('business_locations')->nullOnDelete();
             $table->foreignId('call_log_id')->nullable()->constrained('call_logs')->nullOnDelete();
             $table->string('title');
-            $table->timestamp('starts_at');
-            $table->timestamp('ends_at');
-            $table->timestamp('blocked_until');
+            // dateTime, not timestamp: on MySQL/MariaDB without explicit_defaults_for_timestamp a NOT NULL
+            // timestamp gets ON UPDATE CURRENT_TIMESTAMP (or an invalid zero default). Values are UTC (app.timezone).
+            $table->dateTime('starts_at');
+            $table->dateTime('ends_at');
+            $table->dateTime('blocked_until');
             $table->string('timezone', 64);
             $table->string('status', 20)->default('confirmed');
             $table->string('source', 20)->default('portal');      // portal | agent | api | chatbot | calendar

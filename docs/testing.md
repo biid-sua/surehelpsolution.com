@@ -35,3 +35,14 @@ CI (`.github/workflows/ci.yml`) runs all of the above, plus `composer audit`, `n
 - Every new endpoint gets a feature test, including a cross-tenant test that expects 403/404 (spec §64).
 - New code must pass Larastan with **no new baseline entries**. The baseline (`phpstan-baseline.neon`) only covers legacy controllers and shrinks as they are rewritten.
 - Migrations that touch data are rehearsed on a MySQL/MariaDB copy with legacy-shaped data before release.
+
+## Deploy rehearsal on MySQL/MariaDB
+
+Tests run on SQLite, which accepts schema MySQL rejects and never runs migrations against old data. Before every release:
+
+1. Load a snapshot of the database **as it is in production** (the last released state, with real-shaped data) into a throwaway database.
+2. Run `DB_DATABASE=<throwaway> php artisan migrate --force` for every pending migration **in one run**, as the deploy will.
+3. Check the backfilled rows, not just "DONE" (counts of customers, tasks, links).
+4. `migrate:rollback --step=<n>` and `migrate` again: same data, no errors.
+
+Two Phase 2 bugs were only found this way (2026-10-04): NOT NULL `timestamp` columns (MySQL gives them `ON UPDATE CURRENT_TIMESTAMP` or an invalid default, so use `dateTime`), and a backfill reading a table created by a later migration.

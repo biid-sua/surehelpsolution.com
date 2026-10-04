@@ -6,6 +6,7 @@ use App\Enums\OutcomeCategory;
 use App\Models\CallOutcome;
 use App\Models\Organization;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * The effective call outcomes for a business: platform defaults, with the business's
@@ -27,8 +28,19 @@ class CallOutcomes
     public function effective(Organization|int|null $organization): Collection
     {
         $id = $organization instanceof Organization ? $organization->getKey() : $organization;
+        $key = $id ?? 'platform';
 
-        return $this->cache[$id ?? 'platform'] ??= $this->build($id);
+        if (! isset($this->cache[$key])) {
+            $outcomes = $this->build($id);
+
+            // Nothing is remembered while the table doesn't exist yet (see rows()).
+            if ($this->allRows === null) {
+                return $outcomes;
+            }
+            $this->cache[$key] = $outcomes;
+        }
+
+        return $this->cache[$key];
     }
 
     /**
@@ -142,6 +154,12 @@ class CallOutcomes
      */
     private function rows(): Collection
     {
+        // Backfill migrations that run before the call_outcomes table exists (a deploy that applies
+        // several releases at once) see no outcomes instead of failing. Checked only in the console.
+        if ($this->allRows === null && app()->runningInConsole() && ! Schema::hasTable('call_outcomes')) {
+            return collect();
+        }
+
         return $this->allRows ??= CallOutcome::query()->orderBy('sort_order')->orderBy('id')->get();
     }
 }

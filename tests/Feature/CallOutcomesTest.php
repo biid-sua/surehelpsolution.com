@@ -14,6 +14,7 @@ use App\Services\Calls\CallOutcomes;
 use App\Services\Metrics\ClientMetrics;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Testing\TestResponse;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -71,6 +72,26 @@ class CallOutcomesTest extends TestCase
     private function custom(Organization $organization, string $key, string $label, string $category, bool $active = true): void
     {
         CallOutcome::create(['organization_id' => $organization->id, 'key' => $key, 'label' => $label, 'category' => $category, 'is_active' => $active]);
+    }
+
+    /**
+     * A deploy applying several releases runs the P2-3 customer backfill before call_outcomes exists.
+     * The registry must answer "no outcomes" then, and must not remember that once the table appears.
+     */
+    public function test_registry_tolerates_a_missing_table_without_caching_it(): void
+    {
+        $registry = $this->registry();
+        Schema::rename('call_outcomes', 'call_outcomes_hidden');
+
+        try {
+            $this->assertCount(0, $registry->effective(null));
+            $this->assertSame([], $registry->keys(1, OutcomeCategory::Callback));
+        } finally {
+            Schema::rename('call_outcomes_hidden', 'call_outcomes');
+        }
+
+        $this->assertCount(11, $registry->effective(null));
+        $this->assertContains('callback-requested', $registry->keys(1, OutcomeCategory::Callback));
     }
 
     public function test_platform_defaults_are_seeded_with_categories(): void
