@@ -5,6 +5,7 @@ namespace App\Services\Scheduling;
 use App\Models\Appointment;
 use App\Models\Organization;
 use App\Services\Business\BusinessHours;
+use App\Services\Rules\BusinessRules;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 
@@ -13,7 +14,7 @@ use Carbon\CarbonInterface;
  * later, the chatbot and AI assistant.
  *
  * Considers: business hours (split shifts, holidays, temporary closure), service duration and buffer,
- * existing appointments, minimum notice. Phase 3 adds connected-calendar busy times behind the same API.
+ * existing appointments, minimum notice, and the business's booking rules (cutoff time, booking window). Phase 3 adds connected-calendar busy times behind the same API.
  * Everything is reasoned in the business's timezone, so DST days have the right number of hours.
  */
 class Availability
@@ -22,7 +23,10 @@ class Availability
 
     public const MIN_NOTICE_MINUTES = 60;
 
-    public function __construct(private readonly BusinessHours $hours) {}
+    public function __construct(
+        private readonly BusinessHours $hours,
+        private readonly BusinessRules $rules,
+    ) {}
 
     /**
      * Free start times on a local date.
@@ -37,10 +41,20 @@ class Availability
         ?int $locationId = null,
         ?int $ignoreAppointmentId = null,
         ?CarbonInterface $now = null,
+        ?int $serviceId = null,
     ): array {
         $timezone = $organization->timezoneOrDefault();
+        $now = CarbonImmutable::instance($now ?? now())->setTimezone($timezone);
         $day = CarbonImmutable::parse(is_string($date) ? $date : $date->format('Y-m-d'), $timezone)->startOfDay();
-        $earliest = CarbonImmutable::instance($now ?? now())->setTimezone($timezone)->addMinutes(self::MIN_NOTICE_MINUTES);
+
+        // Business rules (spec §23): notice, how far ahead, latest start time.
+        [$ruleNotice, $maxDays] = $this->rules->window($organization);
+        $earliest = $now->addMinutes(max(self::MIN_NOTICE_MINUTES, (int) $ruleNotice));
+        $cutoff = $this->rules->cutoffFor($organization, $serviceId);
+        if ($maxDays !== null && $day->greaterThan($now->startOfDay()->addDays($maxDays))) {
+            return [];
+        }
+
         $intervals = $this->hours->intervalsOn($organization, $day);
 
         if ($intervals === []) {
@@ -56,7 +70,9 @@ class Availability
             while ($start->addMinutes($durationMinutes)->lessThanOrEqualTo($interval['end'])) {
                 $blockedUntil = $start->addMinutes($durationMinutes + $bufferMinutes);
 
-                if ($start->greaterThanOrEqualTo($earliest) && ! $this->clashes($busy, $start, $blockedUntil)) {
+                $beforeCutoff = $cutoff === null || $start->format('H:i') < $cutoff;
+
+                if ($beforeCutoff && $start->greaterThanOrEqualTo($earliest) && ! $this->clashes($busy, $start, $blockedUntil)) {
                     $slots[] = $start;
                 }
 
@@ -81,12 +97,13 @@ class Availability
         ?int $ignoreAppointmentId = null,
         int $limit = 3,
         int $days = 14,
+        ?int $serviceId = null,
     ): array {
         $from = CarbonImmutable::instance($from)->setTimezone($organization->timezoneOrDefault());
         $found = [];
 
         for ($i = 0; $i < $days && count($found) < $limit; $i++) {
-            foreach ($this->slots($organization, $from->addDays($i), $durationMinutes, $bufferMinutes, $locationId, $ignoreAppointmentId) as $slot) {
+            foreach ($this->slots($organization, $from->addDays($i), $durationMinutes, $bufferMinutes, $locationId, $ignoreAppointmentId, null, $serviceId) as $slot) {
                 if ($slot->greaterThanOrEqualTo($from)) {
                     $found[] = $slot;
                     if (count($found) === $limit) {

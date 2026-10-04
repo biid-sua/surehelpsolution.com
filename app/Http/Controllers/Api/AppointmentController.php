@@ -77,7 +77,7 @@ class AppointmentController extends Controller
         $organization = $current->get();
         $service = isset($data['service_id']) ? BusinessService::query()->forOrganization($organization)->whereKey($data['service_id'])->firstOrFail() : null;
         $duration = (int) ($data['duration_minutes'] ?? $service->duration_minutes ?? BookAppointment::DEFAULT_DURATION);
-        $slots = $availability->slots($organization, $data['date'], $duration, (int) ($service->buffer_minutes ?? 0), $data['location_id'] ?? $service?->location_id);
+        $slots = $availability->slots($organization, $data['date'], $duration, (int) ($service->buffer_minutes ?? 0), $data['location_id'] ?? $service?->location_id, serviceId: $service?->id);
 
         return ApiResponse::success([
             'date' => $data['date'],

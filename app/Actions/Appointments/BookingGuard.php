@@ -36,6 +36,7 @@ class BookingGuard
         ?int $locationId,
         ?int $ignoreAppointmentId,
         Closure $write,
+        ?int $serviceId = null,
     ): mixed {
         try {
             return DB::transaction(function () use ($organization, $start, $blockedUntil, $locationId, $ignoreAppointmentId, $write) {
@@ -57,7 +58,7 @@ class BookingGuard
             });
         } catch (SlotUnavailable $e) {
             $duration = (int) $start->diffInMinutes($blockedUntil);
-            $e->suggestions = $this->availability->nextSlots($organization, $start, $duration, 0, $locationId, $ignoreAppointmentId);
+            $e->suggestions = $this->availability->nextSlots($organization, $start, $duration, 0, $locationId, $ignoreAppointmentId, serviceId: $serviceId);
 
             throw $e;
         }

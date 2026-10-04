@@ -275,7 +275,7 @@ class AppointmentsTest extends TestCase
         $fails(fn () => $this->book($org, '2026-10-06 10:00', ['service_id' => $theirService->id]), 'service_id');
         $fails(fn () => $this->book($org, '2026-10-06 10:00', ['service_id' => $quoteOnly->id]), 'service_id');
         // Agents stay inside opening hours; the business itself may book any time.
-        $fails(fn () => app(BookAppointment::class)->handle($org, ['starts_at' => $this->at('2026-10-06 18:00')], null, 'agent', enforceHours: true), 'starts_at');
+        $fails(fn () => app(BookAppointment::class)->handle($org, ['starts_at' => $this->at('2026-10-06 18:00')], null, 'agent', strict: true), 'starts_at');
         $this->book($org, '2026-10-06 18:00');
         $this->assertSame(1, Appointment::withoutGlobalScopes()->count());
     }

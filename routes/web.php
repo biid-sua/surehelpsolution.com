@@ -19,8 +19,10 @@ use App\Livewire\Admin\Organizations\Index as OrganizationIndex;
 use App\Livewire\Admin\Organizations\Show as OrganizationShow;
 use App\Livewire\Client\Appointments\Index as AppointmentsIndex;
 use App\Livewire\Client\Business\Hours as BusinessHoursPage;
+use App\Livewire\Client\Business\Knowledge as BusinessKnowledgePage;
 use App\Livewire\Client\Business\Outcomes as BusinessOutcomesPage;
 use App\Livewire\Client\Business\Profile as BusinessProfilePage;
+use App\Livewire\Client\Business\Rules as BusinessRulesPage;
 use App\Livewire\Client\Business\Services as BusinessServicesPage;
 use App\Livewire\Client\Calendar as ClientCalendar;
 use App\Livewire\Client\Calls\Index as ClientCalls;
@@ -112,6 +114,8 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/business/hours', BusinessHoursPage::class)->name('business.hours');
         Route::get('/business/services', BusinessServicesPage::class)->name('business.services');
         Route::get('/business/outcomes', BusinessOutcomesPage::class)->name('business.outcomes');
+        Route::get('/business/knowledge', BusinessKnowledgePage::class)->middleware('can:knowledge_base.view')->name('business.knowledge');
+        Route::get('/business/rules', BusinessRulesPage::class)->name('business.rules');
     });
 });
 

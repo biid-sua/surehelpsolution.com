@@ -79,6 +79,8 @@ A client user only ever sees their own business. The business is resolved on the
 | GET | `/client/tasks?status=open\|overdue\|done\|all&mine&customer&per_page` | Permission `tasks.view`. Default `open`, most urgent first. `data.tasks[]`: `id` (ULID), `type` (`callback`, `follow_up`, `todo`), `title`, `description`, `priority` (`urgent`, `high`, `normal`, `low`), `status` (`open`, `in_progress`, `completed`, `cancelled`), `is_overdue`, `due_at`, `source`, `customer {id, name}`, `call_id`, `assigned_to {id, name}`, `completed_at`, `created_at`. Paged like customers |
 | POST | `/client/tasks` | Permission `tasks.create`. `title` (required), `type`, `priority`, `description`, `due_at` (ISO 8601), `customer_id` (customer ULID), `assigned_to` (user id of an active team member). 201 with `data.task` |
 | GET | `/client/tasks/{id}` | `data.task` |
+| GET | `/client/knowledge?type&search` | Permission `knowledge_base.view`. Active items, pinned first: `data.items[] {id, type, title, content, category, visibility, pinned, updated_at}` |
+| GET | `/client/rules` | `data.rules[] {id, type, description, enforced, active}`; `description` is the rule as a sentence |
 | GET | `/client/appointments?from&to&status&customer&per_page` | Permission `appointments.view`. From today by default, in start order. `data.appointments[]`: `id` (ULID), `title`, `status` (`pending`, `tentative`, `confirmed`, `completed`, `no_show`, `cancelled`), `starts_at` / `ends_at` (UTC ISO 8601), `local_start` (business time), `timezone`, `duration_minutes`, `source`, `notes`, `address`, `customer {id, name, phone}`, `service {id, name}`, `location {id, name}`, `call_id`, `cancellation_reason`, `created_at` |
 | GET | `/client/availability?date=YYYY-MM-DD&service_id&duration_minutes&location_id` | Free start times on that local date: `data.slots[] {local, starts_at}`, plus `timezone` and `duration_minutes` |
 | POST | `/client/appointments` | Permission `appointments.create`. `starts_at` (ISO 8601; **without an offset it is the business's local time**), `service_id`, `duration_minutes`, `location_id`, `customer_id` (ULID), `status` (`confirmed` default, `pending`, `tentative`), `notes`, `address`. 201 with `data.appointment`. **409** when the time overlaps another booking: `message`, `errors.starts_at`, `suggestions[] {local, starts_at}` |
@@ -113,6 +115,7 @@ A client user only ever sees their own business. The business is resolved on the
 
 | Date | Change |
 |---|---|
+| 2026-10-08 | `/client/knowledge`, `/client/rules` (read-only). |
 | 2026-10-07 | `/client/appointments` (list, book, show, move, status) and `/client/availability`. |
 | 2026-10-06 | `/client/escalations` (list, show, acknowledge, assign, resolve). Optional `escalation_type` / `escalation_priority` on `POST /agent/call-logs`. `/client/tasks` (list, create, show, update). `call_outcomes[]` on `/agent/clients`. `call_outcome` validated against the business's active outcomes. |
 | 2026-10-05 | `/client/business`, `/client/services`, `/client/customers`. |

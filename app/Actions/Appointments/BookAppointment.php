@@ -15,6 +15,7 @@ use App\Models\Customer;
 use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\AppointmentActivity;
+use App\Services\Rules\BusinessRules;
 use App\Services\Scheduling\Availability;
 use App\Support\Audit\Audit;
 use Carbon\CarbonImmutable;
@@ -33,16 +34,17 @@ class BookAppointment
         private readonly Audit $audit,
         private readonly RecordTimelineEvent $timeline,
         private readonly NotifyOrganization $notify,
+        private readonly BusinessRules $rules,
     ) {}
 
     /**
      * @param  array{starts_at: CarbonImmutable, duration_minutes?: ?int, service_id?: ?int, location_id?: ?int, customer_id?: ?int, call_log_id?: ?int, notes?: ?string, address?: ?string, status?: AppointmentStatus|string|null, title?: ?string}  $data  starts_at is an instant in any timezone
-     * @param  bool  $enforceHours  agents and automated booking must stay inside opening hours; the business itself may book any time
+     * @param  bool  $strict  agents and automated booking must keep to opening hours and the business's rules; the business itself may book any time
      *
-     * @throws ValidationException for bad references, past times or times outside hours
+     * @throws ValidationException for bad references, past times, or (strict) times outside hours or against a rule
      * @throws SlotUnavailable when the time overlaps another booking
      */
-    public function handle(Organization $organization, array $data, ?User $actor = null, string $source = 'portal', bool $enforceHours = false): Appointment
+    public function handle(Organization $organization, array $data, ?User $actor = null, string $source = 'portal', bool $strict = false): Appointment
     {
         $refs = self::references($organization, $data);
         $service = $refs['service'];
@@ -51,7 +53,10 @@ class BookAppointment
         $start = CarbonImmutable::instance($data['starts_at'])->utc()->second(0);
         $end = $start->addMinutes($duration);
 
-        self::checkTime($this->availability, $organization, $start, $duration, $enforceHours);
+        self::checkTime($this->availability, $organization, $start, $duration, $strict);
+        if ($strict && $violations = $this->rules->bookingViolations($organization, $start, $service, $refs['customer'], $data)) {
+            throw ValidationException::withMessages(array_map(fn (string $m) => [$m], $violations));
+        }
 
         $status = $data['status'] ?? AppointmentStatus::Confirmed;
         $status = $status instanceof AppointmentStatus ? $status : AppointmentStatus::from($status);
@@ -82,7 +87,7 @@ class BookAppointment
                 'address' => filled($data['address'] ?? null) ? trim((string) $data['address']) : null,
                 'booked_by_user_id' => $actor?->id,
                 'confirmed_at' => $status === AppointmentStatus::Confirmed ? now() : null,
-            ]));
+            ]), $service?->id);
 
         $this->audit->record('appointment.created', $appointment, new: [
             'starts_at' => $appointment->starts_at->toIso8601String(),
@@ -135,7 +140,7 @@ class BookAppointment
     /**
      * @throws ValidationException
      */
-    public static function checkTime(Availability $availability, Organization $organization, CarbonImmutable $start, int $duration, bool $enforceHours): void
+    public static function checkTime(Availability $availability, Organization $organization, CarbonImmutable $start, int $duration, bool $strict): void
     {
         if ($duration < 5 || $duration > 24 * 60) {
             throw ValidationException::withMessages(['duration_minutes' => ['Choose a length between 5 minutes and 24 hours.']]);
@@ -143,7 +148,7 @@ class BookAppointment
         if ($start->lessThan(now()->subMinutes(5))) {
             throw ValidationException::withMessages(['starts_at' => ['That time has already passed.']]);
         }
-        if ($enforceHours && ! $availability->withinHours($organization, $start, $duration)) {
+        if ($strict && ! $availability->withinHours($organization, $start, $duration)) {
             throw ValidationException::withMessages(['starts_at' => ['That time is outside the business\'s opening hours.']]);
         }
     }

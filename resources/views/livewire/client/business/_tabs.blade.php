@@ -4,6 +4,8 @@
         'app.business.profile' => 'Profile',
         'app.business.hours' => 'Hours',
         'app.business.services' => 'Services',
+        'app.business.knowledge' => 'Knowledge',
+        'app.business.rules' => 'Rules',
         'app.business.outcomes' => 'Call outcomes',
     ];
 @endphp

@@ -10,6 +10,7 @@ use App\Exceptions\SlotUnavailable;
 use App\Models\Appointment;
 use App\Models\User;
 use App\Notifications\AppointmentActivity;
+use App\Services\Rules\BusinessRules;
 use App\Services\Scheduling\Availability;
 use App\Support\Audit\Audit;
 use Carbon\CarbonImmutable;
@@ -26,13 +27,14 @@ class RescheduleAppointment
         private readonly Audit $audit,
         private readonly RecordTimelineEvent $timeline,
         private readonly NotifyOrganization $notify,
+        private readonly BusinessRules $rules,
     ) {}
 
     /**
      * @throws ValidationException
      * @throws SlotUnavailable
      */
-    public function handle(Appointment $appointment, CarbonImmutable $startsAt, ?int $durationMinutes, User $actor, bool $enforceHours = false): Appointment
+    public function handle(Appointment $appointment, CarbonImmutable $startsAt, ?int $durationMinutes, User $actor, bool $strict = false): Appointment
     {
         if (! $appointment->status->blocksTime()) {
             throw ValidationException::withMessages(['starts_at' => ['Only upcoming appointments can be moved. Book a new one instead.']]);
@@ -44,7 +46,10 @@ class RescheduleAppointment
         $start = $startsAt->utc()->second(0);
         $end = $start->addMinutes($duration);
 
-        BookAppointment::checkTime($this->availability, $organization, $start, $duration, $enforceHours);
+        BookAppointment::checkTime($this->availability, $organization, $start, $duration, $strict);
+        if ($strict && $violations = array_intersect_key($this->rules->bookingViolations($organization, $start, $appointment->service, $appointment->customer, ['address' => $appointment->address]), ['starts_at' => true])) {
+            throw ValidationException::withMessages(array_map(fn (string $m) => [$m], $violations));
+        }
 
         $before = $appointment->whenLabel();
         $this->guard->claim($organization, $start, $end->addMinutes($buffer), $appointment->location_id, $appointment->id,

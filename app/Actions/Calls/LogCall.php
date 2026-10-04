@@ -17,6 +17,7 @@ use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\CallActivity;
 use App\Services\Calls\CallOutcomes;
+use App\Services\Rules\BusinessRules;
 use App\Support\Audit\Audit;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -172,8 +173,13 @@ class LogCall
      */
     private function raiseEscalation(CallLog $call, Organization $organization, User $agent, array $data = []): void
     {
+        // A business rule may escalate calls for certain reasons whatever the outcome (spec §23).
         if ($call->outcomeCategory() !== OutcomeCategory::Escalated) {
-            return;
+            $rule = app(BusinessRules::class)->escalationFor($organization, $call->reason_for_call);
+            if (! $rule) {
+                return;
+            }
+            $data = ['escalation_type' => $rule['type']->value, 'escalation_priority' => $rule['priority']?->value];
         }
 
         try {

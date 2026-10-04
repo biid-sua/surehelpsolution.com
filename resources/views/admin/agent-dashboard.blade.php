@@ -1175,19 +1175,9 @@
                                             <label class="form-label">Reason for Call</label>
                                             <select class="form-select" id="reasonForCall">
                                                 <option value="">Select reason...</option>
-                                                <option value="general-inquiry">General Inquiry</option>
-                                                <option value="service-request">Service Request</option>
-                                                <option value="appointment-scheduling">Appointment Scheduling</option>
-                                                <option value="billing-question">Billing Question</option>
-                                                <option value="technical-support">Technical Support</option>
-                                                <option value="emergency-service">Emergency Service Request</option>
-                                                <option value="reschedule-appointment">Reschedule Appointment</option>
-                                                <option value="cancel-appointment">Cancel Appointment</option>
-                                                <option value="service-followup">Service Follow-up</option>
-                                                <option value="feedback">Product/Service Feedback</option>
-                                                <option value="complaint">Complaint</option>
-                                                <option value="wrong-number">Wrong Number / Spam</option>
-                                                <option value="other">Other (Specify in Notes)</option>
+                                                @foreach (\App\Models\CallLog::REASONS as $reasonKey => $reasonLabel)
+                                                    <option value="{{ $reasonKey }}">{{ $reasonLabel }}</option>
+                                                @endforeach
                                             </select>
                                         </div>
                                         

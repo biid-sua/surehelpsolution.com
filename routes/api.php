@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\DutyScheduleController;
 use App\Http\Controllers\Api\EscalationController;
+use App\Http\Controllers\Api\KnowledgeController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\TaskController;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +43,8 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
         });
         Route::get('/business', [ClientBusinessController::class, 'show'])->middleware('can:organization.view');
         Route::get('/services', [ClientBusinessController::class, 'services'])->middleware('can:organization.view');
+        Route::get('/knowledge', [KnowledgeController::class, 'index'])->middleware('can:knowledge_base.view');
+        Route::get('/rules', [KnowledgeController::class, 'rules'])->middleware('can:organization.view');
         Route::middleware('can:customers.view')->group(function () {
             Route::get('/customers', [CustomerController::class, 'index']);
             Route::get('/customers/{ulid}', [CustomerController::class, 'show']);

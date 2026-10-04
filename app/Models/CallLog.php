@@ -57,6 +57,25 @@ class CallLog extends Model
         'followup-scheduled' => 'Follow-Up Scheduled',
     ];
 
+    /**
+     * Reasons agents choose from (the call form, rules and reports share this list).
+     */
+    public const REASONS = [
+        'general-inquiry' => 'General inquiry',
+        'service-request' => 'Service request',
+        'appointment-scheduling' => 'Appointment scheduling',
+        'billing-question' => 'Billing question',
+        'technical-support' => 'Technical support',
+        'emergency-service' => 'Emergency service request',
+        'reschedule-appointment' => 'Reschedule appointment',
+        'cancel-appointment' => 'Cancel appointment',
+        'service-followup' => 'Service follow-up',
+        'feedback' => 'Product or service feedback',
+        'complaint' => 'Complaint',
+        'wrong-number' => 'Wrong number / spam',
+        'other' => 'Other',
+    ];
+
     protected $fillable = [
         'call_id',
         'client_id',
