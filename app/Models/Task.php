@@ -6,6 +6,7 @@ use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use App\Enums\TaskType;
 use App\Models\Concerns\BelongsToOrganization;
+use App\Models\Concerns\StoresUtc;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -25,7 +26,7 @@ use Illuminate\Support\Str;
  */
 class Task extends Model
 {
-    use BelongsToOrganization;
+    use BelongsToOrganization, StoresUtc;
 
     public const SOURCES = ['manual', 'call', 'backfill'];
 

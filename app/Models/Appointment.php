@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\AppointmentStatus;
 use App\Models\Concerns\BelongsToOrganization;
+use App\Models\Concerns\StoresUtc;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -26,7 +27,7 @@ use Illuminate\Support\Str;
  */
 class Appointment extends Model
 {
-    use BelongsToOrganization;
+    use BelongsToOrganization, StoresUtc;
 
     public const SOURCES = ['portal', 'agent', 'api', 'chatbot', 'calendar'];
 

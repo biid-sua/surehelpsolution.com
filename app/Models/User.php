@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\NotificationEvent;
+use App\Enums\OrganizationStatus;
 use App\Support\Audit\Audit;
 use App\Support\Authorization\RoleCatalog;
 use App\Support\Tenancy\CurrentOrganization;
@@ -187,6 +188,27 @@ class User extends Authenticatable
     }
 
     /**
+     * Businesses this user handles calls for in the agent workspace: every active business for
+     * platform admins, the assigned ones for agents (docs/decisions.md D3).
+     *
+     * @return Builder<Organization>
+     */
+    public function workableOrganizations(): Builder
+    {
+        $query = Organization::query()->whereIn('status', [OrganizationStatus::Active->value, OrganizationStatus::Onboarding->value]);
+
+        if ($this->isAdmin()) {
+            return $query;
+        }
+
+        if (! $this->isAgent()) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->whereIn('organizations.id', $this->assignedOrganizations()->select('organizations.id'));
+    }
+
+    /**
      * Client accounts the given user may log calls for: all for admins,
      * only clients of assigned organizations for agents, none otherwise.
      */
@@ -239,7 +261,7 @@ class User extends Authenticatable
     {
         return match ($this->role) {
             'admin' => route('admin.home'),
-            'agent' => route('admin.agent-dashboard'),
+            'agent' => route('agent.home'),
             'client' => route('app.dashboard'),
         };
     }

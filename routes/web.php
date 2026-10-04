@@ -17,6 +17,8 @@ use App\Livewire\Admin\Escalations\Index as AdminEscalations;
 use App\Livewire\Admin\Home as AdminHome;
 use App\Livewire\Admin\Organizations\Index as OrganizationIndex;
 use App\Livewire\Admin\Organizations\Show as OrganizationShow;
+use App\Livewire\Agent\Home as AgentHome;
+use App\Livewire\Agent\Workspace as AgentWorkspace;
 use App\Livewire\Client\Appointments\Index as AppointmentsIndex;
 use App\Livewire\Client\Business\Hours as BusinessHoursPage;
 use App\Livewire\Client\Business\Knowledge as BusinessKnowledgePage;
@@ -117,6 +119,12 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/business/knowledge', BusinessKnowledgePage::class)->middleware('can:knowledge_base.view')->name('business.knowledge');
         Route::get('/business/rules', BusinessRulesPage::class)->name('business.rules');
     });
+});
+
+// Agent workspace (new shell, spec §20–21) — docs/implementation-plan.md P2-7
+Route::prefix('agent')->name('agent.')->middleware(['auth.home', 'force.password.change', 'role:agent,admin'])->group(function () {
+    Route::get('/', AgentHome::class)->name('home');
+    Route::get('/businesses/{organization}', AgentWorkspace::class)->name('businesses.show');
 });
 
 // Admin console (new shell)

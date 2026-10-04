@@ -6,6 +6,7 @@ use App\Enums\EscalationPriority;
 use App\Enums\EscalationStatus;
 use App\Enums\EscalationType;
 use App\Models\Concerns\BelongsToOrganization;
+use App\Models\Concerns\StoresUtc;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,7 +25,7 @@ use Illuminate\Support\Str;
  */
 class Escalation extends Model
 {
-    use BelongsToOrganization;
+    use BelongsToOrganization, StoresUtc;
 
     protected $fillable = [
         'organization_id', 'customer_id', 'call_log_id', 'type', 'priority', 'status', 'reason', 'details', 'source',

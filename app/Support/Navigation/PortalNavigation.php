@@ -41,7 +41,12 @@ class PortalNavigation
                 $this->classic('Users', 'user', 'admin.users.index', 'users.view'),
                 $this->classic('Duty schedules', 'calendar', 'duty-schedules.index', 'users.view'),
                 $this->classic('Contact forms', 'chat', 'admin.contact-submissions.index', 'dashboard.view'),
-                $this->classic('Agent workspace', 'phone', 'admin.agent-dashboard', 'calls.create'),
+                $this->item('Agent workspace', 'phone', 'agent.home', 'agent.*', 'calls.create'),
+            ],
+            'agent' => [
+                $this->item('Businesses', 'building', 'agent.home', 'agent.*', 'calls.create'),
+                $this->classic('Classic call form', 'phone', 'admin.agent-dashboard', 'calls.create'),
+                $this->classic('My duty schedule', 'calendar', 'duty-schedules.index', null),
             ],
             default => [],
         };

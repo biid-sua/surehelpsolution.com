@@ -25,6 +25,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\Sanctum;
@@ -116,6 +117,16 @@ class AppointmentsTest extends TestCase
         // Minimum notice: at 10:10 nothing before 11:10 is offered.
         Carbon::setTestNow($this->at('2026-10-07 10:10'));
         $this->assertSame('11:30', $this->times(app(Availability::class)->slots($org, '2026-10-07', 60))[0]);
+    }
+
+    public function test_times_are_stored_in_utc_whatever_timezone_they_carry(): void
+    {
+        [, $org] = $this->business();
+        $appointment = Appointment::create(['organization_id' => $org->id, 'title' => 'X', 'timezone' => self::TZ,
+            'starts_at' => $this->at('2026-10-06 09:00'), 'ends_at' => $this->at('2026-10-06 10:00'), 'blocked_until' => $this->at('2026-10-06 10:00')]);
+
+        $this->assertSame('2026-10-06 14:00:00', DB::table('appointments')->where('id', $appointment->id)->value('starts_at'), '9 AM CDT is 14:00 UTC');
+        $this->assertSame('09:00', $appointment->fresh()->localStart()->format('H:i'));
     }
 
     public function test_availability_is_right_on_daylight_saving_days(): void

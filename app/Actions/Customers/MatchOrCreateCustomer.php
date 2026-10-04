@@ -72,6 +72,69 @@ class MatchOrCreateCustomer
         }
     }
 
+    /**
+     * Read-only preview for the agent: who this caller probably is, and why (spec §15: confirm before merging).
+     *
+     * @return array{customer: Customer, matched_by: 'phone'|'email'}|null
+     */
+    public function lookup(Organization $organization, ?string $phone, ?string $email): ?array
+    {
+        $e164 = Phone::normalize((string) $phone);
+        if ($e164 !== null && $customer = Customer::query()->forOrganization($organization)->where('phone_e164', $e164)->first()) {
+            return ['customer' => $customer, 'matched_by' => 'phone'];
+        }
+
+        $email = Str::lower(trim((string) $email));
+        if ($email !== '') {
+            $byEmail = Customer::query()->forOrganization($organization)->where('email', $email)->limit(2)->get();
+            if ($byEmail->count() === 1) {
+                return ['customer' => $byEmail->first(), 'matched_by' => 'email'];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The agent confirmed this is the same person: add what we didn't know, never overwrite.
+     *
+     * @param  array{name?: ?string, phone?: ?string, email?: ?string, address?: ?string}  $caller
+     */
+    public function confirm(Customer $customer, array $caller): Customer
+    {
+        $this->enrich($customer, trim((string) ($caller['phone'] ?? '')), Str::lower(trim((string) ($caller['email'] ?? ''))), trim((string) ($caller['name'] ?? '')), $caller['address'] ?? null);
+
+        return $customer;
+    }
+
+    /**
+     * The agent said this is a different person, e.g. a spouse calling from the same number.
+     * A number belongs to one customer, so a number already on file is left off the new record.
+     *
+     * @param  array{name?: ?string, phone?: ?string, email?: ?string, address?: ?string}  $caller
+     */
+    public function createDistinct(Organization $organization, array $caller, string $source = 'call', ?int $actorId = null): Customer
+    {
+        $phone = trim((string) ($caller['phone'] ?? ''));
+        $e164 = Phone::normalize($phone);
+        $phoneTaken = $e164 !== null && Customer::withTrashed()->forOrganization($organization)->where('phone_e164', $e164)->exists();
+        [$first, $last] = $this->splitName(trim((string) ($caller['name'] ?? '')));
+        $email = Str::lower(trim((string) ($caller['email'] ?? '')));
+
+        return Customer::create([
+            'organization_id' => $organization->getKey(),
+            'first_name' => $first ?? 'Unknown',
+            'last_name' => $last,
+            'phone' => $phone !== '' && ! $phoneTaken ? $phone : null,
+            'email' => $email !== '' ? $email : null,
+            'address_line1' => filled($caller['address'] ?? null) ? Str::limit(trim((string) $caller['address']), 250, '') : null,
+            'status' => CustomerStatus::Lead,
+            'source' => in_array($source, Customer::SOURCES, true) ? $source : 'manual',
+            'created_by_user_id' => $actorId,
+            'notes' => $phoneTaken ? 'Shares phone number '.$phone.' with another customer.' : null,
+        ]);
+    }
+
     private function find(Organization $organization, ?string $e164, string $email): ?Customer
     {
         if ($e164 !== null) {

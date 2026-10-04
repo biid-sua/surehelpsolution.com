@@ -13,6 +13,7 @@ use App\Enums\NotificationEvent;
 use App\Enums\OutcomeCategory;
 use App\Enums\TimelineEventType;
 use App\Models\CallLog;
+use App\Models\Customer;
 use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\CallActivity;
@@ -45,13 +46,21 @@ class LogCall
      *
      * @throws ValidationException when the client is unknown or not assigned to the agent
      */
-    public function handle(User $agent, array $data): CallLog
+    public function handle(User $agent, array $data, ?Organization $forOrganization = null): CallLog
     {
         $organizationId = null;
         $organization = null;
         $clientId = isset($data['client_id']) && $data['client_id'] !== '' ? (string) $data['client_id'] : null;
 
-        if ($clientId !== null) {
+        // The agent workspace names the business directly; the legacy form names its owner (client_id).
+        if ($forOrganization) {
+            if (! $agent->hasPermissionIn('calls.create', $forOrganization)) {
+                throw ValidationException::withMessages(['client_id' => ['You are not assigned to this client.']]);
+            }
+            $organization = $forOrganization;
+            $organizationId = $organization->getKey();
+            $clientId = $organization->owner_user_id ? (string) $organization->owner_user_id : null;
+        } elseif ($clientId !== null) {
             $client = User::where('role', 'client')->find($clientId);
             $organization = $client?->primaryOrganization();
 
@@ -100,7 +109,7 @@ class LogCall
         ], actor: $agent);
 
         if ($organization) {
-            $this->linkCustomer($call, $organization, $agent);
+            $this->linkCustomer($call, $organization, $agent, array_intersect_key($data, ['customer_id' => true, 'new_customer' => true]));
             $this->createCallbackTask($call, $organization, $agent);
             $this->raiseEscalation($call, $organization, $agent, $data);
             $this->notify->handle($organization, new CallActivity($call, self::eventFor($call)), 'calls.view');
@@ -113,15 +122,27 @@ class LogCall
      * Link the call to a customer (match by phone, then email, else create) and add it to their timeline.
      * A failure here must never lose the call itself, so it is reported, not thrown.
      */
-    private function linkCustomer(CallLog $call, Organization $organization, User $agent): void
+    /**
+     * @param  array{customer_id?: mixed, new_customer?: mixed}  $choice
+     */
+    private function linkCustomer(CallLog $call, Organization $organization, User $agent, array $choice = []): void
     {
         try {
-            $match = $this->customers->handle($organization, [
+            $caller = [
                 'name' => $call->caller_name,
                 'phone' => $call->caller_phone,
                 'email' => $call->caller_email,
                 'address' => $call->service_location,
-            ], 'call', $agent->getKey());
+            ];
+
+            // The agent confirmed who this is (workspace), or said it is someone new; otherwise match automatically.
+            if (! empty($choice['customer_id']) && $confirmed = Customer::query()->forOrganization($organization)->whereKey($choice['customer_id'])->first()) {
+                $match = ['customer' => $this->customers->confirm($confirmed, $caller), 'created' => false];
+            } elseif (! empty($choice['new_customer'])) {
+                $match = ['customer' => $this->customers->createDistinct($organization, $caller, 'call', $agent->getKey()), 'created' => true];
+            } else {
+                $match = $this->customers->handle($organization, $caller, 'call', $agent->getKey());
+            }
 
             if (! $match) {
                 return;
