@@ -23,7 +23,7 @@ class PortalNavigation
                 $this->item('Dashboard', 'home', 'app.dashboard', 'app.dashboard', 'dashboard.view'),
                 $this->item('Calls', 'phone', 'app.calls.index', 'app.calls.*', 'calls.view'),
                 $this->item('Calendar', 'calendar', 'app.calendar', 'app.calendar', 'calls.view'),
-                $this->soon('Appointments', 'list'),
+                $this->item('Appointments', 'list', 'app.appointments.index', 'app.appointments.*', 'appointments.view'),
                 $this->item('Customers', 'users', 'app.customers.index', 'app.customers.*', 'customers.view'),
                 $this->item('Tasks', 'check-circle', 'app.tasks.index', 'app.tasks.*', 'tasks.view'),
                 $this->item('Escalations', 'alert', 'app.escalations.index', 'app.escalations.*', 'escalations.view'),

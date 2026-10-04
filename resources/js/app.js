@@ -87,6 +87,7 @@ document.addEventListener('alpine:init', () => {
                 },
                 height: 'auto',
                 nowIndicator: true,
+                scrollTime: '07:00:00',
                 events: { url: eventsUrl, failure: () => this.$dispatch('toast', { type: 'error', message: 'We could not load the calendar. Please try again.' }) },
                 eventClick: (info) => {
                     if (info.event.url) {

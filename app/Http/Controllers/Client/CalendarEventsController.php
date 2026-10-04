@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Client;
 
+use App\Enums\AppointmentStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Appointment;
 use App\Models\CallLog;
 use App\Support\Tenancy\CurrentOrganization;
 use Carbon\CarbonImmutable;
@@ -10,7 +12,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * FullCalendar event feed: service visits of the current organization in the requested range.
+ * FullCalendar event feed for the requested range: appointments (timed) and the service visits
+ * agents noted on calls before appointments existed (all-day, D18).
  */
 class CalendarEventsController extends Controller
 {
@@ -30,7 +33,26 @@ class CalendarEventsController extends Controller
         $start = CarbonImmutable::parse($validated['start'])->toDateString();
         $end = CarbonImmutable::parse($validated['end'])->toDateString();
 
-        $events = CallLog::query()->forOrganization($organization)
+        $timezone = $organization->timezoneOrDefault();
+        $appointments = Appointment::query()->forOrganization($organization)
+            ->where('status', '!=', AppointmentStatus::Cancelled->value)
+            ->where('starts_at', '<', CarbonImmutable::parse($end, $timezone)->endOfDay()->utc())
+            ->where('ends_at', '>', CarbonImmutable::parse($start, $timezone)->startOfDay()->utc())
+            ->orderBy('starts_at')
+            ->limit(self::MAX_EVENTS)
+            ->get()
+            ->map(fn (Appointment $a) => [
+                'id' => 'appt-'.$a->ulid,
+                // Wall-clock business time without an offset: the calendar shows the business's day.
+                'title' => $a->title,
+                'start' => $a->starts_at->setTimezone($timezone)->format('Y-m-d\TH:i:s'),
+                'end' => $a->ends_at->setTimezone($timezone)->format('Y-m-d\TH:i:s'),
+                'url' => route('app.appointments.index', ['appointment' => $a->ulid]),
+                'classNames' => ['tone-'.$a->status->tone()],
+                'extendedProps' => ['status' => $a->status->label(), 'kind' => 'appointment'],
+            ]);
+
+        $visits = CallLog::query()->forOrganization($organization)
             ->whereNotNull('service_date')
             ->whereBetween('service_date', [$start, $end])
             ->orderBy('service_date')
@@ -46,6 +68,6 @@ class CalendarEventsController extends Controller
                 'extendedProps' => ['window' => $call->service_window, 'status' => $call->statusLabel()],
             ]);
 
-        return response()->json($events);
+        return response()->json($appointments->concat($visits)->values());
     }
 }

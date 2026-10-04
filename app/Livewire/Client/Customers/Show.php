@@ -187,6 +187,10 @@ class Show extends Component
                 ? $customer->tasks()->open()->byUrgency()->limit(5)->get()
                 : null,
             'canCreateTask' => auth()->user()->can('tasks.create', $organization),
+            'appointments' => auth()->user()->can('appointments.view', $organization)
+                ? $customer->appointments()->blocking()->where('ends_at', '>=', now())->orderBy('starts_at')->limit(5)->get()
+                : null,
+            'canBook' => auth()->user()->can('appointments.create', $organization),
             'timezone' => $organization->timezoneOrDefault(),
         ])->title($customer->fullName());
     }

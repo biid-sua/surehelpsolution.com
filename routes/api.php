@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AdminDashboardController;
 use App\Http\Controllers\Api\AgentDashboardController;
+use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClientBusinessController;
 use App\Http\Controllers\Api\ClientDashboardController;
@@ -49,6 +50,13 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
         Route::post('/tasks', [TaskController::class, 'store'])->middleware('can:tasks.create');
         Route::get('/tasks/{ulid}', [TaskController::class, 'show'])->middleware('can:tasks.view');
         Route::patch('/tasks/{ulid}', [TaskController::class, 'update'])->middleware('can:tasks.update');
+        Route::middleware('can:appointments.view')->group(function () {
+            Route::get('/appointments', [AppointmentController::class, 'index']);
+            Route::get('/availability', [AppointmentController::class, 'availability']);
+            Route::get('/appointments/{ulid}', [AppointmentController::class, 'show']);
+        });
+        Route::post('/appointments', [AppointmentController::class, 'store'])->middleware('can:appointments.create');
+        Route::patch('/appointments/{ulid}', [AppointmentController::class, 'update'])->middleware('can:appointments.view');
         Route::get('/escalations', [EscalationController::class, 'index'])->middleware('can:escalations.view');
         Route::get('/escalations/{ulid}', [EscalationController::class, 'show'])->middleware('can:escalations.view');
         Route::middleware('can:escalations.resolve')->group(function () {

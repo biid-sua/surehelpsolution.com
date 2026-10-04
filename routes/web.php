@@ -17,6 +17,7 @@ use App\Livewire\Admin\Escalations\Index as AdminEscalations;
 use App\Livewire\Admin\Home as AdminHome;
 use App\Livewire\Admin\Organizations\Index as OrganizationIndex;
 use App\Livewire\Admin\Organizations\Show as OrganizationShow;
+use App\Livewire\Client\Appointments\Index as AppointmentsIndex;
 use App\Livewire\Client\Business\Hours as BusinessHoursPage;
 use App\Livewire\Client\Business\Outcomes as BusinessOutcomesPage;
 use App\Livewire\Client\Business\Profile as BusinessProfilePage;
@@ -99,6 +100,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
     });
     Route::get('/settings/notifications', NotificationSettings::class)->name('settings.notifications');
     Route::get('/tasks', TasksIndex::class)->middleware('can:tasks.view')->name('tasks.index');
+    Route::get('/appointments', AppointmentsIndex::class)->middleware('can:appointments.view')->name('appointments.index');
     Route::get('/escalations', EscalationsIndex::class)->middleware('can:escalations.view')->name('escalations.index');
     Route::middleware('can:customers.view')->group(function () {
         Route::get('/customers', CustomerIndex::class)->name('customers.index');

@@ -132,3 +132,15 @@
 .fc .fc-list-day-side-text {
     color: var(--color-muted);
 }
+
+/* Calendar event colours follow badge tones (appointment and call status). */
+.fc .fc-event.tone-warning,
+.fc .fc-event.tone-progress { --fc-event-bg-color: #b45309; --fc-event-border-color: #f59e0b; }
+.fc .fc-event.tone-success,
+.fc .fc-event.tone-completed { --fc-event-bg-color: #047857; --fc-event-border-color: #10b981; }
+.fc .fc-event.tone-danger { --fc-event-bg-color: #b91c1c; --fc-event-border-color: #ef4444; }
+.fc .fc-event.tone-neutral { --fc-event-bg-color: #374151; --fc-event-border-color: #6b7280; }
+.fc .fc-list-event.tone-warning .fc-list-event-dot { border-color: #f59e0b; }
+.fc .fc-list-event.tone-success .fc-list-event-dot,
+.fc .fc-list-event.tone-completed .fc-list-event-dot { border-color: #10b981; }
+.fc .fc-list-event.tone-danger .fc-list-event-dot { border-color: #ef4444; }

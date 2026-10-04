@@ -79,6 +79,11 @@ A client user only ever sees their own business. The business is resolved on the
 | GET | `/client/tasks?status=open\|overdue\|done\|all&mine&customer&per_page` | Permission `tasks.view`. Default `open`, most urgent first. `data.tasks[]`: `id` (ULID), `type` (`callback`, `follow_up`, `todo`), `title`, `description`, `priority` (`urgent`, `high`, `normal`, `low`), `status` (`open`, `in_progress`, `completed`, `cancelled`), `is_overdue`, `due_at`, `source`, `customer {id, name}`, `call_id`, `assigned_to {id, name}`, `completed_at`, `created_at`. Paged like customers |
 | POST | `/client/tasks` | Permission `tasks.create`. `title` (required), `type`, `priority`, `description`, `due_at` (ISO 8601), `customer_id` (customer ULID), `assigned_to` (user id of an active team member). 201 with `data.task` |
 | GET | `/client/tasks/{id}` | `data.task` |
+| GET | `/client/appointments?from&to&status&customer&per_page` | Permission `appointments.view`. From today by default, in start order. `data.appointments[]`: `id` (ULID), `title`, `status` (`pending`, `tentative`, `confirmed`, `completed`, `no_show`, `cancelled`), `starts_at` / `ends_at` (UTC ISO 8601), `local_start` (business time), `timezone`, `duration_minutes`, `source`, `notes`, `address`, `customer {id, name, phone}`, `service {id, name}`, `location {id, name}`, `call_id`, `cancellation_reason`, `created_at` |
+| GET | `/client/availability?date=YYYY-MM-DD&service_id&duration_minutes&location_id` | Free start times on that local date: `data.slots[] {local, starts_at}`, plus `timezone` and `duration_minutes` |
+| POST | `/client/appointments` | Permission `appointments.create`. `starts_at` (ISO 8601; **without an offset it is the business's local time**), `service_id`, `duration_minutes`, `location_id`, `customer_id` (ULID), `status` (`confirmed` default, `pending`, `tentative`), `notes`, `address`. 201 with `data.appointment`. **409** when the time overlaps another booking: `message`, `errors.starts_at`, `suggestions[] {local, starts_at}` |
+| GET | `/client/appointments/{id}` | `data.appointment` |
+| PATCH | `/client/appointments/{id}` | `starts_at` / `duration_minutes` to move (`appointments.update`, 409 on clash), `status` (`appointments.cancel` for `cancelled`, with optional `cancellation_reason`), `notes` |
 | GET | `/client/escalations?status=active\|resolved\|all&per_page` | Permission `escalations.view`. Default `active` (open + acknowledged), waiting longest and most urgent first. `data.escalations[]`: `id` (ULID), `type` (`urgent_issue`, `emergency`, `complaint`, `refund_request`, `pricing_approval`, `owner_decision`, `technical_problem`, `ai_uncertainty`), `type_label`, `priority` (`urgent`, `high`, `normal`), `status` (`open`, `acknowledged`, `resolved`), `reason`, `details`, `source`, `customer {id, name}`, `call_id`, `assigned_to {id, name}`, `acknowledged_at`, `resolved_at`, `resolution_notes`, `created_at` |
 | GET | `/client/escalations/{id}` | `data.escalation` |
 | POST | `/client/escalations/{id}/acknowledge` | Permission `escalations.resolve`. Stops the urgent reminder |
@@ -108,6 +113,7 @@ A client user only ever sees their own business. The business is resolved on the
 
 | Date | Change |
 |---|---|
+| 2026-10-07 | `/client/appointments` (list, book, show, move, status) and `/client/availability`. |
 | 2026-10-06 | `/client/escalations` (list, show, acknowledge, assign, resolve). Optional `escalation_type` / `escalation_priority` on `POST /agent/call-logs`. `/client/tasks` (list, create, show, update). `call_outcomes[]` on `/agent/clients`. `call_outcome` validated against the business's active outcomes. |
 | 2026-10-05 | `/client/business`, `/client/services`, `/client/customers`. |
 | 2026-10-04 | Error envelope for every error (incl. 401/404/405/429/500). `device_name` on login. `expires_at` on login/refresh. `/devices` endpoints. Rate limit on all routes. Security headers, CORS restricted. |

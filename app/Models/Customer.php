@@ -109,6 +109,14 @@ class Customer extends Model
     }
 
     /**
+     * @return HasMany<Appointment, $this>
+     */
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class);
+    }
+
+    /**
      * @return HasMany<Task, $this>
      */
     public function tasks(): HasMany

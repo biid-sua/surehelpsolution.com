@@ -17,14 +17,14 @@ class NotifyOrganization
     /**
      * @return Collection<int, User> the recipients
      */
-    public function handle(Organization $organization, Notification $notification, string $requiredPermission): Collection
+    public function handle(Organization $organization, Notification $notification, string $requiredPermission, ?User $except = null): Collection
     {
         $recipients = $organization->members()
             ->wherePivot('status', 'active')
             ->where('users.is_active', true)
             ->with('notificationPreferences')
             ->get()
-            ->filter(fn (User $member) => $member->hasPermissionIn($requiredPermission, $organization))
+            ->filter(fn (User $member) => $member->id !== $except?->id && $member->hasPermissionIn($requiredPermission, $organization))
             ->values();
 
         if ($recipients->isNotEmpty()) {

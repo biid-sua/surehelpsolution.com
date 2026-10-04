@@ -73,15 +73,15 @@
             </x-ui.card>
 
             {{-- Today's schedule --}}
-            <x-ui.card title="Today's schedule" description="Service visits booked for today" :padding="false">
+            <x-ui.card title="Today's schedule" description="Appointments and visits booked for today" :padding="false">
                 @forelse ($schedule as $visit)
-                    <a href="{{ route('app.calls.show', $visit->call_id) }}" class="flex items-start gap-3 border-b border-line px-5 py-3 last:border-0 hover:bg-surface-2">
-                        <span class="mt-0.5 rounded-md bg-brand-500/15 px-2 py-1 text-xs font-semibold text-brand-300 tabular-nums">{{ $visit->service_window ?: 'Any time' }}</span>
+                    <a href="{{ $visit['url'] }}" class="flex items-start gap-3 border-b border-line px-5 py-3 last:border-0 hover:bg-surface-2">
+                        <span class="mt-0.5 rounded-md bg-brand-500/15 px-2 py-1 text-xs font-semibold text-brand-300 tabular-nums">{{ $visit['time'] }}</span>
                         <div class="min-w-0 flex-1">
-                            <p class="truncate text-sm font-medium text-ink">{{ \App\Models\CallLog::display($visit->caller_name) }}</p>
-                            <p class="truncate text-xs text-muted">{{ \App\Models\CallLog::display($visit->service_location) }}</p>
+                            <p class="truncate text-sm font-medium text-ink">{{ $visit['title'] }}</p>
+                            <p class="truncate text-xs text-muted">{{ $visit['subtitle'] }}</p>
                         </div>
-                        <x-ui.badge :tone="$visit->statusTone()">{{ $visit->statusLabel() }}</x-ui.badge>
+                        <x-ui.badge :tone="$visit['tone']">{{ $visit['status'] }}</x-ui.badge>
                     </a>
                 @empty
                     <x-ui.empty-state icon="calendar" title="Nothing scheduled today"
