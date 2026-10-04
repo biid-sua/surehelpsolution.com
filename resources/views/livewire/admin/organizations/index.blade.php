@@ -23,7 +23,7 @@
     <x-ui.card :padding="false">
         @if ($organizations->isEmpty())
             <x-ui.empty-state icon="building" title="No businesses found"
-                description="{{ $search !== '' || $status !== '' ? 'Try a different search or status.' : 'Create a client user from the classic dashboard to add the first business.' }}" />
+                description="{{ $search !== '' || $status !== '' ? 'Try a different search or status.' : 'Add a business owner under Users to create the first business.' }}" />
         @else
             <x-ui.table>
                 <thead>

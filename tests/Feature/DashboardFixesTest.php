@@ -67,13 +67,11 @@ class DashboardFixesTest extends TestCase
         $this->makeCall($agent);
 
         $this->actingAs($agent)
-            ->get(route('admin.agent-dashboard'))
+            ->get(route('agent.calls'))
             ->assertOk()
-            ->assertSee('id="totalCallsValue" data-target="2"', false)
+            ->assertSeeInOrder(['Calls', '2', 'Service requests'])
             ->assertDontSee('User Management')
-            ->assertDontSee('Content Management')
-            ->assertDontSee('SEO Tools')
-            ->assertSee('&copy; '.now()->year, false);
+            ->assertDontSee('SEO Tools');
     }
 
     /** FIX-02: dropped calls are no longer labelled "Scheduled". */
@@ -149,7 +147,7 @@ class DashboardFixesTest extends TestCase
         $agent = User::factory()->create(['role' => 'agent', 'is_active' => true, 'must_change_password' => false]);
 
         $this->actingAs($agent)
-            ->postJson(route('admin.call-logs.store'), [
+            ->postJson('/api/v1/agent/call-logs', [
                 'call_id' => 'CL-FAKE-9999',
                 'call_date' => '2026-10-03',
                 'call_time' => '09:00',
@@ -159,6 +157,6 @@ class DashboardFixesTest extends TestCase
                 'status' => 'new',
             ])
             ->assertOk()
-            ->assertJson(['success' => true, 'call_id' => 'CL-20261003-0001']);
+            ->assertJsonPath('data.call_log.call_id', 'CL-20261003-0001');
     }
 }

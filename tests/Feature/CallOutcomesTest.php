@@ -53,7 +53,7 @@ class CallOutcomesTest extends TestCase
 
     private function postCall(User $client, string $outcome): TestResponse
     {
-        return $this->actingAs($this->agent)->postJson(route('admin.call-logs.store'), [
+        return $this->actingAs($this->agent)->postJson('/api/v1/agent/call-logs', [
             'client_id' => (string) $client->id,
             'call_date' => now()->toDateString(), 'call_time' => '10:00',
             'reason_for_call' => 'service-request', 'call_outcome' => $outcome,
@@ -225,7 +225,7 @@ class CallOutcomesTest extends TestCase
         $this->custom($org, 'custom-sent-price-list', 'Sent price list', 'information');
         $this->custom($org, 'wrong-number', 'Wrong number', 'spam', false);
 
-        $clients = $this->actingAs($this->agent)->getJson(route('admin.clients.list'))->assertOk()->json('clients');
+        $clients = $this->actingAs($this->agent)->getJson('/api/v1/agent/clients')->assertOk()->json('data.clients');
         $keys = array_column(collect($clients)->firstWhere('id', $owner->id)['call_outcomes'], 'key');
 
         $this->assertContains('custom-sent-price-list', $keys);

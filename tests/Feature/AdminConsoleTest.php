@@ -193,12 +193,18 @@ class AdminConsoleTest extends TestCase
         $component->call('confirm', $fine->id);
     }
 
-    public function test_navigation_marks_classic_screens(): void
+    public function test_navigation_has_one_console_with_no_classic_screens(): void
     {
         $this->actingAs($this->admin)->get(route('admin.home'))
             ->assertOk()
             ->assertSee('Organizations')
-            ->assertSee('Call review')
-            ->assertSee('Classic');
+            ->assertSee('Users')
+            ->assertSee('Duty schedule')
+            ->assertSee('Website enquiries')
+            ->assertDontSee('Classic');
+
+        foreach (['/admin/dashboard', '/admin/agent-dashboard', '/admin/client-dashboard', '/admin/duty-schedules', '/admin/contact-submissions', '/admin/change-password'] as $old) {
+            $this->get($old)->assertNotFound();
+        }
     }
 }

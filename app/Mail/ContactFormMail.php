@@ -17,15 +17,7 @@ class ContactFormMail extends Mailable
 
     public function envelope(): Envelope
     {
-        $labels = [
-            'general' => 'General Inquiry',
-            'sales' => 'Sales',
-            'demo' => 'Demo Request',
-            'support' => 'Support',
-            'enterprise' => 'Enterprise',
-        ];
-
-        $type = $labels[$this->submission->inquiry_type] ?? 'Contact';
+        $type = $this->submission->inquiryLabel();
 
         return new Envelope(
             subject: "[SureHelp] {$type} from {$this->submission->name}",

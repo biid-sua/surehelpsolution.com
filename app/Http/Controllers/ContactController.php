@@ -18,7 +18,7 @@ class ContactController extends Controller
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:30'],
             'company' => ['nullable', 'string', 'max:120'],
-            'inquiry_type' => ['required', Rule::in(['general', 'sales', 'demo', 'support', 'enterprise'])],
+            'inquiry_type' => ['required', Rule::in(array_keys(ContactSubmission::INQUIRY_TYPES))],
             'message' => ['required', 'string', 'min:10', 'max:5000'],
             'privacy' => ['accepted'],
         ], [

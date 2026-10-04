@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Actions\Organizations\ProvisionUserTenancy;
 use App\Enums\AgentAssignmentSource;
 use App\Enums\CallOwnershipSource;
+use App\Livewire\Admin\Users\Index as AdminUsers;
 use App\Models\CallLog;
 use App\Models\Organization;
 use App\Models\User;
@@ -12,6 +13,7 @@ use App\Services\Tenancy\TenancyBackfill;
 use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
@@ -144,7 +146,7 @@ class TenancyTest extends TestCase
         [$client] = $this->client();
 
         $this->actingAs($agent)
-            ->postJson(route('admin.call-logs.store'), $this->payload(['client_id' => (string) $client->id]))
+            ->postJson('/api/v1/agent/call-logs', $this->payload(['client_id' => (string) $client->id]))
             ->assertStatus(422)
             ->assertJsonPath('errors.client_id.0', 'You are not assigned to this client.');
 
@@ -163,7 +165,7 @@ class TenancyTest extends TestCase
         $organization->assignAgent($agent);
 
         $this->actingAs($agent)
-            ->postJson(route('admin.call-logs.store'), $this->payload(['client_id' => (string) $client->id]))
+            ->postJson('/api/v1/agent/call-logs', $this->payload(['client_id' => (string) $client->id]))
             ->assertOk();
 
         $log = CallLog::withoutGlobalScopes()->sole();
@@ -179,9 +181,6 @@ class TenancyTest extends TestCase
         $this->client(['name' => 'Someone Else Dental']);
         $myOrg->assignAgent($agent);
 
-        $names = collect($this->actingAs($agent)->getJson(route('admin.clients.list'))->assertOk()->json('clients'))->pluck('name');
-        $this->assertEquals(['Assigned Plumbing'], $names->all());
-
         Sanctum::actingAs($agent);
         $apiNames = collect($this->getJson('/api/v1/agent/clients')->assertOk()->json('data.clients'))->pluck('name');
         $this->assertEquals(['Assigned Plumbing'], $apiNames->all());
@@ -194,13 +193,11 @@ class TenancyTest extends TestCase
         $admin = $this->user('admin');
         $agent = $this->user('agent');
 
-        $this->actingAs($admin)->postJson(route('admin.users.store'), [
-            'name' => 'Rapid Plumbing',
-            'email' => 'owner@rapid.test',
-            'role' => 'client',
-            'password' => 'TempPass123',
-            'password_confirmation' => 'TempPass123',
-        ])->assertOk();
+        $this->actingAs($admin);
+        Livewire::test(AdminUsers::class)->call('startAdding')
+            ->set('draft.role', 'client')->set('draft.name', 'Rosa Rapid')->set('draft.business_name', 'Rapid Plumbing')
+            ->set('draft.email', 'owner@rapid.test')->set('draft.password', 'TempPass123')
+            ->call('create')->assertHasNoErrors();
 
         $client = User::where('email', 'owner@rapid.test')->sole();
         $organization = $client->primaryOrganization();

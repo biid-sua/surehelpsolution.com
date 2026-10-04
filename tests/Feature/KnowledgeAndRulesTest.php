@@ -240,7 +240,7 @@ class KnowledgeAndRulesTest extends TestCase
         app(ProvisionUserTenancy::class)->handle($agent);
         $this->rule($org, BusinessRuleType::AutoEscalate, ['reasons' => ['complaint', 'billing-question'], 'escalation_type' => 'complaint', 'priority' => 'urgent']);
 
-        $post = fn (string $reason) => $this->actingAs($agent)->postJson(route('admin.call-logs.store'), [
+        $post = fn (string $reason) => $this->actingAs($agent)->postJson('/api/v1/agent/call-logs', [
             'client_id' => (string) $owner->id, 'call_date' => now()->toDateString(), 'call_time' => '10:00',
             'caller_name' => 'Pat', 'reason_for_call' => $reason, 'call_outcome' => 'resolved-by-agent', 'agent_name' => 'A', 'status' => 'new',
         ])->assertOk();

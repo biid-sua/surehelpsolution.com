@@ -5,8 +5,9 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 **Summary:** Phases 0–2 are merged and **deployed to production** (2026-10-04). Since then, on branch `claude/phase-2-development-1yiwc2`:
 - **Google / Microsoft calendar sync (P3-1)** is built. It goes live once the two OAuth apps are registered ([calendar-sync.md](calendar-sync.md)).
 - **Billing through Payoneer (P5-1)** is built and usable as soon as it's deployed and the payment settings are filled in ([billing.md](billing.md)).
+- **One UI (D23):** the product now has a single version of every screen. The old admin and agent pages were rebuilt in the new design and deleted.
 
-215 automated tests pass.
+223 automated tests pass.
 
 ---
 
@@ -39,6 +40,11 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 | P2-6 Knowledge base and rules | Business knowledge for agents; enforced rules (booking windows, service areas, required details) |
 | P2-7 Agent workspace | New `/agent` workspace: business briefing next to a guided call form that saves call, booking and follow-up together |
 
+### One UI (decision D23, 2026-10-11)
+| Step | What it delivered |
+|---|---|
+| P1-7 One UI | Every screen now exists once, in the new design. Users, Duty schedule and Website enquiries moved into the admin console. Agents get *My calls* and *My schedule*. The first-login password page was redesigned. The previous admin dashboard, agent dashboard ("classic call form") and their pages were deleted. |
+
 ### Phase 3: Calendar
 | Step | What it delivered |
 |---|---|
@@ -60,11 +66,10 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 ### A. Can be done now (no outside dependency)
 | Item | Notes |
 |---|---|
-| Move the classic admin screens (Users, Duty schedules, Contact forms) to the new admin console | Required to finish Phase 1's exit criteria |
-| Replace the remaining inline role checks in the legacy controllers with permissions | Done together with the item above |
+| Replace the remaining inline role checks in the mobile API controllers with permissions | The web screens are done (D23) |
 | Two-factor authentication for platform staff and agents, plus idle session timeouts | Decision D8; not built yet |
 | Customer duplicate merge (CRM-04) | Merge two customer records with a person confirming |
-| Content-Security-Policy header | Only possible after the classic screens stop loading scripts from CDNs |
+| Content-Security-Policy header | Only possible after the public website stops loading scripts from CDNs (its redesign) |
 | Indexed lookup for calendar webhooks | Each change notification currently loads every connected calendar to find its channel; store channel ids in their own indexed table before many businesses connect calendars (PR #2 review) |
 | Phase 4 (email part): appointment reminders and confirmation emails, message templates | SMS waits for A2P 10DLC |
 | Billing extras | Usage records, paid add-ons, plan limits enforced through `Entitlements` |
@@ -99,8 +104,8 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 Production deploy ─────────────► everything reaches real users
   └─ needs: P1-0 server clean-up, deploy rehearsal
 
-Classic screens → new console ─► inline role checks removed ─► Phase 1 exit criteria met
-                              └─► CSP header
+One UI (D23) ..................... done: every screen in the new design
+  └─ public website redesign ─► CSP header
 
 Phase 3 Calendar
   ├─ internal calendar ............ done (P2-5)
@@ -135,4 +140,4 @@ Hosting move (D6) ................ unlocks real-time updates (Reverb) and a long
 2. Fill in the Payoneer settings and start invoicing.
 3. Register the Google and Microsoft apps, and submit Google verification.
 4. Start A2P 10DLC.
-5. While approvals come through, build what isn't blocked: classic screens, 2FA, duplicate merge, Phase 4 email.
+5. While approvals come through, build what isn't blocked: 2FA, duplicate merge, Phase 4 email.

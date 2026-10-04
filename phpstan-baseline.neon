@@ -1,10 +1,5 @@
 parameters:
 	ignoreErrors:
-		-
-			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Admin/AgentDutyScheduleController.php
 
 		-
 			message: '#^Access to an undefined property App\\Models\\CallLog\:\:\$service_requests\.$#'

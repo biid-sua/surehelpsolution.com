@@ -529,6 +529,21 @@ The existing UI uses:
 
 Preserve the visual identity, but elevate it to enterprise SaaS quality.
 
+## One UI (product owner requirement, 2026-10-11)
+
+SureHelp launches as a brand-new product. There is exactly **one version of
+every screen**:
+
+-   no "classic", "legacy" or "old" screens kept next to new ones
+-   no links, redirects or toggles to a previous version
+-   when a screen is rebuilt, the old one is deleted in the same change
+-   every web page (business portal, agent workspace, admin console, sign-in
+    and first-login pages) uses the shared design system and layout
+-   the public website follows the same brand and moves onto the design
+    system when it is next redesigned
+
+The mobile API (§111) is not a UI: its endpoints stay stable for the apps.
+
 ## Design requirements
 
 -   Responsive desktop/tablet/mobile web
@@ -3420,8 +3435,8 @@ Before changing existing columns, inspect current data.
 
 # 111. BACKWARD COMPATIBILITY
 
-If existing routes/API endpoints are already consumed by the mobile app
-or other clients:
+If existing API endpoints are already consumed by the mobile app or other
+clients (web screens are not covered: see "One UI" in §7):
 
 -   preserve them where possible
 -   introduce versioned replacements when needed
