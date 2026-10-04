@@ -25,6 +25,9 @@ CI (`.github/workflows/ci.yml`) runs all of the above, plus `composer audit`, `n
 | `tests/Feature/AuditAndNotificationsTest.php` | audit entries (logins, calls, users, assignments), redaction, retention, audit page access; notification recipients, events, preferences, bell isolation, scheduler |
 | `tests/Feature/ApiContractTest.php` | **frozen response shapes** of every existing `/api/v1` endpoint (mobile compatibility, D7) |
 | `tests/Feature/ApiConventionsTest.php` | error envelope per status, no leaked internals, 429, security log, headers, CORS, device tokens |
+| `tests/Feature/BusinessHoursTest.php` | opening-hours engine: split shifts, overnight, holidays, special hours, closure, **timezones and DST** |
+| `tests/Feature/BusinessProfileTest.php` / `BusinessServicesTest.php` | business pages, owner/manager/staff rights, validation, isolation, money parsing, API |
+| `tests/Feature/CustomersTest.php` | E.164 normalization, match/enrich rules, **DB-enforced dedupe**, restore, backfill + dry run, list/search, detail, isolation, export, API |
 | `tests/Feature/PermissionsTest.php` | **permission isolation**: org roles, staff vs billing, agents vs unassigned orgs, platform roles, demotion |
 
 ## Rules

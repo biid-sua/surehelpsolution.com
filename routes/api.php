@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AgentDashboardController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClientBusinessController;
 use App\Http\Controllers\Api\ClientDashboardController;
+use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\DutyScheduleController;
 use App\Http\Controllers\Api\NotificationController;
@@ -38,6 +39,10 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
         });
         Route::get('/business', [ClientBusinessController::class, 'show'])->middleware('can:organization.view');
         Route::get('/services', [ClientBusinessController::class, 'services'])->middleware('can:organization.view');
+        Route::middleware('can:customers.view')->group(function () {
+            Route::get('/customers', [CustomerController::class, 'index']);
+            Route::get('/customers/{ulid}', [CustomerController::class, 'show']);
+        });
         Route::get('/profile', [ClientDashboardController::class, 'getProfile']);
         Route::put('/profile', [ClientDashboardController::class, 'updateProfile']);
     });

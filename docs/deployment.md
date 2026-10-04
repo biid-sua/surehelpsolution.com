@@ -56,6 +56,13 @@ Current host: cPanel (PHP 8.3), deployed by uploading files. Target hosting: [de
 - New log file `storage/logs/security-YYYY-MM-DD.log` (denied requests). Review it weekly.
 - Mobile app: may now send `device_name` on login and use `/devices`. Nothing it already uses changed (contract-tested).
 
+## Release P2-1 to P2-3 (business, services, customers) — specific notes
+
+- **Composer dependency added:** `giggsey/libphonenumber-for-php-lite`. Refresh `vendor/`.
+- Migrations: business profile tables, services, customers/tags/timeline, `call_logs.customer_id`, plus a **customer backfill** from existing calls. Preview it with `php artisan customers:backfill --dry-run`. Rehearsed on a copy of real data: every call with a phone or email linked, and repeat callers deduplicated.
+- Rebuild and upload `public/build/`.
+- Ask each client to set their **timezone and hours** under *Business*. Until then, times show in UTC.
+
 ## Production `.env` settings to check
 
 | Key | Value |

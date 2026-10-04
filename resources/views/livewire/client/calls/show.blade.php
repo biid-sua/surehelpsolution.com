@@ -41,6 +41,14 @@
         </div>
 
         <div class="space-y-6">
+            @if ($call->customer)
+                <x-ui.card title="Customer">
+                    <a href="{{ route('app.customers.show', $call->customer) }}" class="font-medium text-ink hover:text-brand-300">{{ $call->customer->fullName() }}</a>
+                    <p class="mt-1 text-sm text-muted">{{ $call->customer->displayPhone() ?? $call->customer->email }}</p>
+                    <x-ui.button class="mt-4 w-full" variant="secondary" size="sm" :href="route('app.customers.show', $call->customer)">View full history</x-ui.button>
+                </x-ui.card>
+            @endif
+
             <x-ui.card title="Service visit">
                 @if ($call->hasScheduledService())
                     <dl class="space-y-4">

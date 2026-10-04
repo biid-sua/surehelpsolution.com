@@ -7,6 +7,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Client\CalendarEventsController;
 use App\Http\Controllers\Client\CallExportController;
+use App\Http\Controllers\Client\CustomerExportController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PasswordChangeController;
@@ -21,6 +22,8 @@ use App\Livewire\Client\Business\Services as BusinessServicesPage;
 use App\Livewire\Client\Calendar as ClientCalendar;
 use App\Livewire\Client\Calls\Index as ClientCalls;
 use App\Livewire\Client\Calls\Show as ClientCallShow;
+use App\Livewire\Client\Customers\Index as CustomerIndex;
+use App\Livewire\Client\Customers\Show as CustomerShow;
 use App\Livewire\Client\Dashboard as ClientDashboard;
 use App\Livewire\Client\Settings\Notifications as NotificationSettings;
 use Illuminate\Support\Facades\Route;
@@ -91,6 +94,11 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/calendar/events', CalendarEventsController::class)->name('calendar.events');
     });
     Route::get('/settings/notifications', NotificationSettings::class)->name('settings.notifications');
+    Route::middleware('can:customers.view')->group(function () {
+        Route::get('/customers', CustomerIndex::class)->name('customers.index');
+        Route::get('/customers/export', CustomerExportController::class)->name('customers.export');
+        Route::get('/customers/{customer}', CustomerShow::class)->name('customers.show');
+    });
     Route::middleware('can:organization.view')->group(function () {
         Route::get('/business', BusinessProfilePage::class)->name('business.profile');
         Route::get('/business/hours', BusinessHoursPage::class)->name('business.hours');

@@ -218,7 +218,8 @@ The sections above describe the original behaviour. Since then:
 - **Tenancy:** client businesses are `organizations`. Every call has an `organization_id`. Client screens and `/api/v1/client/*` show only their organization's data. Agents can only log calls for organizations they're assigned to (`agent_assignments`). New clients and agents are provisioned automatically.
 - **Permissions:** spec §5 catalogue in `config/authorization.php`. Platform/service roles via Spatie, organization roles (owner/manager/staff) on the membership. See [permissions.md](permissions.md).
 - **Security:** login throttling, 30-day API tokens, tokens revoked on deactivation, `.htaccess` lockdown, no internals in error responses, dependencies patched.
-- **Quality:** 104 feature tests, Pint, Larastan level 5 (new code clean), CI workflow.
+- **Business & CRM (P2-1 to P2-3, 2026-10-05):** clients manage their business profile, hours, holidays and services under *Business*. Every call is linked to a **customer** with a timeline. Customers are searchable, editable, taggable and exportable.
+- **Quality:** 143 feature tests, Pint, Larastan level 5 (new code clean), CI workflow.
 - **New UI (P1-4, 2026-10-07):** clients use the business portal at `/app` (dashboard, calls, call detail, calendar). Admins have a new console at `/admin` (overview, organizations and agent assignments, call review). The old client dashboard (§4.2) has been removed. Details in [ui.md](ui.md).
 - **Audit + notifications (P1-5, 2026-10-04):** audit trail at `/admin/audit`; business members get in-app (bell) and email notifications for calls, missed calls and callback requests, configurable under *Notifications*. Needs the cron entry ([deployment.md](deployment.md)).
 - **API additions (non-breaking):** `organization` object on `/api/v1/user` and `/api/v1/client/profile`. Duty-schedule endpoints fixed.

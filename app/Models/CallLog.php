@@ -58,6 +58,7 @@ class CallLog extends Model
         'call_id',
         'client_id',
         'organization_id',
+        'customer_id',
         'ownership_source',
         'call_date',
         'call_time',
@@ -83,6 +84,14 @@ class CallLog extends Model
         'call_time' => 'datetime:H:i',
         'ownership_source' => CallOwnershipSource::class,
     ];
+
+    /**
+     * @return BelongsTo<Customer, $this>
+     */
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
+    }
 
     /**
      * Get the user that owns the call log.

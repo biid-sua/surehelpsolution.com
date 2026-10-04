@@ -2,13 +2,18 @@
 
 namespace App\Actions\Calls;
 
+use App\Actions\Customers\MatchOrCreateCustomer;
+use App\Actions\Customers\RecordTimelineEvent;
 use App\Actions\Notifications\NotifyOrganization;
 use App\Enums\CallOwnershipSource;
 use App\Enums\NotificationEvent;
+use App\Enums\TimelineEventType;
 use App\Models\CallLog;
+use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\CallActivity;
 use App\Support\Audit\Audit;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -23,6 +28,8 @@ class LogCall
     public function __construct(
         private readonly Audit $audit,
         private readonly NotifyOrganization $notify,
+        private readonly MatchOrCreateCustomer $customers,
+        private readonly RecordTimelineEvent $timeline,
     ) {}
 
     /**
@@ -80,10 +87,51 @@ class LogCall
         ], actor: $agent);
 
         if ($organization) {
+            $this->linkCustomer($call, $organization, $agent);
             $this->notify->handle($organization, new CallActivity($call, self::eventFor($call)), 'calls.view');
         }
 
         return $call;
+    }
+
+    /**
+     * Link the call to a customer (match by phone, then email, else create) and add it to their timeline.
+     * A failure here must never lose the call itself, so it is reported, not thrown.
+     */
+    private function linkCustomer(CallLog $call, Organization $organization, User $agent): void
+    {
+        try {
+            $match = $this->customers->handle($organization, [
+                'name' => $call->caller_name,
+                'phone' => $call->caller_phone,
+                'email' => $call->caller_email,
+                'address' => $call->service_location,
+            ], 'call', $agent->getKey());
+
+            if (! $match) {
+                return;
+            }
+
+            $customer = $match['customer'];
+            $call->forceFill(['customer_id' => $customer->id])->saveQuietly();
+
+            if ($match['created']) {
+                $this->timeline->handle($customer, TimelineEventType::CustomerCreated, 'Added from a call', actorId: $agent->getKey(), occurredAt: $call->created_at);
+            }
+
+            $this->timeline->handle(
+                $customer,
+                TimelineEventType::CallIncoming,
+                'Incoming call · '.Str::headline((string) $call->reason_for_call),
+                trim('Outcome: '.$call->statusLabel().'. '.(string) $call->notes),
+                $call,
+                ['call_id' => $call->call_id, 'outcome' => $call->call_outcome],
+                $agent->getKey(),
+                $call->created_at,
+            );
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     /**
