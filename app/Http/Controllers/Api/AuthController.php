@@ -24,6 +24,7 @@ class AuthController extends Controller
             $request->validate([
                 'email' => 'required|email',
                 'password' => 'required|string|min:6',
+                'device_name' => 'nullable|string|max:100',
             ]);
 
             $user = User::where('email', $request->email)->first();
@@ -47,9 +48,11 @@ class AuthController extends Controller
                 ], 403);
             }
 
-            // Create token
-            $token = $user->createToken('auth-token')->plainTextToken;
-            app(Audit::class)->record('auth.login', $user, new: ['channel' => 'api'], actor: $user);
+            // One named token per device, so users can see and revoke their devices (docs/decisions.md D8).
+            $deviceName = trim((string) $request->input('device_name')) ?: 'Mobile app';
+            $newToken = $user->createToken($deviceName, ['*'], self::tokenExpiry());
+            $token = $newToken->plainTextToken;
+            app(Audit::class)->record('auth.login', $user, new: ['channel' => 'api', 'device' => $deviceName], actor: $user);
 
             // Return success response with user data and token
             return response()->json([
@@ -70,6 +73,7 @@ class AuthController extends Controller
                     ],
                     'token' => $token,
                     'token_type' => 'Bearer',
+                    'expires_at' => $newToken->accessToken->expires_at?->toIso8601String(),
                     'must_change_password' => $user->requiresPasswordChange(),
                 ],
             ], 200);
@@ -100,6 +104,7 @@ class AuthController extends Controller
         try {
             // Revoke the current token
             $request->user()->currentAccessToken()->delete();
+            app(Audit::class)->record('auth.logout', $request->user(), new: ['channel' => 'api']);
 
             return response()->json([
                 'success' => true,
@@ -171,20 +176,22 @@ class AuthController extends Controller
     {
         try {
             $user = $request->user();
+            $current = $user->currentAccessToken();
+            // Keep the device name, so the device list stays meaningful after a refresh.
+            $deviceName = $current->name ?? 'Mobile app';
 
-            // Revoke current token
-            $request->user()->currentAccessToken()->delete();
-
-            // Create new token
-            $token = $user->createToken('auth-token')->plainTextToken;
-            app(Audit::class)->record('auth.login', $user, new: ['channel' => 'api'], actor: $user);
+            // Revoke current token, then issue its replacement.
+            $current->delete();
+            $newToken = $user->createToken($deviceName, ['*'], self::tokenExpiry());
+            app(Audit::class)->record('auth.token_refreshed', $user, new: ['channel' => 'api', 'device' => $deviceName], actor: $user);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Token refreshed successfully',
                 'data' => [
-                    'token' => $token,
+                    'token' => $newToken->plainTextToken,
                     'token_type' => 'Bearer',
+                    'expires_at' => $newToken->accessToken->expires_at?->toIso8601String(),
                 ],
             ], 200);
 
@@ -196,5 +203,12 @@ class AuthController extends Controller
                 'message' => 'Token refresh failed',
             ], 500);
         }
+    }
+
+    private static function tokenExpiry(): ?\DateTimeInterface
+    {
+        $minutes = config('sanctum.expiration');
+
+        return $minutes ? now()->addMinutes((int) $minutes) : null;
     }
 }

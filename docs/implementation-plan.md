@@ -113,6 +113,7 @@ Ordered. Each step is releasable and backward compatible.
 - **Maps to:** task.md FND-14, FND-16, NTF-01/02.
 
 ### P1-6 API conventions
+> **Status 2026-10-04: done.** `ApiResponse` envelope; `ApiExceptionRenderer` gives every /api error the envelope with correct status and no internals (401/403/404/405/422/429/500). Denied requests are logged to the `security` channel (exceptions and role middleware). `throttle:api` (120/min). Restricted CORS. `SecurityHeaders` middleware (nosniff, frame, referrer, permissions, COOP, HSTS on HTTPS, no-store on API). Named, expiring device tokens with `/devices` list/revoke/revoke-others, all audited. Fixed: a token refresh was recorded as a login, and an API guest without an Accept header got a 500 (redirect to a missing `login` route). Contract tests for every existing endpoint (`ApiContractTest`) plus `ApiConventionsTest`. Reference: [api.md](api.md). **Deferred:** generated OpenAPI file (when the mobile team starts, Phase 10); CSP header (after the classic pages leave CDNs); refactoring legacy API controllers onto API Resources (Phase 2, as their data moves to the new models).
 - `ApiResponse` helper and exception renderer giving the spec §49 envelope, with consistent status codes and no internals.
 - API Resources for User, Organization, CallLog, DutySchedule. Existing field names stay, new ones are added.
 - Rate limits: login, general API, future public endpoints.

@@ -1,10 +1,13 @@
 <?php
 
+use App\Exceptions\ApiExceptionRenderer;
+use App\Exceptions\AuthorizationFailureLogger;
 use App\Http\Middleware\EnsureApiUserIsActive;
 use App\Http\Middleware\ForcePasswordChange;
 use App\Http\Middleware\RedirectGuestsToHome;
 use App\Http\Middleware\ResolveOrganization;
 use App\Http\Middleware\RoleMiddleware;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -26,10 +29,20 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant' => ResolveOrganization::class,
         ]);
 
+        $middleware->append(SecurityHeaders::class);
+
+        // Guests are sent to the home page (login modal); the API never redirects, it answers 401.
+        $middleware->redirectGuestsTo(fn ($request) => $request->is('api/*') ? null : route('home'));
+
         $middleware->api(prepend: [
             EnsureFrontendRequestsAreStateful::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Order matters: the logger only observes (returns null), the renderer answers /api requests.
+        $exceptions->render(new AuthorizationFailureLogger);
+        $exceptions->render(new ApiExceptionRenderer);
+
+        // /api always answers in JSON, even when a client forgets the Accept header.
+        $exceptions->shouldRenderJsonWhen(fn ($request) => $request->is('api/*') || $request->expectsJson());
     })->create();

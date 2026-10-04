@@ -50,6 +50,12 @@ Current host: cPanel (PHP 8.3), deployed by uploading files. Target hosting: [de
 - **Behaviour change:** business members start receiving notifications. Missed calls and callback requests are also **emailed** by default (D13). Check `MAIL_*` in `.env` and send a test before relying on it.
 - Rebuild and upload `public/build/` (new UI: notification bell, settings, audit log).
 
+## Release P1-6 (API conventions) — specific notes
+
+- No migrations. Optional `.env`: `CORS_ALLOWED_ORIGINS`, `LOG_SECURITY_DAYS`.
+- New log file `storage/logs/security-YYYY-MM-DD.log` (denied requests). Review it weekly.
+- Mobile app: may now send `device_name` on login and use `/devices`. Nothing it already uses changed (contract-tested).
+
 ## Production `.env` settings to check
 
 | Key | Value |

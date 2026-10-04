@@ -56,6 +56,10 @@ class AppServiceProvider extends ServiceProvider
 
         // Brute-force protection for web and API login: 5 attempts per minute
         // per email + IP, and 20 per minute per IP across all emails.
+        // General API budget (spec §50): per user when signed in, per IP otherwise.
+        RateLimiter::for('api', fn (Request $request) => Limit::perMinute(120)
+            ->by($request->user()?->getAuthIdentifier() ? 'user:'.$request->user()->getAuthIdentifier() : 'ip:'.$request->ip()));
+
         RateLimiter::for('login', function (Request $request) {
             $email = Str::lower((string) $request->input('email'));
 

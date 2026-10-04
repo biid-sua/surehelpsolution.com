@@ -23,6 +23,8 @@ CI (`.github/workflows/ci.yml`) runs all of the above, plus `composer audit`, `n
 | `tests/Feature/ClientPortalTest.php` | business portal: real KPIs, isolation on every page, filters, timezone-aware dates, export, calendar feed |
 | `tests/Feature/AdminConsoleTest.php` | admin console access, ULID URLs, agent assignment add/remove, validation, support role read-only, review queue |
 | `tests/Feature/AuditAndNotificationsTest.php` | audit entries (logins, calls, users, assignments), redaction, retention, audit page access; notification recipients, events, preferences, bell isolation, scheduler |
+| `tests/Feature/ApiContractTest.php` | **frozen response shapes** of every existing `/api/v1` endpoint (mobile compatibility, D7) |
+| `tests/Feature/ApiConventionsTest.php` | error envelope per status, no leaked internals, 429, security log, headers, CORS, device tokens |
 | `tests/Feature/PermissionsTest.php` | **permission isolation**: org roles, staff vs billing, agents vs unassigned orgs, platform roles, demotion |
 
 ## Rules

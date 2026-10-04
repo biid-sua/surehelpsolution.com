@@ -4,22 +4,28 @@ use App\Http\Controllers\Api\AdminDashboardController;
 use App\Http\Controllers\Api\AgentDashboardController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClientDashboardController;
+use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\DutyScheduleController;
 use App\Http\Controllers\Api\NotificationController;
 use Illuminate\Support\Facades\Route;
 
 // Public API routes (no authentication required)
-Route::prefix('v1')->group(function () {
+Route::prefix('v1')->middleware('throttle:api')->group(function () {
     // Authentication routes
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
     Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 });
 
 // Protected API routes (authentication required, active accounts only)
-Route::prefix('v1')->middleware(['auth:sanctum', 'api.active'])->group(function () {
+Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])->group(function () {
     // User profile and authentication
     Route::get('/user', [AuthController::class, 'me']);
     Route::post('/refresh-token', [AuthController::class, 'refresh']);
+
+    // Signed-in devices (docs/api.md)
+    Route::get('/devices', [DeviceController::class, 'index']);
+    Route::delete('/devices', [DeviceController::class, 'destroyOthers']);
+    Route::delete('/devices/{id}', [DeviceController::class, 'destroy'])->whereNumber('id');
 
     // Client Dashboard Routes
     Route::prefix('client')->middleware(['role:client', 'tenant'])->group(function () {
