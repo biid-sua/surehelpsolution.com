@@ -1,0 +1,79 @@
+<?php
+
+namespace App\Enums;
+
+/**
+ * Notification events (spec §27, §67). Only events whose trigger exists are
+ * "available"; the rest are listed so mobile push and later phases share names.
+ */
+enum NotificationEvent: string
+{
+    case CallLogged = 'call.logged';
+    case CallMissed = 'call.missed';
+    case FollowUpCreated = 'followup.created';
+    case FollowUpOverdue = 'followup.overdue';
+    case AppointmentCreated = 'appointment.created';
+    case AppointmentUpdated = 'appointment.updated';
+    case AppointmentCancelled = 'appointment.cancelled';
+    case MessageReceived = 'message.received';
+    case EscalationCreated = 'escalation.created';
+    case PaymentFailed = 'payment.failed';
+    case SubscriptionUpdated = 'subscription.updated';
+    case IntegrationDisconnected = 'integration.disconnected';
+    case AiEscalation = 'ai.escalation';
+
+    /**
+     * @return list<self>
+     */
+    public static function available(): array
+    {
+        return [self::CallLogged, self::CallMissed, self::FollowUpCreated];
+    }
+
+    public function isAvailable(): bool
+    {
+        return in_array($this, self::available(), true);
+    }
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::CallLogged => 'New call handled',
+            self::CallMissed => 'Missed or dropped call',
+            self::FollowUpCreated => 'Caller asked for a call back',
+            self::FollowUpOverdue => 'Follow-up overdue',
+            self::AppointmentCreated => 'Appointment booked',
+            self::AppointmentUpdated => 'Appointment changed',
+            self::AppointmentCancelled => 'Appointment cancelled',
+            self::MessageReceived => 'New message',
+            self::EscalationCreated => 'Urgent escalation',
+            self::PaymentFailed => 'Payment failed',
+            self::SubscriptionUpdated => 'Subscription changed',
+            self::IntegrationDisconnected => 'Integration disconnected',
+            self::AiEscalation => 'AI needs your attention',
+        };
+    }
+
+    public function description(): string
+    {
+        return match ($this) {
+            self::CallLogged => 'Every call our team answers for you, with the outcome.',
+            self::CallMissed => 'A caller hung up or couldn\'t be reached.',
+            self::FollowUpCreated => 'Someone is waiting for you to call them back.',
+            default => '',
+        };
+    }
+
+    /**
+     * Channels used until the user chooses their own (NTF-02).
+     *
+     * @return list<string>
+     */
+    public function defaultChannels(): array
+    {
+        return match ($this) {
+            self::CallLogged => ['database'],
+            default => ['database', 'mail'],
+        };
+    }
+}

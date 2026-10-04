@@ -8,7 +8,9 @@ use App\Enums\CallOwnershipSource;
 use App\Models\CallLog;
 use App\Models\Organization;
 use App\Models\User;
+use App\Support\Audit\Audit;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Moves legacy single-tenant data into organizations (docs/decisions.md D1–D3).
@@ -41,6 +43,11 @@ class TenancyBackfill
             $this->attributeCalls($report);
 
             $dryRun ? DB::rollBack() : DB::commit();
+
+            // On a fresh install this runs (as a migration) before the audit table exists.
+            if (! $dryRun && Schema::hasTable('audit_logs')) {
+                app(Audit::class)->record('tenancy.backfill', new: $report);
+            }
         } catch (\Throwable $e) {
             DB::rollBack();
             throw $e;

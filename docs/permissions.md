@@ -38,6 +38,9 @@ All of it is evaluated in `App\Models\User::hasPermissionIn()`, registered as a 
 
 \* Only in assigned organizations. The full list per role is in `config/authorization.php`.
 
+### Platform-only permission
+`audit_logs.view` (added in P1-5) isn't in the spec §5 list. It gates the internal audit trail, and only Super Admin and Operations Manager have it. Organization roles never get it (spec §62).
+
 ## Changing the catalogue
 
 1. Edit `config/authorization.php`.

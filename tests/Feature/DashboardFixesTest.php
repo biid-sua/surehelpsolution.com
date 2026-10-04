@@ -103,12 +103,11 @@ class DashboardFixesTest extends TestCase
         ]);
 
         $this->actingAs($client)
-            ->get(route('admin.client-dashboard'))
+            ->get(route('app.calls.index'))
             ->assertOk()
             ->assertSee('>Dropped</span>', false)
             ->assertDontSee('>Scheduled</span>', false)
-            ->assertDontSee('<td>null</td>', false)
-            ->assertDontSee('<td></td>', false);
+            ->assertDontSee('>null<', false);
     }
 
     /** FIX-03 */

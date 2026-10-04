@@ -136,7 +136,7 @@ class PermissionsTest extends TestCase
         $org = app(ProvisionUserTenancy::class)->handle($owner);
         $staff = $this->member($org, 'staff');
 
-        $this->actingAs($staff)->get(route('admin.client-dashboard'))->assertOk();
+        $this->actingAs($staff)->get(route('app.dashboard'))->assertOk();
     }
 
     public function test_agent_cannot_edit_calls_after_being_unassigned(): void

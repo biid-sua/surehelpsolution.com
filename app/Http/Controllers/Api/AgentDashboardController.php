@@ -10,6 +10,7 @@ use App\Models\FcmToken;
 use App\Models\User;
 use App\Services\CallStatsService;
 use App\Services\FcmService;
+use App\Support\Audit\Audit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -273,6 +274,8 @@ class AgentDashboardController extends Controller
                 'reason_for_call', 'call_outcome', 'status', 'service_request',
                 'service_date', 'service_window', 'service_location', 'notes',
             ]));
+
+            app(Audit::class)->changes('call.updated', $callLog);
 
             return response()->json([
                 'success' => true,

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Support\Audit\Audit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -23,12 +24,17 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
+            // Only the attempted email is kept; the password never reaches the audit log.
+            app(Audit::class)->record('auth.login_failed', $user, new: ['channel' => 'web', 'email' => $request->email], actor: $user);
+
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
         }
 
         if (! $user->is_active) {
+            app(Audit::class)->record('auth.login_blocked', $user, new: ['channel' => 'web', 'reason' => 'deactivated'], actor: $user);
+
             return response()->json([
                 'success' => false,
                 'account_deactivated' => true,
@@ -37,6 +43,9 @@ class AuthController extends Controller
         }
 
         Auth::login($user);
+
+        // New session ID after login: prevents session fixation.
+        $request->session()->regenerate();
 
         if ($user->requiresPasswordChange()) {
             return response()->json([
@@ -51,7 +60,7 @@ class AuthController extends Controller
             case 'admin':
                 return response()->json([
                     'success' => true,
-                    'redirect' => route('admin.dashboard'),
+                    'redirect' => route('admin.home'),
                 ]);
             case 'agent':
                 return response()->json([
@@ -61,7 +70,7 @@ class AuthController extends Controller
             case 'client':
                 return response()->json([
                     'success' => true,
-                    'redirect' => route('admin.client-dashboard'),
+                    'redirect' => route('app.dashboard'),
                 ]);
             default:
                 return response()->json([

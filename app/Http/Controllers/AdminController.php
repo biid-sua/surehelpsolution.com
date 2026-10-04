@@ -9,13 +9,11 @@ use App\Models\CallLog;
 use App\Models\ContactSubmission;
 use App\Models\User;
 use App\Services\CallStatsService;
-use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AdminController extends Controller
@@ -129,120 +127,12 @@ class AdminController extends Controller
         ];
     }
 
-    /**
-     * Display the client dashboard.
-     */
-    public function clientDashboard(CurrentOrganization $current)
+    // Legacy client dashboard URL: the business portal now lives at /app.
+    public function clientDashboard()
     {
-        // Calls belong to the client's organization only (docs/decisions.md D4).
-        // Platform admins have no organization context here, so they see an empty dashboard.
-        $clientQuery = CallLog::query()->forOrganization($current->id() ?? 0);
-
-        // Helper to get date ranges
-        $now = now();
-        $ranges = [
-            'daily' => [
-                'start' => $now->copy()->startOfDay(),
-                'end' => $now->copy()->endOfDay(),
-            ],
-            'weekly' => [
-                'start' => $now->copy()->startOfWeek(),
-                'end' => $now->copy()->endOfWeek(),
-            ],
-            'monthly' => [
-                'start' => $now->copy()->startOfMonth(),
-                'end' => $now->copy()->endOfMonth(),
-            ],
-        ];
-
-        // Build summary data for each period
-        $summaryData = [];
-        foreach ($ranges as $period => $range) {
-            $periodQuery = (clone $clientQuery)->whereBetween('created_at', [$range['start'], $range['end']]);
-
-            $totalCalls = (clone $periodQuery)->count();
-            $serviceRequests = (clone $periodQuery)->where('service_request', true)->count();
-            $totalScheduled = (clone $periodQuery)->where('call_outcome', 'scheduled-appointment')->count();
-            $inProgress = (clone $periodQuery)->where('status', 'service-requested')->count();
-
-            $summaryData[$period] = [
-                'totalCalls' => $totalCalls,
-                'serviceRequests' => $serviceRequests,
-                'totalScheduled' => $totalScheduled,
-                'inProgress' => $inProgress,
-            ];
-        }
-
-        // Get ALL calls for the client (not filtered by date ranges)
-        $allCalls = (clone $clientQuery)
-            ->orderBy('created_at', 'desc')
-            ->limit(500) // Reasonable limit to prevent performance issues
-            ->get()
-            ->map(fn ($log) => $this->presentClientCall($log))
-            ->toArray();
-
-        // Build call history datasets for each period (for summary filtering)
-        $callData = [];
-        foreach ($ranges as $period => $range) {
-            $callData[$period] = (clone $clientQuery)
-                ->whereBetween('created_at', [$range['start'], $range['end']])
-                ->orderBy('created_at', 'desc')
-                ->limit(100)
-                ->get()
-                ->map(fn ($log) => $this->presentClientCall($log))
-                ->toArray();
-        }
-
-        // Add all calls data for the call history table
-        $callData['all'] = $allCalls;
-
-        // Choose default period for initial render
-        // For summary: prefer first non-empty period (daily -> weekly -> monthly)
-        $defaultSummaryPeriod = 'daily';
-        foreach (['daily', 'weekly', 'monthly'] as $periodOption) {
-            if (! empty($callData[$periodOption])) {
-                $defaultSummaryPeriod = $periodOption;
-                break;
-            }
-        }
-
-        // For call history: always use 'all' to show all calls
-        $defaultCallHistoryPeriod = 'all';
-
-        $initialSummary = $summaryData[$defaultSummaryPeriod] ?? ['totalCalls' => 0, 'serviceRequests' => 0, 'totalScheduled' => 0, 'inProgress' => 0];
-        $initialCalls = $callData[$defaultCallHistoryPeriod] ?? [];
-
-        return view('admin.client-dashboard', [
-            'summaryData' => $summaryData,
-            'callData' => $callData,
-            'initialSummary' => $initialSummary,
-            'initialCalls' => $initialCalls,
-            'defaultSummaryPeriod' => $defaultSummaryPeriod,
-            'defaultCallHistoryPeriod' => $defaultCallHistoryPeriod,
-        ]);
-    }
-
-    /**
-     * Shape a call log row for the client dashboard table and calendar.
-     */
-    private function presentClientCall(CallLog $log): array
-    {
-        return [
-            'callId' => $log->call_id ?? $log->id,
-            'date' => optional($log->created_at)->format('m/d/Y'),
-            'time' => optional($log->created_at)->format('H:i'),
-            'callerName' => CallLog::display($log->caller_name),
-            'callerNumber' => CallLog::display($log->caller_phone),
-            'callOutcome' => CallLog::display($log->call_outcome ? Str::headline($log->call_outcome) : null),
-            'agentName' => CallLog::display($log->agent_name),
-            'status' => $log->statusLabel(),
-            'statusTone' => $log->statusTone(),
-            'hasService' => $log->hasScheduledService(),
-            'serviceLocation' => CallLog::display($log->service_location),
-            'serviceWindow' => $log->service_window,
-            'serviceDate' => optional($log->service_date)->toDateString(),
-            'note' => $log->notes,
-        ];
+        return Auth::user()->isAdmin()
+            ? redirect()->route('admin.organizations.index')
+            : redirect()->route('app.dashboard');
     }
 
     /**

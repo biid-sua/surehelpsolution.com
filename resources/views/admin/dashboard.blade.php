@@ -463,6 +463,12 @@
             
             <ul class="nav flex-column">
                 <li class="nav-item">
+                    <a class="nav-link" href="{{ route('admin.home') }}">
+                        <i class="fas fa-arrow-right"></i>
+                        <span class="nav-text">New admin console</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link active" href="{{ route('admin.dashboard') }}">
                         <i class="fas fa-tachometer-alt"></i>
                         <span class="nav-text">Dashboard</span>

@@ -2,9 +2,13 @@
 
 namespace App\Actions\Calls;
 
+use App\Actions\Notifications\NotifyOrganization;
 use App\Enums\CallOwnershipSource;
+use App\Enums\NotificationEvent;
 use App\Models\CallLog;
 use App\Models\User;
+use App\Notifications\CallActivity;
+use App\Support\Audit\Audit;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -16,6 +20,11 @@ use Illuminate\Validation\ValidationException;
  */
 class LogCall
 {
+    public function __construct(
+        private readonly Audit $audit,
+        private readonly NotifyOrganization $notify,
+    ) {}
+
     /**
      * @param  array<string, mixed>  $data  validated StoreCallLogRequest data
      *
@@ -24,6 +33,7 @@ class LogCall
     public function handle(User $agent, array $data): CallLog
     {
         $organizationId = null;
+        $organization = null;
         $clientId = isset($data['client_id']) && $data['client_id'] !== '' ? (string) $data['client_id'] : null;
 
         if ($clientId !== null) {
@@ -41,7 +51,7 @@ class LogCall
             $organizationId = $organization->getKey();
         }
 
-        return CallLog::create([
+        $call = CallLog::create([
             'call_id' => CallLog::generateCallId(),
             'client_id' => $clientId,
             'organization_id' => $organizationId,
@@ -62,5 +72,29 @@ class LogCall
             'notes' => $data['notes'] ?? null,
             'user_id' => $agent->getKey(),
         ]);
+
+        $this->audit->record('call.created', $call, new: [
+            'call_outcome' => $call->call_outcome,
+            'status' => $call->status,
+            'service_request' => $call->service_request,
+        ], actor: $agent);
+
+        if ($organization) {
+            $this->notify->handle($organization, new CallActivity($call, self::eventFor($call)), 'calls.view');
+        }
+
+        return $call;
+    }
+
+    /**
+     * Which notification a call triggers (spec §27).
+     */
+    public static function eventFor(CallLog $call): NotificationEvent
+    {
+        return match ($call->call_outcome) {
+            'call-dropped', 'no-response' => NotificationEvent::CallMissed,
+            'callback-requested', 'followup-scheduled' => NotificationEvent::FollowUpCreated,
+            default => NotificationEvent::CallLogged,
+        };
     }
 }

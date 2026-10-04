@@ -5,9 +5,21 @@ use App\Http\Controllers\Admin\ContactSubmissionController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Client\CalendarEventsController;
+use App\Http\Controllers\Client\CallExportController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PasswordChangeController;
+use App\Livewire\Admin\AuditLogs;
+use App\Livewire\Admin\Calls\Review as CallReview;
+use App\Livewire\Admin\Home as AdminHome;
+use App\Livewire\Admin\Organizations\Index as OrganizationIndex;
+use App\Livewire\Admin\Organizations\Show as OrganizationShow;
+use App\Livewire\Client\Calendar as ClientCalendar;
+use App\Livewire\Client\Calls\Index as ClientCalls;
+use App\Livewire\Client\Calls\Show as ClientCallShow;
+use App\Livewire\Client\Dashboard as ClientDashboard;
+use App\Livewire\Client\Settings\Notifications as NotificationSettings;
 use Illuminate\Support\Facades\Route;
 
 // Landing page
@@ -37,7 +49,8 @@ Route::prefix('admin')->middleware('auth.home')->group(function () {
 Route::prefix('admin')->middleware(['auth.home', 'force.password.change'])->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->middleware('role:admin')->name('admin.dashboard');
     Route::get('/agent-dashboard', [AdminController::class, 'agentDashboard'])->middleware('role:agent,admin')->name('admin.agent-dashboard');
-    Route::get('/client-dashboard', [AdminController::class, 'clientDashboard'])->middleware(['role:client,admin', 'tenant', 'can:calls.view'])->name('admin.client-dashboard');
+    // Legacy client dashboard URL, kept so old bookmarks and links keep working.
+    Route::get('/client-dashboard', [AdminController::class, 'clientDashboard'])->middleware('role:client,admin')->name('admin.client-dashboard');
 
     // Agent workspace routes (call logs, KPIs, client picker)
     Route::middleware('role:agent,admin')->group(function () {
@@ -62,4 +75,26 @@ Route::prefix('admin')->middleware(['auth.home', 'force.password.change'])->grou
         Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('admin.users.reset-password');
         Route::patch('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('admin.users.toggle-status');
     });
+});
+
+// Business portal (clients) — docs/implementation-plan.md P1-4
+Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.change', 'role:client', 'tenant'])->group(function () {
+    Route::get('/', ClientDashboard::class)->middleware('can:dashboard.view')->name('dashboard');
+    Route::middleware('can:calls.view')->group(function () {
+        Route::get('/calls', ClientCalls::class)->name('calls.index');
+        Route::get('/calls/export', CallExportController::class)->name('calls.export');
+        Route::get('/calls/{callId}', ClientCallShow::class)->name('calls.show');
+        Route::get('/calendar', ClientCalendar::class)->name('calendar');
+        Route::get('/calendar/events', CalendarEventsController::class)->name('calendar.events');
+    });
+    Route::get('/settings/notifications', NotificationSettings::class)->name('settings.notifications');
+});
+
+// Admin console (new shell)
+Route::prefix('admin')->name('admin.')->middleware(['auth.home', 'force.password.change', 'role:admin'])->group(function () {
+    Route::get('/', AdminHome::class)->name('home');
+    Route::get('/organizations', OrganizationIndex::class)->name('organizations.index');
+    Route::get('/organizations/{organization}', OrganizationShow::class)->name('organizations.show');
+    Route::get('/calls/review', CallReview::class)->name('calls.review');
+    Route::get('/audit', AuditLogs::class)->middleware('can:audit_logs.view')->name('audit');
 });

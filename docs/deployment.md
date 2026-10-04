@@ -10,6 +10,7 @@ Current host: cPanel (PHP 8.3), deployed by uploading files. Target hosting: [de
    ```
    composer install --no-dev --optimize-autoloader
    ```
+   **Front-end assets:** build locally with `npm ci && npm run build` and upload the `public/build/` folder. It isn't in Git, and the server needs no Node.
 4. Run:
    ```
    php artisan migrate --force
@@ -32,6 +33,23 @@ Current host: cPanel (PHP 8.3), deployed by uploading files. Target hosting: [de
 - Root `.htaccess` now blocks direct access to source and secrets. After deploying, confirm `https://surehelpsolution.com/.env` returns **403**.
 - Server-side clean-up (once): rotate `APP_KEY`/DB/mail secrets if `.env` was ever reachable, delete `storage/logs/*.log`, remove `*.zip` and `old …` folders.
 
+## Release P1-4 (new portals) — specific notes
+
+- **New:** `public/build/` must be uploaded (built with `npm run build`). Without it, the new pages fail with a Vite manifest error.
+- No new migrations.
+- Clients now land on `/app` after login. Admins land on `/admin`. Agents are unchanged. `/admin/client-dashboard` redirects to `/app`.
+- The old client dashboard page has been removed. The mobile API is unchanged.
+
+## Release P1-5 (audit log + notifications) — specific notes
+
+- Migrations: `audit_logs`, `notifications`, `notification_preferences`, permission catalogue re-sync (`audit_logs.view`).
+- **Add the cron entry now** (cPanel → Cron Jobs). Without it, notifications and emails wait in the `jobs` table:
+  ```
+  * * * * * cd /home/<account>/<path> && php artisan schedule:run >> /dev/null 2>&1
+  ```
+- **Behaviour change:** business members start receiving notifications. Missed calls and callback requests are also **emailed** by default (D13). Check `MAIL_*` in `.env` and send a test before relying on it.
+- Rebuild and upload `public/build/` (new UI: notification bell, settings, audit log).
+
 ## Production `.env` settings to check
 
 | Key | Value |
@@ -44,10 +62,17 @@ Current host: cPanel (PHP 8.3), deployed by uploading files. Target hosting: [de
 
 ## Background work (queues and scheduler)
 
-Nothing is queued yet. From P1-5, add this cron entry in cPanel:
+`routes/console.php` defines the schedule. One cron entry runs all of it:
 ```
 * * * * * cd /home/<account>/<path> && php artisan schedule:run >> /dev/null 2>&1
 ```
+| Job | When |
+|---|---|
+| `queue:work --stop-when-empty` (notifications, emails) | every minute |
+| `model:prune` (audit retention) | daily 03:10 |
+| `queue:prune-failed --hours=168` | daily 03:20 |
+
+Failed jobs: `php artisan queue:failed`, retry with `php artisan queue:retry all`.
 
 ## Rollback
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\Audit\Audit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -28,6 +29,8 @@ class AuthController extends Controller
             $user = User::where('email', $request->email)->first();
 
             if (! $user || ! Hash::check($request->password, $user->password)) {
+                app(Audit::class)->record('auth.login_failed', $user, new: ['channel' => 'api', 'email' => $request->email], actor: $user);
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid credentials',
@@ -35,6 +38,8 @@ class AuthController extends Controller
             }
 
             if (! $user->is_active) {
+                app(Audit::class)->record('auth.login_blocked', $user, new: ['channel' => 'api', 'reason' => 'deactivated'], actor: $user);
+
                 return response()->json([
                     'success' => false,
                     'account_deactivated' => true,
@@ -44,6 +49,7 @@ class AuthController extends Controller
 
             // Create token
             $token = $user->createToken('auth-token')->plainTextToken;
+            app(Audit::class)->record('auth.login', $user, new: ['channel' => 'api'], actor: $user);
 
             // Return success response with user data and token
             return response()->json([
@@ -171,6 +177,7 @@ class AuthController extends Controller
 
             // Create new token
             $token = $user->createToken('auth-token')->plainTextToken;
+            app(Audit::class)->record('auth.login', $user, new: ['channel' => 'api'], actor: $user);
 
             return response()->json([
                 'success' => true,

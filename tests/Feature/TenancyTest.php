@@ -75,7 +75,7 @@ class TenancyTest extends TestCase
         // Bob's call where the caller happens to use Alice's email: previously leaked (audit R3).
         $this->legacyCall(['call_id' => 'CL-BOB-1', 'organization_id' => $bobOrg->id, 'caller_email' => 'alice@plumbing.test', 'user_id' => $agent->id]);
 
-        $this->actingAs($alice)->get(route('admin.client-dashboard'))
+        $this->actingAs($alice)->get(route('app.calls.index'))
             ->assertOk()
             ->assertSee('CL-ALICE-1')
             ->assertDontSee('CL-BOB-1');
@@ -107,7 +107,7 @@ class TenancyTest extends TestCase
     {
         $orphan = $this->user('client');
 
-        $this->actingAs($orphan)->get(route('admin.client-dashboard'))->assertForbidden();
+        $this->actingAs($orphan)->get(route('app.dashboard'))->assertForbidden();
 
         Sanctum::actingAs($orphan);
         $this->getJson('/api/v1/client/call-history')->assertForbidden();

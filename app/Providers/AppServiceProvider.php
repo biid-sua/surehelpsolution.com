@@ -2,16 +2,20 @@
 
 namespace App\Providers;
 
+use App\Http\Middleware\ResolveOrganization;
+use App\Http\Middleware\RoleMiddleware;
 use App\Models\Organization;
 use App\Models\User;
 use App\Support\Authorization\RoleCatalog;
 use App\Support\Tenancy\CurrentOrganization;
+use Illuminate\Auth\Middleware\Authorize;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -41,6 +45,14 @@ class AppServiceProvider extends ServiceProvider
 
             return $user->hasPermissionIn($ability, $organization);
         });
+
+        // Re-apply tenant resolution on Livewire component updates (/livewire/update),
+        // which otherwise skip route middleware.
+        Livewire::addPersistentMiddleware([
+            ResolveOrganization::class,
+            RoleMiddleware::class,
+            Authorize::class,
+        ]);
 
         // Brute-force protection for web and API login: 5 attempts per minute
         // per email + IP, and 20 per minute per IP across all emails.

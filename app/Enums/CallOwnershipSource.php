@@ -19,6 +19,9 @@ enum CallOwnershipSource: string
     /** Could not be attributed. Visible to platform admins only until assigned. */
     case Unassigned = 'unassigned';
 
+    /** Attribution confirmed or set by a platform admin in the call review queue. */
+    case Reviewed = 'reviewed';
+
     public function needsReview(): bool
     {
         return in_array($this, [self::EmailMatch, self::Unassigned], true);

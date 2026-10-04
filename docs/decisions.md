@@ -74,6 +74,18 @@ Implementation: `spatie/laravel-permission` with teams (team = organization).
 **Decision:** spatie/laravel-permission is used **without** its teams mode. Global staff roles (Super Admin, Operations Manager, Support Agent, Agent Supervisor, Agent) are Spatie roles. Organization roles (owner, manager, staff) are stored on the membership (`organization_user.role`) and mapped to permissions in `config/authorization.php`. One method, `User::hasPermissionIn($permission, $organization)`, behind Laravel's Gate, answers every permission question.
 **Why:** In teams mode a role exists only inside one team context, which makes platform-wide roles (Super Admin must work in every organization) fragile and easy to get wrong. The chosen model is explicit, testable, and keeps agents limited to assigned organizations. Per-tenant custom roles can be added later as a new organization-role source without changing call sites.
 
+## D13 — Default notifications and audit retention (2026-10-04)
+**Decision:**
+- Every call: **in-app only** by default.
+- Missed or dropped calls, and callers asking for a call back: **in-app + email** by default, because they need action.
+- Each person can change this under *Notifications*.
+- SMS and mobile push are shown as "coming soon" until Twilio and FCM HTTP v1 are connected.
+- Audit entries are kept **730 days** (`AUDIT_RETENTION_DAYS`), then pruned daily.
+
+The audit log is visible to Super Admin and Operations Manager only, never to business owners (spec §62).
+**Why:** Email for every call would train owners to ignore our emails. Missed calls and callbacks are where a delayed reaction costs the business money. Two years of audit history covers typical dispute and compliance look-backs without keeping personal data forever (spec §56).
+**Revisit if:** a client in a regulated industry needs a longer retention period (a per-organization override can be added).
+
 ## D10 — Telephony
 **Decision:** **Twilio** (Programmable Voice, TaskRouter, Voice JS SDK, Messaging) behind a `TelephonyProvider` interface, so the vendor can be swapped. Calls stay manually logged until then, but the Phase 2 `calls` table is designed for provider data (call SID, direction, timings, recording/transcript references). Telephony becomes **Phase 3b**, right after Calendar, because live call handling is the core of a receptionist product.
 **Action needed from you (long lead time):** create a Twilio account and start **A2P 10DLC** brand and campaign registration now. US SMS cannot go live without it, and approval takes weeks.

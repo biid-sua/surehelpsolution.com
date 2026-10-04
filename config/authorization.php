@@ -34,6 +34,8 @@ $all = [
     'reviews.view', 'reviews.manage',
     'social.view', 'social.manage',
     'settings.view', 'settings.manage',
+    // Platform-only (not in the spec §5 list): internal audit trail, spec §62.
+    'audit_logs.view',
 ];
 
 $except = fn (array $excluded) => array_values(array_diff($all, $excluded));
@@ -102,11 +104,11 @@ return [
     'organization_roles' => [
         'owner' => [
             'label' => 'Business Owner',
-            'permissions' => $all,
+            'permissions' => $except(['audit_logs.view']),
         ],
         'manager' => [
             'label' => 'Business Manager',
-            'permissions' => $except(['billing.manage', 'subscriptions.manage', 'users.delete', 'organization.update']),
+            'permissions' => $except(['billing.manage', 'subscriptions.manage', 'users.delete', 'organization.update', 'audit_logs.view']),
         ],
         'staff' => [
             'label' => 'Staff',

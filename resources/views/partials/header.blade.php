@@ -336,7 +336,7 @@
                 <i class="fas fa-user me-2"></i>{{ Auth::user()->name }}
               </button>
               <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
+                <li><a class="dropdown-item" href="{{ Auth::user()->homeUrl() }}">Dashboard</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
                   <form method="POST" action="{{ route('auth.logout') }}">

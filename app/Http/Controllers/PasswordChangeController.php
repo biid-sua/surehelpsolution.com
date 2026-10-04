@@ -62,11 +62,6 @@ class PasswordChangeController extends Controller
 
     private function dashboardRouteFor($user): string
     {
-        return match ($user?->role) {
-            'agent' => route('admin.agent-dashboard'),
-            'client' => route('admin.client-dashboard'),
-            'admin' => route('admin.dashboard'),
-            default => route('home'),
-        };
+        return $user?->homeUrl() ?? route('home');
     }
 }

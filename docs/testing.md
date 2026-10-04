@@ -20,6 +20,9 @@ CI (`.github/workflows/ci.yml`) runs all of the above, plus `composer audit`, `n
 | `tests/Feature/DashboardFixesTest.php` | KPI/chart agreement, status labels, empty values, call-ID sequencing |
 | `tests/Feature/HotfixesTest.php` | route access, login throttling, deactivated tokens, duty-schedule API, CSV export, no fake data |
 | `tests/Feature/TenancyTest.php` | **tenant isolation** (web + API), agent assignment enforcement, provisioning, backfill rules, dry run |
+| `tests/Feature/ClientPortalTest.php` | business portal: real KPIs, isolation on every page, filters, timezone-aware dates, export, calendar feed |
+| `tests/Feature/AdminConsoleTest.php` | admin console access, ULID URLs, agent assignment add/remove, validation, support role read-only, review queue |
+| `tests/Feature/AuditAndNotificationsTest.php` | audit entries (logins, calls, users, assignments), redaction, retention, audit page access; notification recipients, events, preferences, bell isolation, scheduler |
 | `tests/Feature/PermissionsTest.php` | **permission isolation**: org roles, staff vs billing, agents vs unassigned orgs, platform roles, demotion |
 
 ## Rules

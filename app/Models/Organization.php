@@ -53,11 +53,17 @@ class Organization extends Model
         return 'ulid';
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_user_id');
     }
 
+    /**
+     * @return BelongsToMany<User, $this>
+     */
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(User::class)
@@ -65,6 +71,9 @@ class Organization extends Model
             ->withTimestamps();
     }
 
+    /**
+     * @return BelongsToMany<User, $this>
+     */
     public function agents(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'agent_assignments', 'organization_id', 'agent_user_id')
@@ -72,6 +81,9 @@ class Organization extends Model
             ->withTimestamps();
     }
 
+    /**
+     * @return HasMany<CallLog, $this>
+     */
     public function callLogs(): HasMany
     {
         return $this->hasMany(CallLog::class);

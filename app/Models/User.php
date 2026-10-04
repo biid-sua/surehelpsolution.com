@@ -3,12 +3,15 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\NotificationEvent;
+use App\Support\Audit\Audit;
 use App\Support\Authorization\RoleCatalog;
 use App\Support\Tenancy\CurrentOrganization;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -204,6 +207,43 @@ class User extends Authenticatable
         return $query->whereHas('organizations', fn (Builder $q) => $q->whereIn('organizations.id', $organizationIds));
     }
 
+    /**
+     * @return HasMany<NotificationPreference, $this>
+     */
+    public function notificationPreferences(): HasMany
+    {
+        return $this->hasMany(NotificationPreference::class);
+    }
+
+    /**
+     * Channels this user wants for an event: their saved choice, else the event's
+     * defaults, always limited to channels that are switched on (config/notifications.php).
+     *
+     * @return list<string>
+     */
+    public function notificationChannelsFor(NotificationEvent $event): array
+    {
+        $saved = $this->notificationPreferences->firstWhere('event', $event->value);
+        $channels = $saved ? (array) $saved->channels : $event->defaultChannels();
+
+        return array_values(array_filter(
+            $channels,
+            fn (string $channel) => (bool) config("notifications.channels.{$channel}.enabled"),
+        ));
+    }
+
+    /**
+     * Where this user lands after signing in.
+     */
+    public function homeUrl(): string
+    {
+        return match ($this->role) {
+            'admin' => route('admin.home'),
+            'agent' => route('admin.agent-dashboard'),
+            'client' => route('app.dashboard'),
+        };
+    }
+
     public function requiresPasswordChange(): bool
     {
         return $this->must_change_password && in_array($this->role, ['agent', 'client'], true);
@@ -250,10 +290,28 @@ class User extends Authenticatable
 
         // Keep the global role in step with the portal type on every code path,
         // so e.g. demoting an admin can never leave Super Admin behind.
-        static::created(fn (User $user) => $user->syncDefaultRole());
+        static::created(function (User $user) {
+            $user->syncDefaultRole();
+            app(Audit::class)->record('user.created', $user, new: [
+                'role' => $user->role,
+                'email' => $user->email,
+                'is_active' => $user->is_active,
+            ]);
+        });
+
         static::updated(function (User $user) {
             if ($user->wasChanged('role')) {
                 $user->syncDefaultRole(replace: true);
+            }
+
+            // Every path that changes a user (web, API, self-service) is audited here.
+            app(Audit::class)->changes('user.updated', $user, ['name', 'email', 'phone', 'role', 'is_active']);
+
+            if ($user->wasChanged('password')) {
+                app(Audit::class)->record('user.password_changed', $user, new: [
+                    'by' => auth()->id() === $user->id ? 'self' : 'administrator',
+                    'must_change_password' => (bool) $user->must_change_password,
+                ]);
             }
         });
     }

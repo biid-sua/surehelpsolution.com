@@ -7,18 +7,6 @@ parameters:
 			path: app/Http/Controllers/Admin/AgentDutyScheduleController.php
 
 		-
-			message: '#^Offset ''all'' on array\{daily\: array\<mixed\>, weekly\: array\<mixed\>, monthly\: array\<mixed\>, all\: array\<mixed\>\} on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.offset
-			count: 1
-			path: app/Http/Controllers/AdminController.php
-
-		-
-			message: '#^Offset ''daily''\|''monthly''\|''weekly'' on array\{daily\: array\{totalCalls\: int\<0, max\>, serviceRequests\: int\<0, max\>, totalScheduled\: int\<0, max\>, inProgress\: int\<0, max\>\}, weekly\: array\{totalCalls\: int\<0, max\>, serviceRequests\: int\<0, max\>, totalScheduled\: int\<0, max\>, inProgress\: int\<0, max\>\}, monthly\: array\{totalCalls\: int\<0, max\>, serviceRequests\: int\<0, max\>, totalScheduled\: int\<0, max\>, inProgress\: int\<0, max\>\}\} on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.offset
-			count: 1
-			path: app/Http/Controllers/AdminController.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\CallLog\:\:\$service_requests\.$#'
 			identifier: property.notFound
 			count: 2
