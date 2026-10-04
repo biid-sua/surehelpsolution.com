@@ -305,4 +305,35 @@ class CalendarSyncTest extends TestCase
         Http::assertSent(fn (Request $r) => str_contains($r->url(), 'channels/stop'));
         $this->assertDatabaseHas('audit_logs', ['action' => 'calendar.disconnected', 'organization_id' => $org->id]);
     }
+
+    public function test_calendar_tags_each_entry_with_its_source_and_filters_by_source(): void
+    {
+        [$owner, $org] = $this->business();
+        $google = $this->connection($org, 'google', ['calendars' => [['id' => 'work', 'name' => 'Work', 'primary' => true, 'can_write' => true]], 'write_calendar_id' => 'work', 'busy_calendar_ids' => ['work']]);
+        $microsoft = $this->connection($org, 'microsoft', ['status' => CalendarConnection::STATUS_NEEDS_REAUTH]);
+        $at = fn (string $time) => CarbonImmutable::parse("2026-10-07 {$time}", self::TZ)->utc();
+        CalendarBusyBlock::create(['organization_id' => $org->id, 'calendar_connection_id' => $google->id, 'calendar_id' => 'work', 'external_event_id' => 'g1', 'starts_at' => $at('09:00'), 'ends_at' => $at('10:00')]);
+        CalendarBusyBlock::create(['organization_id' => $org->id, 'calendar_connection_id' => $microsoft->id, 'calendar_id' => 'primary-cal', 'external_event_id' => 'm1', 'starts_at' => $at('13:00'), 'ends_at' => $at('14:00')]);
+        Bus::fake();
+        $appointment = app(BookAppointment::class)->handle($org, ['starts_at' => CarbonImmutable::parse('2026-10-07 11:00', self::TZ), 'title' => 'Leak repair']);
+        $appointment->forceFill(['external_refs' => [
+            'google:'.$google->id => ['provider' => 'google', 'event_id' => 'e1'],
+            'microsoft:'.$microsoft->id => ['provider' => 'microsoft', 'event_id' => 'e2', 'conflict' => true],
+        ]])->saveQuietly();
+
+        $this->actingAs($owner)->get(route('app.calendar'))->assertOk()
+            ->assertSee('Google Calendar')->assertSee('Microsoft Outlook / 365')->assertSee('needs reconnecting');
+
+        $feed = fn (array $query = []) => collect($this->getJson(route('app.calendar.events', ['start' => '2026-10-05', 'end' => '2026-10-12'] + $query))->assertOk()->json());
+        $events = $feed();
+        $this->assertSame(['google', 'microsoft', 'surehelp'], $events->pluck('extendedProps.source')->sort()->values()->all());
+        $this->assertSame('Work', $events->firstWhere('extendedProps.source', 'google')['extendedProps']['calendar']);
+        $booking = $events->firstWhere('extendedProps.kind', 'appointment');
+        $this->assertSame(['google'], $booking['extendedProps']['synced']);
+        $this->assertSame(['microsoft'], $booking['extendedProps']['conflicts']);
+
+        $this->assertSame(['google'], $feed(['sources' => 'google'])->pluck('extendedProps.source')->all());
+        $this->assertSame(['surehelp', 'microsoft'], $feed(['sources' => 'surehelp,microsoft,bogus'])->pluck('extendedProps.source')->all());
+        $this->assertCount(0, $feed(['sources' => '']));
+    }
 }
