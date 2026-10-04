@@ -131,6 +131,14 @@ class Organization extends Model
     }
 
     /**
+     * @return HasMany<BusinessService, $this>
+     */
+    public function services(): HasMany
+    {
+        return $this->hasMany(BusinessService::class);
+    }
+
+    /**
      * The organization's IANA timezone, falling back to the app timezone until it is set.
      */
     public function timezoneOrDefault(): string

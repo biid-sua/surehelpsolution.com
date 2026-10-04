@@ -6,15 +6,48 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\BusinessHoliday;
 use App\Models\BusinessProfile;
+use App\Models\BusinessService;
 use App\Services\Business\BusinessHours;
 use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 /**
  * GET /api/v1/client/business — profile, primary location, hours and open status (docs/api.md).
  */
 class ClientBusinessController extends Controller
 {
+    /**
+     * GET /api/v1/client/services — the business's services; inactive ones only with ?include_inactive=1.
+     */
+    public function services(Request $request, CurrentOrganization $current): JsonResponse
+    {
+        $organization = $current->get();
+        abort_if($organization === null, 403);
+
+        $services = BusinessService::query()->forOrganization($organization)
+            ->when(! $request->boolean('include_inactive'), fn ($q) => $q->where('is_active', true))
+            ->orderBy('sort_order')->orderBy('name')
+            ->get()
+            ->map(fn (BusinessService $s) => [
+                'id' => $s->id,
+                'name' => $s->name,
+                'description' => $s->description,
+                'category' => $s->category,
+                'duration_minutes' => $s->duration_minutes,
+                'buffer_minutes' => $s->buffer_minutes,
+                'price_type' => $s->price_type->value,
+                'price_cents' => $s->price_cents,
+                'currency' => $s->currency,
+                'price_label' => $s->priceLabel(),
+                'is_active' => $s->is_active,
+                'is_bookable' => $s->is_bookable,
+                'required_fields' => $s->required_fields ?? [],
+            ]);
+
+        return ApiResponse::success(['services' => $services]);
+    }
+
     public function show(CurrentOrganization $current, BusinessHours $hours): JsonResponse
     {
         $organization = $current->get();

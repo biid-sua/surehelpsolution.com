@@ -37,6 +37,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
             Route::get('/calendar', [ClientDashboardController::class, 'getCalendarData']);
         });
         Route::get('/business', [ClientBusinessController::class, 'show'])->middleware('can:organization.view');
+        Route::get('/services', [ClientBusinessController::class, 'services'])->middleware('can:organization.view');
         Route::get('/profile', [ClientDashboardController::class, 'getProfile']);
         Route::put('/profile', [ClientDashboardController::class, 'updateProfile']);
     });
