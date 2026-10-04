@@ -17,9 +17,7 @@ class PasswordChangeController extends Controller
             return redirect($this->dashboardRouteFor($user));
         }
 
-        return view('admin.change-password', [
-            'isForced' => true,
-        ]);
+        return view('auth.change-password');
     }
 
     public function update(Request $request)
@@ -36,7 +34,7 @@ class PasswordChangeController extends Controller
         ]);
 
         if (! Hash::check($request->current_password, $user->password)) {
-            return back()->withErrors(['current_password' => 'The current password is incorrect.']);
+            return back()->withErrors(['current_password' => 'That isn\'t the temporary password you were given.']);
         }
 
         if (Hash::check($request->password, $user->password)) {

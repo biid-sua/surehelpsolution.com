@@ -60,9 +60,6 @@
                             ])>
                             <x-ui.icon :name="$item['icon']" @class(['size-5', 'text-brand-300' => $item['current']]) />
                             <span class="flex-1">{{ $item['label'] }}</span>
-                            @if ($item['status'] === 'classic')
-                                <span class="text-[10px] font-medium uppercase tracking-wide text-subtle" title="Opens the previous console">Classic</span>
-                            @endif
                         </a>
                     @endif
                 @endforeach

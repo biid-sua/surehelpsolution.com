@@ -84,13 +84,6 @@ class ClientPortalTest extends TestCase
             ->assertJsonPath('redirect', route('app.dashboard'));
     }
 
-    public function test_legacy_client_dashboard_url_redirects(): void
-    {
-        [$client] = $this->client();
-
-        $this->actingAs($client)->get(route('admin.client-dashboard'))->assertRedirect(route('app.dashboard'));
-    }
-
     public function test_dashboard_shows_real_counts_for_own_business_only(): void
     {
         Carbon::setTestNow('2026-10-07 15:00:00');

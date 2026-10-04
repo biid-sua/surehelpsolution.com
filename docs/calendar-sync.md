@@ -17,6 +17,19 @@ How it runs:
 | Renew push notifications | Twice a day (`calendar:sync --renew-push`) |
 | Lost access (revoked, password change) | The connection is flagged, the owner gets a "needs reconnecting" alert once, and agents see "Calendar not synced" on that business |
 
+## What the business sees on its Calendar page
+
+Every entry is tagged with where it comes from, and a row of chips at the top switches each source on or off. The choice is remembered per business in that browser.
+
+| Source | Shown as | Tags |
+|---|---|---|
+| SureHelp bookings | Appointments, coloured by status, linking to the booking | `SureHelp`, plus `Google` / `Outlook` for each connected calendar that holds a copy; `Edited in Google` / `Edited in Outlook` (amber) when someone changed it there and it's waiting for a person |
+| Service visits from calls | All-day entries noted on calls | `Visit` |
+| Google Calendar | Muted "Busy · *calendar name*" blocks with a blue edge | `Google` |
+| Microsoft Outlook / 365 | Muted "Busy · *calendar name*" blocks with a light-blue edge | `Outlook` |
+
+Each provider chip shows its connection state: *Synced*, *Reconnect* or *Sync error*. Hovering shows the account and when it last synced. A provider SureHelp hasn't registered yet doesn't get a chip, and one the business hasn't connected shows as *Not connected*. The feed (`app.calendar.events`) takes `sources=surehelp,visits,google,microsoft` and only returns those, so switched-off sources aren't downloaded at all. The sources are defined in `App\Support\Calendar\CalendarSources`.
+
 ## One-time setup (SureHelp, not each business)
 
 Until a provider is configured, businesses see "Coming soon" for it. Replace `https://YOUR-DOMAIN` with the production `APP_URL`.

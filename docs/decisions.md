@@ -28,7 +28,7 @@ No call is deleted or silently hidden from the platform team.
 **Decision:** Yes. Once calls carry an `organization_id`, every client query is scoped by organization only. Email matching survives only as the one-time, flagged backfill rule in D2.
 
 ## D5 — Frontend stack
-**Decision:** **Blade + Livewire 3 + Alpine.js + Tailwind CSS 4, built with Vite.** It comes with an in-house component library (`x-ui.*`) on design tokens that keep the dark navy/purple brand. Chart.js and FullCalendar are bundled through npm with pinned versions; no runtime CDNs. Existing Bootstrap pages stay as they are until each one is rebuilt inside the new shell, one page at a time, with no mixing of frameworks on a page.
+**Decision:** **Blade + Livewire 3 + Alpine.js + Tailwind CSS 4, built with Vite.** It comes with an in-house component library (`x-ui.*`) on design tokens that keep the dark navy/purple brand. Chart.js and FullCalendar are bundled through npm with pinned versions; no runtime CDNs. Every web screen is built on this stack; there are no Bootstrap or "classic" screens (D23).
 **Why:**
 - Authorization stays on the server for every interaction, which is critical for tenancy and permissions.
 - One language and one codebase.
@@ -139,7 +139,7 @@ The audit log is visible to Super Admin and Operations Manager only, never to bu
 
 ## D20 — The new agent workspace (2026-10-08)
 **Decision:**
-- Agents land on **/agent** after login. It shows only their assigned businesses (admins see all active and onboarding ones), each with open/closed status and local time, plus what needs attention across them: escalations, call-backs due and the next 24 hours of appointments. The previous agent dashboard stays reachable as *Classic call form* until the team has switched. The mobile API is unchanged (D7).
+- Agents land on **/agent** after login. It shows only their assigned businesses (admins see all active and onboarding ones), each with open/closed status and local time, plus what needs attention across them: escalations, call-backs due and the next 24 hours of appointments. The previous agent dashboard has since been removed (D23). The mobile API is unchanged (D7).
 - A business's workspace puts the **briefing next to the call** (§21): rules as sentences, emergency handling, knowledge the agent may use (team-only items hidden; caller-safe items marked), services with prices and agent instructions, hours, today's bookings, and the caller's history once identified.
 - **Customer matching (§15):** typing a phone number or email shows the existing customer it belongs to. The agent must answer *Yes, it's them* or *Different person* before saving; nothing is merged silently. A different person on a known number gets their own record, and the number stays with its first owner (numbers are unique per business).
 - The call, any booking and any follow-up are saved **in one transaction**. If the time was just taken or a rule blocks the booking, nothing is saved and the agent is offered the nearest free times. Agent bookings always follow opening hours and the business's rules.
@@ -167,6 +167,23 @@ The audit log is visible to Super Admin and Operations Manager only, never to bu
 - Plan changes apply at renewal (immediately during a trial). Cancellation applies at the end of the paid period. Billing days don't drift: the 31st becomes the last day in shorter months and comes back.
 - No separate Billing Admin role yet (D9 planned one): Super Admin manages billing, and Operations Manager and Support Agent can view it. The role can be added as data when someone needs billing access without full admin rights.
 **Why:** It lets SureHelp invoice and collect from US clients today with the account the owner already has, and the effort is limited to a minute of record-keeping per payment. Automation can be added later without migrating any data.
+
+## D23 — One product, one UI (2026-10-11)
+**Requirement from the product owner:** SureHelp launches as a fresh product, so there is one version of every screen and no "classic" versions.
+**Decision:**
+- The previous admin console and agent dashboard are deleted, not linked. That covers the Bootstrap pages for the admin dashboard, users, duty schedules, contact forms, the agent dashboard / classic call form, and the old password page, plus their controllers and routes. There are no redirects from the old URLs.
+- What they did now lives in the shared design system:
+  - *Admin › Users*: add staff, agents and business owners; temporary passwords shown once; reset password; switch off and sign out everywhere; change staff and agent roles.
+  - *Admin › Duty schedule*: a week grid with overnight shifts, an overlap check and "copy last week".
+  - *Admin › Website enquiries*: open/handled inbox with reply by email.
+  - *Agent › My calls*: numbers by period, history and CSV export.
+  - *Agent › My schedule*.
+  - The first-login password page at `/account/password`.
+- Only a Super Admin adds or changes staff accounts. Operations Managers manage agents and business owners. Website enquiries need `marketing.view` (Support Agents don't see sales leads).
+- The mobile API (`/api/v1`, D7) is unchanged. The admin and agent endpoints for users, duty schedules and call logs stay for the apps.
+- The public website (home and legal pages) is a separate marketing site, not a second version of the product. It keeps its own layout until its redesign, when it moves onto the design system and the CSP header can be switched on.
+- From now on, rebuilding a screen means deleting the old one in the same change. Recorded in the master spec, §7 "One UI".
+**Why:** Two versions of a screen double the testing, confuse users about which one is real, and keep old security problems alive. A new product has no existing users to migrate gently.
 
 ## D10 — Telephony
 **Decision:** **Twilio** (Programmable Voice, TaskRouter, Voice JS SDK, Messaging) behind a `TelephonyProvider` interface, so the vendor can be swapped. Calls stay manually logged until then, but the Phase 2 `calls` table is designed for provider data (call SID, direction, timings, recording/transcript references). Telephony becomes **Phase 3b**, right after Calendar, because live call handling is the core of a receptionist product.

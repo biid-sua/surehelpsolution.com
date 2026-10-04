@@ -46,7 +46,7 @@ class CustomersTest extends TestCase
 
     private function logCall(User $client, array $overrides = []): void
     {
-        $this->actingAs($this->agent)->postJson(route('admin.call-logs.store'), array_merge([
+        $this->actingAs($this->agent)->postJson('/api/v1/agent/call-logs', array_merge([
             'client_id' => (string) $client->id,
             'call_date' => now()->toDateString(), 'call_time' => '10:00',
             'caller_name' => 'Maria Lopez', 'caller_phone' => '(512) 555-0147',

@@ -7,14 +7,17 @@ use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\CalendarBusyBlock;
 use App\Models\CallLog;
+use App\Support\Calendar\CalendarSources;
 use App\Support\Tenancy\CurrentOrganization;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * FullCalendar event feed for the requested range: appointments (timed) and the service visits
- * agents noted on calls before appointments existed (all-day, D18).
+ * FullCalendar event feed for the requested range, every event tagged with its source
+ * (CalendarSources): SureHelp appointments (with the calendars each one is synced to), the
+ * service visits agents noted on calls before appointments existed (all-day, D18), and busy
+ * times from the connected Google and Microsoft calendars. `sources` limits the feed.
  */
 class CalendarEventsController extends Controller
 {
@@ -29,13 +32,18 @@ class CalendarEventsController extends Controller
         $validated = $request->validate([
             'start' => ['required', 'date'],
             'end' => ['required', 'date', 'after:start'],
+            'sources' => ['nullable', 'string', 'max:100'],
         ]);
+        $wanted = array_key_exists('sources', $validated)
+            ? array_values(array_intersect(explode(',', (string) $validated['sources']), CalendarSources::keys()))
+            : CalendarSources::keys();
+        $show = fn (string $source) => in_array($source, $wanted, true);
 
         $start = CarbonImmutable::parse($validated['start'])->toDateString();
         $end = CarbonImmutable::parse($validated['end'])->toDateString();
 
         $timezone = $organization->timezoneOrDefault();
-        $appointments = Appointment::query()->forOrganization($organization)
+        $appointments = ! $show(CalendarSources::BOOKINGS) ? collect() : Appointment::query()->forOrganization($organization)
             ->where('status', '!=', AppointmentStatus::Cancelled->value)
             ->where('starts_at', '<', CarbonImmutable::parse($end, $timezone)->endOfDay()->utc())
             ->where('ends_at', '>', CarbonImmutable::parse($start, $timezone)->startOfDay()->utc())
@@ -49,11 +57,18 @@ class CalendarEventsController extends Controller
                 'start' => $a->starts_at->setTimezone($timezone)->format('Y-m-d\TH:i:s'),
                 'end' => $a->ends_at->setTimezone($timezone)->format('Y-m-d\TH:i:s'),
                 'url' => route('app.appointments.index', ['appointment' => $a->ulid]),
-                'classNames' => ['tone-'.$a->status->tone()],
-                'extendedProps' => ['status' => $a->status->label(), 'kind' => 'appointment'],
+                'classNames' => ['tone-'.$a->status->tone(), 'src-'.CalendarSources::BOOKINGS],
+                'extendedProps' => [
+                    'kind' => 'appointment',
+                    'source' => CalendarSources::BOOKINGS,
+                    'status' => $a->status->label(),
+                    // Which connected calendars hold a copy, and which ones someone edited there.
+                    'synced' => collect($a->external_refs ?? [])->reject(fn (array $r) => ! empty($r['conflict']))->pluck('provider')->unique()->values(),
+                    'conflicts' => collect($a->external_refs ?? [])->filter(fn (array $r) => ! empty($r['conflict']))->pluck('provider')->unique()->values(),
+                ],
             ]);
 
-        $visits = CallLog::query()->forOrganization($organization)
+        $visits = ! $show(CalendarSources::VISITS) ? collect() : CallLog::query()->forOrganization($organization)
             ->whereNotNull('service_date')
             ->whereBetween('service_date', [$start, $end])
             ->orderBy('service_date')
@@ -65,13 +80,18 @@ class CalendarEventsController extends Controller
                 'start' => $call->service_date->toDateString(),
                 'allDay' => true,
                 'url' => route('app.calls.show', $call->call_id),
-                'classNames' => ['tone-'.$call->statusTone()],
-                'extendedProps' => ['window' => $call->service_window, 'status' => $call->statusLabel()],
+                'classNames' => ['tone-'.$call->statusTone(), 'src-'.CalendarSources::VISITS],
+                'extendedProps' => ['kind' => 'visit', 'source' => CalendarSources::VISITS, 'window' => $call->service_window, 'status' => $call->statusLabel()],
             ]);
 
-        // Busy times from connected calendars, shown as shaded background (no details are stored).
-        $busy = CalendarBusyBlock::query()->forOrganization($organization)
+        // Busy times from connected calendars, tagged with the provider and calendar they came from.
+        // Only times are stored, never what the events are (D21).
+        $providers = array_values(array_filter(array_keys(CalendarSources::TAGS), $show));
+        $busy = $providers === [] ? collect() : CalendarBusyBlock::query()->forOrganization($organization)
+            ->whereHas('connection', fn ($q) => $q->whereIn('provider', $providers))
+            ->with('connection:id,provider,calendars')
             ->overlapping(CarbonImmutable::parse($start, $timezone)->startOfDay()->utc(), CarbonImmutable::parse($end, $timezone)->endOfDay()->utc())
+            ->orderBy('starts_at')
             ->limit(self::MAX_EVENTS)->get()
             ->map(fn (CalendarBusyBlock $b) => [
                 'id' => 'busy-'.$b->id,
@@ -79,9 +99,12 @@ class CalendarEventsController extends Controller
                 'start' => $b->all_day ? $b->starts_at->format('Y-m-d') : $b->starts_at->setTimezone($timezone)->format('Y-m-d\TH:i:s'),
                 'end' => $b->all_day ? $b->ends_at->format('Y-m-d') : $b->ends_at->setTimezone($timezone)->format('Y-m-d\TH:i:s'),
                 'allDay' => $b->all_day,
-                'display' => 'background',
-                'classNames' => ['busy-block'],
-                'extendedProps' => ['kind' => 'busy'],
+                'classNames' => ['busy-block', 'src-'.$b->connection->provider],
+                'extendedProps' => [
+                    'kind' => 'busy',
+                    'source' => $b->connection->provider,
+                    'calendar' => $b->connection->calendarName($b->calendar_id),
+                ],
             ]);
 
         return response()->json($appointments->concat($visits)->concat($busy)->values());

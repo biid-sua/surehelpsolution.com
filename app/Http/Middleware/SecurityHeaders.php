@@ -9,9 +9,9 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Baseline security headers on every response (spec §58).
  *
- * A Content-Security-Policy is deliberately not set yet: the marketing site and
- * classic screens still load CDN scripts and inline JS. It will be added once
- * those pages move to the Vite-built shell (docs/implementation-plan.md).
+ * A Content-Security-Policy is deliberately not set yet: the public website still
+ * loads CDN scripts and inline JS. It will be added once the website moves to the
+ * Vite-built design system (docs/implementation-plan.md).
  */
 class SecurityHeaders
 {

@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AgentDutySchedule extends Model
 {
+    public const SHIFT_TYPES = ['morning' => 'Morning', 'afternoon' => 'Afternoon', 'evening' => 'Evening', 'night' => 'Night', 'off' => 'Day off'];
+
     protected $fillable = [
         'agent_id',
         'title',
@@ -70,6 +72,7 @@ class AgentDutySchedule extends Model
         return match ($this->shift_type) {
             'morning' => '#3b82f6',
             'afternoon' => '#06b6d4',
+            'evening' => '#f59e0b',
             'night' => '#8b5cf6',
             'off' => '#6b7280',
             default => '#6b7280'

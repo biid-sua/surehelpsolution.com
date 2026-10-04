@@ -44,7 +44,7 @@ class AuditAndNotificationsTest extends TestCase
 
     private function logCallAs(User $agent, User $client, array $overrides = []): void
     {
-        $this->actingAs($agent)->postJson(route('admin.call-logs.store'), array_merge([
+        $this->actingAs($agent)->postJson('/api/v1/agent/call-logs', array_merge([
             'client_id' => (string) $client->id,
             'call_date' => now()->toDateString(),
             'call_time' => '10:00',

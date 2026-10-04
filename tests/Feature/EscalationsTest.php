@@ -67,7 +67,7 @@ class EscalationsTest extends TestCase
     /** @param  array<string, mixed>  $extra */
     private function logCall(User $client, string $outcome = 'escalated-to-client', array $extra = []): TestResponse
     {
-        return $this->actingAs($this->agent)->postJson(route('admin.call-logs.store'), array_merge([
+        return $this->actingAs($this->agent)->postJson('/api/v1/agent/call-logs', array_merge([
             'client_id' => (string) $client->id,
             'call_date' => now()->toDateString(), 'call_time' => '10:00',
             'caller_name' => 'Maria Lopez', 'caller_phone' => '(512) 555-0147',

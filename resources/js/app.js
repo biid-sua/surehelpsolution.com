@@ -69,12 +69,79 @@ document.addEventListener('alpine:init', () => {
     }));
 
     /**
-     * <div x-data="calendar(eventsUrl)"> — events are fetched from the server per visible range,
-     * so the browser never holds more than what is on screen.
+     * <div x-data="calendar(eventsUrl, sources, storageKey)"> — events are fetched from the server per
+     * visible range, so the browser never holds more than what is on screen. Every event is tagged with
+     * its source (SureHelp, Google, Outlook…); the chips switch sources on and off and the choice is
+     * remembered per business in this browser.
      */
-    Alpine.data('calendar', (eventsUrl) => ({
+    Alpine.data('calendar', (eventsUrl, sources = [], storageKey = null) => ({
         instance: null,
+        sources,
+        hidden: [],
+        tags: Object.fromEntries(sources.map((s) => [s.key, s.tag])),
+        isOn(source) {
+            return source.connected && !this.hidden.includes(source.key);
+        },
+        toggle(source) {
+            if (!source.connected) return;
+            this.hidden = this.hidden.includes(source.key) ? this.hidden.filter((k) => k !== source.key) : [...this.hidden, source.key];
+            try { storageKey && localStorage.setItem(storageKey, JSON.stringify(this.hidden)); } catch (e) { /* private mode */ }
+            this.instance?.refetchEvents();
+        },
+        statusText(source) {
+            return { active: 'Synced', needs_reauth: 'Reconnect', error: 'Sync error' }[source.status] ?? 'Not connected';
+        },
+        hint(source) {
+            if (source.kind !== 'external') return source.label;
+            if (!source.connected) return `${source.label} isn't connected`;
+            return [source.account, source.synced ? `last synced ${source.synced}` : null].filter(Boolean).join(' · ');
+        },
+        tag(key, extra = '') {
+            const el = document.createElement('span');
+            el.className = `fc-src-tag src-tag-${key} ${extra}`.trim();
+            el.textContent = this.tags[key] ?? key;
+            return el;
+        },
+        render(arg) {
+            const props = arg.event.extendedProps;
+            const box = document.createElement('div');
+            box.className = 'fc-src-event';
+            const line = document.createElement('div');
+            line.className = 'fc-src-line';
+            if (arg.timeText && !arg.view.type.startsWith('list')) {
+                const time = document.createElement('span');
+                time.className = 'fc-src-time';
+                time.textContent = arg.timeText;
+                line.append(time);
+            }
+            const title = document.createElement('span');
+            title.className = 'fc-src-title';
+            title.textContent = props.kind === 'busy' && props.calendar ? `Busy · ${props.calendar}` : arg.event.title;
+            line.append(title);
+            box.append(line);
+
+            const tags = document.createElement('div');
+            tags.className = 'fc-src-tags';
+            if (props.kind === 'busy') {
+                tags.append(this.tag(props.source));
+            } else if (props.kind === 'appointment') {
+                tags.append(this.tag('surehelp'));
+                (props.synced ?? []).forEach((p) => tags.append(this.tag(p)));
+                (props.conflicts ?? []).forEach((p) => {
+                    const el = this.tag(p, 'is-conflict');
+                    el.textContent = `Edited in ${this.tags[p] ?? p}`;
+                    tags.append(el);
+                });
+            } else if (props.kind === 'visit') {
+                tags.append(this.tag('visits'));
+            }
+            box.append(tags);
+            box.title = [arg.event.title, props.status, props.calendar].filter(Boolean).join(' · ');
+
+            return { domNodes: [box] };
+        },
         async init() {
+            try { this.hidden = (storageKey && JSON.parse(localStorage.getItem(storageKey) ?? '[]')) || []; } catch (e) { this.hidden = []; }
             const { Calendar, plugins } = await loadCalendar();
             const narrow = window.matchMedia('(max-width: 640px)').matches;
             this.instance = new Calendar(this.$refs.calendar, {
@@ -88,7 +155,15 @@ document.addEventListener('alpine:init', () => {
                 height: 'auto',
                 nowIndicator: true,
                 scrollTime: '07:00:00',
-                events: { url: eventsUrl, failure: () => this.$dispatch('toast', { type: 'error', message: 'We could not load the calendar. Please try again.' }) },
+                dayMaxEvents: 4,
+                events: {
+                    url: eventsUrl,
+                    extraParams: () => ({
+                        sources: this.sources.filter((s) => this.isOn(s)).map((s) => s.key).join(','),
+                    }),
+                    failure: () => this.$dispatch('toast', { type: 'error', message: 'We could not load the calendar. Please try again.' }),
+                },
+                eventContent: (arg) => this.render(arg),
                 eventClick: (info) => {
                     if (info.event.url) {
                         info.jsEvent.preventDefault();

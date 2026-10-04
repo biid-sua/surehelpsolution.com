@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\Admin\Users\Index as AdminUsers;
 use App\Models\AgentDutySchedule;
 use App\Models\CallLog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
@@ -43,11 +45,12 @@ class HotfixesTest extends TestCase
     {
         $client = $this->user('client');
 
-        $this->actingAs($client)->postJson(route('admin.call-logs.store'), $this->callPayload())->assertForbidden();
-        $this->actingAs($client)->getJson(route('admin.call-logs.index'))->assertForbidden();
-        $this->actingAs($client)->getJson(route('admin.clients.list'))->assertForbidden();
-        $this->actingAs($client)->getJson(route('admin.kpi-data', 'today'))->assertForbidden();
-        $this->actingAs($client)->get(route('admin.call-logs.export'))->assertForbidden();
+        $this->actingAs($client)->postJson('/api/v1/agent/call-logs', $this->callPayload())->assertForbidden();
+        $this->actingAs($client)->getJson('/api/v1/agent/call-logs')->assertForbidden();
+        $this->actingAs($client)->getJson('/api/v1/agent/clients')->assertForbidden();
+        $this->actingAs($client)->getJson('/api/v1/agent/dashboard/kpi?period=today')->assertForbidden();
+        $this->actingAs($client)->get(route('agent.calls'))->assertForbidden();
+        $this->actingAs($client)->get(route('agent.calls.export'))->assertForbidden();
 
         $this->assertSame(0, CallLog::count());
     }
@@ -56,18 +59,18 @@ class HotfixesTest extends TestCase
     {
         $agent = $this->user('agent');
 
-        $this->actingAs($agent)->postJson(route('admin.call-logs.store'), $this->callPayload())->assertOk();
-        $this->actingAs($agent)->getJson(route('admin.clients.list'))->assertOk();
-        $this->actingAs($agent)->getJson(route('admin.kpi-data', 'today'))->assertOk();
+        $this->actingAs($agent)->postJson('/api/v1/agent/call-logs', $this->callPayload())->assertOk();
+        $this->actingAs($agent)->getJson('/api/v1/agent/clients')->assertOk();
+        $this->actingAs($agent)->getJson('/api/v1/agent/dashboard/kpi?period=today')->assertOk();
+        $this->actingAs($agent)->get(route('agent.calls'))->assertOk();
     }
 
     public function test_only_admin_can_probe_schedule_conflicts(): void
     {
-        $agent = $this->user('agent');
+        Sanctum::actingAs($this->user('agent'));
 
-        $this->actingAs($agent)
-            ->postJson(route('admin.duty-schedules.check-conflicts'), [])
-            ->assertForbidden();
+        $this->postJson('/api/v1/admin/duty-schedules/check-conflicts', [])->assertForbidden();
+        $this->get(route('admin.schedule'))->assertForbidden();
     }
 
     public function test_debug_route_is_removed(): void
@@ -125,9 +128,8 @@ class HotfixesTest extends TestCase
         $agent = $this->user('agent');
         $agent->createToken('phone');
 
-        $this->actingAs($admin)
-            ->patchJson(route('admin.users.toggle-status', $agent))
-            ->assertOk();
+        $this->actingAs($admin);
+        Livewire::test(AdminUsers::class)->call('toggleActive', $agent->id)->assertOk();
 
         $this->assertFalse($agent->fresh()->is_active);
         $this->assertSame(0, $agent->tokens()->count());
@@ -220,7 +222,7 @@ class HotfixesTest extends TestCase
         $agent = $this->user('agent');
 
         $this->actingAs($agent)
-            ->postJson(route('admin.call-logs.store'), $this->callPayload(['status' => 'completed']))
+            ->postJson('/api/v1/agent/call-logs', $this->callPayload(['status' => 'completed']))
             ->assertOk();
 
         $this->assertSame('Completed', CallLog::first()->statusLabel());
@@ -253,10 +255,10 @@ class HotfixesTest extends TestCase
             'user_id' => $agent->id,
         ]));
 
-        $this->actingAs($admin)->get(route('admin.dashboard'))
+        $this->actingAs($admin)->get(route('admin.home'))
             ->assertOk()
-            ->assertSee('Rita Agent')
-            ->assertSee('Plumbing Co')
+            ->assertSee('Agent')
+            ->assertSee('Unassigned')
             ->assertSee('Dropped')
             ->assertDontSee('John Doe')
             ->assertDontSee('ABC Corp');
@@ -264,7 +266,7 @@ class HotfixesTest extends TestCase
 
     public function test_agent_dashboard_has_no_fake_notifications(): void
     {
-        $this->actingAs($this->user('agent'))->get(route('admin.agent-dashboard'))
+        $this->actingAs($this->user('agent'))->get(route('agent.home'))
             ->assertOk()
             ->assertDontSee('New message received')
             ->assertDontSee('System update available');
@@ -278,7 +280,7 @@ class HotfixesTest extends TestCase
         CallLog::create($this->callPayload(['call_id' => 'CL-MINE-0001', 'caller_name' => '=HYPERLINK("x")', 'user_id' => $agent->id]));
         CallLog::create($this->callPayload(['call_id' => 'CL-OTHER-0001', 'user_id' => $other->id]));
 
-        $csv = $this->actingAs($agent)->get(route('admin.call-logs.export'))
+        $csv = $this->actingAs($agent)->get(route('agent.calls.export'))
             ->assertOk()
             ->assertHeader('content-type', 'text/csv; charset=UTF-8')
             ->streamedContent();

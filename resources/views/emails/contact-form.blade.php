@@ -5,7 +5,7 @@ Name: {{ $submission->name }}
 Email: {{ $submission->email }}
 Phone: {{ $submission->phone ?? '—' }}
 Company: {{ $submission->company ?? '—' }}
-Inquiry type: {{ $submission->inquiry_type }}
+Inquiry type: {{ $submission->inquiryLabel() }}
 
 Message:
 {{ $submission->message }}

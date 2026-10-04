@@ -69,7 +69,7 @@ class TasksTest extends TestCase
 
     private function logCall(User $client, string $outcome = 'callback-requested'): TestResponse
     {
-        return $this->actingAs($this->agent)->postJson(route('admin.call-logs.store'), [
+        return $this->actingAs($this->agent)->postJson('/api/v1/agent/call-logs', [
             'client_id' => (string) $client->id,
             'call_date' => now()->toDateString(), 'call_time' => '10:00',
             'caller_name' => 'Maria Lopez', 'caller_phone' => '(512) 555-0147',

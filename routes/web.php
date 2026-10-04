@@ -1,9 +1,6 @@
 <?php
 
-use App\Http\Controllers\Admin\AgentDutyScheduleController;
-use App\Http\Controllers\Admin\ContactSubmissionController;
-use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Agent\CallExportController as AgentCallExportController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Client\CalendarEventsController;
 use App\Http\Controllers\Client\CalendarOAuthController;
@@ -16,11 +13,16 @@ use App\Http\Controllers\PasswordChangeController;
 use App\Livewire\Admin\AuditLogs;
 use App\Livewire\Admin\Billing\Index as AdminBilling;
 use App\Livewire\Admin\Calls\Review as CallReview;
+use App\Livewire\Admin\Enquiries\Index as AdminEnquiries;
 use App\Livewire\Admin\Escalations\Index as AdminEscalations;
 use App\Livewire\Admin\Home as AdminHome;
 use App\Livewire\Admin\Organizations\Index as OrganizationIndex;
 use App\Livewire\Admin\Organizations\Show as OrganizationShow;
+use App\Livewire\Admin\Schedules\Index as AdminSchedules;
+use App\Livewire\Admin\Users\Index as AdminUsers;
+use App\Livewire\Agent\Calls as AgentCalls;
 use App\Livewire\Agent\Home as AgentHome;
+use App\Livewire\Agent\Schedule as AgentSchedule;
 use App\Livewire\Agent\Workspace as AgentWorkspace;
 use App\Livewire\Client\Appointments\Index as AppointmentsIndex;
 use App\Livewire\Client\Billing\Index as ClientBilling;
@@ -59,42 +61,10 @@ Route::get('/faq', [HomeController::class, 'faq'])->name('legal.faq');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login')->name('auth.login');
 Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('auth.logout');
 
-// Password change (agent/client first-login flow — no force middleware here)
-Route::prefix('admin')->middleware('auth.home')->group(function () {
-    Route::get('/change-password', [PasswordChangeController::class, 'show'])->name('password.change');
-    Route::post('/change-password', [PasswordChangeController::class, 'update'])->name('password.change.update');
-});
-
-// Admin routes (redirect guests to home instead of default login)
-Route::prefix('admin')->middleware(['auth.home', 'force.password.change'])->group(function () {
-    Route::get('/dashboard', [AdminController::class, 'dashboard'])->middleware('role:admin')->name('admin.dashboard');
-    Route::get('/agent-dashboard', [AdminController::class, 'agentDashboard'])->middleware('role:agent,admin')->name('admin.agent-dashboard');
-    // Legacy client dashboard URL, kept so old bookmarks and links keep working.
-    Route::get('/client-dashboard', [AdminController::class, 'clientDashboard'])->middleware('role:client,admin')->name('admin.client-dashboard');
-
-    // Agent workspace routes (call logs, KPIs, client picker)
-    Route::middleware('role:agent,admin')->group(function () {
-        Route::post('/call-logs', [AdminController::class, 'storeCallLog'])->middleware('can:calls.create')->name('admin.call-logs.store');
-        Route::get('/call-logs', [AdminController::class, 'getCallLogs'])->name('admin.call-logs.index');
-        Route::get('/call-logs/export', [AdminController::class, 'exportCallLogs'])->name('admin.call-logs.export');
-        Route::get('/kpi-data/{period}', [AdminController::class, 'getKpiData'])->name('admin.kpi-data');
-        Route::get('/clients/list', [AdminController::class, 'getClientsList'])->name('admin.clients.list');
-        Route::get('/duty-schedules/calendar-data', [AgentDutyScheduleController::class, 'getCalendarData'])->name('admin.duty-schedules.calendar-data');
-    });
-
-    // User management routes (admin only)
-    Route::post('/users', [AdminController::class, 'storeUser'])->middleware('role:admin')->name('admin.users.store');
-
-    // Admin-only duty schedule management routes
-    Route::middleware('role:admin')->group(function () {
-        Route::post('/duty-schedules/check-conflicts', [AgentDutyScheduleController::class, 'checkConflicts'])->name('admin.duty-schedules.check-conflicts');
-        Route::resource('duty-schedules', AgentDutyScheduleController::class);
-        Route::get('/contact-submissions', [ContactSubmissionController::class, 'index'])->name('admin.contact-submissions.index');
-        Route::get('/contact-submissions/{contactSubmission}', [ContactSubmissionController::class, 'show'])->name('admin.contact-submissions.show');
-        Route::get('/users', [UserController::class, 'index'])->name('admin.users.index');
-        Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('admin.users.reset-password');
-        Route::patch('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('admin.users.toggle-status');
-    });
+// First sign-in: agents and business owners replace their temporary password (no force middleware here)
+Route::prefix('account')->middleware('auth.home')->group(function () {
+    Route::get('/password', [PasswordChangeController::class, 'show'])->name('password.change');
+    Route::post('/password', [PasswordChangeController::class, 'update'])->name('password.change.update');
 });
 
 // Business portal (clients) — docs/implementation-plan.md P1-4
@@ -136,13 +106,16 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
     });
 });
 
-// Agent workspace (new shell, spec §20–21) — docs/implementation-plan.md P2-7
+// Agent workspace (spec §20–21)
 Route::prefix('agent')->name('agent.')->middleware(['auth.home', 'force.password.change', 'role:agent,admin'])->group(function () {
     Route::get('/', AgentHome::class)->name('home');
     Route::get('/businesses/{organization}', AgentWorkspace::class)->name('businesses.show');
+    Route::get('/calls', AgentCalls::class)->name('calls');
+    Route::get('/calls/export', AgentCallExportController::class)->name('calls.export');
+    Route::get('/schedule', AgentSchedule::class)->name('schedule');
 });
 
-// Admin console (new shell)
+// Admin console
 Route::prefix('admin')->name('admin.')->middleware(['auth.home', 'force.password.change', 'role:admin'])->group(function () {
     Route::get('/', AdminHome::class)->name('home');
     Route::get('/organizations', OrganizationIndex::class)->name('organizations.index');
@@ -150,5 +123,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth.home', 'force.password
     Route::get('/calls/review', CallReview::class)->name('calls.review');
     Route::get('/escalations', AdminEscalations::class)->middleware('can:escalations.view')->name('escalations');
     Route::get('/billing', AdminBilling::class)->middleware('can:billing.view')->name('billing');
+    Route::get('/users', AdminUsers::class)->middleware('can:users.view')->name('users');
+    Route::get('/schedule', AdminSchedules::class)->middleware('can:users.view')->name('schedule');
+    Route::get('/enquiries', AdminEnquiries::class)->middleware('can:marketing.view')->name('enquiries');
     Route::get('/audit', AuditLogs::class)->middleware('can:audit_logs.view')->name('audit');
 });

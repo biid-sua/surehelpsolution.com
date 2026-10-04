@@ -35,20 +35,19 @@ class PortalNavigation
             'admin' => [
                 $this->item('Overview', 'home', 'admin.home', 'admin.home', 'dashboard.view'),
                 $this->item('Organizations', 'building', 'admin.organizations.index', 'admin.organizations.*', 'organization.view'),
+                $this->item('Users', 'user', 'admin.users', 'admin.users', 'users.view'),
+                $this->item('Duty schedule', 'calendar', 'admin.schedule', 'admin.schedule', 'users.view'),
                 $this->item('Call review', 'inbox', 'admin.calls.review', 'admin.calls.review', 'calls.update'),
                 $this->item('Escalations', 'alert', 'admin.escalations', 'admin.escalations', 'escalations.view'),
                 $this->item('Billing', 'card', 'admin.billing', 'admin.billing', 'billing.view'),
+                $this->item('Website enquiries', 'chat', 'admin.enquiries', 'admin.enquiries', 'marketing.view'),
                 $this->item('Audit log', 'shield', 'admin.audit', 'admin.audit', 'audit_logs.view'),
-                $this->classic('Dashboard & new users', 'chart', 'admin.dashboard', 'users.create'),
-                $this->classic('Users', 'user', 'admin.users.index', 'users.view'),
-                $this->classic('Duty schedules', 'calendar', 'duty-schedules.index', 'users.view'),
-                $this->classic('Contact forms', 'chat', 'admin.contact-submissions.index', 'dashboard.view'),
                 $this->item('Agent workspace', 'phone', 'agent.home', 'agent.*', 'calls.create'),
             ],
             'agent' => [
-                $this->item('Businesses', 'building', 'agent.home', 'agent.*', 'calls.create'),
-                $this->classic('Classic call form', 'phone', 'admin.agent-dashboard', 'calls.create'),
-                $this->classic('My duty schedule', 'calendar', 'duty-schedules.index', null),
+                $this->item('Businesses', 'building', 'agent.home', 'agent.home|agent.businesses.*', 'calls.create'),
+                $this->item('My calls', 'phone', 'agent.calls', 'agent.calls*', 'calls.create'),
+                $this->item('My schedule', 'calendar', 'agent.schedule', 'agent.schedule', null),
             ],
             default => [],
         };
@@ -69,7 +68,7 @@ class PortalNavigation
             }
 
             $item['url'] = $item['route'] && Route::has($item['route']) ? route($item['route']) : null;
-            $item['current'] = $item['route'] !== null && request()->routeIs($item['active']);
+            $item['current'] = $item['route'] !== null && request()->routeIs(...explode('|', $item['active']));
             $items[] = $item;
         }
 
@@ -79,12 +78,6 @@ class PortalNavigation
     private function item(string $label, string $icon, string $route, string $active, ?string $permission): array
     {
         return compact('label', 'icon', 'route', 'active', 'permission') + ['status' => 'live'];
-    }
-
-    /** A screen from the previous admin console, linked until it is rebuilt in this shell. */
-    private function classic(string $label, string $icon, string $route, ?string $permission): array
-    {
-        return ['label' => $label, 'icon' => $icon, 'route' => $route, 'active' => $route, 'permission' => $permission, 'status' => 'classic'];
     }
 
     private function soon(string $label, string $icon): array

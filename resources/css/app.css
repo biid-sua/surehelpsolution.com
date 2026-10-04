@@ -145,6 +145,28 @@
 .fc .fc-list-event.tone-completed .fc-list-event-dot { border-color: #10b981; }
 .fc .fc-list-event.tone-danger .fc-list-event-dot { border-color: #ef4444; }
 
-/* Busy time from a connected calendar: shaded, not clickable. */
-.fc .fc-bg-event.busy-block { background: rgb(148 163 184 / 0.18); opacity: 1; }
-.fc .fc-bg-event.busy-block .fc-event-title { color: var(--color-subtle); font-size: 0.7rem; font-style: normal; }
+/* Calendar sources (CalendarSources): one colour per source, used by chips, tags and busy blocks. */
+.src-dot-surehelp { background: var(--color-brand-400); }
+.src-dot-visits { background: #10b981; }
+.src-dot-google { background: #4285f4; }
+.src-dot-microsoft { background: #0ea5e9; }
+
+.fc-src-event { display: flex; min-width: 0; flex-direction: column; gap: 0.125rem; padding: 0.0625rem 0.125rem; overflow: hidden; }
+.fc-src-line { display: flex; min-width: 0; gap: 0.25rem; }
+.fc-src-time { flex-shrink: 0; font-variant-numeric: tabular-nums; opacity: 0.85; }
+.fc-src-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.fc-src-tags { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.fc-src-tag { border-radius: 9999px; padding: 0 0.375rem; font-size: 0.625rem; font-weight: 600; line-height: 1rem; letter-spacing: 0.01em; background: rgb(255 255 255 / 0.14); color: #fff; }
+.fc-src-tag.src-tag-google { background: #1a56c4; }
+.fc-src-tag.src-tag-microsoft { background: #0369a1; }
+.fc-src-tag.src-tag-surehelp { background: rgb(255 255 255 / 0.18); }
+.fc-src-tag.src-tag-visits { background: #065f46; }
+.fc-src-tag.is-conflict { background: #b45309; }
+.fc-timegrid-event .fc-src-tags { flex-wrap: nowrap; overflow: hidden; }
+.fc-list-event .fc-src-event { flex-direction: row; align-items: center; gap: 0.5rem; }
+
+/* Busy time from a connected calendar: muted, striped in the provider's colour, not clickable. */
+.fc .fc-event.busy-block { --fc-event-bg-color: rgb(148 163 184 / 0.14); --fc-event-border-color: rgb(148 163 184 / 0.3); --fc-event-text-color: var(--color-muted); cursor: default; border-left-width: 3px; }
+.fc .fc-event.busy-block.src-google { --fc-event-border-color: #4285f4; }
+.fc .fc-event.busy-block.src-microsoft { --fc-event-border-color: #0ea5e9; }
+.fc .fc-daygrid-dot-event.busy-block .fc-src-event { color: var(--color-muted); }

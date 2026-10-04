@@ -1,5 +1,7 @@
 # Current State
 
+> **Historical snapshot** from the Phase 0 audit. The screens described here were replaced and deleted (decisions D23: one UI). For what exists today, see [ui.md](ui.md) and [project-status.md](project-status.md).
+
 _Snapshot 2026-10-03. Describes what the application **actually does today**. Risks and recommendations are in [architecture-audit.md](architecture-audit.md)._
 
 ---
