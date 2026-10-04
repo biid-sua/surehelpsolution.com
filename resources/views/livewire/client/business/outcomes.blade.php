@@ -43,7 +43,7 @@
                             <td class="whitespace-nowrap text-right">
                                 <x-ui.button variant="ghost" size="sm" wire:click="startRename('{{ $outcome['key'] }}')">Rename</x-ui.button>
                                 @if ($outcome['custom'])
-                                    <x-ui.button variant="ghost" size="sm" wire:click="delete('{{ $outcome['key'] }}')">Delete</x-ui.button>
+                                    <x-ui.button variant="ghost" size="sm" wire:click="delete('{{ $outcome['key'] }}')" wire:confirm="Delete this outcome?">Delete</x-ui.button>
                                 @endif
                             </td>
                         @endif

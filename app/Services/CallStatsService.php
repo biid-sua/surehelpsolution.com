@@ -165,7 +165,6 @@ class CallStatsService
         return [
             'total_calls' => $query()->count(),
             'service_requests' => $query()->where('service_request', true)->count(),
-            // Agents work across businesses, so use every key in the category (spec §14 categories).
             'schedules' => $query()->whereIn('call_outcome', app(CallOutcomes::class)->keys(null, OutcomeCategory::Booked))->count(),
             'callbacks' => $query()->whereIn('call_outcome', app(CallOutcomes::class)->keys(null, OutcomeCategory::Callback))->count(),
         ];

@@ -2,13 +2,17 @@
 
 use App\Http\Controllers\Api\AdminDashboardController;
 use App\Http\Controllers\Api\AgentDashboardController;
+use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClientBusinessController;
 use App\Http\Controllers\Api\ClientDashboardController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\DutyScheduleController;
+use App\Http\Controllers\Api\EscalationController;
+use App\Http\Controllers\Api\KnowledgeController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\TaskController;
 use Illuminate\Support\Facades\Route;
 
 // Public API routes (no authentication required)
@@ -39,9 +43,29 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
         });
         Route::get('/business', [ClientBusinessController::class, 'show'])->middleware('can:organization.view');
         Route::get('/services', [ClientBusinessController::class, 'services'])->middleware('can:organization.view');
+        Route::get('/knowledge', [KnowledgeController::class, 'index'])->middleware('can:knowledge_base.view');
+        Route::get('/rules', [KnowledgeController::class, 'rules'])->middleware('can:organization.view');
         Route::middleware('can:customers.view')->group(function () {
             Route::get('/customers', [CustomerController::class, 'index']);
             Route::get('/customers/{ulid}', [CustomerController::class, 'show']);
+        });
+        Route::get('/tasks', [TaskController::class, 'index'])->middleware('can:tasks.view');
+        Route::post('/tasks', [TaskController::class, 'store'])->middleware('can:tasks.create');
+        Route::get('/tasks/{ulid}', [TaskController::class, 'show'])->middleware('can:tasks.view');
+        Route::patch('/tasks/{ulid}', [TaskController::class, 'update'])->middleware('can:tasks.update');
+        Route::middleware('can:appointments.view')->group(function () {
+            Route::get('/appointments', [AppointmentController::class, 'index']);
+            Route::get('/availability', [AppointmentController::class, 'availability']);
+            Route::get('/appointments/{ulid}', [AppointmentController::class, 'show']);
+        });
+        Route::post('/appointments', [AppointmentController::class, 'store'])->middleware('can:appointments.create');
+        Route::patch('/appointments/{ulid}', [AppointmentController::class, 'update'])->middleware('can:appointments.view');
+        Route::get('/escalations', [EscalationController::class, 'index'])->middleware('can:escalations.view');
+        Route::get('/escalations/{ulid}', [EscalationController::class, 'show'])->middleware('can:escalations.view');
+        Route::middleware('can:escalations.resolve')->group(function () {
+            Route::post('/escalations/{ulid}/acknowledge', [EscalationController::class, 'acknowledge']);
+            Route::post('/escalations/{ulid}/assign', [EscalationController::class, 'assign']);
+            Route::post('/escalations/{ulid}/resolve', [EscalationController::class, 'resolve']);
         });
         Route::get('/profile', [ClientDashboardController::class, 'getProfile']);
         Route::put('/profile', [ClientDashboardController::class, 'updateProfile']);

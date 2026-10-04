@@ -43,7 +43,7 @@ class CallOutcomes
 
     public function isAllowed(Organization|int|null $organization, ?string $key): bool
     {
-        return $key !== null && (bool) ($this->active($organization)->get($key)['is_active'] ?? false);
+        return $key !== null && $this->active($organization)->has($key);
     }
 
     /**

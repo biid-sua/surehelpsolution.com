@@ -528,6 +528,16 @@ class ClientDashboardController extends Controller
     }
 
     /**
+     * Outcome keys that mean "booked" for this business, including its own outcomes (spec §14).
+     *
+     * @return list<string>
+     */
+    private function bookedKeys(): array
+    {
+        return app(CallOutcomes::class)->keys(app(CurrentOrganization::class)->id(), OutcomeCategory::Booked);
+    }
+
+    /**
      * Get event type from status for calendar styling
      */
     private function getEventTypeFromStatus($log)

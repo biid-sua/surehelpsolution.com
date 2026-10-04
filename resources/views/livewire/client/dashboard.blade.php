@@ -14,12 +14,21 @@
         </x-slot:actions>
     </x-ui.page-header>
 
+    {{-- Escalations come first: someone is waiting on the business (spec §25). --}}
+    @if ($activeEscalations > 0)
+        <div class="mb-4">
+            <x-ui.alert tone="danger" title="{{ $activeEscalations }} {{ \Illuminate\Support\Str::plural('escalation', $activeEscalations) }} need{{ $activeEscalations === 1 ? 's' : '' }} your attention">
+                Our team flagged {{ $activeEscalations === 1 ? 'a call' : 'calls' }} only you can deal with. <a href="{{ route('app.escalations.index') }}" class="font-semibold underline underline-offset-2">Open escalations</a>
+            </x-ui.alert>
+        </div>
+    @endif
+
     {{-- Alerts: only real, actionable conditions (spec §8.1). --}}
     @if ($kpis['follow_ups']['value'] > 0 || ($period === 'today' && $kpis['missed']['value'] > 0))
         <div class="mb-6 space-y-3">
             @if ($kpis['follow_ups']['value'] > 0)
                 <x-ui.alert tone="warning" title="{{ $kpis['follow_ups']['value'] }} {{ \Illuminate\Support\Str::plural('caller', $kpis['follow_ups']['value']) }} waiting for a follow-up">
-                    Callers asked to be called back. <a href="{{ route('app.calls.index', ['view' => 'follow_up']) }}" class="font-semibold underline underline-offset-2">Review follow-ups</a>
+                    Callers asked to be called back. <a href="{{ route('app.tasks.index') }}" class="font-semibold underline underline-offset-2">Open tasks</a>
                 </x-ui.alert>
             @endif
             @if ($period === 'today' && $kpis['missed']['value'] > 0)
@@ -46,7 +55,7 @@
             <x-ui.stat label="Missed / dropped" icon="phone-x" :value="number_format($kpis['missed']['value'])" :change="$kpis['missed']['change']"
                 :invert="true" hint="vs previous" :href="route('app.calls.index', ['view' => 'missed'])" />
             <x-ui.stat label="Pending follow-ups" icon="callback" :value="number_format($kpis['follow_ups']['value'])"
-                hint="open right now" :href="route('app.calls.index', ['view' => 'follow_up'])" class="col-span-2 lg:col-span-1" />
+                hint="open right now" :href="route('app.tasks.index')" class="col-span-2 lg:col-span-1" />
         </div>
 
         <div class="mt-6 grid gap-6 lg:grid-cols-3">
@@ -64,15 +73,15 @@
             </x-ui.card>
 
             {{-- Today's schedule --}}
-            <x-ui.card title="Today's schedule" description="Service visits booked for today" :padding="false">
+            <x-ui.card title="Today's schedule" description="Appointments and visits booked for today" :padding="false">
                 @forelse ($schedule as $visit)
-                    <a href="{{ route('app.calls.show', $visit->call_id) }}" class="flex items-start gap-3 border-b border-line px-5 py-3 last:border-0 hover:bg-surface-2">
-                        <span class="mt-0.5 rounded-md bg-brand-500/15 px-2 py-1 text-xs font-semibold text-brand-300 tabular-nums">{{ $visit->service_window ?: 'Any time' }}</span>
+                    <a href="{{ $visit['url'] }}" class="flex items-start gap-3 border-b border-line px-5 py-3 last:border-0 hover:bg-surface-2">
+                        <span class="mt-0.5 rounded-md bg-brand-500/15 px-2 py-1 text-xs font-semibold text-brand-300 tabular-nums">{{ $visit['time'] }}</span>
                         <div class="min-w-0 flex-1">
-                            <p class="truncate text-sm font-medium text-ink">{{ \App\Models\CallLog::display($visit->caller_name) }}</p>
-                            <p class="truncate text-xs text-muted">{{ \App\Models\CallLog::display($visit->service_location) }}</p>
+                            <p class="truncate text-sm font-medium text-ink">{{ $visit['title'] }}</p>
+                            <p class="truncate text-xs text-muted">{{ $visit['subtitle'] }}</p>
                         </div>
-                        <x-ui.badge :tone="$visit->statusTone()">{{ $visit->statusLabel() }}</x-ui.badge>
+                        <x-ui.badge :tone="$visit['tone']">{{ $visit['status'] }}</x-ui.badge>
                     </a>
                 @empty
                     <x-ui.empty-state icon="calendar" title="Nothing scheduled today"

@@ -1175,19 +1175,9 @@
                                             <label class="form-label">Reason for Call</label>
                                             <select class="form-select" id="reasonForCall">
                                                 <option value="">Select reason...</option>
-                                                <option value="general-inquiry">General Inquiry</option>
-                                                <option value="service-request">Service Request</option>
-                                                <option value="appointment-scheduling">Appointment Scheduling</option>
-                                                <option value="billing-question">Billing Question</option>
-                                                <option value="technical-support">Technical Support</option>
-                                                <option value="emergency-service">Emergency Service Request</option>
-                                                <option value="reschedule-appointment">Reschedule Appointment</option>
-                                                <option value="cancel-appointment">Cancel Appointment</option>
-                                                <option value="service-followup">Service Follow-up</option>
-                                                <option value="feedback">Product/Service Feedback</option>
-                                                <option value="complaint">Complaint</option>
-                                                <option value="wrong-number">Wrong Number / Spam</option>
-                                                <option value="other">Other (Specify in Notes)</option>
+                                                @foreach (\App\Models\CallLog::REASONS as $reasonKey => $reasonLabel)
+                                                    <option value="{{ $reasonKey }}">{{ $reasonLabel }}</option>
+                                                @endforeach
                                             </select>
                                         </div>
                                         
@@ -1196,13 +1186,25 @@
                                             <label class="form-label">Call Outcome</label>
                                             <select class="form-select" id="callOutcome">
                                                 <option value="">Select outcome...</option>
-                                                {{-- Platform outcomes (spec §14); replaced by the business's own list once a client is picked. --}}
+                                                {{-- Platform outcomes; replaced by the selected business's own list (spec §14). --}}
                                                 @foreach (app(\App\Services\Calls\CallOutcomes::class)->active(null) as $outcome)
-                                                    <option value="{{ $outcome['key'] }}">{{ $outcome['label'] }}</option>
+                                                    <option value="{{ $outcome['key'] }}" data-category="{{ $outcome['category']->value }}">{{ $outcome['label'] }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
                                         
+                                        <!-- Escalation detail: shown for outcomes that escalate to the business (spec §25) -->
+                                        <div class="col-12" id="escalationFields" style="display: none;">
+                                            <label class="form-label" for="escalationType">What kind of escalation?</label>
+                                            <select class="form-select" id="escalationType">
+                                                @foreach (\App\Enums\EscalationType::cases() as $escalationType)
+                                                    @continue($escalationType === \App\Enums\EscalationType::AiUncertainty)
+                                                    <option value="{{ $escalationType->value }}">{{ $escalationType->label() }}</option>
+                                                @endforeach
+                                            </select>
+                                            <small class="text-muted">Urgent issues and emergencies alert the business immediately.</small>
+                                        </div>
+
                                         <!-- Agent Name -->
                                         <div class="col-12">
                                             <label class="form-label">Agent Name</label>
@@ -1818,6 +1820,30 @@
                 });
             }
 
+            // Each business has its own call outcomes; fall back to the platform list.
+            const outcomeSelect = document.getElementById('callOutcome');
+            const defaultOutcomeOptions = outcomeSelect.innerHTML;
+            function setOutcomeOptions(outcomes) {
+                const current = outcomeSelect.value;
+                if (!Array.isArray(outcomes) || outcomes.length === 0) {
+                    outcomeSelect.innerHTML = defaultOutcomeOptions;
+                } else {
+                    outcomeSelect.innerHTML = '<option value="">Select outcome...</option>';
+                    outcomes.forEach(o => { const opt = new Option(o.label, o.key); opt.dataset.category = o.category; outcomeSelect.add(opt); });
+                }
+                outcomeSelect.value = [...outcomeSelect.options].some(o => o.value === current) ? current : '';
+                toggleEscalationFields();
+            }
+
+            const escalationFields = document.getElementById('escalationFields');
+            function isEscalationOutcome() {
+                return outcomeSelect.selectedOptions[0]?.dataset.category === 'escalated';
+            }
+            function toggleEscalationFields() {
+                escalationFields.style.display = isEscalationOutcome() ? '' : 'none';
+            }
+            outcomeSelect.addEventListener('change', toggleEscalationFields);
+
             // Select a client
             function selectClient(optionElement) {
                 const clientId = optionElement.dataset.clientId;
@@ -1831,7 +1857,7 @@
                     selectedClientEmail.textContent = client.email;
                     selectedClientId.value = client.id; // Store actual client ID
                     setOutcomeOptions(client.call_outcomes);
-
+                    
                     // Show selected client and hide search
                     selectedClient.style.display = 'flex';
                     clientSearch.style.display = 'none';
@@ -2005,6 +2031,9 @@
                 formData.append('caller_email', document.getElementById('callerEmail').value);
                 formData.append('reason_for_call', document.getElementById('reasonForCall').value);
                 formData.append('call_outcome', document.getElementById('callOutcome').value);
+                if (isEscalationOutcome()) {
+                    formData.append('escalation_type', document.getElementById('escalationType').value);
+                }
                 formData.append('agent_name', document.getElementById('agentName').value);
                 formData.append('status', document.getElementById('callStatus').value);
                 formData.append('service_request', document.getElementById('serviceRequest').value === 'yes' ? '1' : '0');
@@ -2045,6 +2074,7 @@
                     
                     // Reset form, keeping the server-assigned ID of the call just saved visible
                     this.reset();
+                    document.getElementById('escalationFields').style.display = 'none';
                     document.getElementById('callId').value = '';
                     document.getElementById('callId').placeholder = 'Last saved: ' + result.call_id;
                     document.getElementById('callDate').value = new Date().toISOString().split('T')[0];

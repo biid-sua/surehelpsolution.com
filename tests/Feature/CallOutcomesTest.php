@@ -14,6 +14,7 @@ use App\Services\Calls\CallOutcomes;
 use App\Services\Metrics\ClientMetrics;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Testing\TestResponse;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -41,7 +42,15 @@ class CallOutcomesTest extends TestCase
         return [$owner, app(ProvisionUserTenancy::class)->handle($owner)];
     }
 
-    private function postCall(User $client, string $outcome)
+    private function member(Organization $organization, string $role): User
+    {
+        $user = User::factory()->create(['role' => 'client', 'is_active' => true, 'must_change_password' => false]);
+        $organization->members()->attach($user->id, ['role' => $role, 'status' => 'active']);
+
+        return $user;
+    }
+
+    private function postCall(User $client, string $outcome): TestResponse
     {
         return $this->actingAs($this->agent)->postJson(route('admin.call-logs.store'), [
             'client_id' => (string) $client->id,
@@ -59,6 +68,11 @@ class CallOutcomesTest extends TestCase
         return $registry;
     }
 
+    private function custom(Organization $organization, string $key, string $label, string $category, bool $active = true): void
+    {
+        CallOutcome::create(['organization_id' => $organization->id, 'key' => $key, 'label' => $label, 'category' => $category, 'is_active' => $active]);
+    }
+
     public function test_platform_defaults_are_seeded_with_categories(): void
     {
         $defaults = $this->registry()->effective(null);
@@ -74,9 +88,9 @@ class CallOutcomesTest extends TestCase
         [, $org] = $this->business();
         [, $other] = $this->business();
 
-        CallOutcome::create(['organization_id' => $org->id, 'key' => 'scheduled-appointment', 'label' => 'Job booked', 'category' => 'spam', 'is_active' => true]);
-        CallOutcome::create(['organization_id' => $org->id, 'key' => 'wrong-number', 'label' => 'Wrong number', 'category' => 'spam', 'is_active' => false]);
-        CallOutcome::create(['organization_id' => $org->id, 'key' => 'custom-sent-price-list', 'label' => 'Sent price list', 'category' => 'information']);
+        $this->custom($org, 'scheduled-appointment', 'Job booked', 'spam');
+        $this->custom($org, 'wrong-number', 'Wrong number', 'spam', false);
+        $this->custom($org, 'custom-sent-price-list', 'Sent price list', 'information');
 
         $registry = $this->registry();
         $mine = $registry->effective($org);
@@ -88,7 +102,7 @@ class CallOutcomesTest extends TestCase
         $this->assertSame('custom-sent-price-list', $mine->keys()->last(), 'custom outcomes come after defaults');
 
         // Another business is untouched.
-        $this->assertNotSame('Job booked', $registry->label($other, 'scheduled-appointment'));
+        $this->assertSame('Appointment booked', $registry->label($other, 'scheduled-appointment'));
         $this->assertTrue($registry->isAllowed($other, 'wrong-number'));
         $this->assertFalse($registry->isAllowed($other, 'custom-sent-price-list'));
     }
@@ -96,8 +110,8 @@ class CallOutcomesTest extends TestCase
     public function test_calls_only_accept_the_businesss_active_outcomes(): void
     {
         [$owner, $org] = $this->business();
-        CallOutcome::create(['organization_id' => $org->id, 'key' => 'custom-sent-price-list', 'label' => 'Sent price list', 'category' => 'information']);
-        CallOutcome::create(['organization_id' => $org->id, 'key' => 'wrong-number', 'label' => 'Wrong number', 'category' => 'spam', 'is_active' => false]);
+        $this->custom($org, 'custom-sent-price-list', 'Sent price list', 'information');
+        $this->custom($org, 'wrong-number', 'Wrong number', 'spam', false);
 
         $this->postCall($owner, 'custom-sent-price-list')->assertOk();
         $this->postCall($owner, 'wrong-number')->assertStatus(422)->assertJsonValidationErrors('call_outcome');
@@ -109,8 +123,8 @@ class CallOutcomesTest extends TestCase
     public function test_custom_outcome_category_drives_notifications_and_metrics(): void
     {
         [$owner, $org] = $this->business();
-        CallOutcome::create(['organization_id' => $org->id, 'key' => 'custom-no-show', 'label' => 'Caller hung up', 'category' => 'missed']);
-        CallOutcome::create(['organization_id' => $org->id, 'key' => 'custom-quote-booked', 'label' => 'Quote visit booked', 'category' => 'booked']);
+        $this->custom($org, 'custom-no-show', 'Caller hung up', 'missed');
+        $this->custom($org, 'custom-quote-booked', 'Quote visit booked', 'booked');
 
         $this->postCall($owner, 'custom-no-show')->assertOk();
         $this->postCall($owner, 'custom-quote-booked')->assertOk();
@@ -119,6 +133,7 @@ class CallOutcomesTest extends TestCase
         $this->assertSame(OutcomeCategory::Missed, $missed->outcomeCategory());
         $this->assertSame(NotificationEvent::CallMissed, OutcomeCategory::Missed->notificationEvent());
         $this->assertSame('Caller hung up', $missed->statusLabel());
+        $this->assertSame('danger', $missed->statusTone());
 
         $this->registry();
         $kpis = app(ClientMetrics::class)->kpis($org, 'month');
@@ -150,6 +165,7 @@ class CallOutcomesTest extends TestCase
         $this->assertFalse($registry->isAllowed($org, 'wrong-number'));
         $this->assertTrue($registry->isAllowed($org, 'custom-sent-price-list'));
         $this->assertDatabaseHas('audit_logs', ['action' => 'call_outcome.created', 'organization_id' => $org->id]);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'call_outcome.updated', 'organization_id' => $org->id]);
 
         // Platform rows are never edited by a business.
         $this->assertSame('Appointment booked', CallOutcome::whereNull('organization_id')->where('key', 'scheduled-appointment')->value('label'));
@@ -161,7 +177,7 @@ class CallOutcomesTest extends TestCase
     public function test_used_custom_outcomes_cannot_be_deleted(): void
     {
         [$owner, $org] = $this->business();
-        CallOutcome::create(['organization_id' => $org->id, 'key' => 'custom-sent-price-list', 'label' => 'Sent price list', 'category' => 'information']);
+        $this->custom($org, 'custom-sent-price-list', 'Sent price list', 'information');
         $this->postCall($owner, 'custom-sent-price-list')->assertOk();
 
         $this->actingAs($owner);
@@ -169,17 +185,11 @@ class CallOutcomesTest extends TestCase
         $this->assertDatabaseHas('call_outcomes', ['organization_id' => $org->id, 'key' => 'custom-sent-price-list']);
     }
 
-    public function test_manager_manages_outcomes_and_staff_cannot_open(): void
+    public function test_managers_manage_outcomes_and_staff_cannot_open(): void
     {
         [, $org] = $this->business();
-        $member = function (string $role) use ($org): User {
-            $user = User::factory()->create(['role' => 'client', 'is_active' => true, 'must_change_password' => false]);
-            $org->members()->attach($user->id, ['role' => $role, 'status' => 'active']);
-
-            return $user;
-        };
-        $manager = $member('manager');
-        $staff = $member('staff');
+        $manager = $this->member($org, 'manager');
+        $staff = $this->member($org, 'staff');
 
         $this->actingAs($manager)->get(route('app.business.outcomes'))->assertOk()->assertSee('Add your own outcome');
         Livewire::test(Outcomes::class)->call('toggle', 'wrong-number')->assertOk();
@@ -188,15 +198,17 @@ class CallOutcomesTest extends TestCase
         $this->actingAs($staff)->get(route('app.business.outcomes'))->assertForbidden();
     }
 
-    public function test_agent_client_list_carries_each_businesss_outcomes(): void
+    public function test_agent_client_lists_carry_each_businesss_outcomes(): void
     {
         [$owner, $org] = $this->business();
-        CallOutcome::create(['organization_id' => $org->id, 'key' => 'custom-sent-price-list', 'label' => 'Sent price list', 'category' => 'information']);
+        $this->custom($org, 'custom-sent-price-list', 'Sent price list', 'information');
+        $this->custom($org, 'wrong-number', 'Wrong number', 'spam', false);
 
         $clients = $this->actingAs($this->agent)->getJson(route('admin.clients.list'))->assertOk()->json('clients');
-        $row = collect($clients)->firstWhere('id', $owner->id);
+        $keys = array_column(collect($clients)->firstWhere('id', $owner->id)['call_outcomes'], 'key');
 
-        $this->assertContains('custom-sent-price-list', array_column($row['call_outcomes'], 'key'));
+        $this->assertContains('custom-sent-price-list', $keys);
+        $this->assertNotContains('wrong-number', $keys);
     }
 
     public function test_admin_success_rate_counts_booked_and_information_outcomes(): void

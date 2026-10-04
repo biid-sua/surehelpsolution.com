@@ -8,6 +8,7 @@ use App\Models\Concerns\BelongsToOrganization;
 use App\Services\Calls\CallOutcomes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -57,6 +58,25 @@ class CallLog extends Model
         'followup-scheduled' => 'Follow-Up Scheduled',
     ];
 
+    /**
+     * Reasons agents choose from (the call form, rules and reports share this list).
+     */
+    public const REASONS = [
+        'general-inquiry' => 'General inquiry',
+        'service-request' => 'Service request',
+        'appointment-scheduling' => 'Appointment scheduling',
+        'billing-question' => 'Billing question',
+        'technical-support' => 'Technical support',
+        'emergency-service' => 'Emergency service request',
+        'reschedule-appointment' => 'Reschedule appointment',
+        'cancel-appointment' => 'Cancel appointment',
+        'service-followup' => 'Service follow-up',
+        'feedback' => 'Product or service feedback',
+        'complaint' => 'Complaint',
+        'wrong-number' => 'Wrong number / spam',
+        'other' => 'Other',
+    ];
+
     protected $fillable = [
         'call_id',
         'client_id',
@@ -97,6 +117,26 @@ class CallLog extends Model
     }
 
     /**
+     * Tasks created from this call (call-backs, spec §24).
+     *
+     * @return HasMany<Task, $this>
+     */
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(Task::class, 'call_log_id');
+    }
+
+    /**
+     * Escalations raised from this call (spec §25).
+     *
+     * @return HasMany<Escalation, $this>
+     */
+    public function escalations(): HasMany
+    {
+        return $this->hasMany(Escalation::class, 'call_log_id');
+    }
+
+    /**
      * Get the user that owns the call log.
      */
     public function user(): BelongsTo
@@ -116,19 +156,21 @@ class CallLog extends Model
             return self::STATUS_LABELS['completed'];
         }
 
+        $outcome = $this->call_outcome ? app(CallOutcomes::class)->effective($this->organization_id)->get($this->call_outcome) : null;
+
         // The business's own wording wins: its custom outcomes and renamed defaults.
-        $outcomes = app(CallOutcomes::class);
-        $label = $outcomes->label($this->organization_id, $this->call_outcome);
-        if ($label !== null && $label !== $outcomes->label(null, $this->call_outcome)) {
-            return $label;
+        if ($outcome && ($outcome['custom'] || $outcome['overridden'])) {
+            return $outcome['label'];
         }
 
         if (isset(self::OUTCOME_LABELS[$this->call_outcome])) {
             return self::OUTCOME_LABELS[$this->call_outcome];
         }
 
-        if ($badge = $this->outcomeCategory()?->badge()) {
-            return $badge;
+        // Categories that say more than the status does (booked, callback, escalated, missed, spam).
+        $category = $outcome['category'] ?? null;
+        if ($category && ! in_array($category, [OutcomeCategory::Information, OutcomeCategory::Other], true)) {
+            return $category->badge();
         }
 
         if ($this->service_date) {
@@ -150,9 +192,18 @@ class CallLog extends Model
             'Completed' => 'completed',
             'Scheduled', 'Follow-Up Scheduled' => 'scheduled',
             'In Progress', 'Callback Requested' => 'progress',
-            'Dropped', 'No Response', 'Cancelled', 'Spam' => 'danger',
+            'Dropped', 'No Response', 'Cancelled', 'Spam', 'Missed' => 'danger',
+            'Escalated' => 'progress',
             default => $this->outcomeCategory()?->tone() ?? 'neutral',
         };
+    }
+
+    /**
+     * What this call's outcome means for its business; null for unknown legacy values.
+     */
+    public function outcomeCategory(): ?OutcomeCategory
+    {
+        return app(CallOutcomes::class)->category($this->organization_id, $this->call_outcome);
     }
 
     /**
@@ -163,14 +214,6 @@ class CallLog extends Model
         return $this->service_request
             || $this->service_date !== null
             || $this->outcomeCategory() === OutcomeCategory::Booked;
-    }
-
-    /**
-     * What the outcome means for this business (booked, callback, missed, …); null for unknown legacy values.
-     */
-    public function outcomeCategory(): ?OutcomeCategory
-    {
-        return app(CallOutcomes::class)->category($this->organization_id, $this->call_outcome);
     }
 
     /**

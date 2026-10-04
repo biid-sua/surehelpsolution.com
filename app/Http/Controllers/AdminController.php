@@ -259,6 +259,7 @@ class AdminController extends Controller
             $outcomes = app(CallOutcomes::class);
             $clients = User::clientsVisibleTo(Auth::user())
                 ->select('id', 'name', 'email', 'phone', 'unique_id')
+                ->with(['organizations' => fn ($q) => $q->wherePivot('status', 'active')->orderBy('organizations.id')])
                 ->orderBy('name')
                 ->get()
                 ->map(function ($user) use ($outcomes) {
@@ -268,7 +269,8 @@ class AdminController extends Controller
                         'name' => $user->name,
                         'email' => $user->email,
                         'phone' => $user->phone ?? '',
-                        'call_outcomes' => $outcomes->menu($user->primaryOrganization()),
+                        // The outcomes this business offers, for the call form (spec §14).
+                        'call_outcomes' => $outcomes->menu($user->organizations->first()),
                     ];
                 });
 

@@ -49,6 +49,22 @@
                 </x-ui.card>
             @endif
 
+            @foreach ($callEscalations as $escalation)
+                <x-ui.card title="Escalation">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <x-ui.badge :tone="$escalation->priority->tone()">{{ $escalation->priority->label() }}</x-ui.badge>
+                        <x-ui.badge :tone="$escalation->status->tone()">{{ $escalation->status->label() }}</x-ui.badge>
+                    </div>
+                    <p class="mt-2 text-sm font-medium text-ink">{{ $escalation->type->label() }}</p>
+                    @if ($escalation->resolution_notes)<p class="mt-1 whitespace-pre-line text-sm text-muted">{{ $escalation->resolution_notes }}</p>@endif
+                    <x-ui.button class="mt-4 w-full" variant="secondary" size="sm" :href="route('app.escalations.index', ['escalation' => $escalation->ulid])">Open escalation</x-ui.button>
+                </x-ui.card>
+            @endforeach
+
+            @if ($callTasks !== null && $callTasks->isNotEmpty())
+                @include('livewire.client.tasks._card', ['cardTasks' => $callTasks])
+            @endif
+
             <x-ui.card title="Service visit">
                 @if ($call->hasScheduledService())
                     <dl class="space-y-4">

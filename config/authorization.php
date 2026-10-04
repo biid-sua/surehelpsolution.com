@@ -23,6 +23,7 @@ $all = [
     'calendar.view', 'calendar.manage',
     'messages.view', 'messages.send',
     'tasks.view', 'tasks.create', 'tasks.update',
+    'escalations.view', 'escalations.create', 'escalations.resolve',
     'knowledge_base.view', 'knowledge_base.manage',
     'ai.view', 'ai.manage',
     'integrations.view', 'integrations.manage',
@@ -48,6 +49,7 @@ $agentWork = [
     'calendar.view',
     'messages.view', 'messages.send',
     'tasks.view', 'tasks.create', 'tasks.update',
+    'escalations.view', 'escalations.create',
     'knowledge_base.view',
 ];
 
@@ -82,6 +84,7 @@ return [
                 'dashboard.view', 'organization.view', 'users.view',
                 'customers.view', 'calls.view', 'appointments.view', 'calendar.view',
                 'messages.view', 'messages.send', 'tasks.view', 'tasks.create', 'tasks.update',
+                'escalations.view', 'escalations.create',
                 'knowledge_base.view', 'integrations.view', 'billing.view', 'subscriptions.view',
                 'reports.view', 'settings.view',
             ],
@@ -120,6 +123,7 @@ return [
                 'calendar.view',
                 'messages.view', 'messages.send',
                 'tasks.view', 'tasks.create', 'tasks.update',
+                'escalations.view', 'escalations.resolve',
                 'knowledge_base.view',
                 'reports.view',
             ],

@@ -55,29 +55,11 @@ class AuthController extends Controller
             ]);
         }
 
-        // Auto-redirect based on user role
-        switch ($user->role) {
-            case 'admin':
-                return response()->json([
-                    'success' => true,
-                    'redirect' => route('admin.home'),
-                ]);
-            case 'agent':
-                return response()->json([
-                    'success' => true,
-                    'redirect' => route('admin.agent-dashboard'),
-                ]);
-            case 'client':
-                return response()->json([
-                    'success' => true,
-                    'redirect' => route('app.dashboard'),
-                ]);
-            default:
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid user role',
-                ], 400);
-        }
+        // Each portal type has one home (User::homeUrl).
+        return response()->json([
+            'success' => true,
+            'redirect' => $user->homeUrl(),
+        ]);
     }
 
     /**

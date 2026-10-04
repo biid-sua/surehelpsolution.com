@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Actions\Calls\LogCall;
+use App\Actions\Escalations\RaiseEscalation;
+use App\Actions\Tasks\CreateCallbackTask;
+use App\Enums\OutcomeCategory;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCallLogRequest;
 use App\Models\CallLog;
@@ -270,7 +273,9 @@ class AgentDashboardController extends Controller
                 'notes' => 'sometimes|nullable|string',
             ]);
 
-            if ($request->has('call_outcome') && ! app(CallOutcomes::class)->isAllowed($callLog->organization_id, $request->input('call_outcome'))) {
+            // A changed outcome must be one this call's business offers (spec §14).
+            if ($request->has('call_outcome') && $request->input('call_outcome') !== $callLog->call_outcome
+                && ! app(CallOutcomes::class)->isAllowed($callLog->organization_id, (string) $request->input('call_outcome'))) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Validation failed',
@@ -285,6 +290,26 @@ class AgentDashboardController extends Controller
             ]));
 
             app(Audit::class)->changes('call.updated', $callLog);
+
+            // Changed to an outcome that needs a call back: the business gets a task (once per call).
+            if ($callLog->wasChanged('call_outcome') && $callLog->organization
+                && $callLog->outcomeCategory() === OutcomeCategory::Callback) {
+                try {
+                    app(CreateCallbackTask::class)->handle($callLog, $callLog->organization, $user);
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+            }
+
+            // Changed to an escalated outcome: the business gets an escalation (once while it is active).
+            if ($callLog->wasChanged('call_outcome') && $callLog->organization
+                && $callLog->outcomeCategory() === OutcomeCategory::Escalated) {
+                try {
+                    LogCall::escalate(app(RaiseEscalation::class), $callLog, $callLog->organization, $user);
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+            }
 
             return response()->json([
                 'success' => true,
@@ -334,6 +359,7 @@ class AgentDashboardController extends Controller
             $clients = User::clientsVisibleTo($user)
                 ->where('is_active', true)
                 ->select('id', 'name', 'email', 'phone', 'unique_id')
+                ->with(['organizations' => fn ($q) => $q->wherePivot('status', 'active')->orderBy('organizations.id')])
                 ->orderBy('name')
                 ->get()
                 ->map(function ($client) use ($outcomes) {
@@ -343,8 +369,8 @@ class AgentDashboardController extends Controller
                         'name' => $client->name,
                         'email' => $client->email,
                         'phone' => $client->phone ?? '',
-                        // Additive (D7): the outcomes agents may choose for this business.
-                        'call_outcomes' => $outcomes->menu($client->primaryOrganization()),
+                        // The outcomes this business offers, for the call form (added P2-4a).
+                        'call_outcomes' => $outcomes->menu($client->organizations->first()),
                     ];
                 });
 

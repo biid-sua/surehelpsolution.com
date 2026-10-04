@@ -29,6 +29,9 @@ All of it is evaluated in `App\Models\User::hasPermissionIn()`, registered as a 
 | calls view/create/update | ✓ | ✓ | view | ✓ | ✓ | ✓ | ✓ | view |
 | calls.recording.view | ✓ | ✓ | – | ✓ | – | ✓ | ✓ | – |
 | customers, appointments, tasks, messages | ✓ | ✓ | view (+tasks, messages) | ✓ | ✓ | ✓ | ✓ | ✓ (no delete/cancel) |
+| escalations.view | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| escalations.create (raise) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | – |
+| escalations.resolve (acknowledge, assign, resolve) | ✓ | ✓ | – | – | – | ✓ | ✓ | ✓ |
 | knowledge_base.manage | ✓ | ✓ | – | ✓ | – | ✓ | ✓ | – |
 | billing.view / subscriptions.view | ✓ | ✓ | ✓ | – | – | ✓ | ✓ | – |
 | billing.manage / subscriptions.manage | ✓ | – | – | – | – | ✓ | – | – |

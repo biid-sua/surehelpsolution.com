@@ -3,9 +3,8 @@
 namespace App\Enums;
 
 /**
- * What a call outcome *means*, independent of its wording (spec §14).
- * Metrics, filters, notifications, tasks and escalations key off the category,
- * so a business can rename or add outcomes without breaking any of them.
+ * What a call outcome means (spec §14). Every outcome, platform or custom, has one,
+ * and KPIs, filters and notifications are driven by the category, never by outcome keys.
  */
 enum OutcomeCategory: string
 {
@@ -20,45 +19,48 @@ enum OutcomeCategory: string
     public function label(): string
     {
         return match ($this) {
-            self::Booked => 'Appointment booked',
-            self::Information => 'Handled / information',
-            self::Callback => 'Needs a call back',
-            self::Escalated => 'Escalated to the business',
-            self::Missed => 'Missed / dropped',
-            self::Spam => 'Spam / wrong number',
+            self::Booked => 'Booked a job or appointment',
+            self::Information => 'Helped or informed the caller',
+            self::Callback => 'Caller needs a call back',
+            self::Escalated => 'Passed to the business urgently',
+            self::Missed => 'Missed or dropped call',
+            self::Spam => 'Spam or wrong number',
             self::Other => 'Other',
         };
     }
 
-    /** Short badge text used in call lists. */
-    public function badge(): ?string
+    /** Short status badge for call lists. */
+    public function badge(): string
     {
         return match ($this) {
             self::Booked => 'Scheduled',
+            self::Information => 'Handled',
             self::Callback => 'Callback Requested',
             self::Escalated => 'Escalated',
             self::Missed => 'Missed',
             self::Spam => 'Spam',
-            default => null, // fall back to the call status
+            self::Other => 'Handled',
         };
     }
 
+    /** Badge colour group (see CallLog::statusTone). */
     public function tone(): string
     {
         return match ($this) {
             self::Booked => 'scheduled',
             self::Callback, self::Escalated => 'progress',
             self::Missed, self::Spam => 'danger',
-            default => 'neutral',
+            self::Information, self::Other => 'neutral',
         };
     }
 
-    /** Counts as a successful call in success-rate metrics. */
+    /** Counts towards the success rate. */
     public function isSuccess(): bool
     {
-        return in_array($this, [self::Booked, self::Information], true);
+        return $this === self::Booked || $this === self::Information;
     }
 
+    /** Which notification a call with this outcome triggers (spec §27). */
     public function notificationEvent(): NotificationEvent
     {
         return match ($this) {

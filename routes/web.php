@@ -13,12 +13,18 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PasswordChangeController;
 use App\Livewire\Admin\AuditLogs;
 use App\Livewire\Admin\Calls\Review as CallReview;
+use App\Livewire\Admin\Escalations\Index as AdminEscalations;
 use App\Livewire\Admin\Home as AdminHome;
 use App\Livewire\Admin\Organizations\Index as OrganizationIndex;
 use App\Livewire\Admin\Organizations\Show as OrganizationShow;
+use App\Livewire\Agent\Home as AgentHome;
+use App\Livewire\Agent\Workspace as AgentWorkspace;
+use App\Livewire\Client\Appointments\Index as AppointmentsIndex;
 use App\Livewire\Client\Business\Hours as BusinessHoursPage;
+use App\Livewire\Client\Business\Knowledge as BusinessKnowledgePage;
 use App\Livewire\Client\Business\Outcomes as BusinessOutcomesPage;
 use App\Livewire\Client\Business\Profile as BusinessProfilePage;
+use App\Livewire\Client\Business\Rules as BusinessRulesPage;
 use App\Livewire\Client\Business\Services as BusinessServicesPage;
 use App\Livewire\Client\Calendar as ClientCalendar;
 use App\Livewire\Client\Calls\Index as ClientCalls;
@@ -26,7 +32,9 @@ use App\Livewire\Client\Calls\Show as ClientCallShow;
 use App\Livewire\Client\Customers\Index as CustomerIndex;
 use App\Livewire\Client\Customers\Show as CustomerShow;
 use App\Livewire\Client\Dashboard as ClientDashboard;
+use App\Livewire\Client\Escalations\Index as EscalationsIndex;
 use App\Livewire\Client\Settings\Notifications as NotificationSettings;
+use App\Livewire\Client\Tasks\Index as TasksIndex;
 use Illuminate\Support\Facades\Route;
 
 // Landing page
@@ -95,6 +103,9 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/calendar/events', CalendarEventsController::class)->name('calendar.events');
     });
     Route::get('/settings/notifications', NotificationSettings::class)->name('settings.notifications');
+    Route::get('/tasks', TasksIndex::class)->middleware('can:tasks.view')->name('tasks.index');
+    Route::get('/appointments', AppointmentsIndex::class)->middleware('can:appointments.view')->name('appointments.index');
+    Route::get('/escalations', EscalationsIndex::class)->middleware('can:escalations.view')->name('escalations.index');
     Route::middleware('can:customers.view')->group(function () {
         Route::get('/customers', CustomerIndex::class)->name('customers.index');
         Route::get('/customers/export', CustomerExportController::class)->name('customers.export');
@@ -105,7 +116,15 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/business/hours', BusinessHoursPage::class)->name('business.hours');
         Route::get('/business/services', BusinessServicesPage::class)->name('business.services');
         Route::get('/business/outcomes', BusinessOutcomesPage::class)->name('business.outcomes');
+        Route::get('/business/knowledge', BusinessKnowledgePage::class)->middleware('can:knowledge_base.view')->name('business.knowledge');
+        Route::get('/business/rules', BusinessRulesPage::class)->name('business.rules');
     });
+});
+
+// Agent workspace (new shell, spec §20–21) — docs/implementation-plan.md P2-7
+Route::prefix('agent')->name('agent.')->middleware(['auth.home', 'force.password.change', 'role:agent,admin'])->group(function () {
+    Route::get('/', AgentHome::class)->name('home');
+    Route::get('/businesses/{organization}', AgentWorkspace::class)->name('businesses.show');
 });
 
 // Admin console (new shell)
@@ -114,5 +133,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth.home', 'force.password
     Route::get('/organizations', OrganizationIndex::class)->name('organizations.index');
     Route::get('/organizations/{organization}', OrganizationShow::class)->name('organizations.show');
     Route::get('/calls/review', CallReview::class)->name('calls.review');
+    Route::get('/escalations', AdminEscalations::class)->middleware('can:escalations.view')->name('escalations');
     Route::get('/audit', AuditLogs::class)->middleware('can:audit_logs.view')->name('audit');
 });

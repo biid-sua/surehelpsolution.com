@@ -65,6 +65,30 @@
                 @endif
             </x-ui.card>
 
+            @if ($appointments !== null)
+                <x-ui.card title="Upcoming appointments">
+                    @forelse ($appointments as $appointment)
+                        <a href="{{ route('app.appointments.index', ['appointment' => $appointment->ulid]) }}" class="mb-3 block last:mb-0">
+                            <span class="block text-sm font-medium text-ink hover:text-brand-300">{{ $appointment->whenLabel() }}</span>
+                            <span class="block text-xs text-subtle">{{ $appointment->title }} · {{ $appointment->status->label() }}</span>
+                        </a>
+                    @empty
+                        <p class="text-sm text-muted">Nothing booked.</p>
+                    @endforelse
+                    @if ($canBook)
+                        <x-ui.button class="mt-4 w-full" variant="secondary" size="sm" icon="calendar" :href="route('app.appointments.index', ['book' => 1, 'customer' => $customer->ulid])">Book appointment</x-ui.button>
+                    @endif
+                </x-ui.card>
+            @endif
+
+            @if ($openTasks !== null)
+                @include('livewire.client.tasks._card', [
+                    'cardTasks' => $openTasks,
+                    'emptyText' => 'No open tasks for this customer.',
+                    'addUrl' => $canCreateTask ? route('app.tasks.index', ['new' => 1, 'customer' => $customer->ulid]) : null,
+                ])
+            @endif
+
             @if ($customer->notes)
                 <x-ui.card title="About this customer">
                     <p class="whitespace-pre-line text-sm text-ink">{{ $customer->notes }}</p>

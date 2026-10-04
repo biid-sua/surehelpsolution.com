@@ -3,6 +3,7 @@
 namespace App\Livewire\Client;
 
 use App\Livewire\Concerns\ScopedToOrganization;
+use App\Models\Escalation;
 use App\Services\Metrics\ClientMetrics;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Str;
@@ -48,6 +49,9 @@ class Dashboard extends Component
             'series' => $metrics->series($organization, $this->period),
             'schedule' => $metrics->todaysSchedule($organization),
             'recentCalls' => $metrics->recentCalls($organization),
+            'activeEscalations' => auth()->user()->can('escalations.view', $organization)
+                ? Escalation::query()->forOrganization($organization)->active()->count()
+                : 0,
         ]);
     }
 

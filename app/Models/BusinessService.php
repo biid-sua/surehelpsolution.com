@@ -6,6 +6,7 @@ use App\Enums\ServicePriceType;
 use App\Models\Concerns\BelongsToOrganization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -65,5 +66,13 @@ class BusinessService extends Model
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
+    }
+
+    /**
+     * @return BelongsTo<BusinessLocation, $this>
+     */
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(BusinessLocation::class, 'location_id');
     }
 }

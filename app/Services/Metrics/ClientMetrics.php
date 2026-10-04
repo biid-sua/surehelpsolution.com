@@ -2,10 +2,12 @@
 
 namespace App\Services\Metrics;
 
+use App\Enums\AppointmentStatus;
 use App\Enums\OutcomeCategory;
+use App\Models\Appointment;
 use App\Models\CallLog;
 use App\Models\Organization;
-use App\Queries\CallLogFilters;
+use App\Models\Task;
 use App\Services\Calls\CallOutcomes;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonPeriod;
@@ -60,7 +62,7 @@ class ClientMetrics
 
         // Follow-ups are a live backlog, not a period figure.
         $kpis['follow_ups'] = [
-            'value' => CallLogFilters::pendingFollowUps(CallLog::query()->forOrganization($organization), $organization)->count(),
+            'value' => Task::query()->forOrganization($organization)->open()->followUps()->count(),
             'change' => null,
         ];
 
@@ -109,19 +111,47 @@ class ClientMetrics
     }
 
     /**
-     * Service visits scheduled for today (service_date = today in the business's timezone).
+     * Today's appointments and legacy service visits, as display rows, in the business's timezone.
      *
-     * @return Collection<int, CallLog>
+     * @return \Illuminate\Support\Collection<int, array{time: string, title: string, subtitle: string, url: string, status: string, tone: string}>
      */
-    public function todaysSchedule(Organization $organization): Collection
+    public function todaysSchedule(Organization $organization): \Illuminate\Support\Collection
     {
-        $today = CarbonImmutable::now($organization->timezone ?: config('app.timezone'))->toDateString();
+        $timezone = $organization->timezoneOrDefault();
+        $today = CarbonImmutable::now($timezone);
 
-        return CallLog::query()->forOrganization($organization)
-            ->whereDate('service_date', $today)
+        $appointments = Appointment::query()->forOrganization($organization)
+            ->with('customer:id,first_name,last_name,company,phone,phone_e164')
+            ->where('status', '!=', AppointmentStatus::Cancelled->value)
+            ->whereBetween('starts_at', [$today->startOfDay()->utc(), $today->endOfDay()->utc()])
+            ->orderBy('starts_at')
+            ->limit(10)
+            ->get()
+            ->map(fn (Appointment $a) => [
+                'time' => $a->starts_at->setTimezone($timezone)->format('g:i A'),
+                'title' => $a->title,
+                'subtitle' => $a->address ?? $a->customer?->displayPhone() ?? '',
+                'url' => route('app.appointments.index', ['appointment' => $a->ulid]),
+                'status' => $a->status->label(),
+                'tone' => $a->status->tone(),
+            ]);
+
+        // Service visits noted on calls before appointments existed (D18).
+        $visits = CallLog::query()->forOrganization($organization)
+            ->whereDate('service_date', $today->toDateString())
             ->orderBy('service_window')
             ->limit(10)
-            ->get();
+            ->get()
+            ->map(fn (CallLog $call) => [
+                'time' => $call->service_window ?: 'Any time',
+                'title' => CallLog::display($call->caller_name),
+                'subtitle' => CallLog::display($call->service_location),
+                'url' => route('app.calls.show', $call->call_id),
+                'status' => $call->statusLabel(),
+                'tone' => $call->statusTone(),
+            ]);
+
+        return $appointments->concat($visits)->take(10)->values();
     }
 
     /**
@@ -142,6 +172,7 @@ class ClientMetrics
      */
     private function counts(Organization $organization, CarbonImmutable $start, CarbonImmutable $end): array
     {
+        // Booked and missed follow the business's outcome categories, including its own outcomes.
         $outcomes = app(CallOutcomes::class);
         $booked = $outcomes->keys($organization, OutcomeCategory::Booked) ?: ['__none__'];
         $missed = $outcomes->keys($organization, OutcomeCategory::Missed) ?: ['__none__'];

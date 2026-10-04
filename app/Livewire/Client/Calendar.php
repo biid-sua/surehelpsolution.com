@@ -9,7 +9,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /**
- * Service visits booked by agents. Events load per visible range from
+ * Appointments and service visits. Events load per visible range from
  * app.calendar.events. Google/Microsoft sync arrives in Phase 3.
  */
 #[Layout('layouts.portal', ['portal' => 'client'])]

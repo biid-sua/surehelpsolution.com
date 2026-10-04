@@ -17,7 +17,7 @@ use Livewire\Component;
 
 /**
  * The outcomes agents can choose for this business's calls (spec §14).
- * Defaults can be renamed or switched off; the business can add its own.
+ * Defaults can be renamed or switched off (their meaning stays fixed); the business can add its own.
  */
 #[Layout('layouts.portal', ['portal' => 'client'])]
 #[Title('Call outcomes')]
@@ -42,6 +42,7 @@ class Outcomes extends Component
     {
         $this->authorize('settings.manage', $this->organization());
         $outcome = $this->outcome($key);
+        $this->resetValidation();
         $this->renaming = $key;
         $this->renameLabel = $outcome['label'];
     }
@@ -52,11 +53,10 @@ class Outcomes extends Component
         $this->authorize('settings.manage', $organization);
         $this->validate(['renameLabel' => ['required', 'string', 'max:100']], attributes: ['renameLabel' => 'name']);
 
-        $outcome = $this->outcome((string) $this->renaming);
-        $row = $this->rowFor($outcome);
+        $row = $this->rowFor($this->outcome((string) $this->renaming));
         $row->label = trim($this->renameLabel);
         $row->save();
-        $audit->changes('call_outcome.updated', $row, ['label']);
+        $audit->changes('call_outcome.updated', $row, ['label'], $organization);
 
         $this->renaming = null;
         app(CallOutcomes::class)->forget();
@@ -71,7 +71,7 @@ class Outcomes extends Component
         $row = $this->rowFor($outcome);
         $row->is_active = ! $outcome['is_active'];
         $row->save();
-        $audit->changes('call_outcome.updated', $row, ['is_active']);
+        $audit->changes('call_outcome.updated', $row, ['is_active'], $organization);
 
         app(CallOutcomes::class)->forget();
     }
@@ -86,8 +86,13 @@ class Outcomes extends Component
             'newCategory' => ['required', Rule::enum(OutcomeCategory::class)],
         ], attributes: ['newLabel' => 'name', 'newCategory' => 'meaning']);
 
-        $key = 'custom-'.Str::limit(Str::slug($this->newLabel), 50, '');
-        if (app(CallOutcomes::class)->effective($organization)->has($key)) {
+        $slug = Str::limit(Str::slug($this->newLabel), 50, '') ?: Str::lower(Str::random(8));
+        $key = 'custom-'.$slug;
+        $registry = app(CallOutcomes::class);
+        $label = trim($this->newLabel);
+
+        if ($registry->effective($organization)->has($key)
+            || $registry->effective($organization)->contains(fn (array $o) => Str::lower($o['label']) === Str::lower($label))) {
             $this->addError('newLabel', 'You already have an outcome with this name.');
 
             return;
@@ -96,14 +101,14 @@ class Outcomes extends Component
         $row = CallOutcome::create([
             'organization_id' => $organization->id,
             'key' => $key,
-            'label' => trim($this->newLabel),
+            'label' => $label,
             'category' => $this->newCategory,
             'sort_order' => (int) CallOutcome::where('organization_id', $organization->id)->max('sort_order') + 1,
         ]);
-        $audit->record('call_outcome.created', $row, new: ['key' => $key, 'label' => $row->label, 'category' => $row->category->value], organization: $organization);
+        $audit->record('call_outcome.created', $row, new: ['key' => $key, 'label' => $label, 'category' => $row->category->value], organization: $organization, label: $label);
 
         $this->reset('newLabel', 'newCategory');
-        app(CallOutcomes::class)->forget();
+        $registry->forget();
         $this->dispatch('toast', type: 'success', message: 'Outcome added. Agents can choose it on the next call.');
     }
 
@@ -125,7 +130,7 @@ class Outcomes extends Component
         }
 
         $row->delete();
-        $audit->record('call_outcome.deleted', $row, old: ['key' => $key, 'label' => $row->label], organization: $organization);
+        $audit->record('call_outcome.deleted', $row, old: ['key' => $key, 'label' => $row->label], organization: $organization, label: $row->label);
         app(CallOutcomes::class)->forget();
     }
 
@@ -142,6 +147,7 @@ class Outcomes extends Component
 
     /**
      * The business's own row for an outcome: its custom outcome, or an override of a default.
+     * Platform rows are never edited from here.
      *
      * @param  array{key: string, label: string, category: OutcomeCategory, is_active: bool}  $outcome
      */

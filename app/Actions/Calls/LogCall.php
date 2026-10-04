@@ -4,16 +4,21 @@ namespace App\Actions\Calls;
 
 use App\Actions\Customers\MatchOrCreateCustomer;
 use App\Actions\Customers\RecordTimelineEvent;
+use App\Actions\Escalations\RaiseEscalation;
 use App\Actions\Notifications\NotifyOrganization;
+use App\Actions\Tasks\CreateCallbackTask;
 use App\Enums\CallOwnershipSource;
+use App\Enums\EscalationType;
 use App\Enums\NotificationEvent;
 use App\Enums\OutcomeCategory;
 use App\Enums\TimelineEventType;
 use App\Models\CallLog;
+use App\Models\Customer;
 use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\CallActivity;
 use App\Services\Calls\CallOutcomes;
+use App\Services\Rules\BusinessRules;
 use App\Support\Audit\Audit;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -32,6 +37,8 @@ class LogCall
         private readonly NotifyOrganization $notify,
         private readonly MatchOrCreateCustomer $customers,
         private readonly RecordTimelineEvent $timeline,
+        private readonly CreateCallbackTask $callbacks,
+        private readonly RaiseEscalation $escalations,
     ) {}
 
     /**
@@ -39,13 +46,21 @@ class LogCall
      *
      * @throws ValidationException when the client is unknown or not assigned to the agent
      */
-    public function handle(User $agent, array $data): CallLog
+    public function handle(User $agent, array $data, ?Organization $forOrganization = null): CallLog
     {
         $organizationId = null;
         $organization = null;
         $clientId = isset($data['client_id']) && $data['client_id'] !== '' ? (string) $data['client_id'] : null;
 
-        if ($clientId !== null) {
+        // The agent workspace names the business directly; the legacy form names its owner (client_id).
+        if ($forOrganization) {
+            if (! $agent->hasPermissionIn('calls.create', $forOrganization)) {
+                throw ValidationException::withMessages(['client_id' => ['You are not assigned to this client.']]);
+            }
+            $organization = $forOrganization;
+            $organizationId = $organization->getKey();
+            $clientId = $organization->owner_user_id ? (string) $organization->owner_user_id : null;
+        } elseif ($clientId !== null) {
             $client = User::where('role', 'client')->find($clientId);
             $organization = $client?->primaryOrganization();
 
@@ -60,7 +75,7 @@ class LogCall
             $organizationId = $organization->getKey();
         }
 
-        // Only outcomes this business offers (its own, or active platform defaults).
+        // Only outcomes this business offers (its own, or its active platform defaults).
         if (! app(CallOutcomes::class)->isAllowed($organization, $data['call_outcome'] ?? null)) {
             throw ValidationException::withMessages(['call_outcome' => ["Choose one of this business's call outcomes."]]);
         }
@@ -94,7 +109,9 @@ class LogCall
         ], actor: $agent);
 
         if ($organization) {
-            $this->linkCustomer($call, $organization, $agent);
+            $this->linkCustomer($call, $organization, $agent, array_intersect_key($data, ['customer_id' => true, 'new_customer' => true]));
+            $this->createCallbackTask($call, $organization, $agent);
+            $this->raiseEscalation($call, $organization, $agent, $data);
             $this->notify->handle($organization, new CallActivity($call, self::eventFor($call)), 'calls.view');
         }
 
@@ -105,15 +122,27 @@ class LogCall
      * Link the call to a customer (match by phone, then email, else create) and add it to their timeline.
      * A failure here must never lose the call itself, so it is reported, not thrown.
      */
-    private function linkCustomer(CallLog $call, Organization $organization, User $agent): void
+    /**
+     * @param  array{customer_id?: mixed, new_customer?: mixed}  $choice
+     */
+    private function linkCustomer(CallLog $call, Organization $organization, User $agent, array $choice = []): void
     {
         try {
-            $match = $this->customers->handle($organization, [
+            $caller = [
                 'name' => $call->caller_name,
                 'phone' => $call->caller_phone,
                 'email' => $call->caller_email,
                 'address' => $call->service_location,
-            ], 'call', $agent->getKey());
+            ];
+
+            // The agent confirmed who this is (workspace), or said it is someone new; otherwise match automatically.
+            if (! empty($choice['customer_id']) && $confirmed = Customer::query()->forOrganization($organization)->whereKey($choice['customer_id'])->first()) {
+                $match = ['customer' => $this->customers->confirm($confirmed, $caller), 'created' => false];
+            } elseif (! empty($choice['new_customer'])) {
+                $match = ['customer' => $this->customers->createDistinct($organization, $caller, 'call', $agent->getKey()), 'created' => true];
+            } else {
+                $match = $this->customers->handle($organization, $caller, 'call', $agent->getKey());
+            }
 
             if (! $match) {
                 return;
@@ -139,6 +168,64 @@ class LogCall
         } catch (\Throwable $e) {
             report($e);
         }
+    }
+
+    /**
+     * A caller who wants a call back gets a task the business can work and close (spec §24).
+     * Like the customer link, a failure here must never lose the call.
+     */
+    private function createCallbackTask(CallLog $call, Organization $organization, User $agent): void
+    {
+        if ($call->outcomeCategory() !== OutcomeCategory::Callback) {
+            return;
+        }
+
+        try {
+            $this->callbacks->handle($call, $organization, $agent);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    /**
+     * An escalated call reaches the business as an escalation it must acknowledge and resolve (spec §25).
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function raiseEscalation(CallLog $call, Organization $organization, User $agent, array $data = []): void
+    {
+        // A business rule may escalate calls for certain reasons whatever the outcome (spec §23).
+        if ($call->outcomeCategory() !== OutcomeCategory::Escalated) {
+            $rule = app(BusinessRules::class)->escalationFor($organization, $call->reason_for_call);
+            if (! $rule) {
+                return;
+            }
+            $data = ['escalation_type' => $rule['type']->value, 'escalation_priority' => $rule['priority']?->value];
+        }
+
+        try {
+            self::escalate($this->escalations, $call, $organization, $agent, $data);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $data  optional escalation_type / escalation_priority
+     */
+    public static function escalate(RaiseEscalation $raise, CallLog $call, Organization $organization, ?User $agent, array $data = []): void
+    {
+        $caller = CallLog::display($call->caller_name);
+        $phone = $call->caller_phone ? ' · '.$call->caller_phone : '';
+
+        $raise->handle($organization, [
+            'type' => EscalationType::tryFrom((string) ($data['escalation_type'] ?? '')) ?? EscalationType::UrgentIssue,
+            'priority' => $data['escalation_priority'] ?? null,
+            'reason' => "{$caller}{$phone}: ".Str::headline((string) $call->reason_for_call),
+            'details' => $call->notes,
+            'customer_id' => $call->customer_id,
+            'call_log_id' => $call->id,
+        ], $agent, 'call');
     }
 
     /**
