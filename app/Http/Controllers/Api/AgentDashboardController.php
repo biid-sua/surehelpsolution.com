@@ -8,6 +8,7 @@ use App\Http\Requests\StoreCallLogRequest;
 use App\Models\CallLog;
 use App\Models\FcmToken;
 use App\Models\User;
+use App\Services\Calls\CallOutcomes;
 use App\Services\CallStatsService;
 use App\Services\FcmService;
 use App\Support\Audit\Audit;
@@ -269,6 +270,16 @@ class AgentDashboardController extends Controller
                 'notes' => 'sometimes|nullable|string',
             ]);
 
+            // A changed outcome must be one this call's business offers (spec §14).
+            if ($request->has('call_outcome') && $request->input('call_outcome') !== $callLog->call_outcome
+                && ! app(CallOutcomes::class)->isAllowed($callLog->organization_id, (string) $request->input('call_outcome'))) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => ['call_outcome' => ["Choose one of this business's call outcomes."]],
+                ], 422);
+            }
+
             $callLog->update($request->only([
                 'call_date', 'call_time', 'caller_name', 'caller_phone', 'caller_email',
                 'reason_for_call', 'call_outcome', 'status', 'service_request',
@@ -321,18 +332,22 @@ class AgentDashboardController extends Controller
                 ], 403);
             }
 
+            $outcomes = app(CallOutcomes::class);
             $clients = User::clientsVisibleTo($user)
                 ->where('is_active', true)
                 ->select('id', 'name', 'email', 'phone', 'unique_id')
+                ->with(['organizations' => fn ($q) => $q->wherePivot('status', 'active')->orderBy('organizations.id')])
                 ->orderBy('name')
                 ->get()
-                ->map(function ($client) {
+                ->map(function ($client) use ($outcomes) {
                     return [
                         'id' => $client->id,
                         'unique_id' => $client->unique_id,
                         'name' => $client->name,
                         'email' => $client->email,
                         'phone' => $client->phone ?? '',
+                        // The outcomes this business offers, for the call form (added P2-4a).
+                        'call_outcomes' => $outcomes->menu($client->organizations->first()),
                     ];
                 });
 

@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Enums\OutcomeCategory;
 use App\Models\CallLog;
+use App\Services\Calls\CallOutcomes;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -163,8 +165,8 @@ class CallStatsService
         return [
             'total_calls' => $query()->count(),
             'service_requests' => $query()->where('service_request', true)->count(),
-            'schedules' => $query()->where('call_outcome', 'scheduled-appointment')->count(),
-            'callbacks' => $query()->where('call_outcome', 'callback-requested')->count(),
+            'schedules' => $query()->whereIn('call_outcome', app(CallOutcomes::class)->keys(null, OutcomeCategory::Booked))->count(),
+            'callbacks' => $query()->whereIn('call_outcome', app(CallOutcomes::class)->keys(null, OutcomeCategory::Callback))->count(),
         ];
     }
 

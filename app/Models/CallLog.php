@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Enums\CallOwnershipSource;
+use App\Enums\OutcomeCategory;
 use App\Models\Concerns\BelongsToOrganization;
+use App\Services\Calls\CallOutcomes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\DB;
@@ -113,8 +115,21 @@ class CallLog extends Model
             return self::STATUS_LABELS['completed'];
         }
 
+        $outcome = $this->call_outcome ? app(CallOutcomes::class)->effective($this->organization_id)->get($this->call_outcome) : null;
+
+        // The business's own wording wins: its custom outcomes and renamed defaults.
+        if ($outcome && ($outcome['custom'] || $outcome['overridden'])) {
+            return $outcome['label'];
+        }
+
         if (isset(self::OUTCOME_LABELS[$this->call_outcome])) {
             return self::OUTCOME_LABELS[$this->call_outcome];
+        }
+
+        // Categories that say more than the status does (booked, callback, escalated, missed, spam).
+        $category = $outcome['category'] ?? null;
+        if ($category && ! in_array($category, [OutcomeCategory::Information, OutcomeCategory::Other], true)) {
+            return $category->badge();
         }
 
         if ($this->service_date) {
@@ -136,9 +151,18 @@ class CallLog extends Model
             'Completed' => 'completed',
             'Scheduled', 'Follow-Up Scheduled' => 'scheduled',
             'In Progress', 'Callback Requested' => 'progress',
-            'Dropped', 'No Response', 'Cancelled', 'Spam' => 'danger',
-            default => 'neutral',
+            'Dropped', 'No Response', 'Cancelled', 'Spam', 'Missed' => 'danger',
+            'Escalated' => 'progress',
+            default => $this->outcomeCategory()?->tone() ?? 'neutral',
         };
+    }
+
+    /**
+     * What this call's outcome means for its business; null for unknown legacy values.
+     */
+    public function outcomeCategory(): ?OutcomeCategory
+    {
+        return app(CallOutcomes::class)->category($this->organization_id, $this->call_outcome);
     }
 
     /**
@@ -148,7 +172,7 @@ class CallLog extends Model
     {
         return $this->service_request
             || $this->service_date !== null
-            || $this->call_outcome === 'scheduled-appointment';
+            || $this->outcomeCategory() === OutcomeCategory::Booked;
     }
 
     /**

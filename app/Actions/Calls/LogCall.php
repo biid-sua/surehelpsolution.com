@@ -7,11 +7,13 @@ use App\Actions\Customers\RecordTimelineEvent;
 use App\Actions\Notifications\NotifyOrganization;
 use App\Enums\CallOwnershipSource;
 use App\Enums\NotificationEvent;
+use App\Enums\OutcomeCategory;
 use App\Enums\TimelineEventType;
 use App\Models\CallLog;
 use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\CallActivity;
+use App\Services\Calls\CallOutcomes;
 use App\Support\Audit\Audit;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -56,6 +58,11 @@ class LogCall
             }
 
             $organizationId = $organization->getKey();
+        }
+
+        // Only outcomes this business offers (its own, or its active platform defaults).
+        if (! app(CallOutcomes::class)->isAllowed($organization, $data['call_outcome'] ?? null)) {
+            throw ValidationException::withMessages(['call_outcome' => ["Choose one of this business's call outcomes."]]);
         }
 
         $call = CallLog::create([
@@ -139,10 +146,6 @@ class LogCall
      */
     public static function eventFor(CallLog $call): NotificationEvent
     {
-        return match ($call->call_outcome) {
-            'call-dropped', 'no-response' => NotificationEvent::CallMissed,
-            'callback-requested', 'followup-scheduled' => NotificationEvent::FollowUpCreated,
-            default => NotificationEvent::CallLogged,
-        };
+        return ($call->outcomeCategory() ?? OutcomeCategory::Other)->notificationEvent();
     }
 }

@@ -131,7 +131,7 @@ class Audit
             return null;
         }
 
-        foreach (['call_id', 'name', 'email'] as $attribute) {
+        foreach (['call_id', 'name', 'title', 'label', 'email'] as $attribute) {
             if ($value = $subject->getAttribute($attribute)) {
                 return Str::limit((string) $value, 250, '');
             }

@@ -2,8 +2,10 @@
 
 namespace App\Queries;
 
+use App\Enums\OutcomeCategory;
 use App\Models\CallLog;
 use App\Models\Organization;
+use App\Services\Calls\CallOutcomes;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -62,12 +64,15 @@ class CallLogFilters
                 ->orWhere('notes', 'like', $term));
         }
 
+        // Views follow outcome categories, so a business's own outcomes are included (spec §14).
+        $outcomes = app(CallOutcomes::class);
+
         match ($this->view) {
-            'follow_up' => self::pendingFollowUps($query),
-            'scheduled' => $query->where(fn (Builder $q) => $q->where('call_outcome', 'scheduled-appointment')->orWhereNotNull('service_date')),
+            'follow_up' => self::pendingFollowUps($query, $organization),
+            'scheduled' => $query->where(fn (Builder $q) => $q->whereIn('call_outcome', $outcomes->keys($organization, OutcomeCategory::Booked))->orWhereNotNull('service_date')),
             'service' => $query->where('service_request', true),
-            'missed' => $query->whereIn('call_outcome', ['call-dropped', 'no-response']),
-            'spam' => $query->where(fn (Builder $q) => $q->where('status', 'spam')->orWhere('call_outcome', 'wrong-number')),
+            'missed' => $query->whereIn('call_outcome', $outcomes->keys($organization, OutcomeCategory::Missed)),
+            'spam' => $query->where(fn (Builder $q) => $q->where('status', 'spam')->orWhereIn('call_outcome', $outcomes->keys($organization, OutcomeCategory::Spam))),
             default => null,
         };
 
@@ -88,9 +93,9 @@ class CallLogFilters
      * @param  Builder<CallLog>  $query
      * @return Builder<CallLog>
      */
-    public static function pendingFollowUps(Builder $query): Builder
+    public static function pendingFollowUps(Builder $query, Organization $organization): Builder
     {
-        return $query->whereIn('call_outcome', ['callback-requested', 'followup-scheduled'])
+        return $query->whereIn('call_outcome', app(CallOutcomes::class)->keys($organization, OutcomeCategory::Callback))
             ->whereNotIn('status', ['completed', 'cancelled', 'spam']);
     }
 

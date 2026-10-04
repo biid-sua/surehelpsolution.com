@@ -1196,16 +1196,10 @@
                                             <label class="form-label">Call Outcome</label>
                                             <select class="form-select" id="callOutcome">
                                                 <option value="">Select outcome...</option>
-                                                <option value="resolved-by-agent">Resolved by Agent</option>
-                                                <option value="forwarded-to-client">Forwarded to Client</option>
-                                                <option value="escalated-to-client">Escalated to Client</option>
-                                                <option value="scheduled-appointment">Scheduled Appointment</option>
-                                                <option value="provided-information">Provided Information Only</option>
-                                                <option value="callback-requested">Caller Requested Callback</option>
-                                                <option value="followup-scheduled">Follow-Up Scheduled</option>
-                                                <option value="call-dropped">Call Dropped / Incomplete</option>
-                                                <option value="no-response">No Response from Caller</option>
-                                                <option value="wrong-number">Wrong Number / Spam</option>
+                                                {{-- Platform outcomes; replaced by the selected business's own list (spec §14). --}}
+                                                @foreach (app(\App\Services\Calls\CallOutcomes::class)->active(null) as $outcome)
+                                                    <option value="{{ $outcome['key'] }}">{{ $outcome['label'] }}</option>
+                                                @endforeach
                                             </select>
                                         </div>
                                         
@@ -1824,6 +1818,20 @@
                 });
             }
 
+            // Each business has its own call outcomes; fall back to the platform list.
+            const outcomeSelect = document.getElementById('callOutcome');
+            const defaultOutcomeOptions = outcomeSelect.innerHTML;
+            function setOutcomeOptions(outcomes) {
+                const current = outcomeSelect.value;
+                if (!Array.isArray(outcomes) || outcomes.length === 0) {
+                    outcomeSelect.innerHTML = defaultOutcomeOptions;
+                } else {
+                    outcomeSelect.innerHTML = '<option value="">Select outcome...</option>';
+                    outcomes.forEach(o => outcomeSelect.add(new Option(o.label, o.key)));
+                }
+                outcomeSelect.value = [...outcomeSelect.options].some(o => o.value === current) ? current : '';
+            }
+
             // Select a client
             function selectClient(optionElement) {
                 const clientId = optionElement.dataset.clientId;
@@ -1836,6 +1844,7 @@
                     selectedClientName.innerHTML = `${client.name} <span class="client-id-badge">${client.unique_id}</span>`;
                     selectedClientEmail.textContent = client.email;
                     selectedClientId.value = client.id; // Store actual client ID
+                    setOutcomeOptions(client.call_outcomes);
                     
                     // Show selected client and hide search
                     selectedClient.style.display = 'flex';
@@ -1854,6 +1863,7 @@
                 selectedClient.style.display = 'none';
                 clientSearch.style.display = 'block';
                 selectedClientId.value = '';
+                setOutcomeOptions(null);
                 clientSearch.focus();
             }
 

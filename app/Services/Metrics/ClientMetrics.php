@@ -2,13 +2,14 @@
 
 namespace App\Services\Metrics;
 
+use App\Enums\OutcomeCategory;
 use App\Models\CallLog;
 use App\Models\Organization;
 use App\Queries\CallLogFilters;
+use App\Services\Calls\CallOutcomes;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonPeriod;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Real, organization-scoped numbers for the client dashboard (spec §8.1).
@@ -59,7 +60,7 @@ class ClientMetrics
 
         // Follow-ups are a live backlog, not a period figure.
         $kpis['follow_ups'] = [
-            'value' => CallLogFilters::pendingFollowUps(CallLog::query()->forOrganization($organization))->count(),
+            'value' => CallLogFilters::pendingFollowUps(CallLog::query()->forOrganization($organization), $organization)->count(),
             'change' => null,
         ];
 
@@ -141,15 +142,22 @@ class ClientMetrics
      */
     private function counts(Organization $organization, CarbonImmutable $start, CarbonImmutable $end): array
     {
+        // Booked and missed follow the business's outcome categories, including its own outcomes.
+        $outcomes = app(CallOutcomes::class);
+        $booked = $outcomes->keys($organization, OutcomeCategory::Booked) ?: ['__none__'];
+        $missed = $outcomes->keys($organization, OutcomeCategory::Missed) ?: ['__none__'];
+        $in = fn (array $keys) => implode(', ', array_fill(0, count($keys), '?'));
+
         $row = CallLog::query()->forOrganization($organization)
             ->whereBetween('created_at', [$start->utc(), $end->utc()])
             ->toBase()
-            ->select([
-                DB::raw('COUNT(*) as calls'),
-                DB::raw('SUM(CASE WHEN service_request = 1 THEN 1 ELSE 0 END) as service_requests'),
-                DB::raw("SUM(CASE WHEN call_outcome = 'scheduled-appointment' OR service_date IS NOT NULL THEN 1 ELSE 0 END) as scheduled"),
-                DB::raw("SUM(CASE WHEN call_outcome IN ('call-dropped', 'no-response') THEN 1 ELSE 0 END) as missed"),
-            ])
+            ->selectRaw(
+                'COUNT(*) as calls, '
+                .'SUM(CASE WHEN service_request = 1 THEN 1 ELSE 0 END) as service_requests, '
+                .'SUM(CASE WHEN call_outcome IN ('.$in($booked).') OR service_date IS NOT NULL THEN 1 ELSE 0 END) as scheduled, '
+                .'SUM(CASE WHEN call_outcome IN ('.$in($missed).') THEN 1 ELSE 0 END) as missed',
+                [...$booked, ...$missed],
+            )
             ->first();
 
         return [
