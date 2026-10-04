@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\EscalationPriority;
+use App\Enums\EscalationType;
 use App\Models\CallLog;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
@@ -36,6 +38,9 @@ class StoreCallLogRequest extends FormRequest
             'service_window' => ['nullable', 'string', 'max:255'],
             'service_location' => ['nullable', 'string'],
             'notes' => ['nullable', 'string'],
+            // Optional detail for outcomes in the "escalated" category (P2-4c, additive).
+            'escalation_type' => ['nullable', Rule::enum(EscalationType::class)],
+            'escalation_priority' => ['nullable', Rule::enum(EscalationPriority::class)],
         ];
     }
 

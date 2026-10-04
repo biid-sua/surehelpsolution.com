@@ -28,7 +28,7 @@ enum NotificationEvent: string
      */
     public static function available(): array
     {
-        return [self::CallLogged, self::CallMissed, self::FollowUpCreated, self::FollowUpOverdue, self::TaskAssigned];
+        return [self::CallLogged, self::CallMissed, self::FollowUpCreated, self::FollowUpOverdue, self::TaskAssigned, self::EscalationCreated];
     }
 
     public function isAvailable(): bool
@@ -48,7 +48,7 @@ enum NotificationEvent: string
             self::AppointmentUpdated => 'Appointment changed',
             self::AppointmentCancelled => 'Appointment cancelled',
             self::MessageReceived => 'New message',
-            self::EscalationCreated => 'Urgent escalation',
+            self::EscalationCreated => 'Escalation raised',
             self::PaymentFailed => 'Payment failed',
             self::SubscriptionUpdated => 'Subscription changed',
             self::IntegrationDisconnected => 'Integration disconnected',
@@ -64,6 +64,7 @@ enum NotificationEvent: string
             self::FollowUpCreated => 'Someone is waiting for you to call them back.',
             self::FollowUpOverdue => 'A call-back or task is past its due time.',
             self::TaskAssigned => 'A teammate gave you a task.',
+            self::EscalationCreated => 'Something needs you now. Urgent escalations always reach you in the app and by email.',
             default => '',
         };
     }

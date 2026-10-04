@@ -79,6 +79,11 @@ A client user only ever sees their own business. The business is resolved on the
 | GET | `/client/tasks?status=open\|overdue\|done\|all&mine&customer&per_page` | Permission `tasks.view`. Default `open`, most urgent first. `data.tasks[]`: `id` (ULID), `type` (`callback`, `follow_up`, `todo`), `title`, `description`, `priority` (`urgent`, `high`, `normal`, `low`), `status` (`open`, `in_progress`, `completed`, `cancelled`), `is_overdue`, `due_at`, `source`, `customer {id, name}`, `call_id`, `assigned_to {id, name}`, `completed_at`, `created_at`. Paged like customers |
 | POST | `/client/tasks` | Permission `tasks.create`. `title` (required), `type`, `priority`, `description`, `due_at` (ISO 8601), `customer_id` (customer ULID), `assigned_to` (user id of an active team member). 201 with `data.task` |
 | GET | `/client/tasks/{id}` | `data.task` |
+| GET | `/client/escalations?status=active\|resolved\|all&per_page` | Permission `escalations.view`. Default `active` (open + acknowledged), waiting longest and most urgent first. `data.escalations[]`: `id` (ULID), `type` (`urgent_issue`, `emergency`, `complaint`, `refund_request`, `pricing_approval`, `owner_decision`, `technical_problem`, `ai_uncertainty`), `type_label`, `priority` (`urgent`, `high`, `normal`), `status` (`open`, `acknowledged`, `resolved`), `reason`, `details`, `source`, `customer {id, name}`, `call_id`, `assigned_to {id, name}`, `acknowledged_at`, `resolved_at`, `resolution_notes`, `created_at` |
+| GET | `/client/escalations/{id}` | `data.escalation` |
+| POST | `/client/escalations/{id}/acknowledge` | Permission `escalations.resolve`. Stops the urgent reminder |
+| POST | `/client/escalations/{id}/assign` | `assigned_to`: user id of an active team member, or `null` |
+| POST | `/client/escalations/{id}/resolve` | `resolution_notes` required (422 without) |
 | PATCH | `/client/tasks/{id}` | Permission `tasks.update`. Any of the POST fields, plus `status`. Completing records who and when |
 | GET / PUT | `/client/profile` | `name`, `phone` editable. GET also returns `data.organization` |
 
@@ -88,7 +93,7 @@ A client user only ever sees their own business. The business is resolved on the
 | GET | `/agent/dashboard/kpi?period=today\|weekly\|monthly` | `data.kpi_data` |
 | GET | `/agent/dashboard/performance` | `data.performance_data` |
 | GET | `/agent/call-logs?status&limit&offset` | Own calls |
-| POST | `/agent/call-logs` | Permission `calls.create` **in the client's business** (else 422 on `client_id`). `call_outcome` must be one of that business's active outcomes (else 422 on `call_outcome`). Notifies the business |
+| POST | `/agent/call-logs` | Permission `calls.create` **in the client's business** (else 422 on `client_id`). `call_outcome` must be one of that business's active outcomes (else 422 on `call_outcome`). Optional `escalation_type` / `escalation_priority` for outcomes in the escalated category (default `urgent_issue`, priority from the type). Callback outcomes create a task; escalated outcomes raise an escalation. Notifies the business |
 | PUT | `/agent/call-logs/{id}` | Own calls, while still assigned to that business |
 | GET | `/agent/clients` | Only businesses the agent is assigned to. Each client carries `call_outcomes: [{key, label, category}]`, the pick-list for that business (added P2-4a, additive) |
 | PUT | `/agent/call-logs/{id}` with a new `call_outcome` | Must be one of the call's business's active outcomes (else 422 on `call_outcome`) |
@@ -103,7 +108,7 @@ A client user only ever sees their own business. The business is resolved on the
 
 | Date | Change |
 |---|---|
-| 2026-10-06 | `/client/tasks` (list, create, show, update). `call_outcomes[]` on `/agent/clients`. `call_outcome` validated against the business's active outcomes. |
+| 2026-10-06 | `/client/escalations` (list, show, acknowledge, assign, resolve). Optional `escalation_type` / `escalation_priority` on `POST /agent/call-logs`. `/client/tasks` (list, create, show, update). `call_outcomes[]` on `/agent/clients`. `call_outcome` validated against the business's active outcomes. |
 | 2026-10-05 | `/client/business`, `/client/services`, `/client/customers`. |
 | 2026-10-04 | Error envelope for every error (incl. 401/404/405/429/500). `device_name` on login. `expires_at` on login/refresh. `/devices` endpoints. Rate limit on all routes. Security headers, CORS restricted. |
 | 2026-10-03 | `organization` object on `/user` and `/client/profile`. Duty-schedule endpoints fixed. 30-day token expiry. Errors no longer include exception text. |

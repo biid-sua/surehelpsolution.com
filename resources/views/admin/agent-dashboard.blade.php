@@ -1198,11 +1198,23 @@
                                                 <option value="">Select outcome...</option>
                                                 {{-- Platform outcomes; replaced by the selected business's own list (spec §14). --}}
                                                 @foreach (app(\App\Services\Calls\CallOutcomes::class)->active(null) as $outcome)
-                                                    <option value="{{ $outcome['key'] }}">{{ $outcome['label'] }}</option>
+                                                    <option value="{{ $outcome['key'] }}" data-category="{{ $outcome['category']->value }}">{{ $outcome['label'] }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
                                         
+                                        <!-- Escalation detail: shown for outcomes that escalate to the business (spec §25) -->
+                                        <div class="col-12" id="escalationFields" style="display: none;">
+                                            <label class="form-label" for="escalationType">What kind of escalation?</label>
+                                            <select class="form-select" id="escalationType">
+                                                @foreach (\App\Enums\EscalationType::cases() as $escalationType)
+                                                    @continue($escalationType === \App\Enums\EscalationType::AiUncertainty)
+                                                    <option value="{{ $escalationType->value }}">{{ $escalationType->label() }}</option>
+                                                @endforeach
+                                            </select>
+                                            <small class="text-muted">Urgent issues and emergencies alert the business immediately.</small>
+                                        </div>
+
                                         <!-- Agent Name -->
                                         <div class="col-12">
                                             <label class="form-label">Agent Name</label>
@@ -1827,10 +1839,20 @@
                     outcomeSelect.innerHTML = defaultOutcomeOptions;
                 } else {
                     outcomeSelect.innerHTML = '<option value="">Select outcome...</option>';
-                    outcomes.forEach(o => outcomeSelect.add(new Option(o.label, o.key)));
+                    outcomes.forEach(o => { const opt = new Option(o.label, o.key); opt.dataset.category = o.category; outcomeSelect.add(opt); });
                 }
                 outcomeSelect.value = [...outcomeSelect.options].some(o => o.value === current) ? current : '';
+                toggleEscalationFields();
             }
+
+            const escalationFields = document.getElementById('escalationFields');
+            function isEscalationOutcome() {
+                return outcomeSelect.selectedOptions[0]?.dataset.category === 'escalated';
+            }
+            function toggleEscalationFields() {
+                escalationFields.style.display = isEscalationOutcome() ? '' : 'none';
+            }
+            outcomeSelect.addEventListener('change', toggleEscalationFields);
 
             // Select a client
             function selectClient(optionElement) {
@@ -2005,6 +2027,9 @@
                 formData.append('caller_email', document.getElementById('callerEmail').value);
                 formData.append('reason_for_call', document.getElementById('reasonForCall').value);
                 formData.append('call_outcome', document.getElementById('callOutcome').value);
+                if (isEscalationOutcome()) {
+                    formData.append('escalation_type', document.getElementById('escalationType').value);
+                }
                 formData.append('agent_name', document.getElementById('agentName').value);
                 formData.append('status', document.getElementById('callStatus').value);
                 formData.append('service_request', document.getElementById('serviceRequest').value === 'yes' ? '1' : '0');
@@ -2045,6 +2070,7 @@
                     
                     // Reset form, keeping the server-assigned ID of the call just saved visible
                     this.reset();
+                    document.getElementById('escalationFields').style.display = 'none';
                     document.getElementById('callId').value = '';
                     document.getElementById('callId').placeholder = 'Last saved: ' + result.call_id;
                     document.getElementById('callDate').value = new Date().toISOString().split('T')[0];

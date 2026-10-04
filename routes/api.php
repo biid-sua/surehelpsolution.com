@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\ClientDashboardController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\DutyScheduleController;
+use App\Http\Controllers\Api\EscalationController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\TaskController;
 use Illuminate\Support\Facades\Route;
@@ -48,6 +49,13 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
         Route::post('/tasks', [TaskController::class, 'store'])->middleware('can:tasks.create');
         Route::get('/tasks/{ulid}', [TaskController::class, 'show'])->middleware('can:tasks.view');
         Route::patch('/tasks/{ulid}', [TaskController::class, 'update'])->middleware('can:tasks.update');
+        Route::get('/escalations', [EscalationController::class, 'index'])->middleware('can:escalations.view');
+        Route::get('/escalations/{ulid}', [EscalationController::class, 'show'])->middleware('can:escalations.view');
+        Route::middleware('can:escalations.resolve')->group(function () {
+            Route::post('/escalations/{ulid}/acknowledge', [EscalationController::class, 'acknowledge']);
+            Route::post('/escalations/{ulid}/assign', [EscalationController::class, 'assign']);
+            Route::post('/escalations/{ulid}/resolve', [EscalationController::class, 'resolve']);
+        });
         Route::get('/profile', [ClientDashboardController::class, 'getProfile']);
         Route::put('/profile', [ClientDashboardController::class, 'updateProfile']);
     });

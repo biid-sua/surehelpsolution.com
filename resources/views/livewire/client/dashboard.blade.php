@@ -14,6 +14,15 @@
         </x-slot:actions>
     </x-ui.page-header>
 
+    {{-- Escalations come first: someone is waiting on the business (spec §25). --}}
+    @if ($activeEscalations > 0)
+        <div class="mb-4">
+            <x-ui.alert tone="danger" title="{{ $activeEscalations }} {{ \Illuminate\Support\Str::plural('escalation', $activeEscalations) }} need{{ $activeEscalations === 1 ? 's' : '' }} your attention">
+                Our team flagged {{ $activeEscalations === 1 ? 'a call' : 'calls' }} only you can deal with. <a href="{{ route('app.escalations.index') }}" class="font-semibold underline underline-offset-2">Open escalations</a>
+            </x-ui.alert>
+        </div>
+    @endif
+
     {{-- Alerts: only real, actionable conditions (spec §8.1). --}}
     @if ($kpis['follow_ups']['value'] > 0 || ($period === 'today' && $kpis['missed']['value'] > 0))
         <div class="mb-6 space-y-3">

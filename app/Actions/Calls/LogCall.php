@@ -4,9 +4,11 @@ namespace App\Actions\Calls;
 
 use App\Actions\Customers\MatchOrCreateCustomer;
 use App\Actions\Customers\RecordTimelineEvent;
+use App\Actions\Escalations\RaiseEscalation;
 use App\Actions\Notifications\NotifyOrganization;
 use App\Actions\Tasks\CreateCallbackTask;
 use App\Enums\CallOwnershipSource;
+use App\Enums\EscalationType;
 use App\Enums\NotificationEvent;
 use App\Enums\OutcomeCategory;
 use App\Enums\TimelineEventType;
@@ -34,6 +36,7 @@ class LogCall
         private readonly MatchOrCreateCustomer $customers,
         private readonly RecordTimelineEvent $timeline,
         private readonly CreateCallbackTask $callbacks,
+        private readonly RaiseEscalation $escalations,
     ) {}
 
     /**
@@ -98,6 +101,7 @@ class LogCall
         if ($organization) {
             $this->linkCustomer($call, $organization, $agent);
             $this->createCallbackTask($call, $organization, $agent);
+            $this->raiseEscalation($call, $organization, $agent, $data);
             $this->notify->handle($organization, new CallActivity($call, self::eventFor($call)), 'calls.view');
         }
 
@@ -159,6 +163,42 @@ class LogCall
         } catch (\Throwable $e) {
             report($e);
         }
+    }
+
+    /**
+     * An escalated call reaches the business as an escalation it must acknowledge and resolve (spec §25).
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function raiseEscalation(CallLog $call, Organization $organization, User $agent, array $data = []): void
+    {
+        if ($call->outcomeCategory() !== OutcomeCategory::Escalated) {
+            return;
+        }
+
+        try {
+            self::escalate($this->escalations, $call, $organization, $agent, $data);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $data  optional escalation_type / escalation_priority
+     */
+    public static function escalate(RaiseEscalation $raise, CallLog $call, Organization $organization, ?User $agent, array $data = []): void
+    {
+        $caller = CallLog::display($call->caller_name);
+        $phone = $call->caller_phone ? ' · '.$call->caller_phone : '';
+
+        $raise->handle($organization, [
+            'type' => EscalationType::tryFrom((string) ($data['escalation_type'] ?? '')) ?? EscalationType::UrgentIssue,
+            'priority' => $data['escalation_priority'] ?? null,
+            'reason' => "{$caller}{$phone}: ".Str::headline((string) $call->reason_for_call),
+            'details' => $call->notes,
+            'customer_id' => $call->customer_id,
+            'call_log_id' => $call->id,
+        ], $agent, 'call');
     }
 
     /**

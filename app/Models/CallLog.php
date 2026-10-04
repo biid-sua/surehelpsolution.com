@@ -107,6 +107,16 @@ class CallLog extends Model
     }
 
     /**
+     * Escalations raised from this call (spec §25).
+     *
+     * @return HasMany<Escalation, $this>
+     */
+    public function escalations(): HasMany
+    {
+        return $this->hasMany(Escalation::class, 'call_log_id');
+    }
+
+    /**
      * Get the user that owns the call log.
      */
     public function user(): BelongsTo

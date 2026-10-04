@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Actions\Calls\LogCall;
+use App\Actions\Escalations\RaiseEscalation;
 use App\Actions\Tasks\CreateCallbackTask;
 use App\Enums\OutcomeCategory;
 use App\Http\Controllers\Controller;
@@ -295,6 +296,16 @@ class AgentDashboardController extends Controller
                 && $callLog->outcomeCategory() === OutcomeCategory::Callback) {
                 try {
                     app(CreateCallbackTask::class)->handle($callLog, $callLog->organization, $user);
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+            }
+
+            // Changed to an escalated outcome: the business gets an escalation (once while it is active).
+            if ($callLog->wasChanged('call_outcome') && $callLog->organization
+                && $callLog->outcomeCategory() === OutcomeCategory::Escalated) {
+                try {
+                    LogCall::escalate(app(RaiseEscalation::class), $callLog, $callLog->organization, $user);
                 } catch (\Throwable $e) {
                     report($e);
                 }

@@ -13,6 +13,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PasswordChangeController;
 use App\Livewire\Admin\AuditLogs;
 use App\Livewire\Admin\Calls\Review as CallReview;
+use App\Livewire\Admin\Escalations\Index as AdminEscalations;
 use App\Livewire\Admin\Home as AdminHome;
 use App\Livewire\Admin\Organizations\Index as OrganizationIndex;
 use App\Livewire\Admin\Organizations\Show as OrganizationShow;
@@ -26,6 +27,7 @@ use App\Livewire\Client\Calls\Show as ClientCallShow;
 use App\Livewire\Client\Customers\Index as CustomerIndex;
 use App\Livewire\Client\Customers\Show as CustomerShow;
 use App\Livewire\Client\Dashboard as ClientDashboard;
+use App\Livewire\Client\Escalations\Index as EscalationsIndex;
 use App\Livewire\Client\Settings\Notifications as NotificationSettings;
 use App\Livewire\Client\Tasks\Index as TasksIndex;
 use Illuminate\Support\Facades\Route;
@@ -97,6 +99,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
     });
     Route::get('/settings/notifications', NotificationSettings::class)->name('settings.notifications');
     Route::get('/tasks', TasksIndex::class)->middleware('can:tasks.view')->name('tasks.index');
+    Route::get('/escalations', EscalationsIndex::class)->middleware('can:escalations.view')->name('escalations.index');
     Route::middleware('can:customers.view')->group(function () {
         Route::get('/customers', CustomerIndex::class)->name('customers.index');
         Route::get('/customers/export', CustomerExportController::class)->name('customers.export');
@@ -116,5 +119,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth.home', 'force.password
     Route::get('/organizations', OrganizationIndex::class)->name('organizations.index');
     Route::get('/organizations/{organization}', OrganizationShow::class)->name('organizations.show');
     Route::get('/calls/review', CallReview::class)->name('calls.review');
+    Route::get('/escalations', AdminEscalations::class)->middleware('can:escalations.view')->name('escalations');
     Route::get('/audit', AuditLogs::class)->middleware('can:audit_logs.view')->name('audit');
 });
