@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Actions\Calls\LogCall;
 use App\Actions\Organizations\ProvisionUserTenancy;
+use App\Enums\OutcomeCategory;
 use App\Http\Requests\StoreCallLogRequest;
 use App\Models\CallLog;
 use App\Models\ContactSubmission;
 use App\Models\User;
+use App\Services\Calls\CallOutcomes;
 use App\Services\CallStatsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -87,11 +89,11 @@ class AdminController extends Controller
 
         // Success Rate (calls with successful outcomes)
         $successfulCallsToday = CallLog::whereDate('created_at', $today)
-            ->whereIn('call_outcome', ['scheduled-appointment', 'information-provided', 'service-completed'])
+            ->whereIn('call_outcome', app(CallOutcomes::class)->keys(null, OutcomeCategory::Booked, OutcomeCategory::Information))
             ->count();
 
         $successfulCallsYesterday = CallLog::whereDate('created_at', $yesterday)
-            ->whereIn('call_outcome', ['scheduled-appointment', 'information-provided', 'service-completed'])
+            ->whereIn('call_outcome', app(CallOutcomes::class)->keys(null, OutcomeCategory::Booked, OutcomeCategory::Information))
             ->count();
 
         $successRateToday = $callsToday > 0 ? round(($successfulCallsToday / $callsToday) * 100, 1) : 0;
@@ -254,17 +256,19 @@ class AdminController extends Controller
     public function getClientsList()
     {
         try {
+            $outcomes = app(CallOutcomes::class);
             $clients = User::clientsVisibleTo(Auth::user())
                 ->select('id', 'name', 'email', 'phone', 'unique_id')
                 ->orderBy('name')
                 ->get()
-                ->map(function ($user) {
+                ->map(function ($user) use ($outcomes) {
                     return [
                         'id' => $user->id,
                         'unique_id' => $user->unique_id,
                         'name' => $user->name,
                         'email' => $user->email,
                         'phone' => $user->phone ?? '',
+                        'call_outcomes' => $outcomes->menu($user->primaryOrganization()),
                     ];
                 });
 

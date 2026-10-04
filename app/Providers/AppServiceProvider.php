@@ -6,6 +6,7 @@ use App\Http\Middleware\ResolveOrganization;
 use App\Http\Middleware\RoleMiddleware;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\Calls\CallOutcomes;
 use App\Support\Authorization\RoleCatalog;
 use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Auth\Middleware\Authorize;
@@ -26,6 +27,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // One tenant context per request / queued job.
         $this->app->scoped(CurrentOrganization::class);
+        $this->app->scoped(CallOutcomes::class);
     }
 
     /**

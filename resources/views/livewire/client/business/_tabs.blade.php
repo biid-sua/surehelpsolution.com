@@ -3,10 +3,9 @@
     $tabs = [
         'app.business.profile' => 'Profile',
         'app.business.hours' => 'Hours',
+        'app.business.services' => 'Services',
+        'app.business.outcomes' => 'Call outcomes',
     ];
-    if (\Illuminate\Support\Facades\Route::has('app.business.services')) {
-        $tabs['app.business.services'] = 'Services';
-    }
 @endphp
 <nav class="mb-6 flex gap-1 overflow-x-auto border-b border-line" aria-label="Business settings">
     @foreach ($tabs as $route => $label)

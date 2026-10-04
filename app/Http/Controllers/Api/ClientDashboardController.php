@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\OutcomeCategory;
 use App\Http\Controllers\Controller;
 use App\Models\CallLog;
 use App\Models\User;
+use App\Services\Calls\CallOutcomes;
 use App\Support\Tenancy\CurrentOrganization;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -57,7 +59,7 @@ class ClientDashboardController extends Controller
             // Get summary data for the period
             $totalCalls = (clone $clientQuery)->whereBetween('created_at', [$range['start'], $range['end']])->count();
             $serviceRequests = (clone $clientQuery)->whereBetween('created_at', [$range['start'], $range['end']])->where('service_request', true)->count();
-            $totalScheduled = (clone $clientQuery)->whereBetween('created_at', [$range['start'], $range['end']])->where('call_outcome', 'scheduled-appointment')->count();
+            $totalScheduled = (clone $clientQuery)->whereBetween('created_at', [$range['start'], $range['end']])->whereIn('call_outcome', $this->bookedKeys())->count();
             $inProgress = (clone $clientQuery)->whereBetween('created_at', [$range['start'], $range['end']])->where('status', 'service-requested')->count();
 
             return response()->json([
@@ -233,7 +235,7 @@ class ClientDashboardController extends Controller
                         $clientQuery->where('status', 'completed');
                         break;
                     case 'scheduled':
-                        $clientQuery->where('call_outcome', 'scheduled-appointment');
+                        $clientQuery->whereIn('call_outcome', $this->bookedKeys());
                         break;
                 }
             }
@@ -397,7 +399,7 @@ class ClientDashboardController extends Controller
                 ->where('service_request', true)
                 ->where(function ($q) {
                     $q->whereNotNull('service_date')
-                        ->orWhere('call_outcome', 'scheduled-appointment');
+                        ->orWhereIn('call_outcome', $this->bookedKeys());
                 });
 
             // Get service requests with calendar data
@@ -532,7 +534,7 @@ class ClientDashboardController extends Controller
     {
         if ($log->status === 'completed') {
             return 'completed';
-        } elseif ($log->status === 'service-requested' || $log->call_outcome === 'scheduled-appointment') {
+        } elseif ($log->status === 'service-requested' || $log->outcomeCategory() === OutcomeCategory::Booked) {
             return 'scheduled';
         } else {
             return 'service-request';
@@ -548,6 +550,16 @@ class ClientDashboardController extends Controller
     private function organizationCalls(): Builder
     {
         return CallLog::query()->forOrganization(app(CurrentOrganization::class)->id() ?? 0);
+    }
+
+    /**
+     * Outcome keys meaning "appointment booked" for the current business (spec §14).
+     *
+     * @return list<string>
+     */
+    private function bookedKeys(): array
+    {
+        return app(CallOutcomes::class)->keys(app(CurrentOrganization::class)->id(), OutcomeCategory::Booked);
     }
 
     private function organizationPayload(): ?array

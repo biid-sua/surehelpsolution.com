@@ -94,6 +94,14 @@ The audit log is visible to Super Admin and Operations Manager only, never to bu
 - Business profile and hours are owner-only (`organization.update`). Services can also be managed by Business Managers (`settings.manage`). Staff can't open the Business section.
 **Why:** Phone is the one identifier a receptionist always has. Fuzzy name matching creates wrong merges, which are worse than duplicates. Duplicate merging (CRM-04) comes later, with a human confirming.
 
+## D15 — Call outcomes are data, with a fixed meaning (2026-10-06)
+**Decision:**
+- Outcomes live in `call_outcomes`. Platform defaults have `organization_id` NULL. A business can **rename** or **switch off** a default (through its own override row) and **add custom outcomes** (keys prefixed `custom-`, so they never collide with future defaults).
+- Every outcome has a **category**: booked, information, callback, escalated, missed, spam or other. KPIs, filters, notifications and (next) automatic follow-up tasks and escalations use the category and never a key. A default's category can't be changed, only its wording.
+- Calls only accept the business's **active** outcomes. Switching one off keeps history intact. A custom outcome can only be deleted while no call uses it.
+- The platform success rate counts booked and information outcomes. This also fixes the old figure, which counted two outcome keys that never existed.
+**Why:** Every trade words things differently ("Job booked", "Quote visit booked"), but reporting must stay comparable across businesses and over time. Mapping each label to a small fixed set of meanings gives businesses their own wording while keeping the numbers honest.
+
 ## D10 — Telephony
 **Decision:** **Twilio** (Programmable Voice, TaskRouter, Voice JS SDK, Messaging) behind a `TelephonyProvider` interface, so the vendor can be swapped. Calls stay manually logged until then, but the Phase 2 `calls` table is designed for provider data (call SID, direction, timings, recording/transcript references). Telephony becomes **Phase 3b**, right after Calendar, because live call handling is the core of a receptionist product.
 **Action needed from you (long lead time):** create a Twilio account and start **A2P 10DLC** brand and campaign registration now. US SMS cannot go live without it, and approval takes weeks.

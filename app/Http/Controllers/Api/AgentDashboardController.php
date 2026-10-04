@@ -8,6 +8,7 @@ use App\Http\Requests\StoreCallLogRequest;
 use App\Models\CallLog;
 use App\Models\FcmToken;
 use App\Models\User;
+use App\Services\Calls\CallOutcomes;
 use App\Services\CallStatsService;
 use App\Services\FcmService;
 use App\Support\Audit\Audit;
@@ -269,6 +270,14 @@ class AgentDashboardController extends Controller
                 'notes' => 'sometimes|nullable|string',
             ]);
 
+            if ($request->has('call_outcome') && ! app(CallOutcomes::class)->isAllowed($callLog->organization_id, $request->input('call_outcome'))) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => ['call_outcome' => ["Choose one of this business's call outcomes."]],
+                ], 422);
+            }
+
             $callLog->update($request->only([
                 'call_date', 'call_time', 'caller_name', 'caller_phone', 'caller_email',
                 'reason_for_call', 'call_outcome', 'status', 'service_request',
@@ -321,18 +330,21 @@ class AgentDashboardController extends Controller
                 ], 403);
             }
 
+            $outcomes = app(CallOutcomes::class);
             $clients = User::clientsVisibleTo($user)
                 ->where('is_active', true)
                 ->select('id', 'name', 'email', 'phone', 'unique_id')
                 ->orderBy('name')
                 ->get()
-                ->map(function ($client) {
+                ->map(function ($client) use ($outcomes) {
                     return [
                         'id' => $client->id,
                         'unique_id' => $client->unique_id,
                         'name' => $client->name,
                         'email' => $client->email,
                         'phone' => $client->phone ?? '',
+                        // Additive (D7): the outcomes agents may choose for this business.
+                        'call_outcomes' => $outcomes->menu($client->primaryOrganization()),
                     ];
                 });
 

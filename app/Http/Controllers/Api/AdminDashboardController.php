@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Actions\Organizations\ProvisionUserTenancy;
+use App\Enums\OutcomeCategory;
 use App\Http\Controllers\Controller;
 use App\Models\CallLog;
 use App\Models\User;
+use App\Services\Calls\CallOutcomes;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -559,11 +561,11 @@ class AdminDashboardController extends Controller
 
         // Success Rate (calls with successful outcomes)
         $successfulCallsToday = CallLog::whereDate('created_at', $today)
-            ->whereIn('call_outcome', ['scheduled-appointment', 'information-provided', 'service-completed'])
+            ->whereIn('call_outcome', app(CallOutcomes::class)->keys(null, OutcomeCategory::Booked, OutcomeCategory::Information))
             ->count();
 
         $successfulCallsYesterday = CallLog::whereDate('created_at', $yesterday)
-            ->whereIn('call_outcome', ['scheduled-appointment', 'information-provided', 'service-completed'])
+            ->whereIn('call_outcome', app(CallOutcomes::class)->keys(null, OutcomeCategory::Booked, OutcomeCategory::Information))
             ->count();
 
         $successRateToday = $callsToday > 0 ? round(($successfulCallsToday / $callsToday) * 100, 1) : 0;

@@ -84,9 +84,9 @@ A client user only ever sees their own business. The business is resolved on the
 | GET | `/agent/dashboard/kpi?period=today\|weekly\|monthly` | `data.kpi_data` |
 | GET | `/agent/dashboard/performance` | `data.performance_data` |
 | GET | `/agent/call-logs?status&limit&offset` | Own calls |
-| POST | `/agent/call-logs` | Permission `calls.create` **in the client's business** (else 422 on `client_id`). Notifies the business |
+| POST | `/agent/call-logs` | Permission `calls.create` **in the client's business** (else 422 on `client_id`). `call_outcome` must be one of that business's active outcomes (else 422 on `call_outcome`). Notifies the business |
 | PUT | `/agent/call-logs/{id}` | Own calls, while still assigned to that business |
-| GET | `/agent/clients` | Only businesses the agent is assigned to |
+| GET | `/agent/clients` | Only businesses the agent is assigned to. Each client carries `call_outcomes: [{key, label, category}]`, the pick-list for that business (added P2-4a) |
 | GET | `/duty-schedules`, `/duty-schedules/calendar` | Own shifts (admins: all) |
 
 ### Admin — role `admin`
