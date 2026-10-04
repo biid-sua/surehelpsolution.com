@@ -46,8 +46,7 @@ class CallLog extends Model
     ];
 
     /**
-     * Short badge text for the platform's default outcomes. A business's own outcomes
-     * use their category's badge instead (OutcomeCategory::badge()).
+     * Call outcomes that describe the call better than its status does.
      */
     public const OUTCOME_LABELS = [
         'scheduled-appointment' => 'Scheduled',

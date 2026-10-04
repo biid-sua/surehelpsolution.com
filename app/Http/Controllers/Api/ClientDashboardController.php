@@ -562,16 +562,6 @@ class ClientDashboardController extends Controller
         return CallLog::query()->forOrganization(app(CurrentOrganization::class)->id() ?? 0);
     }
 
-    /**
-     * Outcome keys meaning "appointment booked" for the current business (spec §14).
-     *
-     * @return list<string>
-     */
-    private function bookedKeys(): array
-    {
-        return app(CallOutcomes::class)->keys(app(CurrentOrganization::class)->id(), OutcomeCategory::Booked);
-    }
-
     private function organizationPayload(): ?array
     {
         $organization = app(CurrentOrganization::class)->get();

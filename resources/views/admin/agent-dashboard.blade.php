@@ -1879,20 +1879,6 @@
                 clientSearch.focus();
             }
 
-            // Each business has its own outcome list (spec §14); fall back to the platform defaults.
-            const outcomeSelect = document.getElementById('callOutcome');
-            const defaultOutcomeOptions = outcomeSelect.innerHTML;
-            function setOutcomeOptions(outcomes) {
-                const current = outcomeSelect.value;
-                if (!Array.isArray(outcomes) || outcomes.length === 0) {
-                    outcomeSelect.innerHTML = defaultOutcomeOptions;
-                } else {
-                    outcomeSelect.innerHTML = '<option value="">Select outcome...</option>';
-                    outcomes.forEach(o => outcomeSelect.add(new Option(o.label, o.key)));
-                }
-                outcomeSelect.value = [...outcomeSelect.options].some(o => o.value === current) ? current : '';
-            }
-
             // Show dropdown
             function showDropdown() {
                 if (filteredClients.length > 0) {
