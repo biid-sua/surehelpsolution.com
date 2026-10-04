@@ -154,6 +154,10 @@ class BillingTest extends TestCase
             ->set('paymentNote', 'Card via Payoneer link, Oct 11')->call('report')->assertHasNoErrors();
         $this->assertNotNull($invoice->fresh()->client_reported_paid_at);
         Notification::assertSentTo($this->admin, PaymentReported::class);
+
+        // Reporting again (e.g. a replayed request) is refused, so the billing team is emailed once.
+        Livewire::test(ClientBilling::class)->set('reporting', $invoice->ulid)->set('paymentNote', 'Again')->call('report')->assertHasErrors('paymentNote');
+        Notification::assertSentToTimes($this->admin, PaymentReported::class, 1);
         $this->actingAs($this->admin);
         Livewire::test(AdminBilling::class)->assertSee('Reported paid')->assertSee($invoice->number);
     }
@@ -289,6 +293,8 @@ class BillingTest extends TestCase
         Notification::assertSentTo($this->admin, PlanChangeRequested::class);
         $this->actingAs($manager)->get(route('app.billing'))->assertOk();
         Livewire::test(ClientBilling::class)->call('requestPlan', $plan->id)->assertForbidden();
+        $mine = app(IssueInvoice::class)->issue($org, [['description' => 'Setup', 'quantity' => 1, 'unit_cents' => 5000]], actor: $this->admin);
+        Livewire::test(ClientBilling::class)->assertDontSee('I\'ve paid')->call('startReport', $mine->ulid)->assertForbidden();
         $this->actingAs($staff)->get(route('app.billing'))->assertForbidden();
         Livewire::test(NotificationSettings::class)->assertDontSee('New invoice');
         $this->actingAs($owner);

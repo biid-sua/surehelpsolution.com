@@ -43,7 +43,7 @@ class Index extends Component
 
     public function startReport(string $ulid): void
     {
-        $this->authorize('billing.view', $this->organization());
+        $this->authorize('billing.manage', $this->organization()); // owners; managers are view-only (docs/billing.md)
         $this->invoice($ulid);
         $this->resetValidation();
         $this->paymentNote = '';
@@ -52,7 +52,7 @@ class Index extends Component
 
     public function report(ReportPayment $report): void
     {
-        $this->authorize('billing.view', $this->organization());
+        $this->authorize('billing.manage', $this->organization());
         $this->validate(['paymentNote' => ['required', 'string', 'max:500']], ['paymentNote.required' => 'Tell us how and when you paid (e.g. "Card via Payoneer on Oct 3").']);
 
         try {

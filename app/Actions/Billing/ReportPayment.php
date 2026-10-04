@@ -23,6 +23,10 @@ class ReportPayment
         if ($invoice->status !== InvoiceStatus::Open) {
             throw ValidationException::withMessages(['note' => ['This invoice is already settled.']]);
         }
+        // Once is enough: repeated reports would email the billing team every time.
+        if ($invoice->client_reported_paid_at !== null) {
+            throw ValidationException::withMessages(['note' => ['You already told us about this payment. We\'ll confirm it shortly.']]);
+        }
 
         $invoice->forceFill(['client_reported_paid_at' => now(), 'client_payment_note' => mb_substr(trim($note), 0, 500) ?: null])->save();
         $this->audit->record('invoice.payment_reported', $invoice, new: ['note' => $invoice->client_payment_note], organization: $invoice->organization, actor: $actor, label: $invoice->number);

@@ -17,9 +17,9 @@
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <x-ui.button variant="secondary" :href="route('app.billing.invoice', $first)">View invoice {{ $first->number }}</x-ui.button>
-                    @unless ($first->client_reported_paid_at)
+                    @if ($canManage && ! $first->client_reported_paid_at)
                         <x-ui.button variant="ghost" wire:click="startReport('{{ $first->ulid }}')">I've paid</x-ui.button>
-                    @endunless
+                    @endif
                 </div>
             </div>
 

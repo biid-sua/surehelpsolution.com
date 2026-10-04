@@ -65,6 +65,7 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 | Two-factor authentication for platform staff and agents, plus idle session timeouts | Decision D8; not built yet |
 | Customer duplicate merge (CRM-04) | Merge two customer records with a person confirming |
 | Content-Security-Policy header | Only possible after the classic screens stop loading scripts from CDNs |
+| Indexed lookup for calendar webhooks | Each change notification currently loads every connected calendar to find its channel; store channel ids in their own indexed table before many businesses connect calendars (PR #2 review) |
 | Phase 4 (email part): appointment reminders and confirmation emails, message templates | SMS waits for A2P 10DLC |
 | Billing extras | Usage records, paid add-ons, plan limits enforced through `Entitlements` |
 
