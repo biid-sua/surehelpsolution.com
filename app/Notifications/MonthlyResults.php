@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Enums\NotificationEvent;
 use App\Models\Organization;
 use App\Models\User;
+use App\Notifications\Concerns\RespectsQuietHours;
 use App\Services\Metrics\ResultsPdf;
 use App\Support\Money;
 use Illuminate\Bus\Queueable;
@@ -18,7 +19,7 @@ use Illuminate\Support\Str;
  */
 class MonthlyResults extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, RespectsQuietHours;
 
     public int $tries = 3;
 

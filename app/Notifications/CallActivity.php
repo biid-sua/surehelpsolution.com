@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Enums\NotificationEvent;
 use App\Models\CallLog;
 use App\Models\User;
+use App\Notifications\Concerns\RespectsQuietHours;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -18,7 +19,7 @@ use Illuminate\Support\Str;
  */
 class CallActivity extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, RespectsQuietHours;
 
     public int $tries = 3;
 

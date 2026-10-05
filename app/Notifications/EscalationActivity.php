@@ -40,6 +40,17 @@ class EscalationActivity extends Notification implements ShouldQueue
         $this->afterCommit();
     }
 
+    /** Urgent escalations ignore quiet hours: they're the reason someone wants to be woken. */
+    public function withDelay(object $notifiable): array
+    {
+        if ($this->escalation->priority === EscalationPriority::Urgent) {
+            return [];
+        }
+        $until = $notifiable instanceof User ? $notifiable->quietUntil() : null;
+
+        return $until ? ['mail' => $until] : [];
+    }
+
     /**
      * @return list<string>
      */

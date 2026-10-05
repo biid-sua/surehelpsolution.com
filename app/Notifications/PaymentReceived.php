@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Enums\NotificationEvent;
 use App\Models\Payment;
 use App\Models\User;
+use App\Notifications\Concerns\RespectsQuietHours;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -16,7 +17,7 @@ use Illuminate\Support\Str;
  */
 class PaymentReceived extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, RespectsQuietHours;
 
     public int $tries = 3;
 

@@ -9,6 +9,7 @@ use App\Notifications\Account\VerifyEmail;
 use App\Support\Audit\Audit;
 use App\Support\Authorization\RoleCatalog;
 use App\Support\Tenancy\CurrentOrganization;
+use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -22,6 +23,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 /**
  * @property list<string>|null $two_factor_recovery_codes hashed one-time codes
+ * @property \Illuminate\Support\Carbon|null $last_summary_on
  */
 class User extends Authenticatable
 {
@@ -49,6 +51,9 @@ class User extends Authenticatable
         'is_active',
         'unique_id',
         'must_change_password',
+        'daily_summary_at',
+        'quiet_hours_start',
+        'quiet_hours_end',
     ];
 
     /**
@@ -80,7 +85,52 @@ class User extends Authenticatable
             'two_factor_confirmed_at' => 'datetime',
             'last_login_at' => 'datetime',
             'session_epoch' => 'integer',
+            'last_summary_on' => 'date',
         ];
+    }
+
+    /** Owners get the daily summary at 7:30 unless they change it; everyone else opts in (NTF-04). */
+    public const DEFAULT_SUMMARY_AT = '07:30';
+
+    /** The person's own timezone, else their business's, else SureHelp's. */
+    public function timezoneOrDefault(): string
+    {
+        return $this->timezone ?: ($this->primaryOrganization()?->timezoneOrDefault() ?? (string) config('app.timezone'));
+    }
+
+    /** "HH:MM" when this person wants the daily summary, or null for none. */
+    public function dailySummaryTime(): ?string
+    {
+        if ($this->daily_summary_at === 'off') {
+            return null;
+        }
+        if ($this->daily_summary_at !== null) {
+            return $this->daily_summary_at;
+        }
+        $organization = $this->primaryOrganization();
+
+        return $organization && $this->organizationRole($organization) === 'owner' ? self::DEFAULT_SUMMARY_AT : null;
+    }
+
+    /**
+     * When quiet hours end, if they're on now (NTF-07). Non-urgent emails wait until then.
+     */
+    public function quietUntil(?\DateTimeInterface $at = null): ?CarbonImmutable
+    {
+        if (! $this->quiet_hours_start || ! $this->quiet_hours_end || $this->quiet_hours_start === $this->quiet_hours_end) {
+            return null;
+        }
+        $now = CarbonImmutable::instance($at ?? now())->setTimezone($this->timezoneOrDefault());
+        $time = $now->format('H:i');
+        [$start, $end] = [$this->quiet_hours_start, $this->quiet_hours_end];
+        $overnight = $start > $end;   // e.g. 21:00 to 07:00
+        $inside = $overnight ? ($time >= $start || $time < $end) : ($time >= $start && $time < $end);
+        if (! $inside) {
+            return null;
+        }
+        $until = $now->setTimeFromTimeString($end);
+
+        return $until->lessThanOrEqualTo($now) ? $until->addDay() : $until;
     }
 
     /** Two-step sign-in is set up and confirmed with a first code. */
