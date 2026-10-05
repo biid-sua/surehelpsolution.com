@@ -28,10 +28,6 @@ class DutyScheduleController extends Controller
         try {
             $user = Auth::user();
 
-            if (! in_array($user->role, ['admin', 'agent'])) {
-                return $this->forbidden('Access denied. Admin or Agent role required.');
-            }
-
             $agentId = $request->get('agent_id');
             $dateFrom = $request->get('date_from');
             $dateTo = $request->get('date_to');
@@ -39,7 +35,8 @@ class DutyScheduleController extends Controller
 
             $query = AgentDutySchedule::with('agent');
 
-            if ($user->role === 'agent') {
+            // Only schedulers see everyone's shifts; everyone else sees their own.
+            if (! $user->hasPermissionIn('users.view')) {
                 $query->where('agent_id', $user->id);
             } elseif ($agentId) {
                 $query->where('agent_id', $agentId);
@@ -89,10 +86,6 @@ class DutyScheduleController extends Controller
         try {
             $user = Auth::user();
 
-            if (! in_array($user->role, ['admin', 'agent'])) {
-                return $this->forbidden('Access denied. Admin or Agent role required.');
-            }
-
             $start = $request->get('start', Carbon::now()->startOfMonth()->toDateString());
             $end = $request->get('end', Carbon::now()->endOfMonth()->toDateString());
 
@@ -100,7 +93,8 @@ class DutyScheduleController extends Controller
                 ->active()
                 ->withinDateRange(Carbon::parse($start)->startOfDay(), Carbon::parse($end)->endOfDay());
 
-            if ($user->role === 'agent') {
+            // Only schedulers see everyone's shifts; everyone else sees their own.
+            if (! $user->hasPermissionIn('users.view')) {
                 $query->where('agent_id', $user->id);
             }
 
@@ -134,10 +128,6 @@ class DutyScheduleController extends Controller
     public function createSchedule(Request $request)
     {
         try {
-            if (Auth::user()->role !== 'admin') {
-                return $this->forbidden('Access denied. Admin role required.');
-            }
-
             $request->validate([
                 'agent_id' => 'required|exists:users,id',
                 'schedule_date' => 'required|date',
@@ -183,10 +173,6 @@ class DutyScheduleController extends Controller
     public function updateSchedule(Request $request, $id)
     {
         try {
-            if (Auth::user()->role !== 'admin') {
-                return $this->forbidden('Access denied. Admin role required.');
-            }
-
             $schedule = AgentDutySchedule::find($id);
             if (! $schedule) {
                 return response()->json(['success' => false, 'message' => 'Duty schedule not found'], 404);
@@ -258,10 +244,6 @@ class DutyScheduleController extends Controller
     public function deleteSchedule($id)
     {
         try {
-            if (Auth::user()->role !== 'admin') {
-                return $this->forbidden('Access denied. Admin role required.');
-            }
-
             $schedule = AgentDutySchedule::find($id);
             if (! $schedule) {
                 return response()->json(['success' => false, 'message' => 'Duty schedule not found'], 404);
@@ -284,10 +266,6 @@ class DutyScheduleController extends Controller
     public function checkConflicts(Request $request)
     {
         try {
-            if (Auth::user()->role !== 'admin') {
-                return $this->forbidden('Access denied. Admin role required.');
-            }
-
             $request->validate([
                 'agent_id' => 'required|exists:users,id',
                 'schedule_date' => 'required|date',
@@ -372,11 +350,6 @@ class DutyScheduleController extends Controller
             'full day' => '#2ecc71',
             default => '#95a5a6',
         };
-    }
-
-    private function forbidden(string $message)
-    {
-        return response()->json(['success' => false, 'message' => $message], 403);
     }
 
     private function conflict()

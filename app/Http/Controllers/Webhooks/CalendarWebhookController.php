@@ -48,15 +48,6 @@ class CalendarWebhookController extends Controller
 
     private function find(string $provider, string $channelId): ?CalendarConnection
     {
-        if ($channelId === '') {
-            return null;
-        }
-
-        return CalendarConnection::withoutGlobalScopes()
-            ->where('provider', $provider)
-            ->where('status', CalendarConnection::STATUS_ACTIVE)
-            ->whereNotNull('push_channels')
-            ->get()
-            ->first(fn (CalendarConnection $c) => collect($c->push_channels)->contains('id', $channelId));
+        return CalendarConnection::forPushChannel($provider, $channelId);
     }
 }

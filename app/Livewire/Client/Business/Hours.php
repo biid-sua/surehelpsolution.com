@@ -32,6 +32,8 @@ class Hours extends Component
 
     public string $emergencyInstructions = '';
 
+    public string $closedFrom = '';
+
     public string $closedUntil = '';
 
     public string $closureMessage = '';
@@ -56,6 +58,9 @@ class Hours extends Component
         $profile = BusinessProfile::query()->forOrganization($organization)->first();
         $this->emergencyAvailable = (bool) $profile?->emergency_available;
         $this->emergencyInstructions = (string) $profile?->emergency_instructions;
+        // Closures saved before vacation mode had a start date began straight away.
+        $start = $profile === null ? null : ($profile->closed_from ?? ($profile->closed_until ? now($organization->timezoneOrDefault()) : null));
+        $this->closedFrom = (string) $start?->toDateString();
         $this->closedUntil = (string) $profile?->closed_until?->toDateString();
         $this->closureMessage = (string) $profile?->closure_message;
     }
@@ -89,7 +94,8 @@ class Hours extends Component
         $this->validateIntervals();
         $this->validate([
             'emergencyInstructions' => ['nullable', 'string', 'max:2000'],
-            'closedUntil' => ['nullable', 'date_format:Y-m-d'],
+            'closedFrom' => ['nullable', 'date_format:Y-m-d', 'required_with:closedUntil'],
+            'closedUntil' => ['nullable', 'date_format:Y-m-d', 'required_with:closedFrom', 'after_or_equal:closedFrom', 'after_or_equal:today'],
             'closureMessage' => ['nullable', 'string', 'max:255'],
         ]);
 
@@ -112,12 +118,13 @@ class Hours extends Component
             $profile->fill([
                 'emergency_available' => $this->emergencyAvailable,
                 'emergency_instructions' => filled($this->emergencyInstructions) ? trim($this->emergencyInstructions) : null,
+                'closed_from' => $this->closedFrom ?: null,
                 'closed_until' => $this->closedUntil ?: null,
                 'closure_message' => filled($this->closureMessage) ? trim($this->closureMessage) : null,
             ])->save();
 
             $audit->record('business_hours.updated', $organization, ['intervals' => $before], ['intervals' => collect($this->days)->flatten(1)->count()]);
-            $audit->changes('business_profile.updated', $profile, ['emergency_available', 'emergency_instructions', 'closed_until', 'closure_message']);
+            $audit->changes('business_profile.updated', $profile, ['emergency_available', 'emergency_instructions', 'closed_from', 'closed_until', 'closure_message']);
         });
 
         $this->dispatch('toast', type: 'success', message: 'Hours saved. Agents see the new schedule right away.');

@@ -4,7 +4,9 @@ namespace App\Livewire\Admin\Schedules;
 
 use App\Livewire\Concerns\PlatformAdminOnly;
 use App\Models\AgentDutySchedule;
+use App\Models\ShiftRequest;
 use App\Models\User;
+use App\Services\Scheduling\ShiftRequests;
 use App\Support\Audit\Audit;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
@@ -17,7 +19,8 @@ use Livewire\Component;
 
 /**
  * Agent duty schedule as a week grid: who answers when. Shifts can run past midnight and never overlap
- * for the same agent. Times are in the operations timezone (config app.timezone).
+ * for the same agent. Times are in the operations timezone (config app.timezone). Agents' swap and
+ * leave requests are decided here, and the coverage grid shows hours with too few agents (SUP-03).
  */
 #[Layout('layouts.portal', ['portal' => 'admin'])]
 #[Title('Duty schedule')]
@@ -35,6 +38,9 @@ class Index extends Component
 
     /** @var array{agent_id: string, date: string, start: string, end: string, shift_type: string, title: string, description: string} */
     public array $shift = ['agent_id' => '', 'date' => '', 'start' => '09:00', 'end' => '17:00', 'shift_type' => 'morning', 'title' => '', 'description' => ''];
+
+    /** @var array<string, array{colleague?: string, note?: string}> per pending request (ULID) */
+    public array $decision = [];
 
     public function mount(): void
     {
@@ -139,6 +145,40 @@ class Index extends Component
         $this->dispatch('toast', type: 'success', message: 'Shift removed.');
     }
 
+    public function approve(string $ulid, ShiftRequests $requests): void
+    {
+        $this->authorize('users.update');
+        $request = ShiftRequest::pending()->where('ulid', $ulid)->firstOrFail();
+        $colleague = $this->decision[$ulid]['colleague'] ?? '';
+
+        $this->forRequest($ulid, fn () => $requests->approve($request, auth()->user(), $colleague !== '' ? (int) $colleague : null, $this->decision[$ulid]['note'] ?? null));
+        unset($this->decision[$ulid]);
+        $this->dispatch('toast', type: 'success', message: $request->type === ShiftRequest::LEAVE
+            ? 'Time off approved. Their shifts in those days were removed; check the coverage below.'
+            : 'Shift handed over.');
+    }
+
+    public function decline(string $ulid, ShiftRequests $requests): void
+    {
+        $this->authorize('users.update');
+        $request = ShiftRequest::pending()->where('ulid', $ulid)->firstOrFail();
+
+        $this->forRequest($ulid, fn () => $requests->decline($request, auth()->user(), $this->decision[$ulid]['note'] ?? null));
+        unset($this->decision[$ulid]);
+        $this->dispatch('toast', type: 'success', message: 'Request declined. The agent has been told.');
+    }
+
+    /** Runs a decision and shows its validation errors next to that request. */
+    private function forRequest(string $ulid, \Closure $decide): void
+    {
+        $this->resetValidation();
+        try {
+            $decide();
+        } catch (ValidationException $e) {
+            throw ValidationException::withMessages(collect($e->errors())->mapWithKeys(fn ($messages, $key) => ["decision.{$ulid}.{$key}" => $messages])->all());
+        }
+    }
+
     /** Repeat last week's shifts in this week, skipping any that would overlap. */
     public function copyPreviousWeek(): void
     {
@@ -167,7 +207,7 @@ class Index extends Component
             : 'Nothing to copy from last week.');
     }
 
-    public function render(): View
+    public function render(ShiftRequests $requests): View
     {
         $start = $this->weekStart();
         $days = collect(range(0, 6))->map(fn (int $i) => $start->addDays($i));
@@ -190,6 +230,9 @@ class Index extends Component
             'types' => AgentDutySchedule::SHIFT_TYPES,
             'timezone' => config('app.timezone'),
             'canEdit' => auth()->user()->hasPermissionIn('users.update'),
+            'requests' => ShiftRequest::pending()->with(['agent:id,name', 'shift', 'swapWith:id,name'])->oldest()->get(),
+            'coverage' => $requests->coverage($start),
+            'minAgents' => max(1, (int) config('scheduling.min_agents', 1)),
         ]);
     }
 

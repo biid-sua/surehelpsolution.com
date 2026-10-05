@@ -283,6 +283,29 @@ class CalendarSyncTest extends TestCase
         Bus::assertDispatched(SyncCalendarConnection::class, fn ($job) => $job->connectionId === $microsoft->id);
     }
 
+    public function test_webhooks_find_the_connection_through_the_channel_index(): void
+    {
+        [, $org] = $this->business();
+        $channel = fn (string $id) => ['calendar_id' => 'primary-cal', 'id' => $id, 'resource_id' => 'r', 'expires_at' => now()->addDays(5)->toIso8601String()];
+        $google = $this->connection($org, extra: ['push_secret' => 'g-secret', 'push_channels' => [$channel('chan-1'), $channel('chan-2')]]);
+
+        $this->assertSame(2, DB::table('calendar_push_channels')->where('calendar_connection_id', $google->id)->count());
+        $this->assertTrue($google->is(CalendarConnection::forPushChannel('google', 'chan-2')));
+        $this->assertNull(CalendarConnection::forPushChannel('microsoft', 'chan-2'), 'per provider');
+        $this->assertNull(CalendarConnection::forPushChannel('google', ''));
+
+        // Renewed channels replace the old ids.
+        $google->update(['push_channels' => [$channel('chan-3')]]);
+        $this->assertNull(CalendarConnection::forPushChannel('google', 'chan-1'));
+        $this->assertTrue($google->is(CalendarConnection::forPushChannel('google', 'chan-3')));
+
+        // A connection that lost access is ignored; a deleted one leaves nothing behind.
+        $google->update(['status' => CalendarConnection::STATUS_NEEDS_REAUTH]);
+        $this->assertNull(CalendarConnection::forPushChannel('google', 'chan-3'));
+        $google->delete();
+        $this->assertSame(0, DB::table('calendar_push_channels')->count());
+    }
+
     public function test_settings_choose_calendars_and_disconnect(): void
     {
         [$owner, $org] = $this->business();

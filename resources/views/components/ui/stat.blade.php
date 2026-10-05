@@ -15,7 +15,7 @@
 
 <{{ $tag }} @if ($href) href="{{ $href }}" @endif {{ $attributes->merge(['class' => 'group block rounded-[var(--radius-card)] border border-line bg-surface p-5 shadow-[var(--shadow-card)] transition-colors'.($href ? ' hover:border-brand-500/50 hover:bg-surface-2' : '')]) }}>
     <div class="flex items-start justify-between gap-3">
-        <p class="text-sm font-medium text-muted">{{ $label }}</p>
+        <p class="text-sm font-medium text-muted">{!! e($label, false) !!}</p>
         @if ($icon)
             <span class="rounded-lg bg-brand-500/15 p-2 text-brand-300"><x-ui.icon :name="$icon" class="size-5" /></span>
         @endif
@@ -28,6 +28,6 @@
                 {{ $change > 0 ? '+' : '' }}{{ $change }}%
             </span>
         @endif
-        @if ($hint)<span class="text-subtle">{{ $hint }}</span>@endif
+        @if ($hint)<span class="text-subtle">{!! e($hint, false) !!}</span>@endif
     </div>
 </{{ $tag }}>

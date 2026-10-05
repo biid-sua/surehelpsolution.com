@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\NotificationEvent;
 use App\Enums\OrganizationStatus;
+use App\Notifications\Account\ResetPassword;
+use App\Notifications\Account\VerifyEmail;
 use App\Support\Audit\Audit;
 use App\Support\Authorization\RoleCatalog;
 use App\Support\Tenancy\CurrentOrganization;
+use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,10 +17,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
 
+/**
+ * @property list<string>|null $two_factor_recovery_codes hashed one-time codes
+ * @property Carbon|null $last_summary_on
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -45,6 +52,9 @@ class User extends Authenticatable
         'is_active',
         'unique_id',
         'must_change_password',
+        'daily_summary_at',
+        'quiet_hours_start',
+        'quiet_hours_end',
     ];
 
     /**
@@ -55,6 +65,8 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     /**
@@ -69,7 +81,90 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
             'must_change_password' => 'boolean',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted:array',
+            'two_factor_confirmed_at' => 'datetime',
+            'last_login_at' => 'datetime',
+            'session_epoch' => 'integer',
+            'last_summary_on' => 'date',
         ];
+    }
+
+    /** Owners get the daily summary at 7:30 unless they change it; everyone else opts in (NTF-04). */
+    public const DEFAULT_SUMMARY_AT = '07:30';
+
+    /** The person's own timezone, else their business's, else SureHelp's. */
+    public function timezoneOrDefault(): string
+    {
+        return $this->timezone ?: ($this->primaryOrganization()?->timezoneOrDefault() ?? (string) config('app.timezone'));
+    }
+
+    /** "HH:MM" when this person wants the daily summary, or null for none. */
+    public function dailySummaryTime(): ?string
+    {
+        if ($this->daily_summary_at === 'off') {
+            return null;
+        }
+        if ($this->daily_summary_at !== null) {
+            return $this->daily_summary_at;
+        }
+        $organization = $this->primaryOrganization();
+
+        return $organization && $this->organizationRole($organization) === 'owner' ? self::DEFAULT_SUMMARY_AT : null;
+    }
+
+    /**
+     * When quiet hours end, if they're on now (NTF-07). Non-urgent emails wait until then.
+     */
+    public function quietUntil(?\DateTimeInterface $at = null): ?CarbonImmutable
+    {
+        if (! $this->quiet_hours_start || ! $this->quiet_hours_end || $this->quiet_hours_start === $this->quiet_hours_end) {
+            return null;
+        }
+        $now = CarbonImmutable::instance($at ?? now())->setTimezone($this->timezoneOrDefault());
+        $time = $now->format('H:i');
+        [$start, $end] = [$this->quiet_hours_start, $this->quiet_hours_end];
+        $overnight = $start > $end;   // e.g. 21:00 to 07:00
+        $inside = $overnight ? ($time >= $start || $time < $end) : ($time >= $start && $time < $end);
+        if (! $inside) {
+            return null;
+        }
+        $until = $now->setTimeFromTimeString($end);
+
+        return $until->lessThanOrEqualTo($now) ? $until->addDay() : $until;
+    }
+
+    /** Two-step sign-in is set up and confirmed with a first code. */
+    public function hasTwoFactor(): bool
+    {
+        return $this->two_factor_confirmed_at !== null && $this->two_factor_secret !== null;
+    }
+
+    /** Staff and agents must use two-step sign-in (D8). */
+    public function requiresTwoFactor(): bool
+    {
+        return in_array($this->role, config('account.two_factor.required_for', []), true);
+    }
+
+    /** @return HasMany<LegalAcceptance, $this> */
+    public function legalAcceptances(): HasMany
+    {
+        return $this->hasMany(LegalAcceptance::class);
+    }
+
+    /**
+     * Branded reset email, linking to our reset page.
+     *
+     * @param  string  $token
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPassword($token));
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmail);
     }
 
     /**
@@ -262,7 +357,10 @@ class User extends Authenticatable
         return match ($this->role) {
             'admin' => route('admin.home'),
             'agent' => route('agent.home'),
-            'client' => route('app.dashboard'),
+            // A business owner who hasn't finished setup starts in the setup wizard (spec ONB).
+            'client' => ($organization = $this->primaryOrganization()) && ! $organization->isSetUp() && $this->organizationRole($organization) === 'owner'
+                ? route('app.setup')
+                : route('app.dashboard'),
         };
     }
 

@@ -7,6 +7,7 @@
         'app.business.knowledge' => 'Knowledge',
         'app.business.rules' => 'Rules',
         'app.business.outcomes' => 'Call outcomes',
+        'app.business.emails' => 'Customer emails',
         'app.business.calendars' => 'Calendar sync',
     ];
 @endphp

@@ -1,8 +1,9 @@
 @php
     // Livewire full-page layout. Data: $portal (client|admin|agent), $title (from #[Title]), $slot.
-    $portal ??= 'client';
     $title ??= null;
     $user = auth()->user();
+    // Pages shared by every portal (your account) render inside the person's own portal.
+    $portal ??= ['admin' => 'admin', 'agent' => 'agent'][$user->role] ?? 'client';
     $navigation = app(\App\Support\Navigation\PortalNavigation::class)->for($user, $portal);
     $organization = app(\App\Support\Tenancy\CurrentOrganization::class)->get();
     $portalLabel = ['client' => 'Business portal', 'admin' => 'Admin console', 'agent' => 'Agent workspace'][$portal] ?? '';
@@ -76,6 +77,16 @@
         </aside>
 
         <div class="lg:pl-64">
+            @if (session()->has(\App\Services\Account\Impersonation::KEY))
+                {{-- Viewing as a client (spec ADM-05): impossible to miss, one click to stop. --}}
+                <div class="sticky top-0 z-40 flex flex-wrap items-center justify-between gap-3 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950 sm:px-6 lg:px-8" role="status">
+                    <span>You're viewing as {{ $user->name }}{{ $organization ? ' ('.$organization->name.')' : '' }}. Everything you do is recorded under your name.</span>
+                    <form method="POST" action="{{ route('impersonation.stop') }}">
+                        @csrf
+                        <button type="submit" class="rounded-lg bg-amber-950 px-3 py-1 text-amber-50 hover:bg-amber-900">Stop viewing</button>
+                    </form>
+                </div>
+            @endif
             {{-- Top bar --}}
             <header class="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-line bg-canvas/80 px-4 backdrop-blur sm:px-6 lg:px-8">
                 <button type="button" class="rounded-lg p-2 text-muted hover:bg-surface-2 hover:text-ink lg:hidden"
@@ -84,6 +95,14 @@
                 </button>
 
                 <div class="min-w-0 flex-1">
+                    @if ($portal === 'admin' && Route::has('admin.search'))
+                        {{-- Global search (spec ADM-09) --}}
+                        <form method="GET" action="{{ route('admin.search') }}" class="relative max-w-md" role="search">
+                            <x-ui.icon name="search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-subtle" />
+                            <label for="top-search" class="sr-only">Search everything</label>
+                            <input id="top-search" name="q" type="search" value="{{ request()->routeIs('admin.search') ? request('q') : '' }}" class="sh-input py-1.5 pl-9 text-sm" placeholder="Search businesses, people, callers, call IDs…" autocomplete="off">
+                        </form>
+                    @endif
                     @if ($organization)
                         <p class="truncate text-sm font-semibold text-ink">{{ $organization->name }}</p>
                         <p class="truncate text-xs text-subtle">{{ $organization->timezone ?? 'Timezone not set yet' }}</p>
@@ -92,11 +111,14 @@
 
                 <div class="flex items-center gap-3">
                     <livewire:notification-bell />
-                    <div class="hidden text-right sm:block">
-                        <p class="text-sm font-medium text-ink">{{ $user->name }}</p>
-                        <p class="text-xs text-subtle">{{ $user->email }}</p>
-                    </div>
-                    <span class="grid size-9 place-items-center rounded-full bg-gradient-to-br from-brand-500 to-accent-500 text-sm font-semibold text-white" aria-hidden="true">{{ $initials }}</span>
+                    <a href="{{ route('account.profile') }}" class="flex items-center gap-3 rounded-xl px-1.5 py-1 hover:bg-surface-2" title="Your account and security">
+                        <span class="hidden text-right sm:block">
+                            <span class="block text-sm font-medium text-ink">{{ $user->name }}</span>
+                            <span class="block text-xs text-subtle">{{ $user->email }}</span>
+                        </span>
+                        <span class="grid size-9 place-items-center rounded-full bg-gradient-to-br from-brand-500 to-accent-500 text-sm font-semibold text-white" aria-hidden="true">{{ $initials }}</span>
+                        <span class="sr-only">Your account</span>
+                    </a>
                 </div>
             </header>
 

@@ -5,9 +5,30 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 **Summary:** Phases 0–2 are merged and **deployed to production** (2026-10-04). Since then, on branch `claude/phase-2-development-1yiwc2`:
 - **Google / Microsoft calendar sync (P3-1)** is built. It goes live once the two OAuth apps are registered ([calendar-sync.md](calendar-sync.md)).
 - **Billing through Payoneer (P5-1)** is built and usable as soon as it's deployed and the payment settings are filled in ([billing.md](billing.md)).
+- **Accounts (D24):**
+  - Forgot password and email confirmation.
+  - Two-step sign-in, mandatory for staff and agents.
+  - Idle timeout and "sign out everywhere".
+  - A profile page.
+  - Team invitations for business owners.
+  - Terms acceptance with version tracking.
+- **Setup wizard and Results (D25):**
+  - New businesses set themselves up in seven guided steps, with industry templates.
+  - A Results page shows calls answered, jobs booked, leads, after-hours calls and estimated revenue.
+  - A monthly report email with a PDF goes out on the 1st.
+- **Support and communication (D26):**
+  - "View as client" and global search for staff.
+  - Daily summary email and quiet hours.
+  - Appointment confirmation, reminder and cancellation emails to customers, with editable templates.
+  - Merging duplicate customers.
+  - Vacation mode.
+- **Call quality reviews (D27):** supervisors score a random sample of each agent's calls against a five-point scorecard; agents read the feedback and confirm it.
+- **Usage, add-ons and plan limits (D30):** plans include a number of calls with a price per extra call, billed on the next invoice; a usage meter and alerts; paid add-ons; limits on team size and calendars.
+- **Data & privacy (D29):** owners download all their data, choose how long history is kept (3 years by default), erase a customer's personal data on request, and close their account with a 30-day grace period.
+- **Shift requests and coverage (D28):** agents ask to hand over a shift or for time off; schedulers approve or decline, and a grid shows hours with nobody on shift.
 - **One UI (D23):** the product now has a single version of every screen. The old admin and agent pages were rebuilt in the new design and deleted.
 
-223 automated tests pass.
+284 automated tests pass.
 
 ---
 
@@ -45,6 +66,34 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 |---|---|
 | P1-7 One UI | Every screen now exists once, in the new design. Users, Duty schedule and Website enquiries moved into the admin console. Agents get *My calls* and *My schedule*. The first-login password page was redesigned. The previous admin dashboard, agent dashboard ("classic call form") and their pages were deleted. |
 
+### Accounts (decision D24, 2026-10-12)
+| Step | What it delivered |
+|---|---|
+| P1-8 Accounts | Sign-in page; forgot password by email; two-step sign-in with an authenticator app (required for staff and agents, Super Admin can reset it); 30-minute idle timeout for staff and agents; "sign out other devices"; profile page with devices and sign-in history; owners invite managers and staff by email; everyone accepts the current Terms / Privacy Policy (and DPA for businesses), asked again when they change |
+
+### Onboarding and results (decision D25, 2026-10-13)
+| Step | What it delivered |
+|---|---|
+| Setup wizard | New owners are guided through business details, services (pre-filled for their industry), hours and service area, call handling (greeting, FAQs, rules), calendar and team; progress saved per step; admins see who is stuck and are emailed when someone finishes |
+| Results | Monthly calls answered, jobs booked, new leads, after-hours calls caught and estimated revenue (jobs × average job value), with breakdowns and a heatmap; PDF; report emailed on the 1st |
+
+### Support, communication and CRM (decision D26, 2026-10-14)
+| Step | What it delivered |
+|---|---|
+| Support tools | Staff can view the portal as a business user (clearly bannered and fully audited) and search everything from one box |
+| Daily summary and quiet hours | A morning email with yesterday's results and today's agenda; non-urgent emails held overnight on request |
+| Customer emails | Appointment confirmations, reminders, changes and cancellations to customers, in the business's name and words |
+| Duplicate customers | Suggested duplicates, side-by-side compare, merge everything into the record you keep |
+| Vacation mode | Plan time away ahead; bookings blocked only on those days; agents and the owner see it |
+
+### Agent quality, scheduling, privacy and billing extras (D27–D30)
+| Step | What it delivered |
+|---|---|
+| Call quality reviews | Each morning one random call per agent goes to the review queue. Supervisors score it (greeting, accuracy, booking attempt, tone, compliance), write feedback, and see each agent's average and pass rate. Agents get a notice, read it and confirm |
+| Usage, add-ons and limits | Calls included per plan, extra calls billed on the next invoice, usage meter and history, 80%/100% alerts; add-ons turned on and off by owners and billed with renewals; team and calendar limits |
+| Data & privacy | Full data export as a ZIP; retention period per business with a daily cleanup; erase one customer's personal data; close the account after 30 days (invoices kept) |
+| Shift requests and coverage | Agents ask to hand over a shift or for time off from *My schedule*. Schedulers approve or decline on *Duty schedule*; approved leave clears those shifts, and a coverage grid shows each hour's agents and the gaps |
+
 ### Phase 3: Calendar
 | Step | What it delivered |
 |---|---|
@@ -66,17 +115,13 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 ### A. Can be done now (no outside dependency)
 | Item | Notes |
 |---|---|
-| Replace the remaining inline role checks in the mobile API controllers with permissions | The web screens are done (D23) |
-| Two-factor authentication for platform staff and agents, plus idle session timeouts | Decision D8; not built yet |
-| Customer duplicate merge (CRM-04) | Merge two customer records with a person confirming |
 | Content-Security-Policy header | Only possible after the public website stops loading scripts from CDNs (its redesign) |
-| Indexed lookup for calendar webhooks | Each change notification currently loads every connected calendar to find its channel; store channel ids in their own indexed table before many businesses connect calendars (PR #2 review) |
-| Phase 4 (email part): appointment reminders and confirmation emails, message templates | SMS waits for A2P 10DLC |
-| Billing extras | Usage records, paid add-ons, plan limits enforced through `Entitlements` |
 
 ### B. Needs action from you (operations)
 | Item | Notes |
 |---|---|
+| **Before deploying the accounts release** | Tell staff and agents they'll need an authenticator app on their phone. Check outgoing email works (password resets, invitations). Set `SESSION_DRIVER=database`. See [deployment.md](deployment.md) |
+| Mobile app: two-step code field | Staff and agents can't sign in to the app until it sends `two_factor_code` ([api.md](api.md)) |
 | **Deploy calendar sync and billing** | Merge `claude/phase-2-development-1yiwc2` into `develop`. Then: `composer install --no-dev -o` (new PDF library), `php artisan migrate --force`, `npm ci && npm run build`, `php artisan optimize` |
 | **Billing setup** | *Admin › Billing › Payment settings*: Payoneer payment link and receiving-account bank details. Then create plans and subscribe businesses ([billing.md](billing.md)) |
 | Production clean-up from P1-0 | Confirm `/.env` returns 403, rotate secrets if it was ever reachable, delete old `storage/logs/*.log` (they contain passwords), move `.zip`/old backups off the server, run `php artisan audit:call-ownership --details` |

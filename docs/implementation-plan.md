@@ -134,6 +134,17 @@ Ordered. Each step is releasable and backward compatible.
 > - Deleted: the previous admin dashboard, users, duty-schedule and contact-form pages; the agent dashboard / classic call form; the old password page; unused `home_new` / `welcome` views; `AdminController` and the `Admin\*` web controllers, with their routes. The mobile API is unchanged.
 > - Tests: `SingleConsoleTest` (9). Older tests moved to the new screens or the API.
 
+### P1-8 Accounts (D24)
+> **Status 2026-10-12: done.**
+> - **Signing in:** a sign-in page in the design system (the website pop-up is removed); forgot/reset password by email (AUTH-01); email confirmation.
+> - **Two-step sign-in (AUTH-02):** authenticator app with recovery codes and replay protection; mandatory for staff and agents on web and mobile API; Super Admin reset.
+> - **Sessions (AUTH-03):** 30-minute idle timeout for staff and agents; sign out everywhere through the session epoch; device list and mobile-app sign-ins; sign-in history with method.
+> - **Profile page (AUTH-06).**
+> - **Team invitations for business owners (AUTH-04):** owner invites managers and staff; managers invite staff; roles; removal.
+> - **Terms acceptance with version tracking (CMP-06).**
+> - **Tests:** `AccountSecurityTest` (11); API and agent tests updated for mandatory two-step sign-in.
+> - **Still open:** "Sign in with Google/Microsoft" (AUTH-05, needs the OAuth apps); the mobile app's code field.
+
 ### Phase 1 exit criteria
 - Every tenant query is scoped by `organization_id`; isolation tests pass for web and API.
 - No inline role checks remain; all writes go through Form Requests and Policies.
@@ -171,6 +182,34 @@ Started 2026-10-04 on `develop`, one feature branch per step.
 | Step | Scope (spec §) | Status |
 |---|---|---|
 | P5-1 | Plans as data (monthly/yearly, trial, feature keys, limits), subscriptions (trial → active → past due → cancelled; plan change at renewal; cancel at period end; billing day kept), invoices (gap-free numbers per year, billing-details snapshot, PDF via dompdf, printable page), payments ledger (partial payments, duplicate-reference guard, receipts), daily `billing:run` (trial conversion, renewals with catch-up, overdue reminders ×3 a week apart), Payoneer gateway (per-invoice or default payment link for card/ACH, receiving-account bank details), client *Billing* page ("I've paid", plan-switch request), *Admin › Billing* (needs-attention queue, record payment, void, one-off invoices, subscriptions, plans, payment settings, MRR/outstanding/overdue/collected), billing notifications, `Entitlements` service. Setup: [billing.md](billing.md) | **done** 2026-10-10 (payments confirmed by a person; automatic gateway later) |
+
+## 4d. Onboarding and results (D25)
+
+| Step | Scope (spec) | Status |
+|---|---|---|
+| ONB-1 | Setup wizard (ONB-01..05, 07, 08): 7 steps with progress bar, industry templates, saved per step into the real records; new owners start there; dashboard banner; admin progress column, filter and checklist; email to staff on finish. Phone setup (ONB-06) and payment (ONB-09) wait for Twilio and automatic payments | **done** 2026-10-13 |
+| RPT-1 | Results page (RPT-01): answered calls, jobs booked, leads, after-hours calls caught, estimated revenue from the owner's average job value, outcomes, reasons, day × hour heatmap, month-over-month change; PDF download; monthly report email with PDF on the 1st (RPT-02), switchable per person | **done** 2026-10-13 |
+
+## 4e. Support, communication and CRM (D26)
+
+| Step | Scope (spec) | Status |
+|---|---|---|
+| SUP-T | View as client (ADM-05) with banner, private account pages and `impersonator_id` on every audit entry; global search (ADM-09) | **done** 2026-10-14 |
+| NTF-4/7 | Daily summary email at each person's chosen time (owners on by default); quiet hours hold non-urgent emails | **done** 2026-10-14 |
+| MSG-1 | Appointment emails to customers (§26–27): confirmation, reminder (chosen lead time), time changed, cancellation; editable templates with preview and test send; timeline entries | **done** 2026-10-14 (SMS after A2P 10DLC) |
+| CRM-04 | Duplicate suggestions (same email or name), side-by-side compare, merge everything into the record a person chooses | **done** 2026-10-14 |
+| CLI-06 | Vacation mode with planned dates, dashboard banner with "end it now", agent notices | **done** 2026-10-14 |
+
+## 4f. Agent quality, scheduling, privacy and billing extras (D27–D30)
+
+| Step | Scope (task.md) | Status |
+|---|---|---|
+| SUP-04 | Call quality reviews: daily random sample per agent, pick by call ID or at random, five-point scorecard with weights and a must-pass compliance point, written feedback, agent notice and "Got it", team results per agent; `qa.review` permission | **done** 2026-10-15 (recordings after telephony; AI scoring AIX-03 later) |
+| BIL-03/05/11, ADD-01..04 | Calls included per plan with extra-call billing on the next invoice; usage records; meter and history on *Billing*; alerts at 80%/100%; add-on catalogue, turn on (pro rata) / off (period end), billed with renewals, unlock feature keys; team-member and calendar limits (D30) | **done** 2026-10-17 (minutes/SMS/AI usage after telephony and AI) |
+| API-perm | Mobile API: per-route permissions on admin endpoints; own-only shifts and numbers without `users.view`; duplicated role checks removed (D32) | **done** 2026-10-17 |
+| CAL-perf | Calendar change notifications find their connection through an indexed channel table (D31) | **done** 2026-10-17 |
+| CMP-05 / CMP-07 | *Data & privacy* page: full data export (ZIP, background, 7 days), retention period per business (default 3 years) with daily cleanup, erasing one customer's personal data, closing the account after 30 days with "keep my account" (D29) | **done** 2026-10-16 |
+| AGT-11 / SUP-03 | Shift hand-over and time-off requests from *My schedule*; approve/decline (with note) on *Duty schedule*; leave removes shifts and marks the days; coverage grid by hour with a minimum (D28) | **done** 2026-10-15 |
 
 ## 5. Later phases (outline, in spec order)
 

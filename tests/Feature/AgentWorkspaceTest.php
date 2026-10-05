@@ -79,8 +79,11 @@ class AgentWorkspaceTest extends TestCase
         [, $mine] = $this->business('Rivera Plumbing');
         [, $notMine] = $this->business('Secret Dental', assign: false);
 
+        // Agents must use two-step sign-in (D8): without it they set it up first.
         $this->postJson(route('auth.login'), ['email' => $this->agent->email, 'password' => 'password'])
             ->assertJsonPath('redirect', route('agent.home'));
+        $this->get(route('agent.home'))->assertRedirect(route('account.security'));
+        $this->flushSession();
 
         $this->actingAs($this->agent)->get(route('agent.home'))->assertOk()
             ->assertSee('Rivera Plumbing')->assertSee('Open until 5 PM')->assertDontSee('Secret Dental');

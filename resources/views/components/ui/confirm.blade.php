@@ -14,7 +14,7 @@
         <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="confirm-title-{{ $attributes->get('id', 'x') }}">
             <div class="absolute inset-0 bg-black/60" x-on:click="open = false"></div>
             <div x-show="open" x-transition x-trap.noscroll="open" class="relative w-full max-w-md rounded-2xl border border-line-strong bg-surface p-6 shadow-2xl">
-                <h2 id="confirm-title-{{ $attributes->get('id', 'x') }}" class="text-base font-semibold text-ink">{{ $title }}</h2>
+                <h2 id="confirm-title-{{ $attributes->get('id', 'x') }}" class="text-base font-semibold text-ink">{!! e($title, false) !!}</h2>
                 <div class="mt-2 text-sm text-muted">{{ $slot }}</div>
                 <div class="mt-6 flex justify-end gap-2">
                     <x-ui.button variant="secondary" x-on:click="open = false">Cancel</x-ui.button>

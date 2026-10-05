@@ -34,6 +34,14 @@ class Plan extends Model
         ];
     }
 
+    /** Limits a plan can set (all optional; missing means unlimited). */
+    public const LIMITS = [
+        'calls' => 'Calls included per billing period',
+        'extra_call_cents' => 'Price per extra call (cents)',
+        'team_members' => 'Team members (people who can sign in)',
+        'calendars' => 'Connected calendars',
+    ];
+
     /** "$299/month" */
     public function priceLabel(): string
     {

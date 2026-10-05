@@ -2,6 +2,7 @@
 
 use App\Exceptions\ApiExceptionRenderer;
 use App\Exceptions\AuthorizationFailureLogger;
+use App\Http\Middleware\AccountGate;
 use App\Http\Middleware\EnsureApiUserIsActive;
 use App\Http\Middleware\ForcePasswordChange;
 use App\Http\Middleware\RedirectGuestsToHome;
@@ -27,12 +28,15 @@ return Application::configure(basePath: dirname(__DIR__))
             'force.password.change' => ForcePasswordChange::class,
             'api.active' => EnsureApiUserIsActive::class,
             'tenant' => ResolveOrganization::class,
+            'account.gate' => AccountGate::class,
         ]);
 
         $middleware->append(SecurityHeaders::class);
 
-        // Guests are sent to the home page (login modal); the API never redirects, it answers 401.
-        $middleware->redirectGuestsTo(fn ($request) => $request->is('api/*') ? null : route('home'));
+        // Guests are sent to the sign-in page; the API never redirects, it answers 401.
+        $middleware->redirectGuestsTo(fn ($request) => $request->is('api/*') ? null : route('login'));
+        // Signed-in people opening a guest page (sign in, forgot password) go to their portal.
+        $middleware->redirectUsersTo(fn ($request) => $request->user()?->homeUrl() ?? route('home'));
 
         $middleware->api(prepend: [
             EnsureFrontendRequestsAreStateful::class,

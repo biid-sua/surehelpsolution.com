@@ -30,6 +30,12 @@ class AuditLog extends Model
     /**
      * @return BelongsTo<User, $this>
      */
+    /** SureHelp staff behind an action taken while viewing as a client (ADM-05). */
+    public function impersonator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'impersonator_id');
+    }
+
     public function actor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'actor_id');

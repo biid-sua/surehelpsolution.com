@@ -6,6 +6,7 @@ use App\Enums\CustomerStatus;
 use App\Livewire\Concerns\ScopedToOrganization;
 use App\Models\Customer;
 use App\Models\Tag;
+use App\Services\Customers\DuplicateCustomers;
 use App\Support\Audit\Audit;
 use App\Support\Phone;
 use Illuminate\Contracts\View\View;
@@ -123,6 +124,9 @@ class Index extends Component
 
         return view('livewire.client.customers.index', [
             'customers' => $customers,
+            // Cheap check first; only list pairs (one per pair, whatever matched) when there are any.
+            'duplicateCount' => auth()->user()->can('customers.delete', $organization) && app(DuplicateCustomers::class)->count($organization) > 0
+                ? app(DuplicateCustomers::class)->for($organization)->count() : 0,
             'statuses' => CustomerStatus::cases(),
             'tags' => Tag::query()->forOrganization($organization)->orderBy('name')->get(['id', 'name']),
             'filtered' => $this->search !== '' || $this->status !== '' || $this->tag !== '',

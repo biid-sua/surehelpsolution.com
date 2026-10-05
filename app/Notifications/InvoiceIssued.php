@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Enums\NotificationEvent;
 use App\Models\Invoice;
 use App\Models\User;
+use App\Notifications\Concerns\RespectsQuietHours;
 use App\Services\Billing\InvoicePdf;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -17,7 +18,7 @@ use Illuminate\Support\Str;
  */
 class InvoiceIssued extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, RespectsQuietHours;
 
     public int $tries = 3;
 

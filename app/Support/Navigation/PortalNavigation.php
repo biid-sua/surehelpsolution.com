@@ -21,6 +21,7 @@ class PortalNavigation
         return match ($portal) {
             'client' => [
                 $this->item('Dashboard', 'home', 'app.dashboard', 'app.dashboard', 'dashboard.view'),
+                $this->item('Results', 'trend-up', 'app.results', 'app.results*', 'reports.view'),
                 $this->item('Calls', 'phone', 'app.calls.index', 'app.calls.*', 'calls.view'),
                 $this->item('Calendar', 'calendar', 'app.calendar', 'app.calendar', 'calls.view'),
                 $this->item('Appointments', 'list', 'app.appointments.index', 'app.appointments.*', 'appointments.view'),
@@ -30,7 +31,9 @@ class PortalNavigation
                 $this->soon('Messages', 'chat'),
                 $this->item('Business', 'building', 'app.business.profile', 'app.business.*', 'organization.view'),
                 $this->item('Billing', 'card', 'app.billing', 'app.billing*', 'billing.view'),
-                $this->item('Notifications', 'bell', 'app.settings.notifications', 'app.settings.*', null),
+                $this->item('Team', 'users', 'app.settings.team', 'app.settings.team', 'users.view'),
+                $this->item('Notifications', 'bell', 'app.settings.notifications', 'app.settings.notifications', null),
+                $this->item('Data & privacy', 'shield', 'app.settings.privacy', 'app.settings.privacy*', 'organization.update'),
             ],
             'admin' => [
                 $this->item('Overview', 'home', 'admin.home', 'admin.home', 'dashboard.view'),
@@ -39,15 +42,17 @@ class PortalNavigation
                 $this->item('Duty schedule', 'calendar', 'admin.schedule', 'admin.schedule', 'users.view'),
                 $this->item('Call review', 'inbox', 'admin.calls.review', 'admin.calls.review', 'calls.update'),
                 $this->item('Escalations', 'alert', 'admin.escalations', 'admin.escalations', 'escalations.view'),
+                $this->item('Call quality', 'check-circle', 'agent.quality', 'agent.quality', 'qa.review'),
                 $this->item('Billing', 'card', 'admin.billing', 'admin.billing', 'billing.view'),
                 $this->item('Website enquiries', 'chat', 'admin.enquiries', 'admin.enquiries', 'marketing.view'),
                 $this->item('Audit log', 'shield', 'admin.audit', 'admin.audit', 'audit_logs.view'),
-                $this->item('Agent workspace', 'phone', 'agent.home', 'agent.*', 'calls.create'),
+                $this->item('Agent workspace', 'phone', 'agent.home', 'agent.home|agent.businesses.*|agent.calls*|agent.schedule', 'calls.create'),
             ],
             'agent' => [
                 $this->item('Businesses', 'building', 'agent.home', 'agent.home|agent.businesses.*', 'calls.create'),
                 $this->item('My calls', 'phone', 'agent.calls', 'agent.calls*', 'calls.create'),
                 $this->item('My schedule', 'calendar', 'agent.schedule', 'agent.schedule', null),
+                $this->item('Call quality', 'check-circle', 'agent.quality', 'agent.quality', null),
             ],
             default => [],
         };

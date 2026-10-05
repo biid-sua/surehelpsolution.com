@@ -77,10 +77,15 @@ class ClientPortalTest extends TestCase
 
     public function test_login_sends_clients_to_the_business_portal(): void
     {
-        [$client] = $this->client(['email' => 'owner@plumbing.test', 'password' => 'Secret123!']);
+        [$client, $organization] = $this->client(['email' => 'owner@plumbing.test', 'password' => 'Secret123!']);
 
+        // A new business starts in the setup wizard; once set up, owners land on the dashboard.
         $this->postJson(route('auth.login'), ['email' => 'owner@plumbing.test', 'password' => 'Secret123!'])
             ->assertOk()
+            ->assertJsonPath('redirect', route('app.setup'));
+        $this->post(route('auth.logout'));
+        $organization->forceFill(['setup_completed_at' => now()])->save();
+        $this->postJson(route('auth.login'), ['email' => 'owner@plumbing.test', 'password' => 'Secret123!'])
             ->assertJsonPath('redirect', route('app.dashboard'));
     }
 

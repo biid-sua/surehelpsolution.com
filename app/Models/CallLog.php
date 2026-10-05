@@ -9,6 +9,7 @@ use App\Services\Calls\CallOutcomes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -123,6 +124,16 @@ class CallLog extends Model
     public function tasks(): HasMany
     {
         return $this->hasMany(Task::class, 'call_log_id');
+    }
+
+    /**
+     * The quality review of this call, if it was sampled or picked (spec SUP-04).
+     *
+     * @return HasOne<QaReview, $this>
+     */
+    public function qaReview(): HasOne
+    {
+        return $this->hasOne(QaReview::class, 'call_log_id');
     }
 
     /**

@@ -13,6 +13,7 @@
             <label for="org-status" class="sh-label">Status</label>
             <select id="org-status" wire:model.live="status" class="sh-input">
                 <option value="">All statuses</option>
+                <option value="setup">Still setting up</option>
                 @foreach ($statuses as $option)
                     <option value="{{ $option->value }}">{{ $option->label() }}</option>
                 @endforeach
@@ -31,6 +32,7 @@
                         <th scope="col">Business</th>
                         <th scope="col">Owner</th>
                         <th scope="col">Status</th>
+                        <th scope="col">Setup</th>
                         <th scope="col" class="text-right">Agents</th>
                         <th scope="col" class="text-right">Calls (30d)</th>
                         <th scope="col" class="hidden text-right md:table-cell">Since</th>
@@ -54,6 +56,14 @@
                                     \App\Enums\OrganizationStatus::Paused => 'warning',
                                     \App\Enums\OrganizationStatus::Cancelled => 'danger',
                                 }">{{ $organization->status->label() }}</x-ui.badge>
+                            </td>
+                            <td>
+                                @if ($organization->isSetUp())
+                                    <span class="text-sm text-muted">Done</span>
+                                @else
+                                    @php $c = app(\App\Services\Setup\SetupProgress::class)->count($organization); @endphp
+                                    <x-ui.badge :tone="$c['done'] === 0 ? 'danger' : 'warning'">{{ $c['done'] }}/{{ $c['total'] }} steps</x-ui.badge>
+                                @endif
                             </td>
                             <td class="text-right tabular-nums text-muted">{{ $organization->agents_count }}</td>
                             <td class="text-right tabular-nums text-muted">{{ number_format($organization->calls_30d) }}</td>

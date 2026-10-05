@@ -32,8 +32,11 @@ class IssueInvoice
 
     /**
      * The invoice for the subscription's current period; issued once, however often billing runs.
+     * Extra lines (add-ons, calls beyond the last period's allowance) are added after the plan.
+     *
+     * @param  list<array{description: string, quantity: int, unit_cents: int}>  $extraLines
      */
-    public function forPeriod(Subscription $subscription, ?User $actor = null): Invoice
+    public function forPeriod(Subscription $subscription, ?User $actor = null, array $extraLines = []): Invoice
     {
         $existing = Invoice::withoutGlobalScopes()->where('subscription_id', $subscription->id)
             ->whereDate('period_start', $subscription->current_period_start->toDateString())->first();
@@ -44,11 +47,12 @@ class IssueInvoice
         $plan = $subscription->plan;
         $start = CarbonImmutable::parse($subscription->current_period_start->toDateString());
         $end = CarbonImmutable::parse($subscription->current_period_end->toDateString());
-        $label = $start->format('M j, Y').' – '.$end->subDay()->format('M j, Y');
+        $label = self::periodLabel($start, $end);
 
         try {
             return $this->issue($subscription->organization, [
                 ['description' => "{$plan->name} plan · {$label}", 'quantity' => 1, 'unit_cents' => $subscription->price_cents],
+                ...$extraLines,
             ], $subscription->currency, $actor, [
                 'subscription_id' => $subscription->id,
                 'period_start' => $start->toDateString(),
@@ -58,6 +62,11 @@ class IssueInvoice
             // A parallel billing run issued it a moment ago.
             return Invoice::withoutGlobalScopes()->where('subscription_id', $subscription->id)->whereDate('period_start', $start->toDateString())->firstOrFail();
         }
+    }
+
+    public static function periodLabel(CarbonImmutable $start, CarbonImmutable $end): string
+    {
+        return $start->format('M j, Y').' – '.$end->subDay()->format('M j, Y');
     }
 
     /**

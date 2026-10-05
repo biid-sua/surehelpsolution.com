@@ -162,13 +162,30 @@
                                 @else
                                     <x-ui.badge tone="success">Active</x-ui.badge>
                                 @endif
+                                @if ($u->hasTwoFactor())
+                                    <x-ui.badge tone="brand" title="Two-step sign-in is on">2-step</x-ui.badge>
+                                @elseif ($u->requiresTwoFactor())
+                                    <x-ui.badge tone="warning" title="Required; they'll set it up at their next sign-in">No 2-step yet</x-ui.badge>
+                                @endif
                             </td>
                             <td class="whitespace-nowrap text-right">
+                                @if ($canImpersonate && $u->isClient() && $u->is_active)
+                                    <form method="POST" action="{{ route('admin.impersonate', $u) }}" class="inline">
+                                        @csrf
+                                        <x-ui.button type="submit" size="sm" variant="ghost">View as</x-ui.button>
+                                    </form>
+                                @endif
                                 @if ($editable)
                                     <x-ui.confirm id="reset-{{ $u->id }}" title="Reset {{ $u->name }}'s password?" confirm-label="Reset password" tone="primary" action="resetPassword({{ $u->id }})">
                                         <x-slot:trigger><x-ui.button size="sm" variant="ghost">Reset password</x-ui.button></x-slot:trigger>
                                         Their current password stops working and they're signed out of the mobile app. You'll see a temporary password to share with them.
                                     </x-ui.confirm>
+                                    @if ($u->hasTwoFactor() && ! $self)
+                                        <x-ui.confirm id="reset2fa-{{ $u->id }}" title="Reset {{ $u->name }}'s two-step sign-in?" confirm-label="Reset" tone="primary" action="resetTwoFactor({{ $u->id }})">
+                                            <x-slot:trigger><x-ui.button size="sm" variant="ghost">Reset 2-step</x-ui.button></x-slot:trigger>
+                                            Use this when they've lost their phone and recovery codes. Check it's really them first. They're signed out everywhere and set it up again at their next sign-in.
+                                        </x-ui.confirm>
+                                    @endif
                                     @unless ($self)
                                         <x-ui.confirm id="toggle-{{ $u->id }}" title="{{ $u->is_active ? 'Switch off '.$u->name.'?' : 'Switch '.$u->name.' back on?' }}"
                                             confirm-label="{{ $u->is_active ? 'Switch off' : 'Switch on' }}" :tone="$u->is_active ? 'danger' : 'primary'" action="toggleActive({{ $u->id }})">

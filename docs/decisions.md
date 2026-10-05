@@ -185,6 +185,163 @@ The audit log is visible to Super Admin and Operations Manager only, never to bu
 - From now on, rebuilding a screen means deleting the old one in the same change. Recorded in the master spec, §7 "One UI".
 **Why:** Two versions of a screen double the testing, confuse users about which one is real, and keep old security problems alive. A new product has no existing users to migrate gently.
 
+## D24 — Accounts: sign-in, two-step codes, invitations, terms (2026-10-12)
+**Decision:**
+- **Sign-in page in the product** at `/login`, built with the design system. The website's "Sign in" button links to it; the old pop-up is gone (D23). Guests opening a portal page go there and come back to the page they wanted.
+- **Forgot password by email.** The answer is always the same, so nobody can find out whether an email has an account. Links expire after 60 minutes and work once. A reset signs the person out everywhere, mobile app included, and confirms their email address.
+- **Two-step sign-in with an authenticator app** (TOTP, RFC 6238), as decided in D8. It is **mandatory for staff and agents**:
+  - Without it they're sent to set it up before anything else.
+  - The mobile app refuses them until it's set up, then asks for the code (`two_factor_code`).
+  - It's optional for business owners and their teams.
+  - Each code works once; replaying a code is refused.
+  - Eight one-time recovery codes are stored hashed. The secret is encrypted at rest.
+  - A Super Admin can reset someone's two-step sign-in when they lose their phone.
+- **Sessions:**
+  - **Idle timeout:** 30 minutes for staff and agents, none for business owners. Background refreshes (`wire:poll`) don't count as activity.
+  - **Sign out everywhere:** every session carries the account's `session_epoch`, and bumping it ends all of that person's sessions at their next request, whatever the session driver. This happens on a password change or reset, on "Sign out other devices", when an account is switched off, and when two-step sign-in is reset. With database sessions the device list is live.
+  - **Login history:** each sign-in is recorded with its method (password, app code, recovery code, invitation), and people can see their recent activity.
+- **Team invitations (spec AUTH-04):**
+  - **Who can invite:** owners invite managers and staff; managers invite staff. Only owners change roles or remove people.
+  - **Joining:** invitations are emailed links valid for 7 days, and only a hash of the token is stored. The invited person picks their name and password and accepts the terms on the same form.
+  - **One business per email:** each person uses SureHelp with one business (D1), so an email that already has an account can't be invited.
+  - **Removing someone** signs them out everywhere. If they have no business left, their account is switched off.
+- **Terms acceptance (spec CMP-06):**
+  - **What's accepted:** everyone accepts the current Terms of Use and Privacy Policy; business users also accept the Data Processing Addendum.
+  - **What's recorded:** each acceptance stores the version, time, IP and browser.
+  - **Version changes:** versions are set in `config/account.php`; changing a version asks everyone again, with "we updated our terms".
+- **Profile page** at `/account`:
+  - Name, phone, your own timezone and password.
+  - Changing your password signs you out everywhere else.
+  - Confirm your email address.
+  - Security: two-step sign-in, recovery codes, devices and mobile-app sign-ins, recent activity.
+**Why:** These are what every user meets on day one, and what security reviews of a receptionist service ask about first: who can get in, how, and what's recorded.
+
+## D25 — Setup wizard and Results (2026-10-13)
+**Decision:**
+- **Setup wizard** at `/app/setup` (spec ONB). There are seven steps:
+  1. Your business (name, industry, timezone, contacts, average job value).
+  2. Services.
+  3. Hours & area (presets, emergencies, ZIP codes).
+  4. Call handling (greeting, details to collect, FAQs, do's and don'ts, when to escalate).
+  5. Calendar.
+  6. Team.
+  7. Go live.
+
+  How it works:
+  - Steps 1, 3 and 7 are required; the rest can be skipped and done later.
+  - **Saves into the real records** (profile, services, hours, rules, knowledge), so the Business pages show the same data and nothing has to be re-entered. Saving a step again replaces what that step created; items added on the Business pages stay.
+  - **Industry templates** live in `config/industries.php`: plumbing, HVAC, electrical, cleaning, dental, salon, legal, auto, other. They pre-fill services, emergency guidance, common FAQs and details to collect. The owner unticks and edits; nothing is saved without "Save and continue".
+  - **Progress is saved per step.** New owners start in the wizard when they sign in, and the dashboard shows a "Finish setting up" banner until they're done. Admins see each business's progress, can filter "Still setting up", and get an email when one finishes.
+  - **Finishing doesn't switch the business live.** The phone line still has to be connected, so SureHelp staff do the go-live check.
+  - **Existing businesses** that already had hours or services are marked as set up by the migration.
+- **Results page** at `/app/results` (spec RPT-01). For a month in the business's timezone it shows:
+  - calls answered (excluding missed and spam);
+  - jobs booked (calls with a "booked" outcome);
+  - new leads (customers created);
+  - after-hours calls caught (answered outside the business's hours; not shown until hours are set);
+  - how calls ended, why people called, and a day × hour heatmap;
+  - each figure compared with the previous month.
+
+  **Estimated revenue** = jobs booked × the average job value the owner sets, labelled as an estimate. Without a job value there's no figure, only a prompt to set one.
+- **Monthly report (spec RPT-02).**
+  - **Recipients:** everyone at the business with `reports.view`, unless they switch "Monthly results report" off.
+  - **Content:** email plus a PDF.
+  - **Timing:** `reports:monthly` runs daily at 14:10 UTC. Each business gets last month's report once (`last_report_month`), on the morning of the 1st in the US. A missed day is caught up the next day.
+- **Fix found while building this:** names with "&" or "<" showed as `&amp;` in headings, because the shared components escaped already-escaped text. The components now escape without double-encoding, so they're safe and correct for both raw and pre-escaped values.
+**Why:** The first hour decides whether a new business trusts the service, and the monthly "we answered X calls and booked $Y for you" is what keeps them paying.
+
+## D26 — Support tools, daily summary, customer emails, duplicates, vacation mode (2026-10-14)
+**Decision:**
+- **View as client (ADM-05).**
+  - **Who:** staff with `users.impersonate` (Super Admin, Operations Manager, Support Agent) can sign in as an active business user. They start it from Organizations, Users or Search.
+  - **While viewing:** an amber banner shows on every page with "Stop viewing", and signing out just stops viewing. The client's account and security pages stay closed. The staff member's own idle timeout and sign-out-everywhere still apply.
+  - **Audit:** start and end are recorded, and every audit entry made meanwhile stores `impersonator_id`. The audit log shows "by X, viewing as them".
+  - **Why full access rather than read-only:** fixing things for a client is what support needs. The audit trail makes it accountable.
+- **Global search (ADM-09):** one box for businesses, people, callers, call IDs and appointments. Each group only appears to staff allowed to see it.
+- **Daily summary (NTF-04):**
+  - **Content:** yesterday's calls, bookings, missed calls and leads; today's appointments; what's waiting.
+  - **When:** on for owners at 7:30 in their own timezone; opt-in for everyone else, at a time they choose. Sent once a day, and not at all on days with nothing to report.
+  - **Quiet hours (NTF-07):** emails wait until morning. In-app notifications still arrive, and urgent escalations never wait.
+- **Emails to a business's customers (§26–27):** confirmation, reminder, time changed and cancellation.
+  - **Sender:** sent in the business's name, with replies going to the business; each one is noted on the customer's timeline.
+  - **Editable:** each email has editable wording with placeholders, a live preview and a test send, and can be switched off.
+  - **Reminders:** at a lead time the business chooses (2–48 hours, default 24). Last-minute bookings get no separate reminder.
+  - **Not sent:** nothing goes to customers without an email address, and pending bookings wait until they're confirmed.
+  - **Text messages:** wait for A2P 10DLC.
+- **Duplicate customers (CRM-04):**
+  - **Suggestions:** records with the same email or the same full name. Phones are already unique per business.
+  - **Merging:** a person picks which record stays. Everything moves to it, and its own details win, with empty fields filled from the other.
+  - **Afterwards:** the other record is archived with `merged_into_id` and frees its phone number. Owners and managers only.
+- **Vacation mode (CLI-06):**
+  - **Planning:** "away from / back after" dates can be set ahead. Only those days are closed for bookings.
+  - **Who's told:** agents see current and upcoming time away. The owner's dashboard shows it, with "end it now".
+**Why:** These take load off SureHelp's support team and the owner's inbox, and keep customers informed without anyone remembering to do it.
+
+## D27 — Call quality reviews (2026-10-15)
+**Decision:** Supervisors score agents' calls against a fixed scorecard, and agents read the feedback on their own page (task.md SUP-04, AGT-12).
+- **Scorecard (`config/quality.php`):** greeting, accuracy, booking attempt, tone and compliance, each marked Met, Partly or Missed. Booking attempt can also be "Doesn't apply". Accuracy, booking attempt and compliance count double.
+  - **Score:** a percentage of the points that apply. A call passes at 80% or more.
+  - **Compliance must pass:** a call that misses it fails, whatever the total.
+  - **History stays put:** each review keeps a copy of the scorecard it was scored with, so changing the list later doesn't change past scores.
+- **Which calls:** each morning one random call per agent from the day before goes into the queue (`quality:sample`, 05:40 UTC). Reviewers can also pick a call by its ID, or ask for a random one from the last week. Each call is reviewed at most once; re-scoring updates it and is audited.
+- **Who:** new platform permission `qa.review`.
+  - **Who has it:** Super Admin and Operations Manager (all businesses), and Agent Supervisor (only their assigned businesses).
+  - **Own calls:** nobody scores their own calls.
+  - **Businesses:** business roles never get it, and businesses never see reviews.
+- **Feedback:** the reviewer writes what went well and/or what to do differently (at least one). The agent gets an in-app notice and an email (held during quiet hours), opens the review and confirms with "Got it". Reviewers see who has read theirs.
+- **One page:** *Call quality* (`/agent/quality`). Reviewers see three tabs: *To review*, *Team results* (per-agent average and pass rate over 30 days, lowest first) and *My feedback*. Agents see only *My feedback*. SureHelp managers reach it from the admin console.
+- **Later:** AI scoring of every call (AIX-03) will fill the same scorecard, so supervisors only review flagged calls. Listening to the recording needs telephony (Phase 3b).
+
+**Why:** Consistent call quality is what a receptionist service sells. A shared scorecard makes coaching fair and measurable, and random sampling keeps it honest.
+
+## D28 — Shift requests and coverage (2026-10-15)
+**Decision:** Agents ask for changes on *My schedule*; whoever plans the duty schedule decides on *Duty schedule*, which also shows coverage by hour (task.md AGT-11, SUP-03).
+- **Hand over a shift:** an agent offers one of their upcoming shifts, optionally naming a colleague. On approval the scheduler picks (or keeps) the colleague and the shift moves to them. It's refused if that colleague already works then.
+- **Time off:** up to 31 days at a time. On approval the agent's shifts in those days are taken off the schedule (kept, inactive, for the record) and each day is marked "Leave". Any gaps this leaves show straight away in the coverage grid.
+- **Who decides:** staff with `users.update` in the admin console, the same people who edit the schedule. Declining needs a note. Agents can withdraw a request while it's waiting. Supervisors who work in the agent workspace can't decide yet; they can be given admin access if needed.
+- **Notices:** schedulers get an in-app notice and email for each new request; the agent gets the decision the same way.
+- **Coverage:** a day × hour grid for the week showing how many agents are on shift. Hours below `SCHEDULE_MIN_AGENTS` (default 1) are marked as gaps.
+
+**Why:** Swaps and leave were handled by message and remembered by hand. Now they're recorded, the schedule changes only when someone approves, and gaps are visible before they cost a missed call.
+
+## D29 — Data export, retention, erasure and closing an account (2026-10-16)
+**Decision:** Business owners control their data on a *Data & privacy* page (spec §56–57, §91; task.md CMP-05, CMP-07). Managers and staff can't open it (`organization.update`).
+- **Full export:** a ZIP with customers, calls, appointments, tasks, escalations and invoices as CSV, plus the business settings as JSON. Built in the background (`BuildDataExport`); the owner gets an in-app notice and email. The file is private, downloads need sign-in and are audited, and it's deleted after 7 days. At most one export in progress and three a day. Cells that start like a formula are neutralised, as in the other CSV exports.
+- **Retention:** each business chooses how long history is kept: 1, 2, 3, 5 or 7 years, or everything. **Default 3 years.** The daily `privacy:run` (04:20 UTC) deletes older calls, past appointments, finished tasks, resolved escalations, timeline entries and archived customers. Open work is never deleted. Recordings and transcripts will follow the same setting once telephony exists.
+- **Erasing one customer:** when a customer asks, owners and managers (`customers.delete`) choose "Erase personal data". Their name, contact details and notes are removed from the record and from every call, appointment, task and escalation about them; the timeline is deleted; the record is archived and its phone number freed. Counts and outcomes stay, so results don't change. The audit entry holds only the record's ID.
+- **Closing the account:** only the owner, after typing the business name and their password (5 tries per 10 minutes). Nothing changes for 30 days: calls are still answered, a banner shows the date, the owner gets an email, and "Keep my account" undoes it. Then `privacy:run` deletes the business's customers, calls, appointments, settings, calendar connections, invitations and agent assignments; ends the subscription; and for people who only belonged to this business, removes their name, email, phone, sign-in, two-step setup, API tokens and notifications. **Invoices and payments are kept** (tax records). The business row stays, marked cancelled, so invoices still have an owner.
+- **Not legal advice:** these are the tools; the privacy policy and DPA describe the promises (spec §57: "Do not present legal compliance as guaranteed by the software").
+
+**Why:** Customers and regulators expect to get their data out and to have it deleted. Doing it in the product, with a grace period and an audit trail, is safer than doing it by hand on request.
+
+## D30 — Usage, add-ons and plan limits (2026-10-17)
+**Decision:** Plans can include a number of calls per billing period, with a price per extra call; businesses can turn on paid add-ons; plans can cap team members and connected calendars (task.md BIL-03, BIL-05, BIL-11, ADD-01..04).
+- **Usage = calls answered**, spam excluded. Minutes, texts and AI usage join once telephony and AI exist.
+- **We never stop answering.** Calls beyond the plan are billed, not refused. At the end of each period the usage is recorded once (`usage_records`) and any extra calls go on the next invoice; a subscription that ends gets a final invoice for them.
+- **Alerts:** at 80% and 100% of the included calls, once each per period, to people who see billing (switchable under *Notifications*, "Plan usage").
+- **Meter:** the client *Billing* page shows calls used this period against the plan, the estimated extra charge, and past periods.
+- **Add-ons:** a catalogue under *Admin › Billing › Add-ons* (name, monthly price, feature key). Owners turn them on and off on *Billing*.
+  - **On:** the price is locked. The rest of the current period is invoiced at once, pro rata; during a free trial it's free. Renewal invoices include it after that.
+  - **Off:** it stays on until the period ends, and "Keep it" undoes the change.
+  - **Features:** an add-on's key unlocks features through `Entitlements::allows`, alongside the plan's feature keys.
+- **Hard limits** (only when a plan sets them; blank means unlimited):
+  - **Team members:** people who can sign in, plus invitations still open.
+  - **Connected calendars:** reconnecting one already counted is always allowed.
+  - **Where they're checked:** on the server, with a clear message.
+- **Payments stay manual** (D22). Every charge is a normal invoice line, so automatic payments later change nothing here.
+
+**Why:** These are the levers of a usage-priced receptionist service: fair pricing for busy businesses, upsells without custom invoices, and plan tiers that mean something.
+
+## D31 — Finding a calendar from its change notification (2026-10-17)
+**Decision:** Push channel ids are indexed in `calendar_push_channels` (unique per provider and channel id). A Google or Microsoft change notification now finds its connection with one indexed lookup. The connection's `push_channels` list stays the source of truth; saving it rewrites the index, the migration backfills existing channels, and deleting a connection removes its rows.
+
+**Why:** The webhook used to load every connected calendar to find the matching channel, which gets slow as more businesses connect calendars (PR #2 review).
+
+## D32 — The mobile API checks permissions, not role names (2026-10-17)
+**Decision:** As on the web (D23), a route's `role:` middleware only picks the portal (admin, agent, client). What someone may do comes from permissions on the route (`can:`) or from the data's policy. The checks that repeated the role inside each API method are removed. The admin endpoints now follow the staff member's role: a Support Agent can read users, calls and schedules but not change them; an Operations Manager can't delete users. Seeing another agent's shifts or numbers needs `users.view`, so agents and supervisors see only their own.
+
+**Why:** One rule everywhere. Before, any admin account could change anything through the API, whatever its role in the admin console.
+
 ## D10 — Telephony
 **Decision:** **Twilio** (Programmable Voice, TaskRouter, Voice JS SDK, Messaging) behind a `TelephonyProvider` interface, so the vendor can be swapped. Calls stay manually logged until then, but the Phase 2 `calls` table is designed for provider data (call SID, direction, timings, recording/transcript references). Telephony becomes **Phase 3b**, right after Calendar, because live call handling is the core of a receptionist product.
 **Action needed from you (long lead time):** create a Twilio account and start **A2P 10DLC** brand and campaign registration now. US SMS cannot go live without it, and approval takes weeks.

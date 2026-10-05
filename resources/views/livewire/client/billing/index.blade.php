@@ -65,6 +65,28 @@
                         <div class="text-amber-300">Ends on {{ $subscription->current_period_end->format('M j, Y') }}.</div>
                     @endif
                 </dl>
+                @if ($meter && $meter['included'])
+                    @php($pct = min(100, $meter['percent']))
+                    <div class="mt-5">
+                        <div class="flex items-baseline justify-between gap-2 text-sm">
+                            <span class="text-muted">Calls this period</span>
+                            <span class="font-medium tabular-nums text-ink">{{ number_format($meter['used']) }} / {{ number_format($meter['included']) }}</span>
+                        </div>
+                        <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $pct }}" aria-label="Calls used">
+                            <div @class(['h-full rounded-full', 'bg-emerald-500' => $meter['percent'] < 80, 'bg-amber-500' => $meter['percent'] >= 80 && $meter['percent'] < 100, 'bg-red-500' => $meter['percent'] >= 100]) style="width: {{ $pct }}%"></div>
+                        </div>
+                        <p class="mt-1.5 text-xs text-subtle">
+                            Until {{ $meter['until']->subDay()->format('M j') }}.
+                            @if ($meter['extra'] > 0)
+                                {{ number_format($meter['extra']) }} extra so far{{ $meter['unit_cents'] ? ': about '.\App\Support\Money::format($meter['extra_cents'], $subscription->currency).' on your next invoice' : '' }}.
+                            @elseif ($meter['unit_cents'])
+                                Extra calls are {{ \App\Support\Money::format($meter['unit_cents'], $subscription->currency) }} each. We never stop answering.
+                            @endif
+                        </p>
+                    </div>
+                @elseif ($meter)
+                    <p class="mt-5 text-sm text-muted">{{ number_format($meter['used']) }} calls answered this period. Your plan has no call limit.</p>
+                @endif
             @else
                 <p class="text-sm text-muted">No plan yet. Choose one below and we'll set it up.</p>
             @endif
@@ -116,6 +138,9 @@
                         <div @class(['rounded-xl p-4 ring-1', 'bg-brand-500/10 ring-brand-500/40' => $isCurrent, 'bg-surface-2 ring-line' => ! $isCurrent])>
                             <p class="font-semibold text-ink">{{ $plan->name }}</p>
                             <p class="text-lg text-ink">{{ $plan->priceLabel() }}</p>
+                            @if (isset($plan->limits['calls']))
+                                <p class="text-xs text-muted">{{ number_format($plan->limits['calls']) }} calls included @if (isset($plan->limits['extra_call_cents']))· {{ \App\Support\Money::format($plan->limits['extra_call_cents'], $plan->currency) }} per extra call @endif</p>
+                            @endif
                             @if ($plan->description)<p class="mt-2 whitespace-pre-line text-sm text-muted">{{ $plan->description }}</p>@endif
                             @if ($plan->trial_days > 0 && ! $subscription)<p class="mt-2 text-xs text-emerald-300">{{ $plan->trial_days }}-day free trial</p>@endif
                             @if ($isCurrent)
@@ -127,6 +152,61 @@
                     @endforeach
                 </div>
                 @if ($subscription)<p class="mt-3 text-xs text-subtle">Plan changes start at your next renewal, so you're never charged twice.</p>@endif
+            </x-ui.card>
+        @endif
+
+        @if ($addons->isNotEmpty())
+            <x-ui.card title="Add-ons" description="Extras billed monthly with your plan. Turning one on adds the rest of this period to a separate invoice." class="lg:col-span-3">
+                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    @foreach ($addons as $addon)
+                        @php($on = $activeAddons->get($addon->id))
+                        <div @class(['rounded-xl border p-4', 'border-brand-500/50 bg-brand-500/5' => $on, 'border-line' => ! $on]) wire:key="addon-{{ $addon->id }}">
+                            <div class="flex items-start justify-between gap-2">
+                                <p class="font-semibold text-ink">{{ $addon->name }}</p>
+                                @if ($on)<x-ui.badge :tone="$on->cancel_at_period_end ? 'warning' : 'success'">{{ $on->cancel_at_period_end ? 'Ends '.$subscription?->current_period_end->format('M j') : 'On' }}</x-ui.badge>@endif
+                            </div>
+                            <p class="text-sm text-muted">{{ $on ? $on->priceLabel() : $addon->priceLabel() }}</p>
+                            @if ($addon->description)<p class="mt-2 text-sm text-muted">{{ $addon->description }}</p>@endif
+                            @if ($canManage)
+                                <div class="mt-3">
+                                    @if (! $on)
+                                        <x-ui.confirm id="addon-on-{{ $addon->id }}" :title="'Turn on '.$addon->name.'?'" confirm-label="Turn it on" tone="primary" action="activateAddon({{ $addon->id }})">
+                                            <x-slot:trigger><x-ui.button size="sm" :disabled="! $subscription">Turn on</x-ui.button></x-slot:trigger>
+                                            {{ $addon->priceLabel() }}, added to your plan's invoices. @if ($subscription?->status->value === 'trialing') It's free until your trial ends. @else The rest of this billing period is invoiced now, pro rata. @endif
+                                        </x-ui.confirm>
+                                    @elseif ($on->cancel_at_period_end)
+                                        <x-ui.button size="sm" variant="secondary" wire:click="activateAddon({{ $addon->id }})">Keep it</x-ui.button>
+                                    @else
+                                        <x-ui.confirm id="addon-off-{{ $addon->id }}" :title="'Turn off '.$addon->name.'?'" confirm-label="Turn it off" action="deactivateAddon({{ $on->id }})">
+                                            <x-slot:trigger><x-ui.button size="sm" variant="ghost">Turn off</x-ui.button></x-slot:trigger>
+                                            It stays on until the end of this billing period and isn't billed after that.
+                                        </x-ui.confirm>
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+                @if (! $subscription)<p class="mt-3 text-xs text-subtle">Choose a plan first: add-ons are billed with it.</p>@endif
+            </x-ui.card>
+        @endif
+
+        @if ($history->isNotEmpty())
+            <x-ui.card title="Usage by period" :padding="false" class="lg:col-span-3">
+                <x-ui.table>
+                    <thead><tr><th scope="col">Period</th><th scope="col" class="text-right">Calls answered</th><th scope="col" class="text-right">Included</th><th scope="col" class="text-right">Extra</th><th scope="col" class="text-right">Charged</th></tr></thead>
+                    <tbody class="divide-y divide-line">
+                        @foreach ($history as $record)
+                            <tr>
+                                <td class="text-ink">{{ $record->period_start->format('M j') }} – {{ $record->period_end->copy()->subDay()->format('M j, Y') }}</td>
+                                <td class="text-right tabular-nums">{{ number_format($record->quantity) }}</td>
+                                <td class="text-right tabular-nums text-muted">{{ $record->included === null ? 'Unlimited' : number_format($record->included) }}</td>
+                                <td class="text-right tabular-nums">{{ number_format($record->overage) }}</td>
+                                <td class="text-right tabular-nums">{{ $record->overage && $record->unit_cents ? \App\Support\Money::format($record->overage * $record->unit_cents) : '—' }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </x-ui.table>
             </x-ui.card>
         @endif
     </div>

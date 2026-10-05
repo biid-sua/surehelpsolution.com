@@ -21,8 +21,11 @@
         <x-ui.alert tone="warning" class="mb-6" title="Calendar not synced">This business's calendar connection is broken: their latest busy times may be missing. Confirm the time with the owner before booking.</x-ui.alert>
     @endif
 
-    @if ($profile?->closed_until && $profile->closed_until->isFuture())
-        <x-ui.alert tone="warning" class="mb-6" title="Temporarily closed until {{ $profile->closed_until->format('M j') }}">{{ $profile->closure_message ?: 'Take a message and offer a call back.' }}</x-ui.alert>
+    @php $localToday = now($organization->timezoneOrDefault())->toDateString(); @endphp
+    @if ($profile?->isAwayOn($localToday))
+        <x-ui.alert tone="warning" class="mb-6" title="On vacation until {{ $profile->closed_until->format('l, M j') }}: don't book visits before then">{{ $profile->closure_message ?: 'Take a message and offer a call back after they return.' }}</x-ui.alert>
+    @elseif ($profile?->hasAwayAhead($localToday))
+        <x-ui.alert tone="info" class="mb-6" title="Away {{ $profile->closed_from->format('M j') }} – {{ $profile->closed_until->format('M j') }}">Bookings for those days aren't possible. {{ $profile->closure_message }}</x-ui.alert>
     @endif
 
     <div class="grid gap-6 lg:grid-cols-5">

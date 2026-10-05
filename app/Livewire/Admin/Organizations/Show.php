@@ -6,6 +6,7 @@ use App\Enums\AgentAssignmentSource;
 use App\Livewire\Concerns\PlatformAdminOnly;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\Setup\SetupProgress;
 use App\Support\Audit\Audit;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
@@ -125,6 +126,8 @@ class Show extends Component
             'primaryTimezones' => self::PRIMARY_TIMEZONES,
             'otherTimezones' => array_values(array_diff(\DateTimeZone::listIdentifiers(), array_keys(self::PRIMARY_TIMEZONES))),
             'canUpdate' => auth()->user()->can('organization.update', $organization),
+            'setupCount' => app(SetupProgress::class)->count($organization),
+            'canImpersonate' => auth()->user()->hasPermissionIn('users.impersonate'),
         ])->title($organization->name);
     }
 }

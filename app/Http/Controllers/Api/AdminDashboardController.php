@@ -23,15 +23,6 @@ class AdminDashboardController extends Controller
     public function getDashboardStats()
     {
         try {
-            $user = Auth::user();
-
-            if ($user->role !== 'admin') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Access denied. Admin role required.',
-                ], 403);
-            }
-
             $stats = $this->calculateDashboardStats();
 
             return response()->json([
@@ -58,13 +49,6 @@ class AdminDashboardController extends Controller
     {
         try {
             $user = Auth::user();
-
-            if ($user->role !== 'admin') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Access denied. Admin role required.',
-                ], 403);
-            }
 
             $role = $request->get('role', 'all'); // all, admin, agent, client
             $status = $request->get('status', 'all'); // all, active, inactive
@@ -138,15 +122,6 @@ class AdminDashboardController extends Controller
     public function createUser(Request $request)
     {
         try {
-            $user = Auth::user();
-
-            if ($user->role !== 'admin') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Access denied. Admin role required.',
-                ], 403);
-            }
-
             $request->validate([
                 'name' => 'required|string|max:255',
                 'email' => 'required|email|unique:users,email|max:255',
@@ -214,15 +189,6 @@ class AdminDashboardController extends Controller
     public function updateUser(Request $request, $id)
     {
         try {
-            $user = Auth::user();
-
-            if ($user->role !== 'admin') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Access denied. Admin role required.',
-                ], 403);
-            }
-
             $targetUser = User::findOrFail($id);
 
             $request->validate([
@@ -296,13 +262,6 @@ class AdminDashboardController extends Controller
         try {
             $user = Auth::user();
 
-            if ($user->role !== 'admin') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Access denied. Admin role required.',
-                ], 403);
-            }
-
             // Prevent admin from deleting themselves
             if ($id == $user->id) {
                 return response()->json([
@@ -335,15 +294,6 @@ class AdminDashboardController extends Controller
     public function getAllCallLogs(Request $request)
     {
         try {
-            $user = Auth::user();
-
-            if ($user->role !== 'admin') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Access denied. Admin role required.',
-                ], 403);
-            }
-
             $agentId = $request->get('agent_id', 'all');
             $status = $request->get('status', 'all');
             $dateFrom = $request->get('date_from');
@@ -439,15 +389,6 @@ class AdminDashboardController extends Controller
     public function getSystemAnalytics(Request $request)
     {
         try {
-            $user = Auth::user();
-
-            if ($user->role !== 'admin') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Access denied. Admin role required.',
-                ], 403);
-            }
-
             $period = $request->get('period', '7days'); // 7days, 30days, 90days
 
             $analytics = $this->calculateSystemAnalytics($period);
@@ -476,15 +417,6 @@ class AdminDashboardController extends Controller
     public function getAgentPerformance()
     {
         try {
-            $user = Auth::user();
-
-            if ($user->role !== 'admin') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Access denied. Admin role required.',
-                ], 403);
-            }
-
             $agents = User::where('role', 'agent')
                 ->where('is_active', true)
                 ->get()

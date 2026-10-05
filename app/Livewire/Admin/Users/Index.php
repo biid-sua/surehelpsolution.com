@@ -5,6 +5,7 @@ namespace App\Livewire\Admin\Users;
 use App\Actions\Users\CreateUser;
 use App\Livewire\Concerns\PlatformAdminOnly;
 use App\Models\User;
+use App\Services\Account\SignIn;
 use App\Support\Audit\Audit;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -111,10 +112,23 @@ class Index extends Component
 
         $password = self::temporaryPassword();
         $user->forceFill(['password' => $password, 'must_change_password' => $user->role !== 'admin'])->save();
-        $user->tokens()->delete();   // sign them out of the mobile app too
+        app(SignIn::class)->signOutEverywhere($user);   // every browser and the mobile app
 
         $this->adding = false;
         $this->issued = ['name' => $user->name, 'email' => $user->email, 'password' => $password, 'reason' => 'reset'];
+    }
+
+    /** Lost phone: clear their two-step sign-in so they set it up again at their next sign-in. */
+    public function resetTwoFactor(int $userId): void
+    {
+        $this->authorize('users.update');
+        $user = $this->target($userId);
+        abort_if($user->is(auth()->user()), 403, 'Ask another Super Admin to reset your own two-step sign-in.');
+
+        $user->forceFill(['two_factor_secret' => null, 'two_factor_recovery_codes' => null, 'two_factor_confirmed_at' => null])->save();
+        app(SignIn::class)->signOutEverywhere($user);
+        app(Audit::class)->record('auth.two_factor_reset', $user);
+        $this->dispatch('toast', type: 'success', message: "{$user->name}'s two-step sign-in is reset. They'll set it up again when they next sign in.");
     }
 
     public function toggleActive(int $userId): void
@@ -125,7 +139,7 @@ class Index extends Component
 
         $user->forceFill(['is_active' => ! $user->is_active])->save();
         if (! $user->is_active) {
-            $user->tokens()->delete();
+            app(SignIn::class)->signOutEverywhere($user);
         }
 
         $this->dispatch('toast', type: 'success', message: $user->is_active ? "{$user->name} can sign in again." : "{$user->name} is switched off and signed out.");
@@ -173,6 +187,7 @@ class Index extends Component
             'canCreate' => auth()->user()->hasPermissionIn('users.create'),
             'canUpdate' => auth()->user()->hasPermissionIn('users.update'),
             'canManageStaff' => $this->canManageStaff(),
+            'canImpersonate' => auth()->user()->hasPermissionIn('users.impersonate'),
         ]);
     }
 

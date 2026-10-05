@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Client;
 use App\Http\Controllers\Controller;
 use App\Jobs\SyncCalendarConnection;
 use App\Models\CalendarConnection;
+use App\Services\Billing\Entitlements;
 use App\Services\Calendar\CalendarManager;
 use App\Services\Calendar\CalendarSync;
 use App\Support\Audit\Audit;
@@ -28,6 +29,14 @@ class CalendarOAuthController extends Controller
         $adapter = $this->calendars->provider($provider);
         abort_unless($adapter->isConfigured(), 404);
 
+        // Plan limit on connected calendars; reconnecting one already counted is always allowed.
+        $organization = $current->get();
+        $others = CalendarConnection::query()->forOrganization($organization)->where('provider', '!=', $provider)->count();
+        $limit = app(Entitlements::class)->limit($organization, 'calendars');
+        if ($limit !== null && $others >= $limit) {
+            return redirect()->route('app.business.calendars')->with('error', "Your plan includes {$limit} connected ".str('calendar')->plural($limit).'. Disconnect one first, or ask us about a bigger plan.');
+        }
+
         $state = Str::random(40);
         $request->session()->put(self::SESSION_KEY, [
             'state' => $state,
@@ -35,6 +44,8 @@ class CalendarOAuthController extends Controller
             'organization_id' => $current->id(),
             'user_id' => $request->user()->id,
             'at' => now()->timestamp,
+            // Started from the setup wizard: come back there afterwards.
+            'from_setup' => $request->query('from') === 'setup',
         ]);
 
         return redirect()->away($adapter->authorizationUrl($this->redirectUri($provider), $state));
@@ -43,7 +54,7 @@ class CalendarOAuthController extends Controller
     public function callback(Request $request, CurrentOrganization $current, CalendarSync $sync, Audit $audit, string $provider): RedirectResponse
     {
         $pending = $request->session()->pull(self::SESSION_KEY);
-        $back = redirect()->route('app.business.calendars');
+        $back = ($pending['from_setup'] ?? false) ? redirect()->route('app.setup', ['step' => 'calendar']) : redirect()->route('app.business.calendars');
 
         // Protects against forged callbacks (CSRF): the state must be the one we issued to this user, recently.
         $valid = is_array($pending)

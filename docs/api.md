@@ -32,6 +32,9 @@ Base URL: `https://surehelpsolution.com/api/v1`. All requests and responses are 
 
 ### Authentication
 1. `POST /login` with `email`, `password`, and optionally `device_name` (e.g. `"Pixel 9"`). The name appears in the user's device list.
+   - **Two-step sign-in (D24).** When it's on, also send `two_factor_code`: the 6-digit app code or a recovery code (`abcde-12345`).
+     - Missing or wrong code: `401` with `two_factor_required: true`. Show a code field and send the login again with the code.
+   - **Staff and agents without two-step sign-in** get `403` with `two_factor_setup_required: true`. They must set it up on the website first.
 2. Send `Authorization: Bearer <token>` on every request.
 3. Tokens expire after **30 days** (`data.expires_at`). Call `POST /refresh-token` before then. The old token is revoked and a new one with the same device name is returned.
 4. Deactivated accounts get `403` with `account_deactivated: true`, and their token is revoked.
@@ -56,7 +59,7 @@ A client user only ever sees their own business. The business is resolved on the
 ### Account and devices — any signed-in user
 | Method | Path | Notes |
 |---|---|---|
-| POST | `/login` | `email`, `password`, `device_name?` → `data.user`, `data.token`, `data.token_type`, `data.expires_at`, `data.must_change_password` |
+| POST | `/login` | `email`, `password`, `device_name?`, `two_factor_code?` → `data.user`, `data.token`, `data.token_type`, `data.expires_at`, `data.must_change_password` |
 | POST | `/logout` | Revokes the current token |
 | GET | `/user` | `data.user`, plus `data.organization` (`id` = public ULID, `name`, `status`, `timezone`, `currency`) for client users, `null` otherwise |
 | POST | `/refresh-token` | New token for the same device → `data.token`, `data.expires_at` |
@@ -104,9 +107,11 @@ A client user only ever sees their own business. The business is resolved on the
 | PUT | `/agent/call-logs/{id}` | Own calls, while still assigned to that business |
 | GET | `/agent/clients` | Only businesses the agent is assigned to. Each client carries `call_outcomes: [{key, label, category}]`, the pick-list for that business (added P2-4a, additive) |
 | PUT | `/agent/call-logs/{id}` with a new `call_outcome` | Must be one of the call's business's active outcomes (else 422 on `call_outcome`) |
-| GET | `/duty-schedules`, `/duty-schedules/calendar` | Own shifts (admins: all) |
+| GET | `/duty-schedules`, `/duty-schedules/calendar` | Own shifts; staff with `users.view` see everyone's (and may pass `agent_id`) |
 
-### Admin — role `admin`
+### Admin — role `admin`, then each endpoint's permission (D32)
+A staff member without the permission gets `403`. Dashboard: `dashboard.view`. Analytics and agent performance: `reports.view`. Users: `users.view` (GET), `users.create` (POST), `users.update` (PUT), `users.delete` (DELETE). Call logs: `calls.view`. Duty schedules: `users.view` to read, `users.update` to create, change, delete or check conflicts.
+
 `/admin/dashboard/stats`, `/admin/analytics`, `/admin/agent-performance`, `/admin/users` (GET/POST, PUT/DELETE `/{id}`), `/admin/call-logs`, `/admin/duty-schedules` (GET/POST, PUT/DELETE `/{id}`, `/calendar`, `/check-conflicts`). Duty schedules use `schedule_date` + `start_time`/`end_time` (`H:i` or `H:i:s`) + `notes`.
 
 ---
@@ -119,5 +124,6 @@ A client user only ever sees their own business. The business is resolved on the
 | 2026-10-07 | `/client/appointments` (list, book, show, move, status) and `/client/availability`. |
 | 2026-10-06 | `/client/escalations` (list, show, acknowledge, assign, resolve). Optional `escalation_type` / `escalation_priority` on `POST /agent/call-logs`. `/client/tasks` (list, create, show, update). `call_outcomes[]` on `/agent/clients`. `call_outcome` validated against the business's active outcomes. |
 | 2026-10-05 | `/client/business`, `/client/services`, `/client/customers`. |
+| 2026-10-12 | `two_factor_code` on login; `401 two_factor_required`, `403 two_factor_setup_required` (D24). A password reset, switching an account off or "sign out everywhere" revokes app tokens. |
 | 2026-10-04 | Error envelope for every error (incl. 401/404/405/429/500). `device_name` on login. `expires_at` on login/refresh. `/devices` endpoints. Rate limit on all routes. Security headers, CORS restricted. |
 | 2026-10-03 | `organization` object on `/user` and `/client/profile`. Duty-schedule endpoints fixed. 30-day token expiry. Errors no longer include exception text. |

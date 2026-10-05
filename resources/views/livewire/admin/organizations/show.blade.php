@@ -3,6 +3,7 @@
         description="{{ number_format($callStats['total']) }} calls in total · {{ number_format($callStats['last30']) }} in the last 30 days">
         <x-slot:actions>
             <x-ui.badge :tone="$organization->status === \App\Enums\OrganizationStatus::Active ? 'success' : 'warning'" class="text-sm">{{ $organization->status->label() }}</x-ui.badge>
+            @if ($organization->isClosing())<x-ui.badge tone="danger" class="text-sm">Closes {{ $organization->closes_at->format('M j') }}</x-ui.badge>@endif
         </x-slot:actions>
     </x-ui.page-header>
 
@@ -90,6 +91,21 @@
             </x-ui.card>
         </div>
 
+        <div class="space-y-6">
+        {{-- Setup wizard progress (spec ONB): where the business is stuck --}}
+        <x-ui.card title="Setup" :description="$organization->isSetUp() ? 'Finished '.$organization->setup_completed_at->format('M j, Y') : $setupCount['done'].' of '.$setupCount['total'].' steps done'" :padding="false">
+            <ul class="divide-y divide-line">
+                @foreach (\App\Services\Setup\SetupProgress::STEPS as $key => [$title])
+                    @continue($key === 'review')
+                    @php $state = ($organization->setup_progress ?? [])[$key] ?? null; @endphp
+                    <li class="flex items-center justify-between px-5 py-2.5 text-sm">
+                        <span class="text-ink">{{ $title }}</span>
+                        <x-ui.badge :tone="$state === 'done' ? 'success' : ($state === 'skipped' ? 'neutral' : 'warning')">{{ $state === 'done' ? 'Done' : ($state === 'skipped' ? 'Skipped' : 'Not yet') }}</x-ui.badge>
+                    </li>
+                @endforeach
+            </ul>
+        </x-ui.card>
+
         {{-- Members --}}
         <x-ui.card title="People at this business" :padding="false">
             <ul class="divide-y divide-line">
@@ -100,11 +116,18 @@
                             <x-ui.badge :tone="$member->pivot->role === 'owner' ? 'brand' : 'neutral'">{{ config('authorization.organization_roles.'.$member->pivot->role.'.label', $member->pivot->role) }}</x-ui.badge>
                         </div>
                         <p class="truncate text-xs text-subtle">{{ $member->email }}{{ $member->is_active ? '' : ' · deactivated' }}</p>
+                        @if ($canImpersonate && $member->is_active)
+                            <form method="POST" action="{{ route('admin.impersonate', $member) }}" class="mt-2">
+                                @csrf
+                                <x-ui.button type="submit" size="sm" variant="secondary" icon="user">View as {{ \Illuminate\Support\Str::before($member->name.' ', ' ') }}</x-ui.button>
+                            </form>
+                        @endif
                     </li>
                 @empty
                     <li><x-ui.empty-state icon="user" title="No members" description="This business has no user accounts." /></li>
                 @endforelse
             </ul>
         </x-ui.card>
+        </div>
     </div>
 </div>
