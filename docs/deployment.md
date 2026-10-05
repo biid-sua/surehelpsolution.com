@@ -2,6 +2,8 @@
 
 Current host: cPanel (PHP 8.3), deployed by uploading files. Target hosting: [decisions.md](decisions.md) D6.
 
+PHP extensions: besides Laravel's defaults, `zip` is required (business data exports). Composer refuses to install without it; on cPanel enable it under *Select PHP Version › Extensions*.
+
 ## Every release
 
 1. **Back up the database** (cPanel → phpMyAdmin → Export, or `mysqldump --single-transaction`).
