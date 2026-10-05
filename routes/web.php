@@ -47,6 +47,7 @@ use App\Livewire\Client\Business\Services as BusinessServicesPage;
 use App\Livewire\Client\Calendar as ClientCalendar;
 use App\Livewire\Client\Calls\Index as ClientCalls;
 use App\Livewire\Client\Calls\Show as ClientCallShow;
+use App\Livewire\Client\Customers\Duplicates as CustomerDuplicates;
 use App\Livewire\Client\Customers\Index as CustomerIndex;
 use App\Livewire\Client\Customers\Show as CustomerShow;
 use App\Livewire\Client\Dashboard as ClientDashboard;
@@ -137,6 +138,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
     Route::middleware('can:customers.view')->group(function () {
         Route::get('/customers', CustomerIndex::class)->name('customers.index');
         Route::get('/customers/export', CustomerExportController::class)->name('customers.export');
+        Route::get('/customers/duplicates', CustomerDuplicates::class)->middleware('can:customers.delete')->name('customers.duplicates');
         Route::get('/customers/{customer}', CustomerShow::class)->name('customers.show');
     });
     Route::middleware('can:organization.view')->group(function () {

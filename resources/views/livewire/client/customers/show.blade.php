@@ -6,8 +6,15 @@
             @if ($canUpdate)
                 <x-ui.button variant="secondary" wire:click="edit">Edit</x-ui.button>
             @endif
+            @can('customers.delete', $customer->organization)
+                <x-ui.button variant="ghost" :href="route('app.customers.duplicates', ['a' => $customer->ulid])">Merge with another customer</x-ui.button>
+            @endcan
         </x-slot:actions>
     </x-ui.page-header>
+
+    @if (session('status'))
+        <x-ui.alert tone="success" class="mb-6">{{ session('status') }}</x-ui.alert>
+    @endif
 
     <div class="grid gap-6 lg:grid-cols-3">
         {{-- Details --}}

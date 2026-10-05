@@ -1,6 +1,9 @@
 <div>
     <x-ui.page-header title="Customers" description="Everyone who has called, been booked, or been added by your team.">
         <x-slot:actions>
+            @if ($duplicateCount)
+                <x-ui.button variant="secondary" icon="users" :href="route('app.customers.duplicates')">{{ $duplicateCount }} possible {{ \Illuminate\Support\Str::plural('duplicate', $duplicateCount) }}</x-ui.button>
+            @endif
             <x-ui.button variant="secondary" icon="download" :href="route('app.customers.export', array_filter(['search' => $search, 'status' => $status, 'tag' => $tag]))">Export CSV</x-ui.button>
             @if ($canCreate)
                 <x-ui.button icon="users" wire:click="add">Add customer</x-ui.button>
