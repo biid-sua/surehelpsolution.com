@@ -41,15 +41,17 @@ class PortalNavigation
                 $this->item('Duty schedule', 'calendar', 'admin.schedule', 'admin.schedule', 'users.view'),
                 $this->item('Call review', 'inbox', 'admin.calls.review', 'admin.calls.review', 'calls.update'),
                 $this->item('Escalations', 'alert', 'admin.escalations', 'admin.escalations', 'escalations.view'),
+                $this->item('Call quality', 'check-circle', 'agent.quality', 'agent.quality', 'qa.review'),
                 $this->item('Billing', 'card', 'admin.billing', 'admin.billing', 'billing.view'),
                 $this->item('Website enquiries', 'chat', 'admin.enquiries', 'admin.enquiries', 'marketing.view'),
                 $this->item('Audit log', 'shield', 'admin.audit', 'admin.audit', 'audit_logs.view'),
-                $this->item('Agent workspace', 'phone', 'agent.home', 'agent.*', 'calls.create'),
+                $this->item('Agent workspace', 'phone', 'agent.home', 'agent.home|agent.businesses.*|agent.calls*|agent.schedule', 'calls.create'),
             ],
             'agent' => [
                 $this->item('Businesses', 'building', 'agent.home', 'agent.home|agent.businesses.*', 'calls.create'),
                 $this->item('My calls', 'phone', 'agent.calls', 'agent.calls*', 'calls.create'),
                 $this->item('My schedule', 'calendar', 'agent.schedule', 'agent.schedule', null),
+                $this->item('Call quality', 'check-circle', 'agent.quality', 'agent.quality', null),
             ],
             default => [],
         };

@@ -32,6 +32,7 @@ use App\Livewire\Admin\Search as AdminSearch;
 use App\Livewire\Admin\Users\Index as AdminUsers;
 use App\Livewire\Agent\Calls as AgentCalls;
 use App\Livewire\Agent\Home as AgentHome;
+use App\Livewire\Agent\Quality as AgentQuality;
 use App\Livewire\Agent\Schedule as AgentSchedule;
 use App\Livewire\Agent\Workspace as AgentWorkspace;
 use App\Livewire\Client\Appointments\Index as AppointmentsIndex;
@@ -160,6 +161,7 @@ Route::prefix('agent')->name('agent.')->middleware(['auth.home', 'force.password
     Route::get('/calls', AgentCalls::class)->name('calls');
     Route::get('/calls/export', AgentCallExportController::class)->name('calls.export');
     Route::get('/schedule', AgentSchedule::class)->name('schedule');
+    Route::get('/quality', AgentQuality::class)->name('quality');
 });
 
 // Admin console

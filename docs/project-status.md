@@ -22,9 +22,10 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
   - Appointment confirmation, reminder and cancellation emails to customers, with editable templates.
   - Merging duplicate customers.
   - Vacation mode.
+- **Call quality reviews (D27):** supervisors score a random sample of each agent's calls against a five-point scorecard; agents read the feedback and confirm it.
 - **One UI (D23):** the product now has a single version of every screen. The old admin and agent pages were rebuilt in the new design and deleted.
 
-262 automated tests pass.
+266 automated tests pass.
 
 ---
 
@@ -81,6 +82,11 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 | Customer emails | Appointment confirmations, reminders, changes and cancellations to customers, in the business's name and words |
 | Duplicate customers | Suggested duplicates, side-by-side compare, merge everything into the record you keep |
 | Vacation mode | Plan time away ahead; bookings blocked only on those days; agents and the owner see it |
+
+### Agent quality (D27)
+| Step | What it delivered |
+|---|---|
+| Call quality reviews | Each morning one random call per agent goes to the review queue. Supervisors score it (greeting, accuracy, booking attempt, tone, compliance), write feedback, and see each agent's average and pass rate. Agents get a notice, read it and confirm |
 
 ### Phase 3: Calendar
 | Step | What it delivered |

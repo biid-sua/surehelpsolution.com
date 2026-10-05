@@ -200,6 +200,12 @@ Started 2026-10-04 on `develop`, one feature branch per step.
 | CRM-04 | Duplicate suggestions (same email or name), side-by-side compare, merge everything into the record a person chooses | **done** 2026-10-14 |
 | CLI-06 | Vacation mode with planned dates, dashboard banner with "end it now", agent notices | **done** 2026-10-14 |
 
+## 4f. Agent quality (D27)
+
+| Step | Scope (task.md) | Status |
+|---|---|---|
+| SUP-04 | Call quality reviews: daily random sample per agent, pick by call ID or at random, five-point scorecard with weights and a must-pass compliance point, written feedback, agent notice and "Got it", team results per agent; `qa.review` permission | **done** 2026-10-15 (recordings after telephony; AI scoring AIX-03 later) |
+
 ## 5. Later phases (outline, in spec order)
 
 | Phase | Scope (spec §) | First steps | Main external dependency |

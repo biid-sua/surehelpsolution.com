@@ -41,8 +41,14 @@ All of it is evaluated in `App\Models\User::hasPermissionIn()`, registered as a 
 
 \* Only in assigned organizations. The full list per role is in `config/authorization.php`.
 
-### Platform-only permission
-`audit_logs.view` (added in P1-5) isn't in the spec §5 list. It gates the internal audit trail, and only Super Admin and Operations Manager have it. Organization roles never get it (spec §62).
+### Platform-only permissions
+These aren't in the spec §5 list. Organization roles never get them.
+
+| Permission | What it allows | Who has it |
+|---|---|---|
+| `audit_logs.view` (P1-5) | The internal audit trail (spec §62) | Super Admin, Operations Manager |
+| `users.impersonate` (D26) | "View as client" for support | Super Admin, Operations Manager, Support Agent |
+| `qa.review` (D27) | Scoring agents' calls | Super Admin, Operations Manager, Agent Supervisor (assigned businesses only) |
 
 ## Changing the catalogue
 

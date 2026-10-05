@@ -277,6 +277,23 @@ The audit log is visible to Super Admin and Operations Manager only, never to bu
   - **Who's told:** agents see current and upcoming time away. The owner's dashboard shows it, with "end it now".
 **Why:** These take load off SureHelp's support team and the owner's inbox, and keep customers informed without anyone remembering to do it.
 
+## D27 — Call quality reviews (2026-10-15)
+**Decision:** Supervisors score agents' calls against a fixed scorecard, and agents read the feedback on their own page (task.md SUP-04, AGT-12).
+- **Scorecard (`config/quality.php`):** greeting, accuracy, booking attempt, tone and compliance, each marked Met, Partly or Missed. Booking attempt can also be "Doesn't apply". Accuracy, booking attempt and compliance count double.
+  - **Score:** a percentage of the points that apply. A call passes at 80% or more.
+  - **Compliance must pass:** a call that misses it fails, whatever the total.
+  - **History stays put:** each review keeps a copy of the scorecard it was scored with, so changing the list later doesn't change past scores.
+- **Which calls:** each morning one random call per agent from the day before goes into the queue (`quality:sample`, 05:40 UTC). Reviewers can also pick a call by its ID, or ask for a random one from the last week. Each call is reviewed at most once; re-scoring updates it and is audited.
+- **Who:** new platform permission `qa.review`.
+  - **Who has it:** Super Admin and Operations Manager (all businesses), and Agent Supervisor (only their assigned businesses).
+  - **Own calls:** nobody scores their own calls.
+  - **Businesses:** business roles never get it, and businesses never see reviews.
+- **Feedback:** the reviewer writes what went well and/or what to do differently (at least one). The agent gets an in-app notice and an email (held during quiet hours), opens the review and confirms with "Got it". Reviewers see who has read theirs.
+- **One page:** *Call quality* (`/agent/quality`). Reviewers see three tabs: *To review*, *Team results* (per-agent average and pass rate over 30 days, lowest first) and *My feedback*. Agents see only *My feedback*. SureHelp managers reach it from the admin console.
+- **Later:** AI scoring of every call (AIX-03) will fill the same scorecard, so supervisors only review flagged calls. Listening to the recording needs telephony (Phase 3b).
+
+**Why:** Consistent call quality is what a receptionist service sells. A shared scorecard makes coaching fair and measurable, and random sampling keeps it honest.
+
 ## D10 — Telephony
 **Decision:** **Twilio** (Programmable Voice, TaskRouter, Voice JS SDK, Messaging) behind a `TelephonyProvider` interface, so the vendor can be swapped. Calls stay manually logged until then, but the Phase 2 `calls` table is designed for provider data (call SID, direction, timings, recording/transcript references). Telephony becomes **Phase 3b**, right after Calendar, because live call handling is the core of a receptionist product.
 **Action needed from you (long lead time):** create a Twilio account and start **A2P 10DLC** brand and campaign registration now. US SMS cannot go live without it, and approval takes weeks.
