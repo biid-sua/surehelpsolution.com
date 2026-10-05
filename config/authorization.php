@@ -35,8 +35,9 @@ $all = [
     'reviews.view', 'reviews.manage',
     'social.view', 'social.manage',
     'settings.view', 'settings.manage',
-    // Platform-only (not in the spec §5 list): internal audit trail, spec §62.
+    // Platform-only (not in the spec §5 list): internal audit trail, spec §62; "view as client" for support (ADM-05).
     'audit_logs.view',
+    'users.impersonate',
 ];
 
 $except = fn (array $excluded) => array_values(array_diff($all, $excluded));
@@ -87,6 +88,7 @@ return [
                 'escalations.view', 'escalations.create',
                 'knowledge_base.view', 'integrations.view', 'billing.view', 'subscriptions.view',
                 'reports.view', 'settings.view',
+                'users.impersonate',
             ],
         ],
         'agent_supervisor' => [
@@ -107,11 +109,11 @@ return [
     'organization_roles' => [
         'owner' => [
             'label' => 'Business Owner',
-            'permissions' => $except(['audit_logs.view']),
+            'permissions' => $except(['audit_logs.view', 'users.impersonate']),
         ],
         'manager' => [
             'label' => 'Business Manager',
-            'permissions' => $except(['billing.manage', 'subscriptions.manage', 'users.delete', 'organization.update', 'audit_logs.view']),
+            'permissions' => $except(['billing.manage', 'subscriptions.manage', 'users.delete', 'organization.update', 'audit_logs.view', 'users.impersonate']),
         ],
         'staff' => [
             'label' => 'Staff',

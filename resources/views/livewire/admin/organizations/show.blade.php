@@ -115,6 +115,12 @@
                             <x-ui.badge :tone="$member->pivot->role === 'owner' ? 'brand' : 'neutral'">{{ config('authorization.organization_roles.'.$member->pivot->role.'.label', $member->pivot->role) }}</x-ui.badge>
                         </div>
                         <p class="truncate text-xs text-subtle">{{ $member->email }}{{ $member->is_active ? '' : ' · deactivated' }}</p>
+                        @if ($canImpersonate && $member->is_active)
+                            <form method="POST" action="{{ route('admin.impersonate', $member) }}" class="mt-2">
+                                @csrf
+                                <x-ui.button type="submit" size="sm" variant="secondary" icon="user">View as {{ \Illuminate\Support\Str::before($member->name.' ', ' ') }}</x-ui.button>
+                            </form>
+                        @endif
                     </li>
                 @empty
                     <li><x-ui.empty-state icon="user" title="No members" description="This business has no user accounts." /></li>

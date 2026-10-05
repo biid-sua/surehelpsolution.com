@@ -169,6 +169,12 @@
                                 @endif
                             </td>
                             <td class="whitespace-nowrap text-right">
+                                @if ($canImpersonate && $u->isClient() && $u->is_active)
+                                    <form method="POST" action="{{ route('admin.impersonate', $u) }}" class="inline">
+                                        @csrf
+                                        <x-ui.button type="submit" size="sm" variant="ghost">View as</x-ui.button>
+                                    </form>
+                                @endif
                                 @if ($editable)
                                     <x-ui.confirm id="reset-{{ $u->id }}" title="Reset {{ $u->name }}'s password?" confirm-label="Reset password" tone="primary" action="resetPassword({{ $u->id }})">
                                         <x-slot:trigger><x-ui.button size="sm" variant="ghost">Reset password</x-ui.button></x-slot:trigger>

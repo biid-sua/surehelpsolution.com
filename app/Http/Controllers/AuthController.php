@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\Account\Impersonation;
 use App\Services\Account\SignIn;
 use App\Support\Audit\Audit;
 use Illuminate\Contracts\View\View;
@@ -64,8 +65,12 @@ class AuthController extends Controller
             : redirect()->to($next);
     }
 
-    public function logout(Request $request): RedirectResponse
+    public function logout(Request $request, Impersonation $impersonation): RedirectResponse
     {
+        // Signing out while viewing as a client just stops viewing as them.
+        if ($impersonation->active($request)) {
+            return redirect()->to($impersonation->stop($request) ?? route('login'));
+        }
         $this->signIn->logout($request, 'You\'re signed out.');
 
         return redirect()->route('login');

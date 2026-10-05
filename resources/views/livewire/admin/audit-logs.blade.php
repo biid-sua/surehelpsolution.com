@@ -54,6 +54,7 @@
                                 <p class="mt-1 text-xs text-subtle">
                                     {{ $log->actor?->name ?? ucfirst($log->actor_type) }}
                                     @if ($log->actor) ({{ $log->actor->email }}) @endif
+                                    @if ($log->impersonator)<span class="block text-xs text-amber-300">by {{ $log->impersonator->name }}, viewing as them</span>@endif
                                     · {{ $log->created_at->format('M j, Y H:i:s') }}
                                     @if ($log->ip_address) · {{ $log->ip_address }} @endif
                                 </p>

@@ -127,6 +127,7 @@ class Show extends Component
             'otherTimezones' => array_values(array_diff(\DateTimeZone::listIdentifiers(), array_keys(self::PRIMARY_TIMEZONES))),
             'canUpdate' => auth()->user()->can('organization.update', $organization),
             'setupCount' => app(SetupProgress::class)->count($organization),
+            'canImpersonate' => auth()->user()->hasPermissionIn('users.impersonate'),
         ])->title($organization->name);
     }
 }

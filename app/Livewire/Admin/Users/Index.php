@@ -187,6 +187,7 @@ class Index extends Component
             'canCreate' => auth()->user()->hasPermissionIn('users.create'),
             'canUpdate' => auth()->user()->hasPermissionIn('users.update'),
             'canManageStaff' => $this->canManageStaff(),
+            'canImpersonate' => auth()->user()->hasPermissionIn('users.impersonate'),
         ]);
     }
 

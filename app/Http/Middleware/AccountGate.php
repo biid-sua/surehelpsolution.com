@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
+use App\Services\Account\Impersonation;
 use App\Services\Account\LegalDocuments;
 use App\Services\Account\SignIn;
 use Closure;
@@ -38,8 +40,20 @@ class AccountGate
             return $this->end($request, 'You were signed out because your password changed or you signed out of all devices.');
         }
 
-        // 2. Idle timeout.
-        $timeout = config('account.idle_timeout.'.$user->role);
+        // While staff view as a client: staff still signed in everywhere, their own idle timeout, no account pages.
+        $impersonating = $session->has(Impersonation::KEY);
+        if ($impersonating) {
+            $staff = User::find($session->get(Impersonation::KEY));
+            if (! $staff || ! $staff->is_active || (int) $staff->session_epoch !== (int) $session->get('impersonator_epoch')) {
+                return $this->end($request, 'Viewing as a client ended. Please sign in again.');
+            }
+            if ($request->routeIs('account.*')) {
+                return $this->send($request, 'app.dashboard', 'Account and security pages are private to '.$user->name.', even while you view as them.');
+            }
+        }
+
+        // 2. Idle timeout (the staff member's, while viewing as a client).
+        $timeout = config('account.idle_timeout.'.($impersonating ? 'admin' : $user->role));
         $last = $session->get('auth.last_activity');
         if ($timeout && $last && now()->timestamp - (int) $last > $timeout * 60) {
             return $this->end($request, "You were signed out after {$timeout} minutes without activity. Please sign in again.");
@@ -48,7 +62,7 @@ class AccountGate
             $session->put('auth.last_activity', now()->timestamp);
         }
 
-        if ($request->routeIs(...self::OPEN)) {
+        if ($impersonating || $request->routeIs(...self::OPEN)) {
             return $next($request);
         }
 

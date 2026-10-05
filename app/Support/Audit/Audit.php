@@ -5,6 +5,7 @@ namespace App\Support\Audit;
 use App\Models\AuditLog;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\Account\Impersonation;
 use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -39,6 +40,8 @@ class Audit
                 'organization_id' => $organization?->getKey() ?? $this->organizationOf($subject),
                 'actor_id' => $actor?->getKey(),
                 'actor_type' => $actor ? 'user' : (app()->runningInConsole() ? 'system' : 'guest'),
+                // While SureHelp staff view as a client, the client is the actor and staff are recorded here.
+                'impersonator_id' => $request?->hasSession() ? $request->session()->get(Impersonation::KEY) : null,
                 'action' => $action,
                 'subject_type' => $subject ? class_basename($subject) : null,
                 'subject_id' => $subject?->getKey(),

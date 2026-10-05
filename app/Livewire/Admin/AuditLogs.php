@@ -54,7 +54,7 @@ class AuditLogs extends Component
         $this->authorize('audit_logs.view');
 
         $logs = AuditLog::query()
-            ->with(['actor:id,name,email', 'organization:id,ulid,name'])
+            ->with(['actor:id,name,email', 'impersonator:id,name', 'organization:id,ulid,name'])
             ->when($this->action !== '', fn (Builder $q) => $q->where('action', $this->action))
             ->when($this->organization !== '', fn (Builder $q) => $q->where('organization_id', (int) $this->organization))
             ->when($this->search !== '', function (Builder $q) {

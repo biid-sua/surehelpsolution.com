@@ -5,6 +5,7 @@ use App\Http\Controllers\Account\InvitationController;
 use App\Http\Controllers\Account\PasswordResetController;
 use App\Http\Controllers\Account\TermsController;
 use App\Http\Controllers\Account\TwoFactorChallengeController;
+use App\Http\Controllers\Admin\ImpersonationController;
 use App\Http\Controllers\Agent\CallExportController as AgentCallExportController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Client\CalendarEventsController;
@@ -27,6 +28,7 @@ use App\Livewire\Admin\Home as AdminHome;
 use App\Livewire\Admin\Organizations\Index as OrganizationIndex;
 use App\Livewire\Admin\Organizations\Show as OrganizationShow;
 use App\Livewire\Admin\Schedules\Index as AdminSchedules;
+use App\Livewire\Admin\Search as AdminSearch;
 use App\Livewire\Admin\Users\Index as AdminUsers;
 use App\Livewire\Agent\Calls as AgentCalls;
 use App\Livewire\Agent\Home as AgentHome;
@@ -80,6 +82,7 @@ Route::middleware('guest')->group(function () {
     Route::post('/reset-password', [PasswordResetController::class, 'update'])->middleware('throttle:10,1')->name('password.store');
 });
 Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('auth.logout');
+Route::post('/impersonation/stop', [ImpersonationController::class, 'stop'])->middleware('auth.home')->name('impersonation.stop');
 Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])->middleware(['signed', 'throttle:10,1'])->whereNumber('id')->name('verification.verify');
 
 // Team invitations from business owners: open to guests (new people) and signed-in owners of the invited email.
@@ -158,12 +161,14 @@ Route::prefix('agent')->name('agent.')->middleware(['auth.home', 'force.password
 // Admin console
 Route::prefix('admin')->name('admin.')->middleware(['auth.home', 'force.password.change', 'role:admin', 'account.gate'])->group(function () {
     Route::get('/', AdminHome::class)->name('home');
+    Route::get('/search', AdminSearch::class)->name('search');
     Route::get('/organizations', OrganizationIndex::class)->name('organizations.index');
     Route::get('/organizations/{organization}', OrganizationShow::class)->name('organizations.show');
     Route::get('/calls/review', CallReview::class)->name('calls.review');
     Route::get('/escalations', AdminEscalations::class)->middleware('can:escalations.view')->name('escalations');
     Route::get('/billing', AdminBilling::class)->middleware('can:billing.view')->name('billing');
     Route::get('/users', AdminUsers::class)->middleware('can:users.view')->name('users');
+    Route::post('/users/{user}/impersonate', [ImpersonationController::class, 'start'])->middleware('can:users.impersonate')->whereNumber('user')->name('impersonate');
     Route::get('/schedule', AdminSchedules::class)->middleware('can:users.view')->name('schedule');
     Route::get('/enquiries', AdminEnquiries::class)->middleware('can:marketing.view')->name('enquiries');
     Route::get('/audit', AuditLogs::class)->middleware('can:audit_logs.view')->name('audit');
