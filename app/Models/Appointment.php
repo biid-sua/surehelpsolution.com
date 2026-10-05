@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\AppointmentStatus;
 use App\Jobs\PushAppointmentToCalendars;
+use App\Jobs\SendAppointmentEmail;
 use App\Models\Concerns\BelongsToOrganization;
 use App\Models\Concerns\StoresUtc;
 use Carbon\CarbonImmutable;
@@ -53,6 +54,7 @@ class Appointment extends Model
             'confirmed_at' => 'datetime',
             'completed_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'reminder_sent_at' => 'datetime',
             'external_refs' => 'array',
         ];
     }
@@ -66,6 +68,20 @@ class Appointment extends Model
         // Connected calendars follow every booking change, once the booking has committed (spec §17).
         static::saved(function (Appointment $appointment) {
             $relevant = $appointment->wasRecentlyCreated || $appointment->wasChanged(['starts_at', 'ends_at', 'status', 'title', 'notes', 'address']);
+
+            // The customer hears about it by email, once the change has committed (spec §26).
+            $email = match (true) {
+                $appointment->status === AppointmentStatus::Cancelled && ($appointment->wasRecentlyCreated || $appointment->wasChanged('status')) => $appointment->wasRecentlyCreated ? null : 'appointment_cancelled',
+                $appointment->status === AppointmentStatus::Confirmed && ($appointment->wasRecentlyCreated || $appointment->wasChanged('status')) => 'appointment_confirmed',
+                $appointment->status === AppointmentStatus::Confirmed && $appointment->wasChanged('starts_at') => 'appointment_changed',
+                default => null,
+            };
+            if ($email) {
+                if ($email === 'appointment_changed') {
+                    $appointment->forceFill(['reminder_sent_at' => null])->saveQuietly();   // remind about the new time
+                }
+                SendAppointmentEmail::dispatch($appointment->id, $email)->afterCommit();
+            }
 
             if ($relevant && CalendarConnection::withoutGlobalScopes()->where('organization_id', $appointment->organization_id)
                 ->where('status', CalendarConnection::STATUS_ACTIVE)->whereNotNull('write_calendar_id')->exists()) {

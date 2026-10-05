@@ -37,6 +37,7 @@ use App\Livewire\Agent\Workspace as AgentWorkspace;
 use App\Livewire\Client\Appointments\Index as AppointmentsIndex;
 use App\Livewire\Client\Billing\Index as ClientBilling;
 use App\Livewire\Client\Business\Calendars as BusinessCalendarsPage;
+use App\Livewire\Client\Business\CustomerEmails as BusinessCustomerEmails;
 use App\Livewire\Client\Business\Hours as BusinessHoursPage;
 use App\Livewire\Client\Business\Knowledge as BusinessKnowledgePage;
 use App\Livewire\Client\Business\Outcomes as BusinessOutcomesPage;
@@ -145,6 +146,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/business/outcomes', BusinessOutcomesPage::class)->name('business.outcomes');
         Route::get('/business/knowledge', BusinessKnowledgePage::class)->middleware('can:knowledge_base.view')->name('business.knowledge');
         Route::get('/business/rules', BusinessRulesPage::class)->name('business.rules');
+        Route::get('/business/emails', BusinessCustomerEmails::class)->name('business.emails');
         Route::get('/business/calendars', BusinessCalendarsPage::class)->middleware('can:integrations.view')->name('business.calendars');
     });
 });

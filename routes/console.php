@@ -39,3 +39,4 @@ Schedule::command('billing:run')->dailyAt('06:05')->withoutOverlapping(60);
 // Daily, not monthly: each business gets last month's report once, on its own morning of the 1st (or the next run).
 Schedule::command('reports:monthly')->dailyAt('14:10')->withoutOverlapping(60);
 Schedule::command('notifications:daily-summary')->everyFifteenMinutes()->withoutOverlapping(30);
+Schedule::command('appointments:send-reminders')->everyFifteenMinutes()->withoutOverlapping(30);

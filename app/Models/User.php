@@ -17,13 +17,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
  * @property list<string>|null $two_factor_recovery_codes hashed one-time codes
- * @property \Illuminate\Support\Carbon|null $last_summary_on
+ * @property Carbon|null $last_summary_on
  */
 class User extends Authenticatable
 {
