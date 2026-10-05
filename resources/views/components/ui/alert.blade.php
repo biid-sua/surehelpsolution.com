@@ -14,7 +14,7 @@
     <x-ui.icon :name="$icon" class="mt-0.5 size-5 shrink-0" />
     <div class="min-w-0 flex-1">
         @if ($title)
-            <p class="font-semibold">{{ $title }}</p>
+            <p class="font-semibold">{!! e($title, false) !!}</p>
         @endif
         <div @class(['mt-0.5' => $title])>{{ $slot }}</div>
     </div>

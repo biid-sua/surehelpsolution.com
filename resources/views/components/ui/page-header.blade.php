@@ -7,8 +7,8 @@
                 <x-ui.icon name="arrow-left" class="size-4" /> Back
             </a>
         @endif
-        <h1 class="text-2xl font-semibold tracking-tight text-ink">{{ $title }}</h1>
-        @if ($description)<p class="mt-1 text-sm text-muted">{{ $description }}</p>@endif
+        <h1 class="text-2xl font-semibold tracking-tight text-ink">{!! e($title, false) !!}</h1>
+        @if ($description)<p class="mt-1 text-sm text-muted">{!! e($description, false) !!}</p>@endif
     </div>
     @isset($actions)<div class="flex flex-wrap items-center gap-2">{{ $actions }}</div>@endisset
 </div>

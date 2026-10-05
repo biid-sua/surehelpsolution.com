@@ -21,6 +21,7 @@ class PortalNavigation
         return match ($portal) {
             'client' => [
                 $this->item('Dashboard', 'home', 'app.dashboard', 'app.dashboard', 'dashboard.view'),
+                $this->item('Results', 'trend-up', 'app.results', 'app.results*', 'reports.view'),
                 $this->item('Calls', 'phone', 'app.calls.index', 'app.calls.*', 'calls.view'),
                 $this->item('Calendar', 'calendar', 'app.calendar', 'app.calendar', 'calls.view'),
                 $this->item('Appointments', 'list', 'app.appointments.index', 'app.appointments.*', 'appointments.view'),

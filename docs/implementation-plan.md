@@ -183,6 +183,13 @@ Started 2026-10-04 on `develop`, one feature branch per step.
 |---|---|---|
 | P5-1 | Plans as data (monthly/yearly, trial, feature keys, limits), subscriptions (trial → active → past due → cancelled; plan change at renewal; cancel at period end; billing day kept), invoices (gap-free numbers per year, billing-details snapshot, PDF via dompdf, printable page), payments ledger (partial payments, duplicate-reference guard, receipts), daily `billing:run` (trial conversion, renewals with catch-up, overdue reminders ×3 a week apart), Payoneer gateway (per-invoice or default payment link for card/ACH, receiving-account bank details), client *Billing* page ("I've paid", plan-switch request), *Admin › Billing* (needs-attention queue, record payment, void, one-off invoices, subscriptions, plans, payment settings, MRR/outstanding/overdue/collected), billing notifications, `Entitlements` service. Setup: [billing.md](billing.md) | **done** 2026-10-10 (payments confirmed by a person; automatic gateway later) |
 
+## 4d. Onboarding and results (D25)
+
+| Step | Scope (spec) | Status |
+|---|---|---|
+| ONB-1 | Setup wizard (ONB-01..05, 07, 08): 7 steps with progress bar, industry templates, saved per step into the real records; new owners start there; dashboard banner; admin progress column, filter and checklist; email to staff on finish. Phone setup (ONB-06) and payment (ONB-09) wait for Twilio and automatic payments | **done** 2026-10-13 |
+| RPT-1 | Results page (RPT-01): answered calls, jobs booked, leads, after-hours calls caught, estimated revenue from the owner's average job value, outcomes, reasons, day × hour heatmap, month-over-month change; PDF download; monthly report email with PDF on the 1st (RPT-02), switchable per person | **done** 2026-10-13 |
+
 ## 5. Later phases (outline, in spec order)
 
 | Phase | Scope (spec §) | First steps | Main external dependency |

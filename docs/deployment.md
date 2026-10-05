@@ -74,6 +74,12 @@ Current host: cPanel (PHP 8.3), deployed by uploading files. Target hosting: [de
   - Staff and agents are asked to set up two-step sign-in at their next sign-in. Tell them in advance: they need an authenticator app on their phone.
   - The mobile app needs a code field for two-step sign-in (docs/api.md). Until the app has one, staff and agents can't sign in to the app.
 
+## Release "setup wizard and results" (D25): specific notes
+
+- **Migration:** adds `setup_progress`, `setup_completed_at`, `average_job_value_cents` and `last_report_month` to `organizations`. Businesses that already have hours or services are marked as set up, so they aren't sent into the wizard.
+- **Scheduler:** `reports:monthly` runs daily at 14:10 UTC and sends each business last month's report once. The existing cron for `schedule:run` covers it. Try it with `php artisan reports:monthly`.
+- **Email:** reports attach a PDF (dompdf, already installed).
+
 ## Production `.env` settings to check
 
 | Key | Value |

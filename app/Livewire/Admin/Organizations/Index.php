@@ -52,6 +52,7 @@ class Index extends Component
                     ->orWhereHas('owner', fn (Builder $owner) => $owner->where('email', 'like', $term)->orWhere('name', 'like', $term)));
             })
             ->when(OrganizationStatus::tryFrom($this->status), fn (Builder $q, OrganizationStatus $status) => $q->where('status', $status))
+            ->when($this->status === 'setup', fn (Builder $q) => $q->whereNull('setup_completed_at'))
             ->orderBy('name')
             ->paginate(20);
 

@@ -216,6 +216,40 @@ The audit log is visible to Super Admin and Operations Manager only, never to bu
   - Security: two-step sign-in, recovery codes, devices and mobile-app sign-ins, recent activity.
 **Why:** These are what every user meets on day one, and what security reviews of a receptionist service ask about first: who can get in, how, and what's recorded.
 
+## D25 — Setup wizard and Results (2026-10-13)
+**Decision:**
+- **Setup wizard** at `/app/setup` (spec ONB). There are seven steps:
+  1. Your business (name, industry, timezone, contacts, average job value).
+  2. Services.
+  3. Hours & area (presets, emergencies, ZIP codes).
+  4. Call handling (greeting, details to collect, FAQs, do's and don'ts, when to escalate).
+  5. Calendar.
+  6. Team.
+  7. Go live.
+
+  How it works:
+  - Steps 1, 3 and 7 are required; the rest can be skipped and done later.
+  - **Saves into the real records** (profile, services, hours, rules, knowledge), so the Business pages show the same data and nothing has to be re-entered. Saving a step again replaces what that step created; items added on the Business pages stay.
+  - **Industry templates** live in `config/industries.php`: plumbing, HVAC, electrical, cleaning, dental, salon, legal, auto, other. They pre-fill services, emergency guidance, common FAQs and details to collect. The owner unticks and edits; nothing is saved without "Save and continue".
+  - **Progress is saved per step.** New owners start in the wizard when they sign in, and the dashboard shows a "Finish setting up" banner until they're done. Admins see each business's progress, can filter "Still setting up", and get an email when one finishes.
+  - **Finishing doesn't switch the business live.** The phone line still has to be connected, so SureHelp staff do the go-live check.
+  - **Existing businesses** that already had hours or services are marked as set up by the migration.
+- **Results page** at `/app/results` (spec RPT-01). For a month in the business's timezone it shows:
+  - calls answered (excluding missed and spam);
+  - jobs booked (calls with a "booked" outcome);
+  - new leads (customers created);
+  - after-hours calls caught (answered outside the business's hours; not shown until hours are set);
+  - how calls ended, why people called, and a day × hour heatmap;
+  - each figure compared with the previous month.
+
+  **Estimated revenue** = jobs booked × the average job value the owner sets, labelled as an estimate. Without a job value there's no figure, only a prompt to set one.
+- **Monthly report (spec RPT-02).**
+  - **Recipients:** everyone at the business with `reports.view`, unless they switch "Monthly results report" off.
+  - **Content:** email plus a PDF.
+  - **Timing:** `reports:monthly` runs daily at 14:10 UTC. Each business gets last month's report once (`last_report_month`), on the morning of the 1st in the US. A missed day is caught up the next day.
+- **Fix found while building this:** names with "&" or "<" showed as `&amp;` in headings, because the shared components escaped already-escaped text. The components now escape without double-encoding, so they're safe and correct for both raw and pre-escaped values.
+**Why:** The first hour decides whether a new business trusts the service, and the monthly "we answered X calls and booked $Y for you" is what keeps them paying.
+
 ## D10 — Telephony
 **Decision:** **Twilio** (Programmable Voice, TaskRouter, Voice JS SDK, Messaging) behind a `TelephonyProvider` interface, so the vendor can be swapped. Calls stay manually logged until then, but the Phase 2 `calls` table is designed for provider data (call SID, direction, timings, recording/transcript references). Telephony becomes **Phase 3b**, right after Calendar, because live call handling is the core of a receptionist product.
 **Action needed from you (long lead time):** create a Twilio account and start **A2P 10DLC** brand and campaign registration now. US SMS cannot go live without it, and approval takes weeks.

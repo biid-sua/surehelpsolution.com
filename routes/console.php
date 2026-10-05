@@ -36,3 +36,5 @@ Schedule::command('calendar:sync', ['--renew-push'])->twiceDaily(4, 16)->without
 
 // Billing: renewals, invoices and overdue reminders once a day (docs/billing.md).
 Schedule::command('billing:run')->dailyAt('06:05')->withoutOverlapping(60);
+// Daily, not monthly: each business gets last month's report once, on its own morning of the 1st (or the next run).
+Schedule::command('reports:monthly')->dailyAt('14:10')->withoutOverlapping(60);

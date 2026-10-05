@@ -14,6 +14,20 @@
         </x-slot:actions>
     </x-ui.page-header>
 
+    @if (session('status'))
+        <x-ui.alert tone="success" class="mb-6">{{ session('status') }}</x-ui.alert>
+    @endif
+    @if ($setup)
+        <div class="mb-6 flex flex-wrap items-center gap-4 rounded-[var(--radius-card)] border border-brand-500/40 bg-brand-500/10 p-5">
+            <div class="min-w-0 flex-1">
+                <p class="font-semibold text-ink">Finish setting up SureHelp</p>
+                <p class="mt-0.5 text-sm text-muted">{{ $setup['done'] }} of {{ $setup['total'] }} steps done. A few minutes more and our receptionists can answer for you like your own team.</p>
+                <div class="mt-3 h-1.5 max-w-sm overflow-hidden rounded-full bg-surface-2"><div class="h-full rounded-full bg-brand-500" style="width: {{ (int) round($setup['done'] / max(1, $setup['total']) * 100) }}%"></div></div>
+            </div>
+            <x-ui.button :href="route('app.setup')">Continue setup</x-ui.button>
+        </div>
+    @endif
+
     {{-- Escalations come first: someone is waiting on the business (spec §25). --}}
     @if ($activeEscalations > 0)
         <div class="mb-4">

@@ -44,6 +44,7 @@ class AccountSecurityTest extends TestCase
         $owner = $this->user('client');
         $organization = app(ProvisionUserTenancy::class)->handle($owner);
         $organization->update(['name' => 'Rivera Plumbing']);
+        $organization->forceFill(['setup_completed_at' => now()])->save();
 
         return [$owner, $organization->fresh()];
     }

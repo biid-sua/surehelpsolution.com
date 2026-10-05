@@ -306,7 +306,10 @@ class User extends Authenticatable
         return match ($this->role) {
             'admin' => route('admin.home'),
             'agent' => route('agent.home'),
-            'client' => route('app.dashboard'),
+            // A business owner who hasn't finished setup starts in the setup wizard (spec ONB).
+            'client' => ($organization = $this->primaryOrganization()) && ! $organization->isSetUp() && $this->organizationRole($organization) === 'owner'
+                ? route('app.setup')
+                : route('app.dashboard'),
         };
     }
 

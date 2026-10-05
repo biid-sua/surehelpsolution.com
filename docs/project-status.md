@@ -12,9 +12,13 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
   - A profile page.
   - Team invitations for business owners.
   - Terms acceptance with version tracking.
+- **Setup wizard and Results (D25):**
+  - New businesses set themselves up in seven guided steps, with industry templates.
+  - A Results page shows calls answered, jobs booked, leads, after-hours calls and estimated revenue.
+  - A monthly report email with a PDF goes out on the 1st.
 - **One UI (D23):** the product now has a single version of every screen. The old admin and agent pages were rebuilt in the new design and deleted.
 
-235 automated tests pass.
+244 automated tests pass.
 
 ---
 
@@ -56,6 +60,12 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 | Step | What it delivered |
 |---|---|
 | P1-8 Accounts | Sign-in page; forgot password by email; two-step sign-in with an authenticator app (required for staff and agents, Super Admin can reset it); 30-minute idle timeout for staff and agents; "sign out other devices"; profile page with devices and sign-in history; owners invite managers and staff by email; everyone accepts the current Terms / Privacy Policy (and DPA for businesses), asked again when they change |
+
+### Onboarding and results (decision D25, 2026-10-13)
+| Step | What it delivered |
+|---|---|
+| Setup wizard | New owners are guided through business details, services (pre-filled for their industry), hours and service area, call handling (greeting, FAQs, rules), calendar and team; progress saved per step; admins see who is stuck and are emailed when someone finishes |
+| Results | Monthly calls answered, jobs booked, new leads, after-hours calls caught and estimated revenue (jobs × average job value), with breakdowns and a heatmap; PDF; report emailed on the 1st |
 
 ### Phase 3: Calendar
 | Step | What it delivered |

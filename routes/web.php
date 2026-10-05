@@ -12,6 +12,7 @@ use App\Http\Controllers\Client\CalendarOAuthController;
 use App\Http\Controllers\Client\CallExportController;
 use App\Http\Controllers\Client\CustomerExportController;
 use App\Http\Controllers\Client\InvoiceController as ClientInvoiceController;
+use App\Http\Controllers\Client\ResultsPdfController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PasswordChangeController;
@@ -47,8 +48,10 @@ use App\Livewire\Client\Customers\Index as CustomerIndex;
 use App\Livewire\Client\Customers\Show as CustomerShow;
 use App\Livewire\Client\Dashboard as ClientDashboard;
 use App\Livewire\Client\Escalations\Index as EscalationsIndex;
+use App\Livewire\Client\Results as ClientResults;
 use App\Livewire\Client\Settings\Notifications as NotificationSettings;
 use App\Livewire\Client\Settings\Team as TeamSettings;
+use App\Livewire\Client\Setup\Wizard as SetupWizard;
 use App\Livewire\Client\Tasks\Index as TasksIndex;
 use Illuminate\Support\Facades\Route;
 
@@ -101,6 +104,11 @@ Route::prefix('account')->name('account.')->middleware(['auth.home', 'force.pass
 // Business portal (clients) — docs/implementation-plan.md P1-4
 Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.change', 'role:client', 'tenant', 'account.gate'])->group(function () {
     Route::get('/', ClientDashboard::class)->middleware('can:dashboard.view')->name('dashboard');
+    Route::get('/setup', SetupWizard::class)->middleware('can:organization.update')->name('setup');
+    Route::middleware('can:reports.view')->group(function () {
+        Route::get('/results', ClientResults::class)->name('results');
+        Route::get('/results/pdf', ResultsPdfController::class)->name('results.pdf');
+    });
     Route::middleware('can:calls.view')->group(function () {
         Route::get('/calls', ClientCalls::class)->name('calls.index');
         Route::get('/calls/export', CallExportController::class)->name('calls.export');

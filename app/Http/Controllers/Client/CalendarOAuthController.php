@@ -35,6 +35,8 @@ class CalendarOAuthController extends Controller
             'organization_id' => $current->id(),
             'user_id' => $request->user()->id,
             'at' => now()->timestamp,
+            // Started from the setup wizard: come back there afterwards.
+            'from_setup' => $request->query('from') === 'setup',
         ]);
 
         return redirect()->away($adapter->authorizationUrl($this->redirectUri($provider), $state));
@@ -43,7 +45,7 @@ class CalendarOAuthController extends Controller
     public function callback(Request $request, CurrentOrganization $current, CalendarSync $sync, Audit $audit, string $provider): RedirectResponse
     {
         $pending = $request->session()->pull(self::SESSION_KEY);
-        $back = redirect()->route('app.business.calendars');
+        $back = ($pending['from_setup'] ?? false) ? redirect()->route('app.setup', ['step' => 'calendar']) : redirect()->route('app.business.calendars');
 
         // Protects against forged callbacks (CSRF): the state must be the one we issued to this user, recently.
         $valid = is_array($pending)

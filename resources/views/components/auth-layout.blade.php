@@ -18,8 +18,8 @@
             <a href="{{ route('home') }}" class="block"><img src="{{ asset('assets/img/logo.png') }}" alt="SureHelp Solutions" class="mx-auto h-9 w-auto"></a>
 
             <x-ui.card class="mt-8">
-                <h1 class="text-xl font-semibold text-ink">{{ $heading ?? $title }}</h1>
-                @if ($description)<p class="mt-1 text-sm text-muted">{{ $description }}</p>@endif
+                <h1 class="text-xl font-semibold text-ink">{!! e($heading ?? $title, false) !!}</h1>
+                @if ($description)<p class="mt-1 text-sm text-muted">{!! e($description, false) !!}</p>@endif
 
                 @if (session('status'))
                     <x-ui.alert tone="success" class="mt-5">{{ session('status') }}</x-ui.alert>

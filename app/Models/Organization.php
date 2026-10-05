@@ -15,6 +15,8 @@ use Illuminate\Support\Str;
 
 /**
  * A client business — the tenant boundary for all business data.
+ *
+ * @property array<string, string>|null $setup_progress setup wizard step => done | skipped
  */
 class Organization extends Model
 {
@@ -27,12 +29,16 @@ class Organization extends Model
         'timezone',
         'currency',
         'owner_user_id',
+        'average_job_value_cents',
     ];
 
     protected function casts(): array
     {
         return [
             'status' => OrganizationStatus::class,
+            'setup_progress' => 'array',
+            'setup_completed_at' => 'datetime',
+            'average_job_value_cents' => 'integer',
         ];
     }
 
@@ -139,11 +145,25 @@ class Organization extends Model
     }
 
     /**
+     * @return HasMany<CalendarConnection, $this>
+     */
+    public function calendarConnections(): HasMany
+    {
+        return $this->hasMany(CalendarConnection::class);
+    }
+
+    /**
      * @return HasMany<Subscription, $this>
      */
     public function subscriptions(): HasMany
     {
         return $this->hasMany(Subscription::class);
+    }
+
+    /** The setup wizard was finished (or wasn't needed). */
+    public function isSetUp(): bool
+    {
+        return $this->setup_completed_at !== null;
     }
 
     /**
