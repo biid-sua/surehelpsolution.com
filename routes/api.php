@@ -91,26 +91,28 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
     // Admin Dashboard Routes
     Route::prefix('admin')->middleware('role:admin')->group(function () {
         // Dashboard stats and analytics
-        Route::get('/dashboard/stats', [AdminDashboardController::class, 'getDashboardStats']);
-        Route::get('/analytics', [AdminDashboardController::class, 'getSystemAnalytics']);
-        Route::get('/agent-performance', [AdminDashboardController::class, 'getAgentPerformance']);
+        Route::get('/dashboard/stats', [AdminDashboardController::class, 'getDashboardStats'])->middleware('can:dashboard.view');
+        Route::get('/analytics', [AdminDashboardController::class, 'getSystemAnalytics'])->middleware('can:reports.view');
+        Route::get('/agent-performance', [AdminDashboardController::class, 'getAgentPerformance'])->middleware('can:reports.view');
 
         // User management
-        Route::get('/users', [AdminDashboardController::class, 'getUsers']);
-        Route::post('/users', [AdminDashboardController::class, 'createUser']);
-        Route::put('/users/{id}', [AdminDashboardController::class, 'updateUser']);
-        Route::delete('/users/{id}', [AdminDashboardController::class, 'deleteUser']);
+        Route::get('/users', [AdminDashboardController::class, 'getUsers'])->middleware('can:users.view');
+        Route::post('/users', [AdminDashboardController::class, 'createUser'])->middleware('can:users.create');
+        Route::put('/users/{id}', [AdminDashboardController::class, 'updateUser'])->middleware('can:users.update');
+        Route::delete('/users/{id}', [AdminDashboardController::class, 'deleteUser'])->middleware('can:users.delete');
 
         // Call logs management
-        Route::get('/call-logs', [AdminDashboardController::class, 'getAllCallLogs']);
+        Route::get('/call-logs', [AdminDashboardController::class, 'getAllCallLogs'])->middleware('can:calls.view');
 
         // Duty schedule management
-        Route::get('/duty-schedules', [DutyScheduleController::class, 'getSchedules']);
-        Route::get('/duty-schedules/calendar', [DutyScheduleController::class, 'getCalendarData']);
-        Route::post('/duty-schedules', [DutyScheduleController::class, 'createSchedule']);
-        Route::put('/duty-schedules/{id}', [DutyScheduleController::class, 'updateSchedule']);
-        Route::delete('/duty-schedules/{id}', [DutyScheduleController::class, 'deleteSchedule']);
-        Route::post('/duty-schedules/check-conflicts', [DutyScheduleController::class, 'checkConflicts']);
+        Route::get('/duty-schedules', [DutyScheduleController::class, 'getSchedules'])->middleware('can:users.view');
+        Route::get('/duty-schedules/calendar', [DutyScheduleController::class, 'getCalendarData'])->middleware('can:users.view');
+        Route::middleware('can:users.update')->group(function () {
+            Route::post('/duty-schedules', [DutyScheduleController::class, 'createSchedule']);
+            Route::put('/duty-schedules/{id}', [DutyScheduleController::class, 'updateSchedule']);
+            Route::delete('/duty-schedules/{id}', [DutyScheduleController::class, 'deleteSchedule']);
+            Route::post('/duty-schedules/check-conflicts', [DutyScheduleController::class, 'checkConflicts']);
+        });
     });
 
     // Shared routes for agents and admins

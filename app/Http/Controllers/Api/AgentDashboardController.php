@@ -35,15 +35,8 @@ class AgentDashboardController extends Controller
         try {
             $user = Auth::user();
 
-            if (! in_array($user->role, ['agent', 'admin'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Access denied. Agent or Admin role required.',
-                ], 403);
-            }
-
             $period = $request->get('period', 'today'); // today, weekly, monthly
-            $userId = $user->role === 'admin' && $request->has('agent_id') ? $request->agent_id : $user->id;
+            $userId = $user->hasPermissionIn('users.view') && $request->has('agent_id') ? $request->agent_id : $user->id;   // another agent's numbers need users.view
 
             if (! in_array($period, CallStatsService::PERIODS, true)) {
                 $period = 'today';
@@ -79,14 +72,7 @@ class AgentDashboardController extends Controller
         try {
             $user = Auth::user();
 
-            if (! in_array($user->role, ['agent', 'admin'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Access denied. Agent or Admin role required.',
-                ], 403);
-            }
-
-            $userId = $user->role === 'admin' && $request->has('agent_id') ? $request->agent_id : $user->id;
+            $userId = $user->hasPermissionIn('users.view') && $request->has('agent_id') ? $request->agent_id : $user->id;   // another agent's numbers need users.view
 
             $performanceData = $this->stats->performance($userId);
 
@@ -117,14 +103,7 @@ class AgentDashboardController extends Controller
         try {
             $user = Auth::user();
 
-            if (! in_array($user->role, ['agent', 'admin'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Access denied. Agent or Admin role required.',
-                ], 403);
-            }
-
-            $userId = $user->role === 'admin' && $request->has('agent_id') ? $request->agent_id : $user->id;
+            $userId = $user->hasPermissionIn('users.view') && $request->has('agent_id') ? $request->agent_id : $user->id;   // another agent's numbers need users.view
             $limit = $request->get('limit', 20);
             $offset = $request->get('offset', 0);
             $status = $request->get('status', 'all'); // all, new, service-requested, completed, etc.
@@ -237,13 +216,6 @@ class AgentDashboardController extends Controller
         try {
             $user = Auth::user();
 
-            if (! in_array($user->role, ['agent', 'admin'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Access denied. Agent or Admin role required.',
-                ], 403);
-            }
-
             $callLog = CallLog::find($id);
             if (! $callLog) {
                 return response()->json(['success' => false, 'message' => 'Call log not found'], 404);
@@ -347,13 +319,6 @@ class AgentDashboardController extends Controller
     {
         try {
             $user = Auth::user();
-
-            if (! in_array($user->role, ['agent', 'admin'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Access denied. Agent or Admin role required.',
-                ], 403);
-            }
 
             $outcomes = app(CallOutcomes::class);
             $clients = User::clientsVisibleTo($user)

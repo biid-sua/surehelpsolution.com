@@ -107,9 +107,11 @@ A client user only ever sees their own business. The business is resolved on the
 | PUT | `/agent/call-logs/{id}` | Own calls, while still assigned to that business |
 | GET | `/agent/clients` | Only businesses the agent is assigned to. Each client carries `call_outcomes: [{key, label, category}]`, the pick-list for that business (added P2-4a, additive) |
 | PUT | `/agent/call-logs/{id}` with a new `call_outcome` | Must be one of the call's business's active outcomes (else 422 on `call_outcome`) |
-| GET | `/duty-schedules`, `/duty-schedules/calendar` | Own shifts (admins: all) |
+| GET | `/duty-schedules`, `/duty-schedules/calendar` | Own shifts; staff with `users.view` see everyone's (and may pass `agent_id`) |
 
-### Admin — role `admin`
+### Admin — role `admin`, then each endpoint's permission (D32)
+A staff member without the permission gets `403`. Dashboard: `dashboard.view`. Analytics and agent performance: `reports.view`. Users: `users.view` (GET), `users.create` (POST), `users.update` (PUT), `users.delete` (DELETE). Call logs: `calls.view`. Duty schedules: `users.view` to read, `users.update` to create, change, delete or check conflicts.
+
 `/admin/dashboard/stats`, `/admin/analytics`, `/admin/agent-performance`, `/admin/users` (GET/POST, PUT/DELETE `/{id}`), `/admin/call-logs`, `/admin/duty-schedules` (GET/POST, PUT/DELETE `/{id}`, `/calendar`, `/check-conflicts`). Duty schedules use `schedule_date` + `start_time`/`end_time` (`H:i` or `H:i:s`) + `notes`.
 
 ---

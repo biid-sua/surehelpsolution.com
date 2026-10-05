@@ -64,3 +64,5 @@ These aren't in the spec §5 list. Organization roles never get them.
 | Client dashboard (web), `/api/v1/client/*` call endpoints | `tenant` middleware + `can:calls.view` |
 | `PUT /api/v1/agent/call-logs/{id}` | `CallLogPolicy::update`: own call **and** still `calls.update` in its organization |
 | Agent client picker (web + API) | `User::clientsVisibleTo()`: assigned organizations only |
+| `/api/v1/admin/*` (D32) | `role:admin` for the portal, then per route: dashboard `dashboard.view`; analytics and agent performance `reports.view`; users `users.view` / `users.create` / `users.update` / `users.delete`; call logs `calls.view`; duty schedules `users.view` to read, `users.update` to change |
+| `/api/v1/duty-schedules`, `/api/v1/agent/dashboard/*` (D32) | Everyone sees their own; another agent's shifts or numbers need `users.view` |

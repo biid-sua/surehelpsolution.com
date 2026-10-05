@@ -337,6 +337,11 @@ The audit log is visible to Super Admin and Operations Manager only, never to bu
 
 **Why:** The webhook used to load every connected calendar to find the matching channel, which gets slow as more businesses connect calendars (PR #2 review).
 
+## D32 — The mobile API checks permissions, not role names (2026-10-17)
+**Decision:** As on the web (D23), a route's `role:` middleware only picks the portal (admin, agent, client). What someone may do comes from permissions on the route (`can:`) or from the data's policy. The checks that repeated the role inside each API method are removed. The admin endpoints now follow the staff member's role: a Support Agent can read users, calls and schedules but not change them; an Operations Manager can't delete users. Seeing another agent's shifts or numbers needs `users.view`, so agents and supervisors see only their own.
+
+**Why:** One rule everywhere. Before, any admin account could change anything through the API, whatever its role in the admin console.
+
 ## D10 — Telephony
 **Decision:** **Twilio** (Programmable Voice, TaskRouter, Voice JS SDK, Messaging) behind a `TelephonyProvider` interface, so the vendor can be swapped. Calls stay manually logged until then, but the Phase 2 `calls` table is designed for provider data (call SID, direction, timings, recording/transcript references). Telephony becomes **Phase 3b**, right after Calendar, because live call handling is the core of a receptionist product.
 **Action needed from you (long lead time):** create a Twilio account and start **A2P 10DLC** brand and campaign registration now. US SMS cannot go live without it, and approval takes weeks.

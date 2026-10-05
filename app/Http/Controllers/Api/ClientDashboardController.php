@@ -22,16 +22,6 @@ class ClientDashboardController extends Controller
     public function getDashboardSummary(Request $request)
     {
         try {
-            $user = Auth::user();
-
-            // Validate user role
-            if ($user->role !== 'client') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Access denied. Client role required.',
-                ], 403);
-            }
-
             $period = $request->get('period', 'daily'); // daily, weekly, monthly
             $now = Carbon::now();
 
@@ -95,15 +85,6 @@ class ClientDashboardController extends Controller
     public function getCallHistory(Request $request)
     {
         try {
-            $user = Auth::user();
-
-            if ($user->role !== 'client') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Access denied. Client role required.',
-                ], 403);
-            }
-
             $period = $request->get('period', 'all'); // Default to 'all' to show all calls
             $limit = $request->get('limit', 100);
             $offset = $request->get('offset', 0);
@@ -206,15 +187,6 @@ class ClientDashboardController extends Controller
     public function getServiceRequests(Request $request)
     {
         try {
-            $user = Auth::user();
-
-            if ($user->role !== 'client') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Access denied. Client role required.',
-                ], 403);
-            }
-
             $status = $request->get('status', 'all'); // all, pending, in_progress, completed, scheduled
             $limit = $request->get('limit', 20);
 
@@ -287,13 +259,6 @@ class ClientDashboardController extends Controller
         try {
             $user = Auth::user();
 
-            if ($user->role !== 'client') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Access denied. Client role required.',
-                ], 403);
-            }
-
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -329,13 +294,6 @@ class ClientDashboardController extends Controller
     {
         try {
             $user = Auth::user();
-
-            if ($user->role !== 'client') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Access denied. Client role required.',
-                ], 403);
-            }
 
             $request->validate([
                 'name' => 'sometimes|string|max:255',
@@ -382,15 +340,6 @@ class ClientDashboardController extends Controller
     public function getCalendarData(Request $request)
     {
         try {
-            $user = Auth::user();
-
-            if ($user->role !== 'client') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Access denied. Client role required.',
-                ], 403);
-            }
-
             $start = $request->get('start', Carbon::now()->startOfMonth()->format('Y-m-d'));
             $end = $request->get('end', Carbon::now()->endOfMonth()->format('Y-m-d'));
 

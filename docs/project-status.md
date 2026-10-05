@@ -28,7 +28,7 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 - **Shift requests and coverage (D28):** agents ask to hand over a shift or for time off; schedulers approve or decline, and a grid shows hours with nobody on shift.
 - **One UI (D23):** the product now has a single version of every screen. The old admin and agent pages were rebuilt in the new design and deleted.
 
-282 automated tests pass.
+284 automated tests pass.
 
 ---
 
@@ -115,7 +115,6 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 ### A. Can be done now (no outside dependency)
 | Item | Notes |
 |---|---|
-| Replace the remaining inline role checks in the mobile API controllers with permissions | The web screens are done (D23) |
 | Content-Security-Policy header | Only possible after the public website stops loading scripts from CDNs (its redesign) |
 
 ### B. Needs action from you (operations)
