@@ -17,6 +17,18 @@
     @if (session('status'))
         <x-ui.alert tone="success" class="mb-6">{{ session('status') }}</x-ui.alert>
     @endif
+    @if ($away)
+        <x-ui.alert :tone="$away['now'] ? 'warning' : 'info'" class="mb-6"
+            :title="$away['now'] ? 'Vacation mode is on until '.$away['profile']->closed_until->format('l, M j') : 'Vacation planned: '.$away['profile']->closed_from->format('M j').' – '.$away['profile']->closed_until->format('M j')">
+            {{ $away['profile']->closure_message ?: 'Our receptionists take messages and don\'t book anything on those days.' }}
+            @if ($canManageHours)
+                <span class="mt-2 flex flex-wrap gap-3">
+                    <a href="{{ route('app.business.hours') }}" class="font-semibold underline underline-offset-2">Change dates</a>
+                    <button type="button" wire:click="endVacation" class="font-semibold underline underline-offset-2">{{ $away['now'] ? 'I\'m back: end it now' : 'Cancel it' }}</button>
+                </span>
+            @endif
+        </x-ui.alert>
+    @endif
     @if ($setup)
         <div class="mb-6 flex flex-wrap items-center gap-4 rounded-[var(--radius-card)] border border-brand-500/40 bg-brand-500/10 p-5">
             <div class="min-w-0 flex-1">

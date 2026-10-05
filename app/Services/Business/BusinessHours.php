@@ -17,7 +17,7 @@ use Illuminate\Support\Collection;
  * - several intervals per weekday = split shift; no interval = closed that day
  * - closes_at earlier than (or equal to) opens_at = open past midnight
  * - a holiday row closes the whole date, or replaces its hours with special hours
- * - closed_until on the profile closes the business up to and including that date
+ * - closed_from..closed_until on the profile (vacation mode) closes the business on those dates
  */
 class BusinessHours
 {
@@ -41,7 +41,7 @@ class BusinessHours
         $day = CarbonImmutable::parse($date->format('Y-m-d'), $timezone);
         $data = $this->data($organization);
 
-        if ($data['profile']?->closed_until && $day->toDateString() <= $data['profile']->closed_until->toDateString()) {
+        if ($data['profile']?->isAwayOn($day->toDateString())) {
             return [];
         }
 
@@ -93,7 +93,7 @@ class BusinessHours
         $holiday = $this->data($organization)['holidays']->get($now->toDateString());
 
         $reason = match (true) {
-            $profile?->closed_until && $now->toDateString() <= $profile->closed_until->toDateString() => 'temporarily_closed',
+            (bool) $profile?->isAwayOn($now->toDateString()) => 'temporarily_closed',
             $holiday !== null => 'holiday',
             default => null,
         };

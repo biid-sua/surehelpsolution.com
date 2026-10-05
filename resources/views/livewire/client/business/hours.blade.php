@@ -67,16 +67,22 @@
                     @endif
                 </x-ui.card>
 
-                <x-ui.card title="Temporary closure" description="Closed for vacation or renovation? Agents will tell callers.">
+                <x-ui.card title="Vacation mode" description="Away for a holiday or renovation? Our receptionists tell callers, take messages and don't book anything on those days.">
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div>
-                            <label for="closed-until" class="sh-label">Closed until (including)</label>
+                            <label for="closed-from" class="sh-label">Away from</label>
+                            <input id="closed-from" type="date" wire:model="closedFrom" class="sh-input">
+                            @error('closedFrom') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label for="closed-until" class="sh-label">Back after (last day away)</label>
                             <input id="closed-until" type="date" wire:model="closedUntil" class="sh-input">
                             @error('closedUntil') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror
                         </div>
-                        <div>
-                            <label for="closure-msg" class="sh-label">Message for callers</label>
-                            <input id="closure-msg" type="text" wire:model="closureMessage" class="sh-input" maxlength="255" placeholder="Back on Monday the 12th">
+                        <div class="sm:col-span-2">
+                            <label for="closure-msg" class="sh-label">What should we tell callers and do while you're away?</label>
+                            <input id="closure-msg" type="text" wire:model="closureMessage" class="sh-input" maxlength="255" placeholder="We're on vacation until Monday the 12th. Take a message; emergencies go to Mike on (512) 555-0199.">
+                            <p class="mt-1 text-xs text-subtle">Leave both dates empty to turn vacation mode off. Emergency handling above still applies.</p>
                         </div>
                     </div>
                 </x-ui.card>
