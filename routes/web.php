@@ -12,6 +12,7 @@ use App\Http\Controllers\Client\CalendarEventsController;
 use App\Http\Controllers\Client\CalendarOAuthController;
 use App\Http\Controllers\Client\CallExportController;
 use App\Http\Controllers\Client\CustomerExportController;
+use App\Http\Controllers\Client\DataExportController as ClientDataExportController;
 use App\Http\Controllers\Client\InvoiceController as ClientInvoiceController;
 use App\Http\Controllers\Client\ResultsPdfController;
 use App\Http\Controllers\ContactController;
@@ -55,6 +56,7 @@ use App\Livewire\Client\Dashboard as ClientDashboard;
 use App\Livewire\Client\Escalations\Index as EscalationsIndex;
 use App\Livewire\Client\Results as ClientResults;
 use App\Livewire\Client\Settings\Notifications as NotificationSettings;
+use App\Livewire\Client\Settings\Privacy as PrivacySettings;
 use App\Livewire\Client\Settings\Team as TeamSettings;
 use App\Livewire\Client\Setup\Wizard as SetupWizard;
 use App\Livewire\Client\Tasks\Index as TasksIndex;
@@ -124,6 +126,10 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
     });
     Route::get('/settings/notifications', NotificationSettings::class)->name('settings.notifications');
     Route::get('/settings/team', TeamSettings::class)->middleware('can:users.view')->name('settings.team');
+    Route::middleware('can:organization.update')->group(function () {
+        Route::get('/settings/privacy', PrivacySettings::class)->name('settings.privacy');
+        Route::get('/settings/privacy/exports/{export}', ClientDataExportController::class)->name('settings.privacy.export');
+    });
     Route::get('/tasks', TasksIndex::class)->middleware('can:tasks.view')->name('tasks.index');
     Route::middleware('can:billing.view')->group(function () {
         Route::get('/billing', ClientBilling::class)->name('billing');

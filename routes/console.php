@@ -42,3 +42,5 @@ Schedule::command('notifications:daily-summary')->everyFifteenMinutes()->without
 Schedule::command('appointments:send-reminders')->everyFifteenMinutes()->withoutOverlapping(30);
 // Quality: yesterday's random call sample for supervisors (SUP-04).
 Schedule::command('quality:sample')->dailyAt('05:40')->withoutOverlapping(30);
+// Data retention, expired exports and account closures (spec §56, CMP-05/07).
+Schedule::command('privacy:run')->dailyAt('04:20')->withoutOverlapping(60);

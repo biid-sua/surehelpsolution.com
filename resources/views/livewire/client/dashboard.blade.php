@@ -17,6 +17,14 @@
     @if (session('status'))
         <x-ui.alert tone="success" class="mb-6">{{ session('status') }}</x-ui.alert>
     @endif
+    @if ($organization->isClosing())
+        <x-ui.alert tone="warning" class="mb-6" :title="'Your account closes on '.$organization->closes_at->setTimezone($organization->timezoneOrDefault())->format('l, F j')">
+            After that day your data is deleted and calls are no longer answered.
+            @can('organization.update', $organization)
+                <a href="{{ route('app.settings.privacy') }}" class="mt-2 block font-semibold underline underline-offset-2">Keep my account or download my data</a>
+            @endcan
+        </x-ui.alert>
+    @endif
     @if ($away)
         <x-ui.alert :tone="$away['now'] ? 'warning' : 'info'" class="mb-6"
             :title="$away['now'] ? 'Vacation mode is on until '.$away['profile']->closed_until->format('l, M j') : 'Vacation planned: '.$away['profile']->closed_from->format('M j').' – '.$away['profile']->closed_until->format('M j')">

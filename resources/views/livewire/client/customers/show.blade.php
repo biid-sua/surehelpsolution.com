@@ -8,6 +8,10 @@
             @endif
             @can('customers.delete', $customer->organization)
                 <x-ui.button variant="ghost" :href="route('app.customers.duplicates', ['a' => $customer->ulid])">Merge with another customer</x-ui.button>
+                <x-ui.confirm id="erase-customer" title="Erase this customer's personal data?" confirm-label="Erase for good" action="erase">
+                    <x-slot:trigger><x-ui.button variant="ghost">Erase personal data</x-ui.button></x-slot:trigger>
+                    Use this when {{ $customer->fullName() }} asks you to delete their information. Their name, phone, email, address and notes are removed from this record and from every call, appointment and task about them, and their timeline is deleted. This can't be undone.
+                </x-ui.confirm>
             @endcan
         </x-slot:actions>
     </x-ui.page-header>

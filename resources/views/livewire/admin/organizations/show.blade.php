@@ -3,6 +3,7 @@
         description="{{ number_format($callStats['total']) }} calls in total · {{ number_format($callStats['last30']) }} in the last 30 days">
         <x-slot:actions>
             <x-ui.badge :tone="$organization->status === \App\Enums\OrganizationStatus::Active ? 'success' : 'warning'" class="text-sm">{{ $organization->status->label() }}</x-ui.badge>
+            @if ($organization->isClosing())<x-ui.badge tone="danger" class="text-sm">Closes {{ $organization->closes_at->format('M j') }}</x-ui.badge>@endif
         </x-slot:actions>
     </x-ui.page-header>
 

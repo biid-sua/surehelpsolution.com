@@ -33,6 +33,7 @@ class PortalNavigation
                 $this->item('Billing', 'card', 'app.billing', 'app.billing*', 'billing.view'),
                 $this->item('Team', 'users', 'app.settings.team', 'app.settings.team', 'users.view'),
                 $this->item('Notifications', 'bell', 'app.settings.notifications', 'app.settings.notifications', null),
+                $this->item('Data & privacy', 'shield', 'app.settings.privacy', 'app.settings.privacy*', 'organization.update'),
             ],
             'admin' => [
                 $this->item('Overview', 'home', 'admin.home', 'admin.home', 'dashboard.view'),

@@ -8,7 +8,7 @@ Stack ([decisions.md](decisions.md) D5): Blade + Livewire 3 + Alpine (bundled wi
 
 | Portal | URL | Screens |
 |---|---|---|
-| Business portal (clients) | `/app` | Dashboard, Calls, Calendar, Appointments, Customers, Tasks, Escalations, Business (profile, hours, services, knowledge, rules, outcomes, calendar sync), Billing, Notifications |
+| Business portal (clients) | `/app` | Dashboard, Calls, Calendar, Appointments, Customers, Tasks, Escalations, Business (profile, hours, services, knowledge, rules, outcomes, calendar sync), Billing, Team, Notifications, Data & privacy |
 | Agent workspace | `/agent` | Businesses (per-business workspace with guided call entry), My calls, My schedule (with hand-over and time-off requests), Call quality |
 | Admin console | `/admin` | Overview, Organizations, Users, Duty schedule (with requests and coverage), Call review, Escalations, Call quality (opens `/agent/quality`), Billing, Website enquiries, Audit log |
 | Account | `/account/password` | First sign-in: replace the temporary password |

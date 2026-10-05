@@ -91,7 +91,12 @@ Current host: cPanel (PHP 8.3), deployed by uploading files. Target hosting: [de
 - **Queue:** quiet hours delay emails, so the queue worker must process delayed jobs. A worker started every minute by cron does that.
 - **Email:** customers now receive appointment emails from the `MAIL_FROM_ADDRESS`, showing the business's name, with replies going to the business. Make sure that address's domain has SPF and DKIM set up.
 
-## Release "call quality" (D27) and "shift requests" (D28): specific notes
+## Release "call quality" (D27), "shift requests" (D28) and "data & privacy" (D29): specific notes
+
+- **Retention starts at 3 years for every business.** The first nightly `privacy:run` deletes calls and finished work older than that. Production data starts in 2025, so nothing is deleted yet, but check before deploying to any older copy. Owners can choose "Keep everything".
+- **Migration** `2026_10_16_000001`: `data_exports` table; on `organizations` the retention and closure columns; `customers.erased_at`.
+- **Scheduler:** `privacy:run` daily at 04:20 UTC.
+- **Storage:** exports are written to `storage/app/private/exports` (not public). Make sure that folder is writable and included in backups' exclusions if you don't want copies of exports in backups.
 
 - **Migrations:** new `qa_reviews` table, plus a permission re-sync for `qa.review`; new `shift_requests` table.
 - **Optional `.env`:** `SCHEDULE_MIN_AGENTS` (default 1) sets how many agents an hour needs before the coverage grid stops marking it as a gap.

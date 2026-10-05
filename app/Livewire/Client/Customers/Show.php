@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Client\Customers;
 
+use App\Actions\Customers\EraseCustomer;
 use App\Actions\Customers\RecordTimelineEvent;
 use App\Enums\CustomerStatus;
 use App\Enums\TimelineEventType;
@@ -51,6 +52,16 @@ class Show extends Component
     private function customer(): Customer
     {
         return Customer::query()->forOrganization($this->organization())->where('ulid', $this->ulid)->firstOrFail();
+    }
+
+    /** The customer asked for their personal data to be deleted (spec §57). */
+    public function erase(EraseCustomer $erase): mixed
+    {
+        $this->authorize('customers.delete', $this->organization());
+        $erase->handle($this->customer(), auth()->user());
+        session()->flash('status', 'The customer\'s personal data was erased.');
+
+        return $this->redirectRoute('app.customers.index');
     }
 
     public function edit(): void

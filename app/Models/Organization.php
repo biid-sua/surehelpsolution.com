@@ -11,12 +11,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
  * A client business — the tenant boundary for all business data.
  *
  * @property array<string, string>|null $setup_progress setup wizard step => done | skipped
+ * @property int|null $retention_months months of history kept (null = all)
+ * @property Carbon|null $closure_requested_at
+ * @property Carbon|null $closes_at when a requested closure takes effect
+ * @property Carbon|null $closed_at
  */
 class Organization extends Model
 {
@@ -39,6 +44,10 @@ class Organization extends Model
             'setup_progress' => 'array',
             'setup_completed_at' => 'datetime',
             'average_job_value_cents' => 'integer',
+            'retention_months' => 'integer',
+            'closure_requested_at' => 'datetime',
+            'closes_at' => 'datetime',
+            'closed_at' => 'datetime',
         ];
     }
 
@@ -50,6 +59,11 @@ class Organization extends Model
             $organization->status ??= OrganizationStatus::Onboarding;
             $organization->currency ??= 'USD';
         });
+    }
+
+    public function isClosing(): bool
+    {
+        return $this->closes_at !== null && $this->closed_at === null;
     }
 
     /**

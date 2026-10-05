@@ -11,6 +11,10 @@
         </x-slot:actions>
     </x-ui.page-header>
 
+    @if (session('status'))
+        <x-ui.alert tone="success" class="mb-6">{{ session('status') }}</x-ui.alert>
+    @endif
+
     <div class="mb-4 grid gap-3 sm:grid-cols-[1fr_12rem_12rem] sm:items-end">
         <div>
             <label for="cust-search" class="sh-label">Search</label>

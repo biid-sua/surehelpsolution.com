@@ -200,11 +200,12 @@ Started 2026-10-04 on `develop`, one feature branch per step.
 | CRM-04 | Duplicate suggestions (same email or name), side-by-side compare, merge everything into the record a person chooses | **done** 2026-10-14 |
 | CLI-06 | Vacation mode with planned dates, dashboard banner with "end it now", agent notices | **done** 2026-10-14 |
 
-## 4f. Agent quality and scheduling (D27, D28)
+## 4f. Agent quality, scheduling and privacy (D27–D29)
 
 | Step | Scope (task.md) | Status |
 |---|---|---|
 | SUP-04 | Call quality reviews: daily random sample per agent, pick by call ID or at random, five-point scorecard with weights and a must-pass compliance point, written feedback, agent notice and "Got it", team results per agent; `qa.review` permission | **done** 2026-10-15 (recordings after telephony; AI scoring AIX-03 later) |
+| CMP-05 / CMP-07 | *Data & privacy* page: full data export (ZIP, background, 7 days), retention period per business (default 3 years) with daily cleanup, erasing one customer's personal data, closing the account after 30 days with "keep my account" (D29) | **done** 2026-10-16 |
 | AGT-11 / SUP-03 | Shift hand-over and time-off requests from *My schedule*; approve/decline (with note) on *Duty schedule*; leave removes shifts and marks the days; coverage grid by hour with a minimum (D28) | **done** 2026-10-15 |
 
 ## 5. Later phases (outline, in spec order)

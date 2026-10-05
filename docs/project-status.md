@@ -23,10 +23,11 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
   - Merging duplicate customers.
   - Vacation mode.
 - **Call quality reviews (D27):** supervisors score a random sample of each agent's calls against a five-point scorecard; agents read the feedback and confirm it.
+- **Data & privacy (D29):** owners download all their data, choose how long history is kept (3 years by default), erase a customer's personal data on request, and close their account with a 30-day grace period.
 - **Shift requests and coverage (D28):** agents ask to hand over a shift or for time off; schedulers approve or decline, and a grid shows hours with nobody on shift.
 - **One UI (D23):** the product now has a single version of every screen. The old admin and agent pages were rebuilt in the new design and deleted.
 
-269 automated tests pass.
+274 automated tests pass.
 
 ---
 
@@ -84,10 +85,11 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 | Duplicate customers | Suggested duplicates, side-by-side compare, merge everything into the record you keep |
 | Vacation mode | Plan time away ahead; bookings blocked only on those days; agents and the owner see it |
 
-### Agent quality and scheduling (D27, D28)
+### Agent quality, scheduling and privacy (D27–D29)
 | Step | What it delivered |
 |---|---|
 | Call quality reviews | Each morning one random call per agent goes to the review queue. Supervisors score it (greeting, accuracy, booking attempt, tone, compliance), write feedback, and see each agent's average and pass rate. Agents get a notice, read it and confirm |
+| Data & privacy | Full data export as a ZIP; retention period per business with a daily cleanup; erase one customer's personal data; close the account after 30 days (invoices kept) |
 | Shift requests and coverage | Agents ask to hand over a shift or for time off from *My schedule*. Schedulers approve or decline on *Duty schedule*; approved leave clears those shifts, and a coverage grid shows each hour's agents and the gaps |
 
 ### Phase 3: Calendar
