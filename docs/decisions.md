@@ -342,6 +342,53 @@ The audit log is visible to Super Admin and Operations Manager only, never to bu
 
 **Why:** One rule everywhere. Before, any admin account could change anything through the API, whatever its role in the admin console.
 
+## D33 — Social publishing: our own scheduler, official APIs only (2026-10-06)
+**Decision:**
+- **Launch channels:** Facebook Pages, Instagram professional accounts, LinkedIn Company Pages, Google Business Profile.
+- **Next:** TikTok, YouTube Shorts, Pinterest and Threads.
+- **X:** charges per post (about $0.015, or $0.20 with a link, since Sept 2026), so it's only offered as a paid add-on that passes the cost on.
+- **Official APIs only:** each network sits behind a `SocialProvider` adapter over plain HTTPS, like calendar sync (P3-1). No browser automation, no unofficial APIs.
+- **Our own queue:** SureHelp keeps the schedule and publishes at the due time. We don't use each network's native scheduling (Facebook allows only 10 minutes to 30 days ahead; Instagram has none). Every channel behaves the same, posts can be planned 12 months ahead, and they can be moved or cancelled freely.
+- **Each adapter declares its capabilities:** media types, text limits, links, first comment, analytics. A post is validated per channel before it can be scheduled.
+- **Human gate:** nothing is published without a person scheduling it, approving it or pressing "publish now".
+**Why:** Official APIs are the only route that doesn't get customers' accounts banned. A single queue gives a calendar that behaves the same everywhere, and lets us retry, alert and report consistently.
+**Action needed from you (long lead time):**
+- **Meta:** App Review for `pages_manage_posts`, `pages_read_engagement`, `instagram_business_content_publish` and related permissions, plus Business Verification. It needs screencasts and takes weeks.
+- **LinkedIn:** Community Management API access. It needs a registered company and a verified LinkedIn Page, goes through a two-tier review with a screencast, and takes 1–4 weeks per tier.
+- **Google:** a Business Profile API access request.
+- **TikTok:** the Content Posting audit. Until it passes, posts stay private.
+Start these early. The code can be built and tested with your own accounts before approval.
+
+## D34 — AI content uses Claude through an `AiService` (2026-10-06)
+**Decision:**
+- **Vendor:** the AI foundation (Phase 6) starts now, because the content studio needs it. Claude (Anthropic) is the first provider, behind an `AiService` interface so the vendor can change.
+- **Grounding:** prompts are built from the Business Brain (services, prices, area, hours, offers, knowledge, brand voice).
+- **Checks:** output is checked against that data before a person sees it.
+- **Limits and labels:** every call is metered per business and capped by plan. Drafts are labelled AI-written until a person edits or approves them.
+- **No customer data in prompts:** no customer personal data is sent for marketing content.
+**Why:** Content grounded in the business's real facts is the difference between useful posts and generic filler. Metering keeps AI costs inside plan prices.
+**Action needed from you:** an Anthropic API key (Console → API keys), and the commercial terms / DPA accepted in the Anthropic Console.
+
+## D35 — Websites: connect first, then SureHelp Sites from templates (2026-10-06)
+**Decision:**
+1. **Connect an existing website.** The business verifies ownership by meta tag or DNS TXT and gets a one-line snippet: chat, booking, click-to-call and a lead form. We run a monthly site health and SEO check.
+2. **SureHelp Sites.** Industry templates are rendered by SureHelp from the Business Brain, so hours, services and holidays are always current. Every site gets structured data, a sitemap, Open Graph tags and cached pages. Sites live on a SureHelp subdomain, or on the business's own domain through Cloudflare for SaaS custom hostnames: automatic HTTPS, 100 hostnames included, then about $0.10 per hostname per month.
+**Why:** Most businesses already have a site, and the snippet turns it into a lead source in minutes. Businesses without one, or with a poor one, get a fast, always-accurate local site without a web designer. Rendering it ourselves, rather than exporting to WordPress, keeps it in sync and secure.
+**Action needed from you:**
+- Choose and buy a short domain for hosted sites (e.g. `surehelp.site`).
+- Put it on Cloudflare, needed for custom domains.
+- Custom domains also need the hosting move (D6): cPanel can't issue certificates for customers' domains.
+
+## D36 — Growth module order (2026-10-06)
+**Decision:**
+- **G-1 Social foundation:** accounts, posts, per-channel versions, scheduling queue, approval, calendar, media library. It ships with a Facebook / Instagram / LinkedIn / Google Business Profile adapter set that stays hidden until each app is approved.
+- **G-2 AI foundation and content studio.**
+- **G-3 Connect your website** (verification, snippet, SEO check).
+- **G-4 SureHelp Sites.**
+- **G-5 Social analytics** in Results.
+- **G-6 Growth ideas backlog** (§41C), in priority order.
+**Why:** G-1 and G-3 deliver value without waiting for third-party approvals. G-2 needs only an API key. G-4 needs the domain and hosting decisions.
+
 ## D10 — Telephony
 **Decision:** **Twilio** (Programmable Voice, TaskRouter, Voice JS SDK, Messaging) behind a `TelephonyProvider` interface, so the vendor can be swapped. Calls stay manually logged until then, but the Phase 2 `calls` table is designed for provider data (call SID, direction, timings, recording/transcript references). Telephony becomes **Phase 3b**, right after Calendar, because live call handling is the core of a receptionist product.
 **Action needed from you (long lead time):** create a Twilio account and start **A2P 10DLC** brand and campaign registration now. US SMS cannot go live without it, and approval takes weeks.

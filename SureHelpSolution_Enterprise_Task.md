@@ -1680,27 +1680,173 @@ Do not automate deceptive review practices.
 
 ------------------------------------------------------------------------
 
-# 41. SOCIAL MEDIA MODULE --- FUTURE
+# 41. SOCIAL MEDIA MODULE
 
-Support provider adapters.
+_Expanded 2026-10-06 at the product owner's request. Decisions: D33–D36._
 
-Potential channels:
+Businesses connect their own social accounts and plan, write, approve and
+publish posts from SureHelp, immediately or on any future date.
 
--   Facebook
--   Instagram
--   other supported networks later
+Support provider adapters. Do not assume every social platform provides
+identical API capabilities: each adapter declares what it supports
+(text-only posts, images, video, carousels, links, first comment,
+scheduling window, character limits, analytics).
 
-Features:
+## Channels
 
--   connect account
--   content calendar
--   draft posts
--   AI content suggestions
--   approval workflow
--   publishing where provider APIs permit
--   analytics
+Launch channels (official APIs that allow publishing for customers'
+accounts after app review):
 
-Do not assume every social platform provides identical API capabilities.
+-   Facebook Pages
+-   Instagram professional accounts (Business / Creator)
+-   LinkedIn Company Pages (and the owner's personal profile)
+-   Google Business Profile posts (updates, offers, events)
+
+Later channels, each behind its own adapter:
+
+-   TikTok (posts stay private until TikTok's audit is passed)
+-   YouTube Shorts
+-   Pinterest
+-   Threads
+-   X (paid per post by X; offered only as a paid add-on)
+
+## Features
+
+-   connect / reconnect / disconnect each account with OAuth; tokens
+    encrypted, never sent to the browser; lost access flagged and the
+    owner alerted (same pattern as calendar sync)
+-   one post, many channels: a shared draft with per-channel versions
+    (text, media, link, hashtags, Google Business Profile button and
+    offer/event fields), validated against each channel's rules before
+    it can be scheduled
+-   publish now, schedule for a date and time in the business's
+    timezone, or add to a queue with recurring weekly slots
+-   advance scheduling up to 12 months ahead; SureHelp runs its own
+    publishing queue so every channel behaves the same
+-   content calendar (month, week, list) with drag-to-reschedule,
+    filters by channel and status, and planned campaigns
+-   statuses: draft → in review → approved → scheduled → publishing →
+    published / partly published / failed; failed channels retried
+    with backoff, then the owner is told what to fix
+-   approval workflow: owners can require approval for posts written by
+    staff, by SureHelp's content team or by AI; one-tap approve from
+    email and the mobile app
+-   media library: images and video with alt text, cropping per channel
+    aspect ratio, brand kit (logo, colours, fonts) and branded templates
+    for offers, reviews, tips and before/after photos
+-   evergreen posts that can be re-queued; duplicate-post protection
+-   link tracking: UTM tags added automatically; links to the booking
+    page and the business website
+-   analytics where APIs permit: reach, impressions, engagement, clicks,
+    followers; per post, per channel and in the monthly Results report,
+    tied to website visits, calls and bookings where attribution exists
+-   done-for-you service: SureHelp's content team can plan and write
+    posts for a business (paid add-on), always subject to the owner's
+    approval settings
+-   audit log for every publish, edit, approval and deletion
+
+## Rules
+
+-   Nothing is published without a human decision: a schedule, an
+    approval or "publish now". AI never publishes on its own.
+-   Respect each platform's terms, rate limits and content policies.
+-   No fake reviews, fake engagement, purchased followers or
+    impersonation.
+-   Reviews are only turned into posts with the business's choice and
+    without the reviewer's surname unless public on the source.
+
+------------------------------------------------------------------------
+
+# 41A. AI CONTENT STUDIO
+
+AI writes, the business decides. Uses the AI foundation (§33) and the
+Business Brain (§34): services, prices, service area, hours, offers,
+knowledge base and brand voice.
+
+-   brand voice settings: tone, words to use and avoid, emoji and
+    hashtag style, examples of posts the business likes
+-   write a post from a prompt, a photo, a review, a service, an offer,
+    a completed job (before/after photos uploaded by the team) or a
+    seasonal idea for the industry
+-   a month plan: a ready-to-review calendar of posts mixing tips,
+    offers, reviews, seasonal reminders and behind-the-scenes
+-   per-channel rewriting (length, format, hashtags, Google Business
+    Profile call-to-action)
+-   SEO built in: local keywords (service + town), Google Business
+    Profile posts aligned with the business's categories and services,
+    alt text for every image, short readable link text, hashtags that
+    are relevant rather than generic
+-   blog articles for the business's SureHelp site (§41B) with title,
+    meta description, headings, internal links to service pages and
+    FAQ structured data, repurposed into social posts
+-   quality checks before approval: facts checked against the Business
+    Brain (prices, hours, areas), no promises the business doesn't make,
+    no medical/legal/financial claims, readability score, duplicate
+    check against recent posts
+-   AI usage metered per business and limited by plan (§28–32)
+-   every AI draft is labelled as AI-written until a person edits or
+    approves it
+
+------------------------------------------------------------------------
+
+# 41B. WEBSITES
+
+Two ways in, one result: a website that brings in calls and bookings.
+
+## Connect an existing website
+
+-   verify ownership (meta tag or DNS TXT record)
+-   one snippet adds SureHelp to the site: chat widget (§35), booking
+    widget, click-to-call, lead form into the CRM
+-   website health and SEO check: titles, meta descriptions, headings,
+    broken links, mobile friendliness, page speed basics, structured
+    data, name/address/phone consistency with the Business Profile;
+    plain-language fixes, re-checked monthly
+-   later: Google Search Console and Analytics connection for real
+    search and traffic data (no ranking claims without measurement, §39)
+
+## SureHelp Sites (hosted website from templates)
+
+-   industry templates (plumbing, HVAC, electrical, cleaning, dental,
+    salon, legal, …) filled automatically from the Business Brain:
+    home, one page per service, service-area pages, about, reviews,
+    FAQ from the knowledge base, contact, booking, blog
+-   live preview generated in seconds during sign-up or a sales call
+    ("here is your site"), publishable when the owner is happy
+-   always in sync: hours, services, prices, holidays and vacation mode
+    update the site automatically
+-   simple editor: sections, text, photos, colours and fonts from the
+    brand kit; no code; versions with preview and roll back
+-   address on a free SureHelp subdomain, or the business's own domain
+    with automatic HTTPS; step-by-step DNS help
+-   SEO by default: LocalBusiness / Service / FAQ structured data,
+    sitemap, robots, canonical URLs, Open Graph images, fast cached
+    pages, image compression, Core Web Vitals in the green
+-   accessibility to WCAG 2.2 AA; cookie consent only where tracking
+    needs it; privacy-friendly visit counts
+-   every form, chat and booking lands in the CRM and the customer
+    timeline; calls from the site are counted in Results
+
+------------------------------------------------------------------------
+
+# 41C. GROWTH IDEAS BACKLOG
+
+Ideas researched for a world-class growth suite, to be prioritised
+after the modules above:
+
+-   Google Business Profile management: hours, holidays and services
+    synced from SureHelp; photos; Q&A; post performance
+-   review-to-post: turn a 5-star review into a branded image post
+-   job photos to post: the team snaps before/after photos on the
+    mobile app; AI drafts the post for approval
+-   industry campaign packs (e.g. spring AC tune-up, winter pipe
+    protection) with posts, an offer, a landing page and email
+-   link-in-bio page with booking, offers and reviews
+-   "last-minute openings" posts suggested when the calendar has gaps
+-   unified social inbox for comments and messages (Phase 9)
+-   listings consistency across directories (name, address, phone)
+-   competitor watch: their review counts and posting frequency
+-   multi-location: one post, location-specific versions
 
 ------------------------------------------------------------------------
 
@@ -3282,11 +3428,12 @@ Implement:
 
 Implement:
 
+-   social media publishing and content calendar (§41)
+-   AI content studio with SEO (§41A, needs Phase 6)
+-   websites: connect an existing site, SureHelp Sites from templates (§41B)
 -   review management
 -   Google Business Profile integration where available
 -   local SEO
--   social media
--   content calendar
 -   marketing automation
 
 ------------------------------------------------------------------------

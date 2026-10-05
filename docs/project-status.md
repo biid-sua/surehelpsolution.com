@@ -116,17 +116,20 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 | Item | Notes |
 |---|---|
 | Content-Security-Policy header | Only possible after the public website stops loading scripts from CDNs (its redesign) |
+| G-1 Social foundation (in progress) | Accounts, posts, per-channel versions, scheduling queue, approval, content calendar, media library; network adapters stay hidden until each app is approved |
+| G-3 Connect a website | Ownership check, embed snippet (booking, click-to-call, lead form), SEO health check |
 
 ### B. Needs action from you (operations)
 | Item | Notes |
 |---|---|
 | **Before deploying the accounts release** | Tell staff and agents they'll need an authenticator app on their phone. Check outgoing email works (password resets, invitations). Set `SESSION_DRIVER=database`. See [deployment.md](deployment.md) |
 | Mobile app: two-step code field | Staff and agents can't sign in to the app until it sends `two_factor_code` ([api.md](api.md)) |
-| **Deploy calendar sync and billing** | Merge `claude/phase-2-development-1yiwc2` into `develop`. Then: `composer install --no-dev -o` (new PDF library), `php artisan migrate --force`, `npm ci && npm run build`, `php artisan optimize` |
+| **Deploy `develop`** | Everything is merged. On the server: `composer install --no-dev -o`, `php artisan migrate --force`, `npm ci && npm run build`, `php artisan optimize`. Enable the PHP `zip` extension first |
 | **Billing setup** | *Admin › Billing › Payment settings*: Payoneer payment link and receiving-account bank details. Then create plans and subscribe businesses ([billing.md](billing.md)) |
 | Production clean-up from P1-0 | Confirm `/.env` returns 403, rotate secrets if it was ever reachable, delete old `storage/logs/*.log` (they contain passwords), move `.zip`/old backups off the server, run `php artisan audit:call-ownership --details` |
 | Staging environment | Not set up yet; recommended before larger releases |
 | Delete branch `feature/p2-4b-tasks` | A superseded local draft; the cloud version is merged |
+| Pick a domain for hosted websites | e.g. `surehelp.site`, on Cloudflare (D35) |
 
 ### C. Blocked on outside accounts or approvals
 | Item | Waiting for | Lead time |
@@ -137,8 +140,12 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 | Mobile push notifications | Firebase service-account key (FCM v1) | Days |
 | Real-time updates and a background worker that keeps running (Reverb, Horizon) | Hosting move off cPanel (D6: Laravel Cloud / Forge) | Days |
 | Automatic card payments (billing works today with Payoneer and manual confirmation) | Payoneer Checkout (Hong Kong entity, ~$20k/month volume) or Stripe (US entity); tax advice | Weeks |
-| Phase 6: AI foundation | Choice of LLM vendor, data-processing agreements (DPA/BAA) | Weeks |
-| Phase 8–9: Growth and social | Google Business Profile API access, Meta app review | Weeks |
+| G-2 AI content studio (Phase 6 starts here, D34) | Anthropic API key and commercial terms / DPA in the Anthropic Console | Days |
+| Publishing to Facebook and Instagram | Meta App Review (`pages_manage_posts`, Instagram content publishing) and Business Verification (D33) | **Weeks, start now** |
+| Publishing to LinkedIn Company Pages | LinkedIn Community Management API access: registered company, verified Page, two-tier review with a screencast | 1–4 weeks per tier |
+| Google Business Profile posts | Business Profile API access request | Days to weeks |
+| TikTok public posts | TikTok Content Posting audit (posts stay private until then) | Weeks |
+| G-4 SureHelp Sites on customers' own domains | Sites domain, Cloudflare for SaaS, hosting move (D6) | Days to weeks |
 | Phase 10: Mobile apps | Apple and Google developer accounts | Days to weeks |
 
 ---
@@ -172,7 +179,13 @@ Phase 6 AI foundation ............ needs LLM vendor + DPA/BAA
   └─ Phase 7 AI products (chatbot, copilot, call summaries)
        └─ uses Phase 2 knowledge base and rules, Phase 3b transcripts
 
-Phase 8–9 Growth / social ........ needs Google Business Profile + Meta approval
+Phase 8 Growth (D33–D36)
+  ├─ G-1 social foundation ........ building now; each network live after its app review
+  ├─ G-2 AI content studio ........ needs Anthropic key; starts Phase 6 (AiService)
+  │     └─ SEO posts, month plans, blog articles for G-4
+  ├─ G-3 connect a website ........ ready to build
+  ├─ G-4 SureHelp Sites ........... needs sites domain + Cloudflare; custom domains need hosting move
+  └─ G-5 analytics in Results ..... after G-1/G-3 and provider approvals
 
 Phase 10 Mobile .................. needs Apple/Google developer accounts + Firebase key
   └─ generated OpenAPI spec (deferred from P1-6)
@@ -185,4 +198,5 @@ Hosting move (D6) ................ unlocks real-time updates (Reverb) and a long
 2. Fill in the Payoneer settings and start invoicing.
 3. Register the Google and Microsoft apps, and submit Google verification.
 4. Start A2P 10DLC.
-5. While approvals come through, build what isn't blocked: 2FA, duplicate merge, Phase 4 email.
+5. Submit Meta App Review and LinkedIn API access, and get an Anthropic API key (Growth, D33–D34).
+6. While approvals come through, build what isn't blocked: G-1 social foundation, G-3 connect a website, Phase 4 email.

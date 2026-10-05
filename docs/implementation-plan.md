@@ -211,6 +211,19 @@ Started 2026-10-04 on `develop`, one feature branch per step.
 | CMP-05 / CMP-07 | *Data & privacy* page: full data export (ZIP, background, 7 days), retention period per business (default 3 years) with daily cleanup, erasing one customer's personal data, closing the account after 30 days with "keep my account" (D29) | **done** 2026-10-16 |
 | AGT-11 / SUP-03 | Shift hand-over and time-off requests from *My schedule*; approve/decline (with note) on *Duty schedule*; leave removes shifts and marks the days; coverage grid by hour with a minimum (D28) | **done** 2026-10-15 |
 
+## 4g. Phase 8 — Growth: social, AI content, websites (spec §41–41C, D33–D36)
+
+Added to the requirements on 2026-10-06 at the product owner's request. Order and reasons: D36.
+
+| Step | Scope (spec §) | Depends on | Status |
+|---|---|---|---|
+| G-1 | Social foundation (§41): connected accounts with OAuth and encrypted tokens; `SocialProvider` interface with capability declarations; Facebook Pages, Instagram, LinkedIn and Google Business Profile adapters (hidden until configured); posts with per-channel versions and validation; publish now / schedule / queue, up to 12 months ahead in the business's timezone; approval workflow; content calendar; media library; publishing queue with retries, lost-access alerts and audit; `social.*` permissions | Meta App Review, LinkedIn Community Management API access, Google Business Profile API access. **Building does not wait for them.** | in progress |
+| G-2 | AI foundation (§33) and content studio (§41A): `AiService` with a Claude adapter, metering and plan caps, Business Brain context, brand voice, write and rewrite per channel, month plan, SEO (local keywords, alt text, GBP call-to-action), fact checks against business data, AI-written label | Anthropic API key and terms | planned |
+| G-3 | Connect a website (§41B): ownership verification (meta tag / DNS TXT), embed snippet (chat placeholder, booking, click-to-call, lead form → CRM), site health and SEO check with plain-language fixes, monthly re-check | none | planned |
+| G-4 | SureHelp Sites (§41B): industry templates rendered from the Business Brain, instant preview, simple editor with versions, subdomain hosting, custom domains with automatic HTTPS, structured data / sitemap / Open Graph, WCAG 2.2 AA, forms and bookings into the CRM | sites domain; Cloudflare for SaaS; hosting move (D6) for custom domains | planned |
+| G-5 | Social and website analytics in Results (§41): reach, engagement, clicks, site visits, leads and bookings by source | G-1, G-3/G-4, provider approvals | planned |
+| G-6 | Growth ideas backlog (§41C): Google Business Profile sync, review-to-post, job photos to post, campaign packs, link-in-bio, last-minute openings, multi-location | G-1, G-2 | planned |
+
 ## 5. Later phases (outline, in spec order)
 
 | Phase | Scope (spec §) | First steps | Main external dependency |
@@ -221,7 +234,7 @@ Started 2026-10-04 on `develop`, one feature branch per step.
 | 5 Billing | §28–32 | P5-1 done with Payoneer (D22). Next: usage records, add-ons, automatic gateway with idempotent webhooks | for automatic payments: Stripe (US entity) or Payoneer Checkout; tax advice |
 | 6 AI foundation | §33–34, 38 | `AiService` provider adapter, tool registry with org-scoped authorization, Business Brain read model, usage metering, audit of tool calls | LLM vendor + DPA/BAA decisions |
 | 7 AI products | §35–37 | website chatbot, copilot, call summaries | phase 6 |
-| 8–9 Growth / social | §39–41 | provider adapters per platform | Google Business Profile, Meta app review |
+| 8–9 Growth / social | §39–41C | see section 4g (G-1 to G-6) | Meta App Review, LinkedIn API access, Google Business Profile API, Anthropic key, sites domain + Cloudflare |
 | 10 Mobile | §66–67 | apps on the same API; FCM v1 push | Apple/Google developer accounts |
 
 Each later phase starts with its own short plan (affected files, tables, API changes, risks, migration, tests) as spec §107 requires.
