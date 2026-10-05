@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -61,6 +62,44 @@ class CalendarConnection extends Model
         static::creating(function (CalendarConnection $connection) {
             $connection->ulid ??= (string) Str::ulid();
         });
+
+        // Mirror the channel list into its index, so webhooks find the connection by channel id.
+        static::saved(function (CalendarConnection $connection) {
+            if ($connection->wasRecentlyCreated || $connection->wasChanged('push_channels')) {
+                $connection->indexPushChannels();
+            }
+        });
+    }
+
+    public function indexPushChannels(): void
+    {
+        DB::transaction(function () {
+            DB::table('calendar_push_channels')->where('calendar_connection_id', $this->id)->delete();
+            foreach ($this->pushChannels() as $channel) {
+                DB::table('calendar_push_channels')->upsert([[
+                    'calendar_connection_id' => $this->id,
+                    'provider' => $this->provider,
+                    'channel_id' => mb_substr($channel->id, 0, 191),
+                    'calendar_id' => $channel->calendarId,
+                    'expires_at' => $channel->expiresAt->utc()->toDateTimeString(),
+                ]], ['provider', 'channel_id'], ['calendar_connection_id', 'calendar_id', 'expires_at']);
+            }
+        });
+    }
+
+    /**
+     * The active connection a provider's channel or subscription id belongs to.
+     */
+    public static function forPushChannel(string $provider, string $channelId): ?self
+    {
+        if ($channelId === '') {
+            return null;
+        }
+
+        return static::withoutGlobalScopes()
+            ->whereIn('id', DB::table('calendar_push_channels')->where('provider', $provider)->where('channel_id', $channelId)->select('calendar_connection_id'))
+            ->where('status', self::STATUS_ACTIVE)
+            ->first();
     }
 
     /** @return BelongsTo<User, $this> */

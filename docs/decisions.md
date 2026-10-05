@@ -332,6 +332,11 @@ The audit log is visible to Super Admin and Operations Manager only, never to bu
 
 **Why:** These are the levers of a usage-priced receptionist service: fair pricing for busy businesses, upsells without custom invoices, and plan tiers that mean something.
 
+## D31 — Finding a calendar from its change notification (2026-10-17)
+**Decision:** Push channel ids are indexed in `calendar_push_channels` (unique per provider and channel id). A Google or Microsoft change notification now finds its connection with one indexed lookup. The connection's `push_channels` list stays the source of truth; saving it rewrites the index, the migration backfills existing channels, and deleting a connection removes its rows.
+
+**Why:** The webhook used to load every connected calendar to find the matching channel, which gets slow as more businesses connect calendars (PR #2 review).
+
 ## D10 — Telephony
 **Decision:** **Twilio** (Programmable Voice, TaskRouter, Voice JS SDK, Messaging) behind a `TelephonyProvider` interface, so the vendor can be swapped. Calls stay manually logged until then, but the Phase 2 `calls` table is designed for provider data (call SID, direction, timings, recording/transcript references). Telephony becomes **Phase 3b**, right after Calendar, because live call handling is the core of a receptionist product.
 **Action needed from you (long lead time):** create a Twilio account and start **A2P 10DLC** brand and campaign registration now. US SMS cannot go live without it, and approval takes weeks.

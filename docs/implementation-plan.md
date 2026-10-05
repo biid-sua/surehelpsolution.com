@@ -206,6 +206,7 @@ Started 2026-10-04 on `develop`, one feature branch per step.
 |---|---|---|
 | SUP-04 | Call quality reviews: daily random sample per agent, pick by call ID or at random, five-point scorecard with weights and a must-pass compliance point, written feedback, agent notice and "Got it", team results per agent; `qa.review` permission | **done** 2026-10-15 (recordings after telephony; AI scoring AIX-03 later) |
 | BIL-03/05/11, ADD-01..04 | Calls included per plan with extra-call billing on the next invoice; usage records; meter and history on *Billing*; alerts at 80%/100%; add-on catalogue, turn on (pro rata) / off (period end), billed with renewals, unlock feature keys; team-member and calendar limits (D30) | **done** 2026-10-17 (minutes/SMS/AI usage after telephony and AI) |
+| CAL-perf | Calendar change notifications find their connection through an indexed channel table (D31) | **done** 2026-10-17 |
 | CMP-05 / CMP-07 | *Data & privacy* page: full data export (ZIP, background, 7 days), retention period per business (default 3 years) with daily cleanup, erasing one customer's personal data, closing the account after 30 days with "keep my account" (D29) | **done** 2026-10-16 |
 | AGT-11 / SUP-03 | Shift hand-over and time-off requests from *My schedule*; approve/decline (with note) on *Duty schedule*; leave removes shifts and marks the days; coverage grid by hour with a minimum (D28) | **done** 2026-10-15 |
 

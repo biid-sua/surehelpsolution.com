@@ -97,6 +97,7 @@ Current host: cPanel (PHP 8.3), deployed by uploading files. Target hosting: [de
 - **Migration** `2026_10_16_000001`: `data_exports` table; on `organizations` the retention and closure columns; `customers.erased_at`.
 - **Scheduler:** `privacy:run` daily at 04:20 UTC.
 - **Storage:** exports are written to `storage/app/private/exports` (not public). Make sure that folder is writable. Consider leaving it out of backups: exports are copies of data you already back up, and they're deleted after 7 days.
+- **Calendar channel index (D31):** migration `2026_10_17_000002` creates `calendar_push_channels` and fills it from connected calendars. Nothing to configure.
 - **Billing extras (D30):** migration `2026_10_17_000001` adds `usage_records`, `addons`, `organization_addons` and `subscriptions.usage_alerts`. Nothing changes for existing plans until you set *Calls included* or limits on them. `billing:run` now also records usage, adds extra calls and add-ons to renewal invoices, and sends usage alerts.
 
 - **Migrations:** new `qa_reviews` table, plus a permission re-sync for `qa.review`; new `shift_requests` table.
