@@ -23,11 +23,12 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
   - Merging duplicate customers.
   - Vacation mode.
 - **Call quality reviews (D27):** supervisors score a random sample of each agent's calls against a five-point scorecard; agents read the feedback and confirm it.
+- **Usage, add-ons and plan limits (D30):** plans include a number of calls with a price per extra call, billed on the next invoice; a usage meter and alerts; paid add-ons; limits on team size and calendars.
 - **Data & privacy (D29):** owners download all their data, choose how long history is kept (3 years by default), erase a customer's personal data on request, and close their account with a 30-day grace period.
 - **Shift requests and coverage (D28):** agents ask to hand over a shift or for time off; schedulers approve or decline, and a grid shows hours with nobody on shift.
 - **One UI (D23):** the product now has a single version of every screen. The old admin and agent pages were rebuilt in the new design and deleted.
 
-274 automated tests pass.
+281 automated tests pass.
 
 ---
 
@@ -85,10 +86,11 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 | Duplicate customers | Suggested duplicates, side-by-side compare, merge everything into the record you keep |
 | Vacation mode | Plan time away ahead; bookings blocked only on those days; agents and the owner see it |
 
-### Agent quality, scheduling and privacy (D27–D29)
+### Agent quality, scheduling, privacy and billing extras (D27–D30)
 | Step | What it delivered |
 |---|---|
 | Call quality reviews | Each morning one random call per agent goes to the review queue. Supervisors score it (greeting, accuracy, booking attempt, tone, compliance), write feedback, and see each agent's average and pass rate. Agents get a notice, read it and confirm |
+| Usage, add-ons and limits | Calls included per plan, extra calls billed on the next invoice, usage meter and history, 80%/100% alerts; add-ons turned on and off by owners and billed with renewals; team and calendar limits |
 | Data & privacy | Full data export as a ZIP; retention period per business with a daily cleanup; erase one customer's personal data; close the account after 30 days (invoices kept) |
 | Shift requests and coverage | Agents ask to hand over a shift or for time off from *My schedule*. Schedulers approve or decline on *Duty schedule*; approved leave clears those shifts, and a coverage grid shows each hour's agents and the gaps |
 
@@ -116,7 +118,6 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 | Replace the remaining inline role checks in the mobile API controllers with permissions | The web screens are done (D23) |
 | Content-Security-Policy header | Only possible after the public website stops loading scripts from CDNs (its redesign) |
 | Indexed lookup for calendar webhooks | Each change notification currently loads every connected calendar to find its channel; store channel ids in their own indexed table before many businesses connect calendars (PR #2 review) |
-| Billing extras | Usage records, paid add-ons, plan limits enforced through `Entitlements` |
 
 ### B. Needs action from you (operations)
 | Item | Notes |

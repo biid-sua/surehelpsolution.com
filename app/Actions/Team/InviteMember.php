@@ -6,6 +6,7 @@ use App\Models\Organization;
 use App\Models\OrganizationInvitation;
 use App\Models\User;
 use App\Notifications\Account\TeamInvitation;
+use App\Services\Billing\Entitlements;
 use App\Support\Audit\Audit;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
@@ -32,6 +33,11 @@ class InviteMember
         if (User::where('email', $email)->exists()) {
             throw ValidationException::withMessages(['email' => 'This email already has a SureHelp account, so it can\'t join another business. Use a different email for this person.']);
         }
+
+        // Plan limit on people who can sign in: current members plus invitations still open.
+        $seats = $organization->members()->wherePivot('status', 'active')->count()
+            + OrganizationInvitation::query()->where('organization_id', $organization->id)->pending()->where('email', '!=', $email)->count();
+        app(Entitlements::class)->ensureRoomFor($organization, 'team_members', $seats, 'email', 'team members');
 
         // Inviting again replaces the earlier invitation, so only the newest link works.
         OrganizationInvitation::query()->where('organization_id', $organization->id)->where('email', $email)->pending()->update(['revoked_at' => now()]);

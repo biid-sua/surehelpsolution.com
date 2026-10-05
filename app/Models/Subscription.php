@@ -21,6 +21,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $current_period_start
  * @property Carbon $current_period_end
  * @property Carbon|null $cancelled_at
+ * @property array{period?: string, levels?: list<int>}|null $usage_alerts usage alerts sent in the current period
  */
 class Subscription extends Model
 {
@@ -28,7 +29,7 @@ class Subscription extends Model
 
     protected $fillable = [
         'organization_id', 'plan_id', 'next_plan_id', 'status', 'price_cents', 'currency', 'interval', 'started_on',
-        'trial_ends_on', 'current_period_start', 'current_period_end', 'cancel_at_period_end', 'cancelled_at',
+        'trial_ends_on', 'current_period_start', 'current_period_end', 'cancel_at_period_end', 'cancelled_at', 'usage_alerts',
     ];
 
     protected function casts(): array
@@ -40,6 +41,7 @@ class Subscription extends Model
             'trial_ends_on' => 'date',
             'current_period_start' => 'date',
             'current_period_end' => 'date',
+            'usage_alerts' => 'array',
             'cancel_at_period_end' => 'boolean',
             'cancelled_at' => 'datetime',
         ];

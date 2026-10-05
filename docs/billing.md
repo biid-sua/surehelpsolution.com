@@ -76,4 +76,9 @@ The cron entry for `schedule:run` already in place runs `billing:run` daily. To 
 
 `App\Services\Billing\Gateways\PaymentGateway` is the seam. When an automated checkout becomes available, a new gateway can return a hosted-checkout URL per invoice and confirm payments from a webhook through the same `RecordPayment` action. Candidates are Payoneer Checkout (it currently needs a Hong Kong entity and about $20k a month in volume), Stripe or Paddle. Nothing else changes: invoices, numbers, reminders and receipts stay as they are.
 
-`App\Services\Billing\Entitlements` already answers "does this business's plan include X?" from each plan's feature keys and limits. No existing feature is gated yet. Gating starts with the first paid add-on (AI products, Phase 6–7).
+## Usage, add-ons and limits (D30)
+
+- **Calls included and extra calls.** On a plan, set *Calls included* (per billing period) and *Price per extra call*. Spam calls never count. Each period's usage is recorded once when it ends, and extra calls are added to the next invoice (or to a final invoice when a subscription ends). Clients see a meter on *Billing* and get an alert at 80% and 100%. Calls are always answered.
+- **Add-ons.** Create them under *Admin › Billing › Add-ons*: name, monthly price, and a feature key (fixed once created). Owners turn them on from *Billing*. The rest of the current period is invoiced straight away, pro rata (free during a trial). After that, each renewal invoice includes it. Turning one off takes effect at the end of the period. A new price applies only to businesses that turn the add-on on afterwards.
+- **Limits.** *Team members* caps the people who can sign in (members plus open invitations); *Connected calendars* caps calendar connections. Leave blank for unlimited.
+- **Feature access.** `App\Services\Billing\Entitlements::allows()` is true when the plan's feature keys or an active add-on include the key. Use it on the server for any paid feature.

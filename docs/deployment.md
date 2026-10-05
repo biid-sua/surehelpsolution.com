@@ -96,7 +96,8 @@ Current host: cPanel (PHP 8.3), deployed by uploading files. Target hosting: [de
 - **Retention starts at 3 years for every business.** The first nightly `privacy:run` deletes calls and finished work older than that. Production data starts in 2025, so nothing is deleted yet, but check before deploying to any older copy. Owners can choose "Keep everything".
 - **Migration** `2026_10_16_000001`: `data_exports` table; on `organizations` the retention and closure columns; `customers.erased_at`.
 - **Scheduler:** `privacy:run` daily at 04:20 UTC.
-- **Storage:** exports are written to `storage/app/private/exports` (not public). Make sure that folder is writable and included in backups' exclusions if you don't want copies of exports in backups.
+- **Storage:** exports are written to `storage/app/private/exports` (not public). Make sure that folder is writable. Consider leaving it out of backups: exports are copies of data you already back up, and they're deleted after 7 days.
+- **Billing extras (D30):** migration `2026_10_17_000001` adds `usage_records`, `addons`, `organization_addons` and `subscriptions.usage_alerts`. Nothing changes for existing plans until you set *Calls included* or limits on them. `billing:run` now also records usage, adds extra calls and add-ons to renewal invoices, and sends usage alerts.
 
 - **Migrations:** new `qa_reviews` table, plus a permission re-sync for `qa.review`; new `shift_requests` table.
 - **Optional `.env`:** `SCHEDULE_MIN_AGENTS` (default 1) sets how many agents an hour needs before the coverage grid stops marking it as a gap.

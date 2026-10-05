@@ -218,7 +218,7 @@
                             <li class="flex items-center justify-between gap-3 px-5 py-3" wire:key="plan-{{ $p->id }}">
                                 <span>
                                     <span class="font-medium text-ink">{{ $p->name }}</span> <span class="text-muted">{{ $p->priceLabel() }}</span>
-                                    <span class="block text-xs text-subtle">{{ $p->subscriptions_count }} {{ \Illuminate\Support\Str::plural('business', $p->subscriptions_count) }}{{ $p->trial_days ? ' · '.$p->trial_days.'-day trial' : '' }}{{ $p->is_public ? '' : ' · hidden' }}{{ $p->is_active ? '' : ' · retired' }}</span>
+                                    <span class="block text-xs text-subtle">{{ $p->subscriptions_count }} {{ \Illuminate\Support\Str::plural('business', $p->subscriptions_count) }}{{ $p->trial_days ? ' · '.$p->trial_days.'-day trial' : '' }}{{ $p->is_public ? '' : ' · hidden' }}{{ $p->is_active ? '' : ' · retired' }}@if (isset($p->limits['calls'])) · {{ number_format($p->limits['calls']) }} calls @if (isset($p->limits['extra_call_cents']))(+{{ \App\Support\Money::format($p->limits['extra_call_cents']) }} each extra)@endif @endif @if (isset($p->limits['team_members'])) · {{ $p->limits['team_members'] }} people @endif @if (isset($p->limits['calendars'])) · {{ $p->limits['calendars'] }} {{ \Illuminate\Support\Str::plural('calendar', $p->limits['calendars']) }}@endif</span>
                                 </span>
                                 @if ($canManage)<x-ui.button size="sm" variant="ghost" wire:click="editPlan({{ $p->id }})">Edit</x-ui.button>@endif
                             </li>
@@ -234,6 +234,10 @@
                         <div><label for="pl-int" class="sh-label">Billed</label><select id="pl-int" wire:model="plan.interval" class="sh-input">@foreach (\App\Models\Plan::INTERVALS as $k => $l)<option value="{{ $k }}">{{ $l }}</option>@endforeach</select></div>
                         <div><label for="pl-trial" class="sh-label">Trial days</label><input id="pl-trial" type="number" min="0" max="90" wire:model="plan.trial_days" class="sh-input">@error('plan.trial_days') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror</div>
                         <div class="sm:col-span-2"><label for="pl-desc" class="sh-label">What's included</label><textarea id="pl-desc" wire:model="plan.description" rows="3" class="sh-input"></textarea></div>
+                        <div><label for="pl-calls" class="sh-label">Calls included <span class="font-normal text-subtle">(per period, blank = unlimited)</span></label><input id="pl-calls" type="number" min="1" wire:model="plan.calls" class="sh-input">@error('plan.calls') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror</div>
+                        <div><label for="pl-extra" class="sh-label">Price per extra call ($)</label><input id="pl-extra" type="text" inputmode="decimal" wire:model="plan.extra_call" class="sh-input" placeholder="e.g. 1.50">@error('plan.extra_call') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror</div>
+                        <div><label for="pl-team" class="sh-label">Team members <span class="font-normal text-subtle">(blank = unlimited)</span></label><input id="pl-team" type="number" min="1" wire:model="plan.team_members" class="sh-input">@error('plan.team_members') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror</div>
+                        <div><label for="pl-cal" class="sh-label">Connected calendars <span class="font-normal text-subtle">(blank = unlimited)</span></label><input id="pl-cal" type="number" min="0" max="10" wire:model="plan.calendars" class="sh-input">@error('plan.calendars') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror</div>
                         <div class="sm:col-span-2"><label for="pl-feat" class="sh-label">Feature keys <span class="font-normal text-subtle">(comma-separated, for feature access)</span></label><input id="pl-feat" type="text" wire:model="plan.features" class="sh-input" placeholder="calendar_sync, ai.website_chatbot"></div>
                         <label class="flex items-center gap-2 text-sm text-ink"><input type="checkbox" wire:model="plan.is_public" class="size-4 rounded border-line-strong bg-surface-2 text-brand-500"> Shown to clients</label>
                         <label class="flex items-center gap-2 text-sm text-ink"><input type="checkbox" wire:model="plan.is_active" class="size-4 rounded border-line-strong bg-surface-2 text-brand-500"> Available</label>
@@ -245,6 +249,8 @@
                 </x-ui.card>
             @endif
         </div>
+    @elseif ($tab === 'addons')
+        <livewire:admin.billing.addons />
     @else
         <x-ui.card title="Payment settings" description="What clients see on invoices and the billing page.">
             <form wire:submit="saveSettings" class="grid gap-4 lg:grid-cols-2">

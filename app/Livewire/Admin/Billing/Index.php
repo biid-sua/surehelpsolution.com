@@ -42,7 +42,7 @@ class Index extends Component
     use PlatformAdminOnly;
     use WithPagination;
 
-    public const TABS = ['invoices' => 'Invoices', 'subscriptions' => 'Subscriptions', 'plans' => 'Plans', 'settings' => 'Payment settings'];
+    public const TABS = ['invoices' => 'Invoices', 'subscriptions' => 'Subscriptions', 'plans' => 'Plans', 'addons' => 'Add-ons', 'settings' => 'Payment settings'];
 
     #[Url(except: 'invoices')]
     public string $tab = 'invoices';
@@ -258,7 +258,8 @@ class Index extends Component
     private function resetPlanForm(): void
     {
         $this->editingPlan = null;
-        $this->plan = ['name' => '', 'price' => '', 'interval' => 'month', 'trial_days' => '0', 'description' => '', 'features' => '', 'is_public' => true, 'is_active' => true];
+        $this->plan = ['name' => '', 'price' => '', 'interval' => 'month', 'trial_days' => '0', 'description' => '', 'features' => '', 'is_public' => true, 'is_active' => true,
+            'calls' => '', 'extra_call' => '', 'team_members' => '', 'calendars' => ''];
     }
 
     public function editPlan(int $id): void
@@ -268,6 +269,8 @@ class Index extends Component
         $this->plan = [
             'name' => $plan->name, 'price' => Money::toInput($plan->price_cents), 'interval' => $plan->interval, 'trial_days' => (string) $plan->trial_days,
             'description' => (string) $plan->description, 'features' => implode(', ', $plan->features ?? []), 'is_public' => $plan->is_public, 'is_active' => $plan->is_active,
+            'calls' => (string) ($plan->limits['calls'] ?? ''), 'extra_call' => isset($plan->limits['extra_call_cents']) ? Money::toInput($plan->limits['extra_call_cents']) : '',
+            'team_members' => (string) ($plan->limits['team_members'] ?? ''), 'calendars' => (string) ($plan->limits['calendars'] ?? ''),
         ];
         $this->resetValidation();
     }
@@ -288,7 +291,20 @@ class Index extends Component
             'plan.trial_days' => ['required', 'integer', 'min:0', 'max:90'],
             'plan.description' => ['nullable', 'string', 'max:2000'],
             'plan.features' => ['nullable', 'string', 'max:1000'],
-        ], [], ['plan.name' => 'name', 'plan.price' => 'price', 'plan.trial_days' => 'trial days']);
+            'plan.calls' => ['nullable', 'integer', 'min:1', 'max:1000000'],
+            'plan.extra_call' => ['nullable', 'string', 'max:20'],
+            'plan.team_members' => ['nullable', 'integer', 'min:1', 'max:1000'],
+            'plan.calendars' => ['nullable', 'integer', 'min:0', 'max:10'],
+        ], [], ['plan.name' => 'name', 'plan.price' => 'price', 'plan.trial_days' => 'trial days', 'plan.calls' => 'calls included',
+            'plan.team_members' => 'team members', 'plan.calendars' => 'calendars']);
+
+        try {
+            $extraCall = filled($this->plan['extra_call']) ? Money::parse((string) $this->plan['extra_call']) : null;
+        } catch (\InvalidArgumentException) {
+            $this->addError('plan.extra_call', 'Enter a price like 1.50.');
+
+            return;
+        }
 
         try {
             $cents = Money::parse((string) $this->plan['price']);
@@ -307,12 +323,18 @@ class Index extends Component
             'features' => array_values(array_filter(array_map('trim', explode(',', (string) $this->plan['features'])))) ?: null,
             'is_public' => (bool) $this->plan['is_public'],
             'is_active' => (bool) $this->plan['is_active'],
+            'limits' => array_filter([
+                'calls' => filled($this->plan['calls']) ? (int) $this->plan['calls'] : null,
+                'extra_call_cents' => $extraCall,
+                'team_members' => filled($this->plan['team_members']) ? (int) $this->plan['team_members'] : null,
+                'calendars' => filled($this->plan['calendars']) ? (int) $this->plan['calendars'] : null,
+            ], fn ($v) => $v !== null) ?: null,
         ];
 
         if ($this->editingPlan) {
             $plan = Plan::findOrFail($this->editingPlan);
             $plan->fill($values)->save();
-            $audit->changes('plan.updated', $plan, ['name', 'price_cents', 'interval', 'trial_days', 'is_public', 'is_active']);
+            $audit->changes('plan.updated', $plan, ['name', 'price_cents', 'interval', 'trial_days', 'is_public', 'is_active', 'limits']);
             $message = 'Plan saved. Existing customers move to the new price at their next renewal.';
         } else {
             $slug = Str::slug($values['name']);

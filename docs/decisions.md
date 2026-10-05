@@ -314,6 +314,24 @@ The audit log is visible to Super Admin and Operations Manager only, never to bu
 
 **Why:** Customers and regulators expect to get their data out and to have it deleted. Doing it in the product, with a grace period and an audit trail, is safer than doing it by hand on request.
 
+## D30 — Usage, add-ons and plan limits (2026-10-17)
+**Decision:** Plans can include a number of calls per billing period, with a price per extra call; businesses can turn on paid add-ons; plans can cap team members and connected calendars (task.md BIL-03, BIL-05, BIL-11, ADD-01..04).
+- **Usage = calls answered**, spam excluded. Minutes, texts and AI usage join once telephony and AI exist.
+- **We never stop answering.** Calls beyond the plan are billed, not refused. At the end of each period the usage is recorded once (`usage_records`) and any extra calls go on the next invoice; a subscription that ends gets a final invoice for them.
+- **Alerts:** at 80% and 100% of the included calls, once each per period, to people who see billing (switchable under *Notifications*, "Plan usage").
+- **Meter:** the client *Billing* page shows calls used this period against the plan, the estimated extra charge, and past periods.
+- **Add-ons:** a catalogue under *Admin › Billing › Add-ons* (name, monthly price, feature key). Owners turn them on and off on *Billing*.
+  - **On:** the price is locked. The rest of the current period is invoiced at once, pro rata; during a free trial it's free. Renewal invoices include it after that.
+  - **Off:** it stays on until the period ends, and "Keep it" undoes the change.
+  - **Features:** an add-on's key unlocks features through `Entitlements::allows`, alongside the plan's feature keys.
+- **Hard limits** (only when a plan sets them; blank means unlimited):
+  - **Team members:** people who can sign in, plus invitations still open.
+  - **Connected calendars:** reconnecting one already counted is always allowed.
+  - **Where they're checked:** on the server, with a clear message.
+- **Payments stay manual** (D22). Every charge is a normal invoice line, so automatic payments later change nothing here.
+
+**Why:** These are the levers of a usage-priced receptionist service: fair pricing for busy businesses, upsells without custom invoices, and plan tiers that mean something.
+
 ## D10 — Telephony
 **Decision:** **Twilio** (Programmable Voice, TaskRouter, Voice JS SDK, Messaging) behind a `TelephonyProvider` interface, so the vendor can be swapped. Calls stay manually logged until then, but the Phase 2 `calls` table is designed for provider data (call SID, direction, timings, recording/transcript references). Telephony becomes **Phase 3b**, right after Calendar, because live call handling is the core of a receptionist product.
 **Action needed from you (long lead time):** create a Twilio account and start **A2P 10DLC** brand and campaign registration now. US SMS cannot go live without it, and approval takes weeks.

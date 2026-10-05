@@ -25,13 +25,14 @@ enum NotificationEvent: string
     case IntegrationDisconnected = 'integration.disconnected';
     case AiEscalation = 'ai.escalation';
     case MonthlyReport = 'report.monthly';
+    case UsageAlert = 'billing.usage';
 
     /**
      * @return list<self>
      */
     public static function available(): array
     {
-        return [self::CallLogged, self::CallMissed, self::FollowUpCreated, self::FollowUpOverdue, self::TaskAssigned, self::EscalationCreated, self::AppointmentCreated, self::AppointmentUpdated, self::AppointmentCancelled, self::IntegrationDisconnected, self::InvoiceIssued, self::PaymentReceived, self::PaymentFailed, self::MonthlyReport];
+        return [self::CallLogged, self::CallMissed, self::FollowUpCreated, self::FollowUpOverdue, self::TaskAssigned, self::EscalationCreated, self::AppointmentCreated, self::AppointmentUpdated, self::AppointmentCancelled, self::IntegrationDisconnected, self::InvoiceIssued, self::PaymentReceived, self::PaymentFailed, self::UsageAlert, self::MonthlyReport];
     }
 
     public function isAvailable(): bool
@@ -59,6 +60,7 @@ enum NotificationEvent: string
             self::IntegrationDisconnected => 'Integration disconnected',
             self::AiEscalation => 'AI needs your attention',
             self::MonthlyReport => 'Monthly results report',
+            self::UsageAlert => 'Plan usage',
         };
     }
 
@@ -78,6 +80,7 @@ enum NotificationEvent: string
             self::AppointmentUpdated => 'An appointment was moved to a new time.',
             self::AppointmentCancelled => 'An appointment was cancelled.',
             self::MonthlyReport => 'On the 1st: last month\'s calls answered, leads, bookings and estimated revenue, with a PDF.',
+            self::UsageAlert => 'When you\'ve used 80% and 100% of the calls your plan includes.',
             self::EscalationCreated => 'Something needs you now. Urgent escalations always reach you in the app and by email.',
             default => '',
         };
@@ -102,7 +105,7 @@ enum NotificationEvent: string
     public function requiredPermission(): ?string
     {
         return match ($this) {
-            self::InvoiceIssued, self::PaymentReceived, self::PaymentFailed, self::SubscriptionUpdated => 'billing.view',
+            self::InvoiceIssued, self::PaymentReceived, self::PaymentFailed, self::SubscriptionUpdated, self::UsageAlert => 'billing.view',
             self::IntegrationDisconnected => 'integrations.manage',
             self::MonthlyReport => 'reports.view',
             self::EscalationCreated => 'escalations.view',
