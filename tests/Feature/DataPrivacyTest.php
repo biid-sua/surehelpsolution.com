@@ -113,6 +113,17 @@ class DataPrivacyTest extends TestCase
         $this->actingAs($owner)->get(route('app.settings.privacy.export', $export))->assertStatus(410);
     }
 
+    public function test_export_size_label_needs_no_intl_extension(): void
+    {
+        $label = fn (?int $bytes) => (new DataExport(['size_bytes' => $bytes]))->forceFill(['size_bytes' => $bytes])->sizeLabel();
+
+        $this->assertNull($label(null));
+        $this->assertSame('512 B', $label(512));
+        $this->assertSame('1 KB', $label(1024));
+        $this->assertSame('840 KB', $label(840 * 1024));
+        $this->assertSame('2.4 MB', $label((int) (2.4 * 1024 * 1024)));
+    }
+
     public function test_one_export_at_a_time_and_three_a_day(): void
     {
         Bus::fake();

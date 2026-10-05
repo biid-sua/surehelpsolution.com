@@ -19,7 +19,7 @@
                         <li class="flex flex-wrap items-center gap-3 px-4 py-3 text-sm" wire:key="export-{{ $export->id }}">
                             <span class="min-w-0 flex-1">
                                 <span class="block text-ink">{{ $export->created_at->setTimezone($timezone)->format('M j, g:i A') }}</span>
-                                <span class="block text-xs text-subtle">by {{ $export->requester->name ?? 'a former team member' }}@if ($export->size_bytes) · {{ \Illuminate\Support\Number::fileSize($export->size_bytes, 1) }}@endif</span>
+                                <span class="block text-xs text-subtle">by {{ $export->requester->name ?? 'a former team member' }}@if ($export->sizeLabel()) · {{ $export->sizeLabel() }}@endif</span>
                             </span>
                             @if ($export->isDownloadable())
                                 <x-ui.button size="sm" variant="secondary" icon="download" :href="route('app.settings.privacy.export', $export)">Download</x-ui.button>

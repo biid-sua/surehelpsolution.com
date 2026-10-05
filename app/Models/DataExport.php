@@ -68,4 +68,24 @@ class DataExport extends Model
     {
         return $this->status === self::READY && $this->path !== null && $this->expires_at?->isFuture();
     }
+
+    /**
+     * "840 KB", "2.4 MB". Plain arithmetic: Number::fileSize() needs the intl extension, which hosts may lack.
+     */
+    public function sizeLabel(): ?string
+    {
+        if (! $this->size_bytes) {
+            return null;
+        }
+
+        $units = ['B', 'KB', 'MB', 'GB'];
+        $size = (float) $this->size_bytes;
+        $i = 0;
+        while ($size >= 1024 && $i < count($units) - 1) {
+            $size /= 1024;
+            $i++;
+        }
+
+        return ($i === 0 ? (string) (int) $size : rtrim(rtrim(number_format($size, 1), '0'), '.')).' '.$units[$i];
+    }
 }
