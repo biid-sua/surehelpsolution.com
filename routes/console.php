@@ -44,3 +44,6 @@ Schedule::command('appointments:send-reminders')->everyFifteenMinutes()->without
 Schedule::command('quality:sample')->dailyAt('05:40')->withoutOverlapping(30);
 // Data retention, expired exports and account closures (spec §56, CMP-05/07).
 Schedule::command('privacy:run')->dailyAt('04:20')->withoutOverlapping(60);
+
+// Social posts: SureHelp's own publishing queue (D33). Due posts and retries every minute.
+Schedule::command('social:publish-due')->everyMinute()->withoutOverlapping(5);

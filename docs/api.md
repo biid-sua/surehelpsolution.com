@@ -96,6 +96,9 @@ A client user only ever sees their own business. The business is resolved on the
 | POST | `/client/escalations/{id}/resolve` | `resolution_notes` required (422 without) |
 | PATCH | `/client/tasks/{id}` | Permission `tasks.update`. Any of the POST fields, plus `status`. Completing records who and when |
 | GET / PUT | `/client/profile` | `name`, `phone` editable. GET also returns `data.organization` |
+| GET | `/client/social/posts?status=upcoming\|awaiting_approval\|published\|failed\|all&per_page` | Permission `social.view`. Default `upcoming` (waiting, scheduled, publishing), soonest first. `data.posts[]`: `id` (ULID), `status` (`draft`, `in_review`, `scheduled`, `publishing`, `published`, `partly_published`, `failed`, `cancelled`), `status_label`, `body`, `link_url`, `scheduled_at`, `published_at`, `source` (`manual`, `team`, `ai`), `author`, `review_note`, `accounts[] {network, name, status, url, error}`, `media[] {url, alt}` (signed links, valid 2 hours), `web_url`. Paged like customers. Tokens are never included |
+| POST | `/client/social/posts/{id}/approve` | Permission `social.manage` and **business owner** (403 otherwise). Posts waiting for approval only (422 otherwise) |
+| POST | `/client/social/posts/{id}/request-changes` | Same rules. `note` required: the post returns to draft with the note |
 
 ### Agent workspace — role `agent` or `admin`
 | Method | Path | Notes |
@@ -120,6 +123,7 @@ A staff member without the permission gets `403`. Dashboard: `dashboard.view`. A
 
 | Date | Change |
 |---|---|
+| 2026-10-06 (G-1) | `/client/social/posts` (list), `/approve`, `/request-changes` (G-1, D33). |
 | 2026-10-08 | `/client/knowledge`, `/client/rules` (read-only). |
 | 2026-10-07 | `/client/appointments` (list, book, show, move, status) and `/client/availability`. |
 | 2026-10-06 | `/client/escalations` (list, show, acknowledge, assign, resolve). Optional `escalation_type` / `escalation_priority` on `POST /agent/call-logs`. `/client/tasks` (list, create, show, update). `call_outcomes[]` on `/agent/clients`. `call_outcome` validated against the business's active outcomes. |

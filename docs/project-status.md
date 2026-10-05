@@ -1,8 +1,8 @@
 # Project status
 
-_As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-plan.md). Reasons behind decisions: [decisions.md](decisions.md)._
+_As of 2026-10-06. Detailed tracker: [implementation-plan.md](implementation-plan.md). Reasons behind decisions: [decisions.md](decisions.md)._
 
-**Summary:** Phases 0–2 are merged and **deployed to production** (2026-10-04). Since then, on branch `claude/phase-2-development-1yiwc2`:
+**Summary:** Phases 0–2 are merged and **deployed to production** (2026-10-04). Since then, merged into `develop` and **not yet deployed**:
 - **Google / Microsoft calendar sync (P3-1)** is built. It goes live once the two OAuth apps are registered ([calendar-sync.md](calendar-sync.md)).
 - **Billing through Payoneer (P5-1)** is built and usable as soon as it's deployed and the payment settings are filled in ([billing.md](billing.md)).
 - **Accounts (D24):**
@@ -27,8 +27,9 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 - **Data & privacy (D29):** owners download all their data, choose how long history is kept (3 years by default), erase a customer's personal data on request, and close their account with a 30-day grace period.
 - **Shift requests and coverage (D28):** agents ask to hand over a shift or for time off; schedulers approve or decline, and a grid shows hours with nobody on shift.
 - **One UI (D23):** the product now has a single version of every screen. The old admin and agent pages were rebuilt in the new design and deleted.
+- **Social publishing (G-1, D33):** Facebook, Instagram, LinkedIn and Google Business Profile posts, scheduled up to 12 months ahead with owner approval ([social.md](social.md)). Requirements for AI content with SEO and websites added to the spec (§41A–41C).
 
-284 automated tests pass.
+303 automated tests pass.
 
 ---
 
@@ -104,6 +105,11 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 |---|---|
 | P5-1 Billing with Payoneer | Plans, subscriptions with free trials, automatic monthly or yearly invoices with PDF, reminders for overdue invoices, and a client *Billing* page with Payoneer card/ACH payment links and bank details. *Admin › Billing* to record payments, void invoices, issue one-off invoices and manage plans, with revenue figures. |
 
+### Phase 8: Growth (started 2026-10-06, decisions D33–D36)
+| Step | What it delivered |
+|---|---|
+| G-1 Social publishing | Businesses connect Facebook Pages, Instagram, LinkedIn and Google Business Profile, then write one post with optional per-account text, photos and Google offer/event details. They publish now or schedule up to 12 months ahead in their own timezone, with per-network checks and previews. Owner approval covers posts by managers and the SureHelp team. Includes a content calendar, media library, retries, alerts for lost access and failed posts, and mobile API approval. Each network goes live after its app review ([social.md](social.md)). |
+
 ### Merge of the cloud session (2026-10-04)
 - Branch `claude/phase-2-development-1yiwc2` merged into `develop` and pushed.
 - Two deploy-blocking bugs found by rehearsing the production upgrade on MariaDB and fixed: the appointments table couldn't be created on MySQL/MariaDB, and an older data backfill read a table that a later migration creates. Full upgrade and rollback now verified on a copy of real data.
@@ -116,7 +122,6 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 | Item | Notes |
 |---|---|
 | Content-Security-Policy header | Only possible after the public website stops loading scripts from CDNs (its redesign) |
-| G-1 Social foundation (in progress) | Accounts, posts, per-channel versions, scheduling queue, approval, content calendar, media library; network adapters stay hidden until each app is approved |
 | G-3 Connect a website | Ownership check, embed snippet (booking, click-to-call, lead form), SEO health check |
 
 ### B. Needs action from you (operations)
@@ -180,7 +185,7 @@ Phase 6 AI foundation ............ needs LLM vendor + DPA/BAA
        └─ uses Phase 2 knowledge base and rules, Phase 3b transcripts
 
 Phase 8 Growth (D33–D36)
-  ├─ G-1 social foundation ........ building now; each network live after its app review
+  ├─ G-1 social foundation ........ done; each network live after its app review (docs/social.md)
   ├─ G-2 AI content studio ........ needs Anthropic key; starts Phase 6 (AiService)
   │     └─ SEO posts, month plans, blog articles for G-4
   ├─ G-3 connect a website ........ ready to build

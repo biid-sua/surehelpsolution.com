@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\DutyScheduleController;
 use App\Http\Controllers\Api\EscalationController;
 use App\Http\Controllers\Api\KnowledgeController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\SocialPostController;
 use App\Http\Controllers\Api\TaskController;
 use App\Http\Controllers\Webhooks\CalendarWebhookController;
 use Illuminate\Support\Facades\Route;
@@ -56,6 +57,9 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
             Route::get('/customers', [CustomerController::class, 'index']);
             Route::get('/customers/{ulid}', [CustomerController::class, 'show']);
         });
+        Route::get('/social/posts', [SocialPostController::class, 'index'])->middleware('can:social.view');
+        Route::post('/social/posts/{ulid}/approve', [SocialPostController::class, 'approve'])->middleware('can:social.manage');
+        Route::post('/social/posts/{ulid}/request-changes', [SocialPostController::class, 'requestChanges'])->middleware('can:social.manage');
         Route::get('/tasks', [TaskController::class, 'index'])->middleware('can:tasks.view');
         Route::post('/tasks', [TaskController::class, 'store'])->middleware('can:tasks.create');
         Route::get('/tasks/{ulid}', [TaskController::class, 'show'])->middleware('can:tasks.view');

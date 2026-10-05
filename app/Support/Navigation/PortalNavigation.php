@@ -28,6 +28,7 @@ class PortalNavigation
                 $this->item('Customers', 'users', 'app.customers.index', 'app.customers.*', 'customers.view'),
                 $this->item('Tasks', 'check-circle', 'app.tasks.index', 'app.tasks.*', 'tasks.view'),
                 $this->item('Escalations', 'alert', 'app.escalations.index', 'app.escalations.*', 'escalations.view'),
+                $this->item('Social', 'megaphone', 'app.social.index', 'app.social.*', 'social.view'),
                 $this->soon('Messages', 'chat'),
                 $this->item('Business', 'building', 'app.business.profile', 'app.business.*', 'organization.view'),
                 $this->item('Billing', 'card', 'app.billing', 'app.billing*', 'billing.view'),

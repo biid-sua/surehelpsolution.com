@@ -15,8 +15,10 @@ use App\Http\Controllers\Client\CustomerExportController;
 use App\Http\Controllers\Client\DataExportController as ClientDataExportController;
 use App\Http\Controllers\Client\InvoiceController as ClientInvoiceController;
 use App\Http\Controllers\Client\ResultsPdfController;
+use App\Http\Controllers\Client\SocialOAuthController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\MediaController;
 use App\Http\Controllers\PasswordChangeController;
 use App\Livewire\Account\Profile as AccountProfile;
 use App\Livewire\Account\Security as AccountSecurity;
@@ -59,6 +61,10 @@ use App\Livewire\Client\Settings\Notifications as NotificationSettings;
 use App\Livewire\Client\Settings\Privacy as PrivacySettings;
 use App\Livewire\Client\Settings\Team as TeamSettings;
 use App\Livewire\Client\Setup\Wizard as SetupWizard;
+use App\Livewire\Client\Social\Accounts as SocialAccounts;
+use App\Livewire\Client\Social\Compose as SocialCompose;
+use App\Livewire\Client\Social\Index as SocialIndex;
+use App\Livewire\Client\Social\Media as SocialMedia;
 use App\Livewire\Client\Tasks\Index as TasksIndex;
 use Illuminate\Support\Facades\Route;
 
@@ -89,6 +95,9 @@ Route::middleware('guest')->group(function () {
 Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('auth.logout');
 Route::post('/impersonation/stop', [ImpersonationController::class, 'stop'])->middleware('auth.home')->name('impersonation.stop');
 Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])->middleware(['signed', 'throttle:10,1'])->whereNumber('id')->name('verification.verify');
+
+// Media for social networks to download while publishing: short-lived signed links only (D33).
+Route::get('/media/{asset}', [MediaController::class, 'public'])->middleware(['signed', 'throttle:120,1'])->name('media.public');
 
 // Team invitations from business owners: open to guests (new people) and signed-in owners of the invited email.
 Route::get('/invitations/{token}', [InvitationController::class, 'show'])->name('invitations.show');
@@ -139,6 +148,19 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
     Route::middleware('can:integrations.manage')->whereIn('provider', ['google', 'microsoft'])->group(function () {
         Route::get('/integrations/calendar/{provider}/connect', [CalendarOAuthController::class, 'redirect'])->name('integrations.calendar.connect');
         Route::get('/integrations/calendar/{provider}/callback', [CalendarOAuthController::class, 'callback'])->name('integrations.calendar.callback');
+    });
+    // Social media (spec §41, D33)
+    Route::middleware('can:social.view')->group(function () {
+        Route::get('/social', SocialIndex::class)->name('social.index');
+        Route::get('/social/accounts', SocialAccounts::class)->name('social.accounts');
+        Route::get('/social/media', SocialMedia::class)->name('social.media');
+        Route::get('/social/media/{asset}', [MediaController::class, 'show'])->name('social.media.show');
+        Route::get('/social/posts/new', SocialCompose::class)->middleware('can:social.manage')->name('social.posts.create');
+        Route::get('/social/posts/{post}', SocialCompose::class)->name('social.posts.edit');
+    });
+    Route::middleware('can:social.manage')->whereIn('connector', ['meta', 'linkedin', 'google'])->group(function () {
+        Route::get('/social/connect/{connector}', [SocialOAuthController::class, 'redirect'])->name('social.connect');
+        Route::get('/social/connect/{connector}/callback', [SocialOAuthController::class, 'callback'])->name('social.connect.callback');
     });
     Route::get('/appointments', AppointmentsIndex::class)->middleware('can:appointments.view')->name('appointments.index');
     Route::get('/escalations', EscalationsIndex::class)->middleware('can:escalations.view')->name('escalations.index');

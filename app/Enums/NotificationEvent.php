@@ -26,13 +26,16 @@ enum NotificationEvent: string
     case AiEscalation = 'ai.escalation';
     case MonthlyReport = 'report.monthly';
     case UsageAlert = 'billing.usage';
+    case SocialApprovalRequested = 'social.approval_requested';
+    case SocialPostFailed = 'social.post_failed';
+    case SocialAccountDisconnected = 'social.account_disconnected';
 
     /**
      * @return list<self>
      */
     public static function available(): array
     {
-        return [self::CallLogged, self::CallMissed, self::FollowUpCreated, self::FollowUpOverdue, self::TaskAssigned, self::EscalationCreated, self::AppointmentCreated, self::AppointmentUpdated, self::AppointmentCancelled, self::IntegrationDisconnected, self::InvoiceIssued, self::PaymentReceived, self::PaymentFailed, self::UsageAlert, self::MonthlyReport];
+        return [self::CallLogged, self::CallMissed, self::FollowUpCreated, self::FollowUpOverdue, self::TaskAssigned, self::EscalationCreated, self::AppointmentCreated, self::AppointmentUpdated, self::AppointmentCancelled, self::IntegrationDisconnected, self::InvoiceIssued, self::PaymentReceived, self::PaymentFailed, self::UsageAlert, self::MonthlyReport, self::SocialApprovalRequested, self::SocialPostFailed, self::SocialAccountDisconnected];
     }
 
     public function isAvailable(): bool
@@ -61,6 +64,9 @@ enum NotificationEvent: string
             self::AiEscalation => 'AI needs your attention',
             self::MonthlyReport => 'Monthly results report',
             self::UsageAlert => 'Plan usage',
+            self::SocialApprovalRequested => 'Social post waiting for approval',
+            self::SocialPostFailed => 'Social post didn\'t publish',
+            self::SocialAccountDisconnected => 'Social account needs reconnecting',
         };
     }
 
@@ -82,6 +88,9 @@ enum NotificationEvent: string
             self::MonthlyReport => 'On the 1st: last month\'s calls answered, leads, bookings and estimated revenue, with a PDF.',
             self::UsageAlert => 'When you\'ve used 80% and 100% of the calls your plan includes.',
             self::EscalationCreated => 'Something needs you now. Urgent escalations always reach you in the app and by email.',
+            self::SocialApprovalRequested => 'A post written by your team or ours is ready for you to approve.',
+            self::SocialPostFailed => 'A scheduled post couldn\'t be published to one or more accounts.',
+            self::SocialAccountDisconnected => 'We lost access to a connected social account.',
             default => '',
         };
     }
@@ -111,6 +120,7 @@ enum NotificationEvent: string
             self::EscalationCreated => 'escalations.view',
             self::TaskAssigned, self::FollowUpOverdue => 'tasks.view',
             self::AppointmentCreated, self::AppointmentUpdated, self::AppointmentCancelled => 'appointments.view',
+            self::SocialApprovalRequested, self::SocialPostFailed, self::SocialAccountDisconnected => 'social.manage',
             default => null,
         };
     }
