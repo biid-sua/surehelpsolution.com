@@ -1,5 +1,10 @@
 <?php
 
+use App\Http\Controllers\Account\EmailVerificationController;
+use App\Http\Controllers\Account\InvitationController;
+use App\Http\Controllers\Account\PasswordResetController;
+use App\Http\Controllers\Account\TermsController;
+use App\Http\Controllers\Account\TwoFactorChallengeController;
 use App\Http\Controllers\Agent\CallExportController as AgentCallExportController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Client\CalendarEventsController;
@@ -10,6 +15,8 @@ use App\Http\Controllers\Client\InvoiceController as ClientInvoiceController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PasswordChangeController;
+use App\Livewire\Account\Profile as AccountProfile;
+use App\Livewire\Account\Security as AccountSecurity;
 use App\Livewire\Admin\AuditLogs;
 use App\Livewire\Admin\Billing\Index as AdminBilling;
 use App\Livewire\Admin\Calls\Review as CallReview;
@@ -41,6 +48,7 @@ use App\Livewire\Client\Customers\Show as CustomerShow;
 use App\Livewire\Client\Dashboard as ClientDashboard;
 use App\Livewire\Client\Escalations\Index as EscalationsIndex;
 use App\Livewire\Client\Settings\Notifications as NotificationSettings;
+use App\Livewire\Client\Settings\Team as TeamSettings;
 use App\Livewire\Client\Tasks\Index as TasksIndex;
 use Illuminate\Support\Facades\Route;
 
@@ -57,9 +65,23 @@ Route::get('/data-security', [HomeController::class, 'dataSecurity'])->name('leg
 Route::get('/cookie-notice', [HomeController::class, 'cookieNotice'])->name('legal.cookie-notice');
 Route::get('/faq', [HomeController::class, 'faq'])->name('legal.faq');
 
-// Authentication routes
-Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login')->name('auth.login');
+// Signing in (D8, D24)
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'show'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login')->name('auth.login');
+    Route::get('/two-factor-challenge', [TwoFactorChallengeController::class, 'show'])->name('two-factor.challenge');
+    Route::post('/two-factor-challenge', [TwoFactorChallengeController::class, 'verify'])->middleware('throttle:10,1')->name('two-factor.verify');
+    Route::get('/forgot-password', [PasswordResetController::class, 'request'])->name('password.request');
+    Route::post('/forgot-password', [PasswordResetController::class, 'email'])->middleware('throttle:5,1')->name('password.email');
+    Route::get('/reset-password/{token}', [PasswordResetController::class, 'edit'])->name('password.reset');
+    Route::post('/reset-password', [PasswordResetController::class, 'update'])->middleware('throttle:10,1')->name('password.store');
+});
 Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('auth.logout');
+Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])->middleware(['signed', 'throttle:10,1'])->whereNumber('id')->name('verification.verify');
+
+// Team invitations from business owners: open to guests (new people) and signed-in owners of the invited email.
+Route::get('/invitations/{token}', [InvitationController::class, 'show'])->name('invitations.show');
+Route::post('/invitations/{token}', [InvitationController::class, 'accept'])->middleware('throttle:10,1')->name('invitations.accept');
 
 // First sign-in: agents and business owners replace their temporary password (no force middleware here)
 Route::prefix('account')->middleware('auth.home')->group(function () {
@@ -67,8 +89,17 @@ Route::prefix('account')->middleware('auth.home')->group(function () {
     Route::post('/password', [PasswordChangeController::class, 'update'])->name('password.change.update');
 });
 
+// Everyone's own account: profile, security (two-step sign-in, devices), terms
+Route::prefix('account')->name('account.')->middleware(['auth.home', 'force.password.change', 'tenant', 'account.gate'])->group(function () {
+    Route::get('/', AccountProfile::class)->name('profile');
+    Route::get('/security', AccountSecurity::class)->name('security');
+    Route::get('/terms', [TermsController::class, 'show'])->name('terms');
+    Route::post('/terms', [TermsController::class, 'accept'])->name('terms.accept');
+    Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])->middleware('throttle:3,10')->name('verification.send');
+});
+
 // Business portal (clients) — docs/implementation-plan.md P1-4
-Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.change', 'role:client', 'tenant'])->group(function () {
+Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.change', 'role:client', 'tenant', 'account.gate'])->group(function () {
     Route::get('/', ClientDashboard::class)->middleware('can:dashboard.view')->name('dashboard');
     Route::middleware('can:calls.view')->group(function () {
         Route::get('/calls', ClientCalls::class)->name('calls.index');
@@ -78,6 +109,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/calendar/events', CalendarEventsController::class)->name('calendar.events');
     });
     Route::get('/settings/notifications', NotificationSettings::class)->name('settings.notifications');
+    Route::get('/settings/team', TeamSettings::class)->middleware('can:users.view')->name('settings.team');
     Route::get('/tasks', TasksIndex::class)->middleware('can:tasks.view')->name('tasks.index');
     Route::middleware('can:billing.view')->group(function () {
         Route::get('/billing', ClientBilling::class)->name('billing');
@@ -107,7 +139,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
 });
 
 // Agent workspace (spec §20–21)
-Route::prefix('agent')->name('agent.')->middleware(['auth.home', 'force.password.change', 'role:agent,admin'])->group(function () {
+Route::prefix('agent')->name('agent.')->middleware(['auth.home', 'force.password.change', 'role:agent,admin', 'account.gate'])->group(function () {
     Route::get('/', AgentHome::class)->name('home');
     Route::get('/businesses/{organization}', AgentWorkspace::class)->name('businesses.show');
     Route::get('/calls', AgentCalls::class)->name('calls');
@@ -116,7 +148,7 @@ Route::prefix('agent')->name('agent.')->middleware(['auth.home', 'force.password
 });
 
 // Admin console
-Route::prefix('admin')->name('admin.')->middleware(['auth.home', 'force.password.change', 'role:admin'])->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['auth.home', 'force.password.change', 'role:admin', 'account.gate'])->group(function () {
     Route::get('/', AdminHome::class)->name('home');
     Route::get('/organizations', OrganizationIndex::class)->name('organizations.index');
     Route::get('/organizations/{organization}', OrganizationShow::class)->name('organizations.show');

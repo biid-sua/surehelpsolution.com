@@ -57,7 +57,8 @@ class ApiContractTest extends TestCase
 
     public function test_auth_endpoints(): void
     {
-        $login = $this->postJson('/api/v1/login', ['email' => 'agent@surehelp.test', 'password' => 'Secret123!'])
+        $secret = $this->enableTwoFactor(User::where('email', 'agent@surehelp.test')->sole());
+        $login = $this->postJson('/api/v1/login', ['email' => 'agent@surehelp.test', 'password' => 'Secret123!', 'two_factor_code' => $this->twoFactorCode($secret)])
             ->assertOk()
             ->assertJsonStructure(['success', 'message', 'data' => [
                 'user' => ['id', 'name', 'email', 'role', 'phone', 'unique_id', 'is_active', 'must_change_password', 'created_at', 'updated_at'],

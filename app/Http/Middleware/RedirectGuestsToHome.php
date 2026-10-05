@@ -2,33 +2,29 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\Account\SignIn;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Portal pages need a signed-in, active account. Guests go to the sign-in page and come back
+ * to where they were headed; a switched-off account is signed out with an explanation.
+ */
 class RedirectGuestsToHome
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  Closure(Request): (Response)  $next
-     */
+    public function __construct(private readonly SignIn $signIn) {}
+
     public function handle(Request $request, Closure $next): Response
     {
         if (! auth()->check()) {
-            return redirect()->route('home');
+            return redirect()->guest(route('login'));
         }
 
         if (! auth()->user()->is_active) {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
+            $this->signIn->logout($request, 'Your account is switched off. Please contact the person who manages your SureHelp account.');
 
-            return redirect()->route('home')->with([
-                'account_deactivated' => true,
-                'account_deactivated_message' => 'Your account has been deactivated. Please contact the concerned person for assistance.',
-            ]);
+            return redirect()->route('login');
         }
 
         return $next($request);

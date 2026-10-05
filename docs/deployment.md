@@ -63,6 +63,17 @@ Current host: cPanel (PHP 8.3), deployed by uploading files. Target hosting: [de
 - Rebuild and upload `public/build/`.
 - Ask each client to set their **timezone and hours** under *Business*. Until then, times show in UTC.
 
+## Release "accounts" (D24): specific notes
+
+- **Composer dependencies added:** `pragmarx/google2fa` and `bacon/bacon-qr-code`. Run `composer install --no-dev -o`.
+- **Migration:** adds two-step sign-in and session columns on `users`, plus `organization_invitations` and `legal_acceptances`.
+- **Email must work.** Password resets, invitations and email confirmation are sent straight away. Check `MAIL_*` and send yourself a reset from `/forgot-password` after deploying.
+- **Recommended: `SESSION_DRIVER=database`.** "Where you're signed in" can then list devices. Signing out everywhere works with any driver.
+- **After deploying:**
+  - Everyone is asked to accept the Terms and Privacy Policy (plus the DPA for businesses) at their next page view.
+  - Staff and agents are asked to set up two-step sign-in at their next sign-in. Tell them in advance: they need an authenticator app on their phone.
+  - The mobile app needs a code field for two-step sign-in (docs/api.md). Until the app has one, staff and agents can't sign in to the app.
+
 ## Production `.env` settings to check
 
 | Key | Value |
@@ -72,6 +83,9 @@ Current host: cPanel (PHP 8.3), deployed by uploading files. Target hosting: [de
 | `SESSION_SECURE_COOKIE` | `true` |
 | `SANCTUM_TOKEN_EXPIRATION` | `43200` (minutes) |
 | `TENANCY_AUTO_ASSIGN_AGENTS` | `true` until ops manages agent assignments (D3) |
+| `SESSION_DRIVER` | `database` (device list on Account › Security) |
+| `IDLE_TIMEOUT_STAFF` / `IDLE_TIMEOUT_AGENTS` | minutes, default `30` (D8) |
+| `TWO_FACTOR_ISSUER` | name shown in authenticator apps, default `SureHelp` |
 
 ## Background work (queues and scheduler)
 

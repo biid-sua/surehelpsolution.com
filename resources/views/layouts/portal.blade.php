@@ -1,8 +1,9 @@
 @php
     // Livewire full-page layout. Data: $portal (client|admin|agent), $title (from #[Title]), $slot.
-    $portal ??= 'client';
     $title ??= null;
     $user = auth()->user();
+    // Pages shared by every portal (your account) render inside the person's own portal.
+    $portal ??= ['admin' => 'admin', 'agent' => 'agent'][$user->role] ?? 'client';
     $navigation = app(\App\Support\Navigation\PortalNavigation::class)->for($user, $portal);
     $organization = app(\App\Support\Tenancy\CurrentOrganization::class)->get();
     $portalLabel = ['client' => 'Business portal', 'admin' => 'Admin console', 'agent' => 'Agent workspace'][$portal] ?? '';
@@ -92,11 +93,14 @@
 
                 <div class="flex items-center gap-3">
                     <livewire:notification-bell />
-                    <div class="hidden text-right sm:block">
-                        <p class="text-sm font-medium text-ink">{{ $user->name }}</p>
-                        <p class="text-xs text-subtle">{{ $user->email }}</p>
-                    </div>
-                    <span class="grid size-9 place-items-center rounded-full bg-gradient-to-br from-brand-500 to-accent-500 text-sm font-semibold text-white" aria-hidden="true">{{ $initials }}</span>
+                    <a href="{{ route('account.profile') }}" class="flex items-center gap-3 rounded-xl px-1.5 py-1 hover:bg-surface-2" title="Your account and security">
+                        <span class="hidden text-right sm:block">
+                            <span class="block text-sm font-medium text-ink">{{ $user->name }}</span>
+                            <span class="block text-xs text-subtle">{{ $user->email }}</span>
+                        </span>
+                        <span class="grid size-9 place-items-center rounded-full bg-gradient-to-br from-brand-500 to-accent-500 text-sm font-semibold text-white" aria-hidden="true">{{ $initials }}</span>
+                        <span class="sr-only">Your account</span>
+                    </a>
                 </div>
             </header>
 

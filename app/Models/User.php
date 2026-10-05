@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\NotificationEvent;
 use App\Enums\OrganizationStatus;
+use App\Notifications\Account\ResetPassword;
+use App\Notifications\Account\VerifyEmail;
 use App\Support\Audit\Audit;
 use App\Support\Authorization\RoleCatalog;
 use App\Support\Tenancy\CurrentOrganization;
@@ -19,6 +20,9 @@ use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
 
+/**
+ * @property list<string>|null $two_factor_recovery_codes hashed one-time codes
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -55,6 +59,8 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     /**
@@ -69,7 +75,45 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
             'must_change_password' => 'boolean',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted:array',
+            'two_factor_confirmed_at' => 'datetime',
+            'last_login_at' => 'datetime',
+            'session_epoch' => 'integer',
         ];
+    }
+
+    /** Two-step sign-in is set up and confirmed with a first code. */
+    public function hasTwoFactor(): bool
+    {
+        return $this->two_factor_confirmed_at !== null && $this->two_factor_secret !== null;
+    }
+
+    /** Staff and agents must use two-step sign-in (D8). */
+    public function requiresTwoFactor(): bool
+    {
+        return in_array($this->role, config('account.two_factor.required_for', []), true);
+    }
+
+    /** @return HasMany<LegalAcceptance, $this> */
+    public function legalAcceptances(): HasMany
+    {
+        return $this->hasMany(LegalAcceptance::class);
+    }
+
+    /**
+     * Branded reset email, linking to our reset page.
+     *
+     * @param  string  $token
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPassword($token));
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmail);
     }
 
     /**

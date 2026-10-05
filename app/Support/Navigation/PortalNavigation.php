@@ -30,7 +30,8 @@ class PortalNavigation
                 $this->soon('Messages', 'chat'),
                 $this->item('Business', 'building', 'app.business.profile', 'app.business.*', 'organization.view'),
                 $this->item('Billing', 'card', 'app.billing', 'app.billing*', 'billing.view'),
-                $this->item('Notifications', 'bell', 'app.settings.notifications', 'app.settings.*', null),
+                $this->item('Team', 'users', 'app.settings.team', 'app.settings.team', 'users.view'),
+                $this->item('Notifications', 'bell', 'app.settings.notifications', 'app.settings.notifications', null),
             ],
             'admin' => [
                 $this->item('Overview', 'home', 'admin.home', 'admin.home', 'dashboard.view'),

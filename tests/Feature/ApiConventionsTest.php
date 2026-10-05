@@ -115,7 +115,8 @@ class ApiConventionsTest extends TestCase
     {
         $user = $this->user('agent', ['email' => 'agent@surehelp.test']);
 
-        $response = $this->postJson('/api/v1/login', ['email' => 'agent@surehelp.test', 'password' => 'Secret123!', 'device_name' => 'Pixel 9'])
+        $secret = $this->enableTwoFactor($user);
+        $response = $this->postJson('/api/v1/login', ['email' => 'agent@surehelp.test', 'password' => 'Secret123!', 'device_name' => 'Pixel 9', 'two_factor_code' => $this->twoFactorCode($secret)])
             ->assertOk();
 
         $this->assertNotNull($response->json('data.expires_at'));

@@ -5,9 +5,16 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 **Summary:** Phases 0–2 are merged and **deployed to production** (2026-10-04). Since then, on branch `claude/phase-2-development-1yiwc2`:
 - **Google / Microsoft calendar sync (P3-1)** is built. It goes live once the two OAuth apps are registered ([calendar-sync.md](calendar-sync.md)).
 - **Billing through Payoneer (P5-1)** is built and usable as soon as it's deployed and the payment settings are filled in ([billing.md](billing.md)).
+- **Accounts (D24):**
+  - Forgot password and email confirmation.
+  - Two-step sign-in, mandatory for staff and agents.
+  - Idle timeout and "sign out everywhere".
+  - A profile page.
+  - Team invitations for business owners.
+  - Terms acceptance with version tracking.
 - **One UI (D23):** the product now has a single version of every screen. The old admin and agent pages were rebuilt in the new design and deleted.
 
-223 automated tests pass.
+235 automated tests pass.
 
 ---
 
@@ -45,6 +52,11 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 |---|---|
 | P1-7 One UI | Every screen now exists once, in the new design. Users, Duty schedule and Website enquiries moved into the admin console. Agents get *My calls* and *My schedule*. The first-login password page was redesigned. The previous admin dashboard, agent dashboard ("classic call form") and their pages were deleted. |
 
+### Accounts (decision D24, 2026-10-12)
+| Step | What it delivered |
+|---|---|
+| P1-8 Accounts | Sign-in page; forgot password by email; two-step sign-in with an authenticator app (required for staff and agents, Super Admin can reset it); 30-minute idle timeout for staff and agents; "sign out other devices"; profile page with devices and sign-in history; owners invite managers and staff by email; everyone accepts the current Terms / Privacy Policy (and DPA for businesses), asked again when they change |
+
 ### Phase 3: Calendar
 | Step | What it delivered |
 |---|---|
@@ -67,7 +79,6 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 | Item | Notes |
 |---|---|
 | Replace the remaining inline role checks in the mobile API controllers with permissions | The web screens are done (D23) |
-| Two-factor authentication for platform staff and agents, plus idle session timeouts | Decision D8; not built yet |
 | Customer duplicate merge (CRM-04) | Merge two customer records with a person confirming |
 | Content-Security-Policy header | Only possible after the public website stops loading scripts from CDNs (its redesign) |
 | Indexed lookup for calendar webhooks | Each change notification currently loads every connected calendar to find its channel; store channel ids in their own indexed table before many businesses connect calendars (PR #2 review) |
@@ -77,6 +88,8 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 ### B. Needs action from you (operations)
 | Item | Notes |
 |---|---|
+| **Before deploying the accounts release** | Tell staff and agents they'll need an authenticator app on their phone. Check outgoing email works (password resets, invitations). Set `SESSION_DRIVER=database`. See [deployment.md](deployment.md) |
+| Mobile app: two-step code field | Staff and agents can't sign in to the app until it sends `two_factor_code` ([api.md](api.md)) |
 | **Deploy calendar sync and billing** | Merge `claude/phase-2-development-1yiwc2` into `develop`. Then: `composer install --no-dev -o` (new PDF library), `php artisan migrate --force`, `npm ci && npm run build`, `php artisan optimize` |
 | **Billing setup** | *Admin › Billing › Payment settings*: Payoneer payment link and receiving-account bank details. Then create plans and subscribe businesses ([billing.md](billing.md)) |
 | Production clean-up from P1-0 | Confirm `/.env` returns 403, rotate secrets if it was ever reachable, delete old `storage/logs/*.log` (they contain passwords), move `.zip`/old backups off the server, run `php artisan audit:call-ownership --details` |

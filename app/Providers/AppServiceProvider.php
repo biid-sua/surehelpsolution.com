@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Http\Middleware\AccountGate;
 use App\Http\Middleware\ResolveOrganization;
 use App\Http\Middleware\RoleMiddleware;
 use App\Models\Organization;
@@ -64,6 +65,7 @@ class AppServiceProvider extends ServiceProvider
         // Re-apply tenant resolution on Livewire component updates (/livewire/update),
         // which otherwise skip route middleware.
         Livewire::addPersistentMiddleware([
+            AccountGate::class,
             ResolveOrganization::class,
             RoleMiddleware::class,
             Authorize::class,

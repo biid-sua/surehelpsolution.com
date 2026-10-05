@@ -185,6 +185,37 @@ The audit log is visible to Super Admin and Operations Manager only, never to bu
 - From now on, rebuilding a screen means deleting the old one in the same change. Recorded in the master spec, §7 "One UI".
 **Why:** Two versions of a screen double the testing, confuse users about which one is real, and keep old security problems alive. A new product has no existing users to migrate gently.
 
+## D24 — Accounts: sign-in, two-step codes, invitations, terms (2026-10-12)
+**Decision:**
+- **Sign-in page in the product** at `/login`, built with the design system. The website's "Sign in" button links to it; the old pop-up is gone (D23). Guests opening a portal page go there and come back to the page they wanted.
+- **Forgot password by email.** The answer is always the same, so nobody can find out whether an email has an account. Links expire after 60 minutes and work once. A reset signs the person out everywhere, mobile app included, and confirms their email address.
+- **Two-step sign-in with an authenticator app** (TOTP, RFC 6238), as decided in D8. It is **mandatory for staff and agents**:
+  - Without it they're sent to set it up before anything else.
+  - The mobile app refuses them until it's set up, then asks for the code (`two_factor_code`).
+  - It's optional for business owners and their teams.
+  - Each code works once; replaying a code is refused.
+  - Eight one-time recovery codes are stored hashed. The secret is encrypted at rest.
+  - A Super Admin can reset someone's two-step sign-in when they lose their phone.
+- **Sessions:**
+  - **Idle timeout:** 30 minutes for staff and agents, none for business owners. Background refreshes (`wire:poll`) don't count as activity.
+  - **Sign out everywhere:** every session carries the account's `session_epoch`, and bumping it ends all of that person's sessions at their next request, whatever the session driver. This happens on a password change or reset, on "Sign out other devices", when an account is switched off, and when two-step sign-in is reset. With database sessions the device list is live.
+  - **Login history:** each sign-in is recorded with its method (password, app code, recovery code, invitation), and people can see their recent activity.
+- **Team invitations (spec AUTH-04):**
+  - **Who can invite:** owners invite managers and staff; managers invite staff. Only owners change roles or remove people.
+  - **Joining:** invitations are emailed links valid for 7 days, and only a hash of the token is stored. The invited person picks their name and password and accepts the terms on the same form.
+  - **One business per email:** each person uses SureHelp with one business (D1), so an email that already has an account can't be invited.
+  - **Removing someone** signs them out everywhere. If they have no business left, their account is switched off.
+- **Terms acceptance (spec CMP-06):**
+  - **What's accepted:** everyone accepts the current Terms of Use and Privacy Policy; business users also accept the Data Processing Addendum.
+  - **What's recorded:** each acceptance stores the version, time, IP and browser.
+  - **Version changes:** versions are set in `config/account.php`; changing a version asks everyone again, with "we updated our terms".
+- **Profile page** at `/account`:
+  - Name, phone, your own timezone and password.
+  - Changing your password signs you out everywhere else.
+  - Confirm your email address.
+  - Security: two-step sign-in, recovery codes, devices and mobile-app sign-ins, recent activity.
+**Why:** These are what every user meets on day one, and what security reviews of a receptionist service ask about first: who can get in, how, and what's recorded.
+
 ## D10 — Telephony
 **Decision:** **Twilio** (Programmable Voice, TaskRouter, Voice JS SDK, Messaging) behind a `TelephonyProvider` interface, so the vendor can be swapped. Calls stay manually logged until then, but the Phase 2 `calls` table is designed for provider data (call SID, direction, timings, recording/transcript references). Telephony becomes **Phase 3b**, right after Calendar, because live call handling is the core of a receptionist product.
 **Action needed from you (long lead time):** create a Twilio account and start **A2P 10DLC** brand and campaign registration now. US SMS cannot go live without it, and approval takes weeks.

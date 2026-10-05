@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\Account\TwoFactor;
 use App\Support\Audit\Audit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,6 +26,7 @@ class AuthController extends Controller
                 'email' => 'required|email',
                 'password' => 'required|string|min:6',
                 'device_name' => 'nullable|string|max:100',
+                'two_factor_code' => 'nullable|string|max:20',
             ]);
 
             $user = User::where('email', $request->email)->first();
@@ -48,11 +50,29 @@ class AuthController extends Controller
                 ], 403);
             }
 
+            // Two-step sign-in (D8, D24): the app sends the code with the password.
+            if ($user->hasTwoFactor()) {
+                $code = (string) $request->input('two_factor_code', '');
+                if ($code === '') {
+                    return response()->json(['success' => false, 'two_factor_required' => true, 'message' => 'Enter the 6-digit code from your authenticator app.'], 401);
+                }
+                if (! app(TwoFactor::class)->check($user, $code)) {
+                    app(Audit::class)->record('auth.login_failed', $user, new: ['channel' => 'api', 'reason' => 'two_factor'], actor: $user);
+
+                    return response()->json(['success' => false, 'two_factor_required' => true, 'message' => 'That code isn\'t right. Try the current one from your app.'], 401);
+                }
+            } elseif ($user->requiresTwoFactor()) {
+                app(Audit::class)->record('auth.login_blocked', $user, new: ['channel' => 'api', 'reason' => 'two_factor_not_set_up'], actor: $user);
+
+                return response()->json(['success' => false, 'two_factor_setup_required' => true, 'message' => 'Set up two-step sign-in on the SureHelp website first, then sign in to the app.'], 403);
+            }
+
             // One named token per device, so users can see and revoke their devices (docs/decisions.md D8).
             $deviceName = trim((string) $request->input('device_name')) ?: 'Mobile app';
             $newToken = $user->createToken($deviceName, ['*'], self::tokenExpiry());
             $token = $newToken->plainTextToken;
-            app(Audit::class)->record('auth.login', $user, new: ['channel' => 'api', 'device' => $deviceName], actor: $user);
+            app(Audit::class)->record('auth.login', $user, new: ['channel' => 'api', 'device' => $deviceName, 'method' => $user->hasTwoFactor() ? 'two_factor' : 'password'], actor: $user);
+            $user->forceFill(['last_login_at' => now()])->saveQuietly();
 
             // Return success response with user data and token
             return response()->json([

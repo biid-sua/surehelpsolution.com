@@ -134,6 +134,17 @@ Ordered. Each step is releasable and backward compatible.
 > - Deleted: the previous admin dashboard, users, duty-schedule and contact-form pages; the agent dashboard / classic call form; the old password page; unused `home_new` / `welcome` views; `AdminController` and the `Admin\*` web controllers, with their routes. The mobile API is unchanged.
 > - Tests: `SingleConsoleTest` (9). Older tests moved to the new screens or the API.
 
+### P1-8 Accounts (D24)
+> **Status 2026-10-12: done.**
+> - **Signing in:** a sign-in page in the design system (the website pop-up is removed); forgot/reset password by email (AUTH-01); email confirmation.
+> - **Two-step sign-in (AUTH-02):** authenticator app with recovery codes and replay protection; mandatory for staff and agents on web and mobile API; Super Admin reset.
+> - **Sessions (AUTH-03):** 30-minute idle timeout for staff and agents; sign out everywhere through the session epoch; device list and mobile-app sign-ins; sign-in history with method.
+> - **Profile page (AUTH-06).**
+> - **Team invitations for business owners (AUTH-04):** owner invites managers and staff; managers invite staff; roles; removal.
+> - **Terms acceptance with version tracking (CMP-06).**
+> - **Tests:** `AccountSecurityTest` (11); API and agent tests updated for mandatory two-step sign-in.
+> - **Still open:** "Sign in with Google/Microsoft" (AUTH-05, needs the OAuth apps); the mobile app's code field.
+
 ### Phase 1 exit criteria
 - Every tenant query is scoped by `organization_id`; isolation tests pass for web and API.
 - No inline role checks remain; all writes go through Form Requests and Policies.

@@ -79,9 +79,9 @@ class AuditAndNotificationsTest extends TestCase
 
     public function test_api_login_is_audited(): void
     {
-        $this->user('agent', ['email' => 'agent@surehelp.test', 'password' => 'Secret123!']);
+        $secret = $this->enableTwoFactor($this->user('agent', ['email' => 'agent@surehelp.test', 'password' => 'Secret123!']));
 
-        $this->postJson('/api/v1/login', ['email' => 'agent@surehelp.test', 'password' => 'Secret123!'])->assertOk();
+        $this->postJson('/api/v1/login', ['email' => 'agent@surehelp.test', 'password' => 'Secret123!', 'two_factor_code' => $this->twoFactorCode($secret)])->assertOk();
 
         $this->assertDatabaseHas('audit_logs', ['action' => 'auth.login']);
         $this->assertSame('api', AuditLog::where('action', 'auth.login')->sole()->new_values['channel']);
