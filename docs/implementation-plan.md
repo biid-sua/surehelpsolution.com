@@ -190,6 +190,16 @@ Started 2026-10-04 on `develop`, one feature branch per step.
 | ONB-1 | Setup wizard (ONB-01..05, 07, 08): 7 steps with progress bar, industry templates, saved per step into the real records; new owners start there; dashboard banner; admin progress column, filter and checklist; email to staff on finish. Phone setup (ONB-06) and payment (ONB-09) wait for Twilio and automatic payments | **done** 2026-10-13 |
 | RPT-1 | Results page (RPT-01): answered calls, jobs booked, leads, after-hours calls caught, estimated revenue from the owner's average job value, outcomes, reasons, day × hour heatmap, month-over-month change; PDF download; monthly report email with PDF on the 1st (RPT-02), switchable per person | **done** 2026-10-13 |
 
+## 4e. Support, communication and CRM (D26)
+
+| Step | Scope (spec) | Status |
+|---|---|---|
+| SUP-T | View as client (ADM-05) with banner, private account pages and `impersonator_id` on every audit entry; global search (ADM-09) | **done** 2026-10-14 |
+| NTF-4/7 | Daily summary email at each person's chosen time (owners on by default); quiet hours hold non-urgent emails | **done** 2026-10-14 |
+| MSG-1 | Appointment emails to customers (§26–27): confirmation, reminder (chosen lead time), time changed, cancellation; editable templates with preview and test send; timeline entries | **done** 2026-10-14 (SMS after A2P 10DLC) |
+| CRM-04 | Duplicate suggestions (same email or name), side-by-side compare, merge everything into the record a person chooses | **done** 2026-10-14 |
+| CLI-06 | Vacation mode with planned dates, dashboard banner with "end it now", agent notices | **done** 2026-10-14 |
+
 ## 5. Later phases (outline, in spec order)
 
 | Phase | Scope (spec §) | First steps | Main external dependency |

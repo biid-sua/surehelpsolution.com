@@ -16,9 +16,15 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
   - New businesses set themselves up in seven guided steps, with industry templates.
   - A Results page shows calls answered, jobs booked, leads, after-hours calls and estimated revenue.
   - A monthly report email with a PDF goes out on the 1st.
+- **Support and communication (D26):**
+  - "View as client" and global search for staff.
+  - Daily summary email and quiet hours.
+  - Appointment confirmation, reminder and cancellation emails to customers, with editable templates.
+  - Merging duplicate customers.
+  - Vacation mode.
 - **One UI (D23):** the product now has a single version of every screen. The old admin and agent pages were rebuilt in the new design and deleted.
 
-244 automated tests pass.
+262 automated tests pass.
 
 ---
 
@@ -67,6 +73,15 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 | Setup wizard | New owners are guided through business details, services (pre-filled for their industry), hours and service area, call handling (greeting, FAQs, rules), calendar and team; progress saved per step; admins see who is stuck and are emailed when someone finishes |
 | Results | Monthly calls answered, jobs booked, new leads, after-hours calls caught and estimated revenue (jobs × average job value), with breakdowns and a heatmap; PDF; report emailed on the 1st |
 
+### Support, communication and CRM (decision D26, 2026-10-14)
+| Step | What it delivered |
+|---|---|
+| Support tools | Staff can view the portal as a business user (clearly bannered and fully audited) and search everything from one box |
+| Daily summary and quiet hours | A morning email with yesterday's results and today's agenda; non-urgent emails held overnight on request |
+| Customer emails | Appointment confirmations, reminders, changes and cancellations to customers, in the business's name and words |
+| Duplicate customers | Suggested duplicates, side-by-side compare, merge everything into the record you keep |
+| Vacation mode | Plan time away ahead; bookings blocked only on those days; agents and the owner see it |
+
 ### Phase 3: Calendar
 | Step | What it delivered |
 |---|---|
@@ -89,10 +104,8 @@ _As of 2026-10-10. Detailed tracker: [implementation-plan.md](implementation-pla
 | Item | Notes |
 |---|---|
 | Replace the remaining inline role checks in the mobile API controllers with permissions | The web screens are done (D23) |
-| Customer duplicate merge (CRM-04) | Merge two customer records with a person confirming |
 | Content-Security-Policy header | Only possible after the public website stops loading scripts from CDNs (its redesign) |
 | Indexed lookup for calendar webhooks | Each change notification currently loads every connected calendar to find its channel; store channel ids in their own indexed table before many businesses connect calendars (PR #2 review) |
-| Phase 4 (email part): appointment reminders and confirmation emails, message templates | SMS waits for A2P 10DLC |
 | Billing extras | Usage records, paid add-ons, plan limits enforced through `Entitlements` |
 
 ### B. Needs action from you (operations)

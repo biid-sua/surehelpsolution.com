@@ -250,6 +250,33 @@ The audit log is visible to Super Admin and Operations Manager only, never to bu
 - **Fix found while building this:** names with "&" or "<" showed as `&amp;` in headings, because the shared components escaped already-escaped text. The components now escape without double-encoding, so they're safe and correct for both raw and pre-escaped values.
 **Why:** The first hour decides whether a new business trusts the service, and the monthly "we answered X calls and booked $Y for you" is what keeps them paying.
 
+## D26 — Support tools, daily summary, customer emails, duplicates, vacation mode (2026-10-14)
+**Decision:**
+- **View as client (ADM-05).**
+  - **Who:** staff with `users.impersonate` (Super Admin, Operations Manager, Support Agent) can sign in as an active business user. They start it from Organizations, Users or Search.
+  - **While viewing:** an amber banner shows on every page with "Stop viewing", and signing out just stops viewing. The client's account and security pages stay closed. The staff member's own idle timeout and sign-out-everywhere still apply.
+  - **Audit:** start and end are recorded, and every audit entry made meanwhile stores `impersonator_id`. The audit log shows "by X, viewing as them".
+  - **Why full access rather than read-only:** fixing things for a client is what support needs. The audit trail makes it accountable.
+- **Global search (ADM-09):** one box for businesses, people, callers, call IDs and appointments. Each group only appears to staff allowed to see it.
+- **Daily summary (NTF-04):**
+  - **Content:** yesterday's calls, bookings, missed calls and leads; today's appointments; what's waiting.
+  - **When:** on for owners at 7:30 in their own timezone; opt-in for everyone else, at a time they choose. Sent once a day, and not at all on days with nothing to report.
+  - **Quiet hours (NTF-07):** emails wait until morning. In-app notifications still arrive, and urgent escalations never wait.
+- **Emails to a business's customers (§26–27):** confirmation, reminder, time changed and cancellation.
+  - **Sender:** sent in the business's name, with replies going to the business; each one is noted on the customer's timeline.
+  - **Editable:** each email has editable wording with placeholders, a live preview and a test send, and can be switched off.
+  - **Reminders:** at a lead time the business chooses (2–48 hours, default 24). Last-minute bookings get no separate reminder.
+  - **Not sent:** nothing goes to customers without an email address, and pending bookings wait until they're confirmed.
+  - **Text messages:** wait for A2P 10DLC.
+- **Duplicate customers (CRM-04):**
+  - **Suggestions:** records with the same email or the same full name. Phones are already unique per business.
+  - **Merging:** a person picks which record stays. Everything moves to it, and its own details win, with empty fields filled from the other.
+  - **Afterwards:** the other record is archived with `merged_into_id` and frees its phone number. Owners and managers only.
+- **Vacation mode (CLI-06):**
+  - **Planning:** "away from / back after" dates can be set ahead. Only those days are closed for bookings.
+  - **Who's told:** agents see current and upcoming time away. The owner's dashboard shows it, with "end it now".
+**Why:** These take load off SureHelp's support team and the owner's inbox, and keep customers informed without anyone remembering to do it.
+
 ## D10 — Telephony
 **Decision:** **Twilio** (Programmable Voice, TaskRouter, Voice JS SDK, Messaging) behind a `TelephonyProvider` interface, so the vendor can be swapped. Calls stay manually logged until then, but the Phase 2 `calls` table is designed for provider data (call SID, direction, timings, recording/transcript references). Telephony becomes **Phase 3b**, right after Calendar, because live call handling is the core of a receptionist product.
 **Action needed from you (long lead time):** create a Twilio account and start **A2P 10DLC** brand and campaign registration now. US SMS cannot go live without it, and approval takes weeks.

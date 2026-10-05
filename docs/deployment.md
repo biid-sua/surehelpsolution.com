@@ -80,6 +80,17 @@ Current host: cPanel (PHP 8.3), deployed by uploading files. Target hosting: [de
 - **Scheduler:** `reports:monthly` runs daily at 14:10 UTC and sends each business last month's report once. The existing cron for `schedule:run` covers it. Try it with `php artisan reports:monthly`.
 - **Email:** reports attach a PDF (dompdf, already installed).
 
+## Release "support and communication" (D26): specific notes
+
+- **Migrations:**
+  - `audit_logs.impersonator_id`, plus a permission re-sync for `users.impersonate`.
+  - On `users`: daily-summary and quiet-hours columns.
+  - New `message_templates` table, and `appointments.reminder_sent_at`.
+  - `customers.merged_into_id` and `business_profiles.closed_from`.
+- **Scheduler:** two new commands run every 15 minutes through the existing `schedule:run` cron: `notifications:daily-summary` and `appointments:send-reminders`.
+- **Queue:** quiet hours delay emails, so the queue worker must process delayed jobs. A worker started every minute by cron does that.
+- **Email:** customers now receive appointment emails from the `MAIL_FROM_ADDRESS`, showing the business's name, with replies going to the business. Make sure that address's domain has SPF and DKIM set up.
+
 ## Production `.env` settings to check
 
 | Key | Value |
