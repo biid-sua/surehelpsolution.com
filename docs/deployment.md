@@ -91,9 +91,10 @@ Current host: cPanel (PHP 8.3), deployed by uploading files. Target hosting: [de
 - **Queue:** quiet hours delay emails, so the queue worker must process delayed jobs. A worker started every minute by cron does that.
 - **Email:** customers now receive appointment emails from the `MAIL_FROM_ADDRESS`, showing the business's name, with replies going to the business. Make sure that address's domain has SPF and DKIM set up.
 
-## Release "call quality" (D27): specific notes
+## Release "call quality" (D27) and "shift requests" (D28): specific notes
 
-- **Migration:** new `qa_reviews` table, plus a permission re-sync for `qa.review`.
+- **Migrations:** new `qa_reviews` table, plus a permission re-sync for `qa.review`; new `shift_requests` table.
+- **Optional `.env`:** `SCHEDULE_MIN_AGENTS` (default 1) sets how many agents an hour needs before the coverage grid stops marking it as a gap.
 - **Scheduler:** `quality:sample` runs daily at 05:40 UTC through the existing `schedule:run` cron.
 - **Assets:** run `npm ci && npm run build` (new styles on the review form).
 

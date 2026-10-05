@@ -93,6 +93,45 @@
         </x-ui.card>
     @endif
 
+    @if ($requests->isNotEmpty())
+        <x-ui.card class="mb-6" :padding="false" title="Requests from agents" description="Approving a hand-over moves the shift; approving time off removes their shifts on those days.">
+            <ul class="divide-y divide-line" role="list">
+                @foreach ($requests as $item)
+                    <li class="grid gap-3 px-5 py-4 lg:grid-cols-[1fr_auto]" wire:key="request-{{ $item->id }}">
+                        <div class="min-w-0">
+                            <p class="font-medium text-ink">{{ $item->agent->name ?? 'Former agent' }} <span class="font-normal text-muted">· {{ $item->summary() }}</span></p>
+                            @if ($item->reason)<p class="mt-0.5 text-sm text-muted">“{{ $item->reason }}”</p>@endif
+                            <p class="mt-0.5 text-xs text-subtle">Asked {{ $item->created_at->diffForHumans() }}</p>
+                        </div>
+                        @if ($canEdit)
+                            <div class="flex flex-wrap items-start gap-2">
+                                @if ($item->type === 'swap')
+                                    <div>
+                                        <label for="d-{{ $item->ulid }}-c" class="sr-only">Who takes the shift</label>
+                                        <select id="d-{{ $item->ulid }}-c" wire:model="decision.{{ $item->ulid }}.colleague" class="sh-input py-1.5 text-sm">
+                                            <option value="">{{ $item->swapWith ? $item->swapWith->name.' (asked)' : 'Who takes it?' }}</option>
+                                            @foreach ($agents->where('id', '!=', $item->agent_id) as $agent)
+                                                <option value="{{ $agent->id }}">{{ $agent->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('decision.'.$item->ulid.'.colleague') <p class="mt-1 max-w-xs text-sm text-danger">{{ $message }}</p> @enderror
+                                    </div>
+                                @endif
+                                <div>
+                                    <label for="d-{{ $item->ulid }}-n" class="sr-only">Note to the agent</label>
+                                    <input id="d-{{ $item->ulid }}-n" type="text" wire:model="decision.{{ $item->ulid }}.note" class="sh-input py-1.5 text-sm" placeholder="Note (needed to decline)" maxlength="1000">
+                                    @error('decision.'.$item->ulid.'.note') <p class="mt-1 max-w-xs text-sm text-danger">{{ $message }}</p> @enderror
+                                </div>
+                                <x-ui.button size="sm" variant="secondary" wire:click="decline('{{ $item->ulid }}')">Decline</x-ui.button>
+                                <x-ui.button size="sm" wire:click="approve('{{ $item->ulid }}')">Approve</x-ui.button>
+                            </div>
+                        @endif
+                    </li>
+                @endforeach
+            </ul>
+        </x-ui.card>
+    @endif
+
     <x-ui.card :padding="false">
         @if ($agents->isEmpty())
             <x-ui.empty-state icon="users" title="No agents yet" description="Add agents under Users, then plan their shifts here.">
@@ -145,5 +184,40 @@
                 </table>
             </div>
         @endif
+    </x-ui.card>
+    <x-ui.card class="mt-6" :padding="false" title="Coverage" :description="'Agents on shift in each hour. Hours with fewer than '.$minAgents.' '.str('agent')->plural($minAgents).' are gaps.'">
+        <div class="overflow-x-auto p-4">
+            <table class="w-full min-w-[48rem] table-fixed border-separate border-spacing-0.5 text-xs">
+                <thead>
+                    <tr class="text-subtle">
+                        <th scope="col" class="w-16 text-left font-medium"><span class="sr-only">Day</span></th>
+                        @foreach (range(0, 23) as $hour)
+                            <th scope="col" class="font-normal tabular-nums">{{ $hour % 3 === 0 ? \Carbon\CarbonImmutable::today()->setTime($hour, 0)->format('ga') : '' }}</th>
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($days as $day)
+                        <tr>
+                            <th scope="row" @class(['text-left font-medium', 'text-brand-300' => $day->isToday(), 'text-muted' => ! $day->isToday()])>{{ $day->format('D j') }}</th>
+                            @foreach ($coverage[$day->toDateString()] ?? [] as $hour => $count)
+                                <td @class([
+                                    'h-7 rounded text-center tabular-nums',
+                                    'bg-red-500/25 text-red-200' => $count === 0,
+                                    'bg-amber-500/25 text-amber-200' => $count > 0 && $count < $minAgents,
+                                    'bg-emerald-500/20 text-emerald-200' => $count >= $minAgents && $count < $minAgents + 1,
+                                    'bg-emerald-500/40 text-emerald-100' => $count >= $minAgents + 1,
+                                ]) title="{{ $day->format('D M j') }}, {{ $day->setTime($hour, 0)->format('g A') }}: {{ $count }} {{ str('agent')->plural($count) }}">{{ $count }}</td>
+                            @endforeach
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            <p class="mt-3 flex flex-wrap gap-4 text-xs text-muted">
+                <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded bg-red-500/40"></span> Nobody on shift</span>
+                @if ($minAgents > 1)<span class="inline-flex items-center gap-1.5"><span class="size-3 rounded bg-amber-500/40"></span> Too few</span>@endif
+                <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded bg-emerald-500/40"></span> Covered</span>
+            </p>
+        </div>
     </x-ui.card>
 </div>

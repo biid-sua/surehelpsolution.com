@@ -294,6 +294,16 @@ The audit log is visible to Super Admin and Operations Manager only, never to bu
 
 **Why:** Consistent call quality is what a receptionist service sells. A shared scorecard makes coaching fair and measurable, and random sampling keeps it honest.
 
+## D28 — Shift requests and coverage (2026-10-15)
+**Decision:** Agents ask for changes on *My schedule*; whoever plans the duty schedule decides on *Duty schedule*, which also shows coverage by hour (task.md AGT-11, SUP-03).
+- **Hand over a shift:** an agent offers one of their upcoming shifts, optionally naming a colleague. On approval the scheduler picks (or keeps) the colleague and the shift moves to them. It's refused if that colleague already works then.
+- **Time off:** up to 31 days at a time. On approval the agent's shifts in those days are taken off the schedule (kept, inactive, for the record) and each day is marked "Leave". Any gaps this leaves show straight away in the coverage grid.
+- **Who decides:** staff with `users.update` in the admin console, the same people who edit the schedule. Declining needs a note. Agents can withdraw a request while it's waiting. Supervisors who work in the agent workspace can't decide yet; they can be given admin access if needed.
+- **Notices:** schedulers get an in-app notice and email for each new request; the agent gets the decision the same way.
+- **Coverage:** a day × hour grid for the week showing how many agents are on shift. Hours below `SCHEDULE_MIN_AGENTS` (default 1) are marked as gaps.
+
+**Why:** Swaps and leave were handled by message and remembered by hand. Now they're recorded, the schedule changes only when someone approves, and gaps are visible before they cost a missed call.
+
 ## D10 — Telephony
 **Decision:** **Twilio** (Programmable Voice, TaskRouter, Voice JS SDK, Messaging) behind a `TelephonyProvider` interface, so the vendor can be swapped. Calls stay manually logged until then, but the Phase 2 `calls` table is designed for provider data (call SID, direction, timings, recording/transcript references). Telephony becomes **Phase 3b**, right after Calendar, because live call handling is the core of a receptionist product.
 **Action needed from you (long lead time):** create a Twilio account and start **A2P 10DLC** brand and campaign registration now. US SMS cannot go live without it, and approval takes weeks.
