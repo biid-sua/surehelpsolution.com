@@ -48,6 +48,7 @@ class PortalNavigation
                 $this->item('Website enquiries', 'chat', 'admin.enquiries', 'admin.enquiries', 'marketing.view'),
                 $this->item('Audit log', 'shield', 'admin.audit', 'admin.audit', 'audit_logs.view'),
                 $this->item('Agent assignments', 'users', 'agent.assignments', 'agent.assignments|agent.team*', 'agent_assignments.view'),
+                $this->item('Agent University', 'sparkles', 'agent.training.courses', 'agent.training.*', 'training.view_progress'),
                 $this->item('Agent workspace', 'phone', 'agent.home', 'agent.home|agent.companies|agent.businesses.*|agent.calls*|agent.schedule', 'calls.create'),
             ],
             'agent' => [
@@ -56,8 +57,10 @@ class PortalNavigation
                 $this->item('My calls', 'phone', 'agent.calls', 'agent.calls*', 'calls.create'),
                 $this->item('My schedule', 'calendar', 'agent.schedule', 'agent.schedule', null),
                 $this->item('Call quality', 'check-circle', 'agent.quality', 'agent.quality', null),
+                $this->item('University', 'sparkles', 'agent.university', 'agent.university*', 'agent_university.view'),
                 $this->item('Team', 'users', 'agent.team', 'agent.team*', 'agent_assignments.view'),
                 $this->item('Assignments', 'list', 'agent.assignments', 'agent.assignments', 'agent_assignments.view'),
+                $this->item('Training', 'chart', 'agent.training.courses', 'agent.training.*', 'training.view_progress'),
             ],
             default => [],
         };

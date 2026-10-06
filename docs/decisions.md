@@ -452,9 +452,16 @@ Start these early. The code can be built and tested with your own accounts befor
 - **Assignments are stored per agent:** one `training_assignments` row each, created from assignment rules (everyone, a role, a company's agents, or one agent). Status, due dates and reporting are per person. Team assignment waits for a team model, which doesn't exist yet.
 - **Progress is server-side:** per lesson and per attempt.
 - **Certificates:** a course can issue one, with a unique ID, a validity period and recertification.
-- **Files:** stored privately and served through signed links. Video can be uploaded or linked (YouTube / Vimeo).
+- **Files:** stored privately and served only through a route that checks access on every request (no shareable links). Video can be uploaded or linked (YouTube / Vimeo).
 - **Audit:** the existing audit log is reused; there is no separate training audit table.
 **Why:** It covers every content type in the brief without being built around video, and keeps the history that compliance-style training needs.
+**How it was built (A-3):**
+- **Publishing freezes the draft.** Modules, lessons and questions are frozen as JSON in `training_course_versions`. Learners only ever read that frozen copy, so draft edits are invisible until published. Correct answers stay on the server.
+- **One row per agent and course** holds the current cycle. A retake or a recertification after expiry starts a new cycle: earlier lessons and attempts stay on record but no longer count. Every finished cycle is kept in `training_completions`.
+- **Rules only make an assignment stricter:** required beats optional, the earlier due date wins, and the higher priority wins.
+- **Supervisors** may give *published platform-wide* courses to the agents of their own companies (a company or one agent). They can't edit those courses, or give them to everyone or a whole role.
+- **Company readiness is calculated now.** Enforcing the restricted and blocking levels in the workspace comes with A-4.
+- **Starter content:** `php artisan training:starter` creates two draft platform courses (call handling; privacy and security) for an admin to review and publish.
 
 ## D43 — Company readiness and how it's enforced (2026-10-06)
 **Decision:**

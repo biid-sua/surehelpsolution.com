@@ -53,6 +53,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Lesson files (Agent University) can be larger than Livewire's 12 MB default. Each form
+        // still validates its own limit and file types.
+        config([
+            'livewire.temporary_file_upload.rules' => ['required', 'file', 'max:'.(max(12, (int) config('training.max_upload_mb')) * 1024)],
+            'livewire.temporary_file_upload.max_upload_time' => 15,
+        ]);
+
         // Every permission from config/authorization.php is answered by one
         // organization-aware check (docs/permissions.md). Pass an Organization as
         // the argument, or the current tenant context is used.

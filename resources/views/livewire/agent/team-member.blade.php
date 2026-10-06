@@ -28,6 +28,38 @@
                 @endif
             </x-ui.card>
 
+            @if ($training !== null)
+                <x-ui.card title="Training" :description="$training['required'] ? $training['required_done'].' of '.$training['required'].' required courses completed' : 'No required training'" :padding="false">
+                    @if ($training['rows']->isEmpty())
+                        <x-ui.empty-state icon="sparkles" title="No training yet" description="Training given to this agent appears here." />
+                    @else
+                        <x-ui.table>
+                            <thead><tr><th scope="col">Course</th><th scope="col">Progress</th><th scope="col">Due</th><th scope="col">Status</th></tr></thead>
+                            <tbody class="divide-y divide-line">
+                                @foreach ($training['rows'] as $t)
+                                    <tr wire:key="tr-{{ $t->id }}">
+                                        <td><p class="text-sm text-ink">{{ $t->course->title }}</p><p class="text-xs text-subtle">{{ $t->course->organization?->name ?? 'All agents' }} · {{ $t->is_required ? 'required' : 'optional' }}</p></td>
+                                        <td class="text-sm text-muted">{{ $t->isDone() ? 100 : $t->progress_percent }}%@if ($t->best_score !== null) · {{ $t->best_score }}%@endif</td>
+                                        <td class="text-sm text-muted">{{ $t->due_at?->format('j M Y') ?? '–' }}</td>
+                                        <td><x-ui.badge :tone="$t->tone()">{{ $t->label() }}</x-ui.badge></td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </x-ui.table>
+                    @endif
+                    @if ($training['certificates']->isNotEmpty())
+                        <div class="border-t border-line px-5 py-3">
+                            <p class="text-xs font-semibold uppercase tracking-wider text-subtle">Certifications</p>
+                            <ul class="mt-2 flex flex-wrap gap-2">
+                                @foreach ($training['certificates'] as $cert)
+                                    <li><a href="{{ route('agent.university.certificate', $cert->ulid) }}"><x-ui.badge :tone="$cert->tone()">{{ $cert->name }} · {{ $cert->label() }}</x-ui.badge></a></li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+                </x-ui.card>
+            @endif
+
             <x-ui.card title="Assignment history" :padding="false">
                 @if ($history->isEmpty())
                     <p class="px-5 py-4 text-sm text-muted">No history with your companies.</p>

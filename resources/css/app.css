@@ -30,6 +30,7 @@
     --color-muted: #a9adcf;
     --color-subtle: #8a8fb8;
 
+    --color-brand-200: #c7d2fe;
     --color-brand-300: #a5b4fc;
     --color-brand-400: #818cf8;
     --color-brand-500: #6366f1;
@@ -106,6 +107,58 @@
 
     .sh-skeleton {
         @apply animate-pulse rounded-md bg-surface-3;
+    }
+
+    /* Written lesson and course text (Agent University): readable line length and rhythm. */
+    .sh-prose {
+        @apply max-w-prose leading-relaxed;
+    }
+
+    .sh-prose > * + * {
+        @apply mt-3;
+    }
+
+    .sh-prose h1,
+    .sh-prose h2 {
+        @apply mt-6 text-lg font-semibold text-ink;
+    }
+
+    .sh-prose h3,
+    .sh-prose h4 {
+        @apply mt-5 text-base font-semibold text-ink;
+    }
+
+    .sh-prose ul {
+        @apply list-disc space-y-1 pl-5;
+    }
+
+    .sh-prose ol {
+        @apply list-decimal space-y-1 pl-5;
+    }
+
+    .sh-prose a {
+        @apply text-brand-300 underline hover:text-brand-200;
+    }
+
+    .sh-prose strong {
+        @apply font-semibold text-ink;
+    }
+
+    .sh-prose blockquote {
+        @apply border-l-2 border-brand-400/60 pl-4 italic;
+    }
+
+    .sh-prose code {
+        @apply rounded bg-surface-3 px-1 py-0.5 text-[0.85em];
+    }
+
+    .sh-prose table {
+        @apply min-w-full text-left;
+    }
+
+    .sh-prose th,
+    .sh-prose td {
+        @apply border border-line px-3 py-1.5;
     }
 }
 

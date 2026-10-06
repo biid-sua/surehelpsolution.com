@@ -237,6 +237,16 @@ class User extends Authenticatable
         return $this->hasMany(AgentAssignment::class, 'agent_user_id')->latest('id');
     }
 
+    /**
+     * Agent University: this person's courses (spec §20B).
+     *
+     * @return HasMany<TrainingAssignment, $this>
+     */
+    public function trainingAssignments(): HasMany
+    {
+        return $this->hasMany(TrainingAssignment::class, 'agent_user_id');
+    }
+
     /** Whether this agent may work for the organization right now (memoised per request). */
     public function isAssignedTo(Organization|int $organization): bool
     {
@@ -271,6 +281,25 @@ class User extends Authenticatable
         }
 
         return $this->organizationRoleCache[$key];
+    }
+
+    /**
+     * Whether a platform-scope role grants the permission, i.e. for every company and for things
+     * that belong to no company (platform-wide courses, D41). Same roles as hasPermissionIn.
+     */
+    public function hasPlatformPermission(string $permission): bool
+    {
+        $catalog = app(RoleCatalog::class);
+        $this->loadMissing('roles.permissions');
+
+        /** @var Role $role */
+        foreach ($this->roles as $role) {
+            if ($catalog->roleScope($role->name) === 'platform' && $role->getRelationValue('permissions')->contains('name', $permission)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

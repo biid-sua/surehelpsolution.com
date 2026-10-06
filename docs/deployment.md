@@ -116,6 +116,7 @@ PHP extensions: besides Laravel's defaults, `zip` is required (business data exp
 | `SESSION_SECURE_COOKIE` | `true` |
 | `SANCTUM_TOKEN_EXPIRATION` | `43200` (minutes) |
 | `TENANCY_AUTO_ASSIGN_AGENTS` | `false` (D40). Agents serve only the businesses a supervisor assigns. After deploying, review the assignments flagged "Assigned automatically" on *Agent assignments* (admin menu) |
+| `TRAINING_MAX_UPLOAD_MB` | default `50`. PHP `upload_max_filesize` and `post_max_size` must be at least this. After the first deploy with Agent University, run `php artisan training:starter` once and publish the starter courses after review |
 | `SESSION_DRIVER` | `database` (device list on Account › Security) |
 | `IDLE_TIMEOUT_STAFF` / `IDLE_TIMEOUT_AGENTS` | minutes, default `30` (D8) |
 | `TWO_FACTOR_ISSUER` | name shown in authenticator apps, default `SureHelp` |
