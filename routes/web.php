@@ -21,6 +21,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\PasswordChangeController;
+use App\Livewire\Account\Notifications as AccountNotifications;
 use App\Livewire\Account\Profile as AccountProfile;
 use App\Livewire\Account\Security as AccountSecurity;
 use App\Livewire\Admin\AuditLogs;
@@ -136,6 +137,7 @@ Route::prefix('account')->middleware('auth.home')->group(function () {
 Route::prefix('account')->name('account.')->middleware(['auth.home', 'force.password.change', 'tenant', 'account.gate'])->group(function () {
     Route::get('/', AccountProfile::class)->name('profile');
     Route::get('/security', AccountSecurity::class)->name('security');
+    Route::get('/notifications', AccountNotifications::class)->name('notifications');
     Route::get('/terms', [TermsController::class, 'show'])->name('terms');
     Route::post('/terms', [TermsController::class, 'accept'])->name('terms.accept');
     Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])->middleware('throttle:3,10')->name('verification.send');

@@ -24,6 +24,7 @@ use App\Services\Business\BusinessHours;
 use App\Services\Calls\CallOutcomes;
 use App\Services\Rules\BusinessRules;
 use App\Services\Scheduling\Availability;
+use App\Services\Training\TrainingReadiness;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
@@ -68,9 +69,16 @@ class Workspace extends Component
 
     public ?string $lastSaved = null;
 
-    public function mount(Organization $organization): void
+    public function mount(Organization $organization, TrainingReadiness $readiness): void
     {
         $this->authorizeFor($organization);
+        if ($readiness->restriction(auth()->user(), $organization) === 'blocking') {
+            // Only the company's training is open until it's done (D43).
+            session()->flash('status', $readiness->message($organization, 'blocking'));
+            $this->redirectRoute('agent.businesses.training', $organization->ulid);
+
+            return;
+        }
         $this->organizationId = $organization->id;
         $this->resetCall();
     }
@@ -79,6 +87,8 @@ class Workspace extends Component
     {
         $organization = Organization::query()->findOrFail($this->organizationId);
         $this->authorizeFor($organization);
+        $readiness = app(TrainingReadiness::class);
+        abort_if($readiness->restriction(auth()->user(), $organization) === 'blocking', 403, $readiness->message($organization, 'blocking'));
 
         return $organization;
     }
@@ -152,6 +162,12 @@ class Workspace extends Component
         $organization = $this->organization();
         $agent = auth()->user();
         $timezone = $organization->timezoneOrDefault();
+        $readiness = app(TrainingReadiness::class);
+        if ($level = $readiness->restriction($agent, $organization)) {
+            $this->addError('training', $readiness->message($organization, $level));
+
+            return;
+        }
 
         $this->validate([
             'entry.phone' => ['nullable', 'string', 'max:20'],

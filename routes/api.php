@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Agent\TrainingFileController;
 use App\Http\Controllers\Api\AdminDashboardController;
 use App\Http\Controllers\Api\AgentCompanyController;
 use App\Http\Controllers\Api\AgentDashboardController;
@@ -16,6 +17,7 @@ use App\Http\Controllers\Api\KnowledgeController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\SocialPostController;
 use App\Http\Controllers\Api\TaskController;
+use App\Http\Controllers\Api\TrainingController;
 use App\Http\Controllers\Chat\WidgetController;
 use App\Http\Controllers\Webhooks\CalendarWebhookController;
 use App\Http\Controllers\Webhooks\MetaWebhookController;
@@ -118,6 +120,18 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
         Route::get('/companies/{company}/appointments', [AgentCompanyController::class, 'appointments']);
         Route::get('/companies/{company}/calls', [AgentCompanyController::class, 'calls']);
         Route::get('/companies/{company}/conversations', [AgentCompanyController::class, 'conversations']);
+        // Agent University (docs/agent-university.md): same services and rules as the web portal.
+        Route::prefix('training')->group(function () {
+            Route::get('/', [TrainingController::class, 'index']);
+            Route::get('/certificates', [TrainingController::class, 'certificates']);
+            Route::get('/courses/{course}', [TrainingController::class, 'show']);
+            Route::post('/courses/{course}/start', [TrainingController::class, 'start']);
+            Route::get('/courses/{course}/lessons/{lesson}', [TrainingController::class, 'lesson']);
+            Route::post('/courses/{course}/lessons/{lesson}/complete', [TrainingController::class, 'complete']);
+            Route::post('/courses/{course}/lessons/{lesson}/attempts', [TrainingController::class, 'startAttempt'])->middleware('throttle:30,1');
+            Route::post('/attempts/{attempt}/submit', [TrainingController::class, 'submitAttempt'])->middleware('throttle:30,1');
+            Route::get('/courses/{course}/v{version}/files/{lesson}', [TrainingFileController::class, 'lesson'])->whereNumber('version');
+        });
     });
 
     // Admin Dashboard Routes

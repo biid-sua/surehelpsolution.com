@@ -12,6 +12,7 @@ use App\Models\TrainingCourse;
 use App\Models\TrainingCourseVersion;
 use App\Models\TrainingLessonProgress;
 use App\Models\User;
+use App\Notifications\TrainingActivity;
 use App\Support\Audit\Audit;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
@@ -71,7 +72,7 @@ class LearningProgress
                 // New cycle: a new version, a retake, or recertification after expiry. Lessons and
                 // attempts from earlier cycles stay on record but no longer count.
                 $number = $latest;
-                $changes += ['version' => $latest, 'progress_percent' => 0, 'cycle_started_at' => now()];
+                $changes += ['version' => $latest, 'progress_percent' => 0, 'cycle_started_at' => now(), 'due_soon_notified_at' => null, 'overdue_notified_at' => null];
                 $assignment->lessonProgress()->where('course_version', $latest)->whereNotNull('completed_at')->update(['completed_at' => null]);
                 if ($assignment->due_at?->isPast() && $assignment->status === TrainingAssignment::COMPLETED) {
                     $changes['due_at'] = null;
@@ -274,6 +275,11 @@ class LearningProgress
             $agent = $assignment->agent;
             $this->audit->record('training.completed', $course, [], ['agent' => $agent->name, 'version' => $version->version, 'score' => $score],
                 $assignment->organization, $agent, $course->title);
+            // The person who gave this training hears that it's done.
+            $giver = $assignment->assigner;
+            if ($giver && $giver->is_active && $giver->id !== $agent->id) {
+                $giver->notify(new TrainingActivity($assignment, TrainingActivity::COMPLETED));
+            }
 
             if ($course->issues_certificate) {
                 $certificate = TrainingCertificate::create([

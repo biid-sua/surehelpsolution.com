@@ -50,4 +50,27 @@ class TrainingReadiness
             'enforcement' => $missing->isEmpty() ? null : $level,
         ];
     }
+
+    /**
+     * What unfinished training stops this person doing for the company right now (D43):
+     * "restricted" (no calls or bookings) or "blocking" (only the company's training), else null.
+     * Only agents are limited; platform staff never are.
+     */
+    public function restriction(User $user, Organization $organization): ?string
+    {
+        if (! $user->isAgent()) {
+            return null;
+        }
+        $level = $this->for($user, $organization)['enforcement'];
+
+        return in_array($level, ['restricted', 'blocking'], true) ? $level : null;
+    }
+
+    /** The sentence shown wherever the restriction applies. */
+    public function message(Organization $organization, string $level): string
+    {
+        return $level === 'blocking'
+            ? "Finish the required training for {$organization->name} to start working for it. Until then only its training is open."
+            : "Finish the required training for {$organization->name} before taking its calls or booking appointments.";
+    }
 }

@@ -25,7 +25,7 @@ class TrainingCertificate extends Model
     public const EXPIRING_DAYS = 30;
 
     protected $fillable = [
-        'number', 'agent_user_id', 'course_id', 'completion_id', 'course_version', 'name', 'issued_at', 'expires_at', 'status',
+        'number', 'agent_user_id', 'course_id', 'completion_id', 'course_version', 'name', 'issued_at', 'expires_at', 'expiring_notified_at', 'expired_notified_at', 'status',
         'revoked_at', 'revoked_by_user_id', 'revoke_reason',
     ];
 
@@ -33,7 +33,7 @@ class TrainingCertificate extends Model
 
     protected function casts(): array
     {
-        return ['issued_at' => 'datetime', 'expires_at' => 'datetime', 'revoked_at' => 'datetime'];
+        return ['issued_at' => 'datetime', 'expires_at' => 'datetime', 'expiring_notified_at' => 'datetime', 'expired_notified_at' => 'datetime', 'revoked_at' => 'datetime'];
     }
 
     protected static function booted(): void

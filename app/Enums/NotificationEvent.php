@@ -19,6 +19,10 @@ enum NotificationEvent: string
     case MessageReceived = 'message.received';
     case AssignmentStarted = 'assignment.started';
     case AssignmentChanged = 'assignment.changed';
+    case TrainingAssigned = 'training.assigned';
+    case TrainingDue = 'training.due';
+    case TrainingCompleted = 'training.completed';
+    case CertificationExpiring = 'training.certification';
     case EscalationCreated = 'escalation.created';
     case PaymentFailed = 'payment.failed';
     case InvoiceIssued = 'invoice.issued';
@@ -37,7 +41,7 @@ enum NotificationEvent: string
      */
     public static function available(): array
     {
-        return [self::CallLogged, self::CallMissed, self::FollowUpCreated, self::FollowUpOverdue, self::TaskAssigned, self::EscalationCreated, self::AppointmentCreated, self::AppointmentUpdated, self::AppointmentCancelled, self::IntegrationDisconnected, self::InvoiceIssued, self::PaymentReceived, self::PaymentFailed, self::UsageAlert, self::MonthlyReport, self::SocialApprovalRequested, self::SocialPostFailed, self::SocialAccountDisconnected, self::MessageReceived, self::AssignmentStarted, self::AssignmentChanged];
+        return [self::CallLogged, self::CallMissed, self::FollowUpCreated, self::FollowUpOverdue, self::TaskAssigned, self::EscalationCreated, self::AppointmentCreated, self::AppointmentUpdated, self::AppointmentCancelled, self::IntegrationDisconnected, self::InvoiceIssued, self::PaymentReceived, self::PaymentFailed, self::UsageAlert, self::MonthlyReport, self::SocialApprovalRequested, self::SocialPostFailed, self::SocialAccountDisconnected, self::MessageReceived, self::AssignmentStarted, self::AssignmentChanged, self::TrainingAssigned, self::TrainingDue, self::TrainingCompleted, self::CertificationExpiring];
     }
 
     public function isAvailable(): bool
@@ -68,6 +72,10 @@ enum NotificationEvent: string
             self::UsageAlert => 'Plan usage',
             self::AssignmentStarted => 'Assigned to a company',
             self::AssignmentChanged => 'Company assignment changed',
+            self::TrainingAssigned => 'New training',
+            self::TrainingDue => 'Training due or overdue',
+            self::TrainingCompleted => 'Training completed by an agent',
+            self::CertificationExpiring => 'Certification expiring',
             self::SocialApprovalRequested => 'Social post waiting for approval',
             self::SocialPostFailed => 'Social post didn\'t publish',
             self::SocialAccountDisconnected => 'Social account needs reconnecting',
@@ -96,6 +104,10 @@ enum NotificationEvent: string
             self::MessageReceived => 'A customer wrote to you and a person needs to answer (not sent while your AI assistant is handling it).',
             self::AssignmentStarted => 'You start serving a company, now or on a planned date.',
             self::AssignmentChanged => 'An assignment of yours ended, was paused or was scheduled.',
+            self::TrainingAssigned => 'Training you must or may take, for example when you start serving a company.',
+            self::TrainingDue => 'Two days before required training is due, and once if it becomes overdue.',
+            self::TrainingCompleted => 'An agent finished training you gave them.',
+            self::CertificationExpiring => 'Thirty days before a certification expires, and when it has expired.',
             self::SocialPostFailed => 'A scheduled post couldn\'t be published to one or more accounts.',
             self::SocialAccountDisconnected => 'We lost access to a connected social account.',
             default => '',
@@ -129,7 +141,8 @@ enum NotificationEvent: string
             self::AppointmentCreated, self::AppointmentUpdated, self::AppointmentCancelled => 'appointments.view',
             self::SocialApprovalRequested, self::SocialPostFailed, self::SocialAccountDisconnected => 'social.manage',
             self::MessageReceived => 'messages.view',
-            self::AssignmentStarted, self::AssignmentChanged => 'agent_university.view', // agents and supervisors only
+            self::AssignmentStarted, self::AssignmentChanged, self::TrainingAssigned, self::TrainingDue, self::CertificationExpiring => 'agent_university.view', // agents and supervisors only
+            self::TrainingCompleted => 'training.view_progress',
             default => null,
         };
     }

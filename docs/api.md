@@ -124,6 +124,25 @@ A client user only ever sees their own business. The business is resolved on the
 
 Every `/agent/companies/{id}/…` endpoint answers `404` when the business doesn't exist, the agent isn't currently assigned (scheduled, suspended, ended or revoked assignments give nothing), or the agent lacks the permission there.
 
+**Required training (D43).** Unfinished required training can limit what an agent does for a company:
+- **Blocking:** `/agent/companies/{id}/…` answers `403` with `code: "training_required"` and `missing: [course titles]`. Open the company's training instead.
+- **Restricted or blocking:** `POST /agent/call-logs` answers `422` on `client_id`, with the reason in the message.
+
+#### Agent University — any agent (docs/agent-university.md)
+A course the agent may not take answers `404`: another company's course, an unpublished one, or one switched off. Correct quiz answers are never sent.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/agent/training` | `summary` (progress %, required, required completed, overdue). `assignments[]`: course, required, priority, `status` (`assigned`, `started`, `in_progress`, `completed`, `overdue`, `expired`, `outdated`, `revoked`), progress, score and dates. `recommended[]`: course plus `reason` |
+| GET | `/agent/training/certificates` | Each with `number`, `status` (`active`, `expiring_soon`, `expired`, `revoked`), `issued_at`, `expires_at` and a printable `url` |
+| GET | `/agent/training/courses/{id}` | Details, the `assignment`, and the outline of the version being taken (`modules[].lessons[]` with `completed`) |
+| POST | `/agent/training/courses/{id}/start` | Starts or continues. Returns `version` and `next_lesson` |
+| GET | `/agent/training/courses/{id}/lessons/{lesson}` | `body_markdown` and `body_html`, `url`, `embed_url` (YouTube/Vimeo), `file.url`, and `quiz` (pass mark, question count, `attempts_left`, `open_attempt`) |
+| POST | `/agent/training/courses/{id}/lessons/{lesson}/complete` | Optional `seconds` (time spent; capped at the time since the lesson was opened). Not for quizzes |
+| POST | `/agent/training/courses/{id}/lessons/{lesson}/attempts` | Starts or resumes a quiz attempt: `attempt.id`, `questions[]` (id, type, scenario, prompt, options). `422` when no attempts are left |
+| POST | `/agent/training/attempts/{attempt}/submit` | `answers: {question id: option id \| [option ids]}`. Returns the score, `passed`, per-question `correct`, and the `explanation` for wrong answers. Every question must be answered (`422`). Rate limited |
+| GET | `/agent/training/courses/{id}/v{version}/files/{lesson}` | The lesson file, with range requests for audio and video |
+
 ### Admin — role `admin`, then each endpoint's permission (D32)
 A staff member without the permission gets `403`. Dashboard: `dashboard.view`. Analytics and agent performance: `reports.view`. Users: `users.view` (GET), `users.create` (POST), `users.update` (PUT), `users.delete` (DELETE). Call logs: `calls.view`. Duty schedules: `users.view` to read, `users.update` to create, change, delete or check conflicts.
 
@@ -135,6 +154,7 @@ A staff member without the permission gets `403`. Dashboard: `dashboard.view`. A
 
 | Date | Change |
 |---|---|
+| 2026-10-06 (A-4) | `/agent/training/…` (Agent University). Required training can now refuse company endpoints (`403 training_required`) and call logging (`422`) (D43). |
 | 2026-10-06 (A-1/A-2) | `/agent/companies` and its customers, appointments, calls and conversations. Unassigned businesses now answer `404` (was `403`) on `PUT /agent/call-logs/{id}`; `/agent/call-logs` lists only calls for businesses the agent serves now (D40). |
 | 2026-10-06 (M-1) | `/client/inbox/conversations` (list, show, reply). Public website chat endpoints `/api/chat/{key}/…` and the Meta webhook `/api/webhooks/meta` are outside v1 (docs/inbox.md). |
 | 2026-10-06 (G-1) | `/client/social/posts` (list), `/approve`, `/request-changes` (G-1, D33). |

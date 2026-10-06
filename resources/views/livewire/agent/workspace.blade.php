@@ -29,6 +29,10 @@
         <x-ui.alert tone="info" class="mb-6" title="Away {{ $profile->closed_from->format('M j') }} – {{ $profile->closed_until->format('M j') }}">Bookings for those days aren't possible. {{ $profile->closure_message }}</x-ui.alert>
     @endif
 
+    @error('training')
+        <x-ui.alert tone="danger" class="mb-6" title="Training required">{{ $message }} <a href="{{ route('agent.businesses.training', $organization->ulid) }}" class="underline">Open the company training</a></x-ui.alert>
+    @enderror
+
     <div class="grid gap-6 lg:grid-cols-5">
         {{-- Call entry (spec §15) --}}
         <form wire:submit="save" class="space-y-6 lg:col-span-3" aria-label="Log this call">

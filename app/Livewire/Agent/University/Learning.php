@@ -9,6 +9,7 @@ use App\Models\TrainingCertificate;
 use App\Models\TrainingCompletion;
 use App\Models\TrainingCourse;
 use App\Models\TrainingPath;
+use App\Services\Training\TrainingRecommendations;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -118,7 +119,6 @@ class Learning extends Component
     private function overview($mine): array
     {
         $user = auth()->user();
-        $taken = $mine->pluck('course_id');
 
         return [
             'todo' => $this->sorted($mine->reject->isDone())->take(6),
@@ -127,8 +127,7 @@ class Learning extends Component
             'expiring' => TrainingCertificate::query()->where('agent_user_id', $user->id)->where('status', TrainingCertificate::ACTIVE)
                 ->whereNotNull('expires_at')->where('expires_at', '<=', now()->addDays(TrainingCertificate::EXPIRING_DAYS))
                 ->with('course:id,ulid,title')->orderBy('expires_at')->get(),
-            'suggested' => TrainingCourse::query()->availableTo($user)->whereNotIn('id', $taken)->with('organization:id,name')
-                ->orderByDesc('published_at')->limit(3)->get(),
+            'suggested' => app(TrainingRecommendations::class)->for($user, 3),
             'paths' => TrainingPath::query()->availableTo($user)->with(['courses' => fn ($q) => $q->availableTo($user)->select('training_courses.id', 'ulid', 'title')])
                 ->orderBy('title')->get()->filter(fn (TrainingPath $p) => $p->courses->isNotEmpty())->values(),
             'byCourse' => $mine->keyBy('course_id'),
@@ -155,6 +154,7 @@ class Learning extends Component
                 // Courses for the learner's own companies first: they matter most to their work.
                 ->orderByRaw('CASE WHEN organization_id IS NULL THEN 1 ELSE 0 END')->orderBy('title')->paginate(12),
             'categories' => TrainingCategory::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
+            'picks' => $term === '' && $this->category === '' && $this->getPage() === 1 ? app(TrainingRecommendations::class)->for($user) : collect(),
         ];
     }
 }

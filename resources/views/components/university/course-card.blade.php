@@ -1,4 +1,4 @@
-@props(['course', 'assignment' => null])
+@props(['course', 'assignment' => null, 'reason' => null])
 {{-- One course in Agent University lists: what it is, who it's for, and where the learner stands. --}}
 <a href="{{ route('agent.university.course', $course->ulid) }}" {{ $attributes->merge(['class' => 'group flex flex-col rounded-2xl border border-line bg-surface p-5 shadow-[var(--shadow-card)] transition hover:border-brand-400/60']) }}>
     <div class="flex items-start justify-between gap-3">
@@ -8,6 +8,9 @@
         @endif
     </div>
     <h3 class="mt-2 text-base font-semibold text-ink group-hover:text-brand-200">{{ $course->title }}</h3>
+    @if ($reason)
+        <p class="mt-1 flex items-start gap-1.5 text-xs font-medium text-brand-300"><x-ui.icon name="sparkles" class="mt-px size-3.5 shrink-0" /> {{ $reason }}</p>
+    @endif
     @if ($course->summary)
         <p class="mt-1 line-clamp-2 text-sm text-muted">{{ $course->summary }}</p>
     @endif

@@ -19,6 +19,7 @@ use App\Models\User;
 use App\Notifications\CallActivity;
 use App\Services\Calls\CallOutcomes;
 use App\Services\Rules\BusinessRules;
+use App\Services\Training\TrainingReadiness;
 use App\Support\Audit\Audit;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -73,6 +74,12 @@ class LogCall
             }
 
             $organizationId = $organization->getKey();
+        }
+
+        // Required training set to "restricted" or "blocking" for this company stops call logging (D43).
+        $readiness = app(TrainingReadiness::class);
+        if ($organization && ($level = $readiness->restriction($agent, $organization))) {
+            throw ValidationException::withMessages(['client_id' => [$readiness->message($organization, $level)]]);
         }
 
         // Only outcomes this business offers (its own, or its active platform defaults).

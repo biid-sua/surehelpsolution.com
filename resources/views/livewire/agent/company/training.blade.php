@@ -3,6 +3,10 @@
 
     <x-ui.page-header title="Company training" :description="'What '.$company->name.' asks of the agents who serve it.'" />
 
+    @if (session('status'))
+        <x-ui.alert tone="danger" class="mb-6">{{ session('status') }}</x-ui.alert>
+    @endif
+
     @if ($requiredCount > 0)
         @if ($requiredDone === $requiredCount)
             <x-ui.alert tone="success" class="mb-6" title="Training ready">You've completed every required course for {{ $company->name }}.</x-ui.alert>

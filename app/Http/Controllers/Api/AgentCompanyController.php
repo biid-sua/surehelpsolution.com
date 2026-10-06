@@ -11,7 +11,9 @@ use App\Models\CallLog;
 use App\Models\Conversation;
 use App\Models\Customer;
 use App\Models\Organization;
+use App\Services\Training\TrainingReadiness;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -133,6 +135,14 @@ class AgentCompanyController extends Controller
         $organization = Organization::query()->where('ulid', $ulid)->first();
         if (! $organization || ! $request->user()->hasPermissionIn($permission, $organization)) {
             throw new NotFoundHttpException;
+        }
+        // Required training set to "blocking": only the company's training is open (D43).
+        $readiness = app(TrainingReadiness::class);
+        if ($readiness->restriction($request->user(), $organization) === 'blocking') {
+            throw new HttpResponseException(ApiResponse::error($readiness->message($organization, 'blocking'), 403, extra: [
+                'code' => 'training_required',
+                'missing' => $readiness->for($request->user(), $organization)['missing'],
+            ]));
         }
 
         return $organization;

@@ -8,6 +8,7 @@ use App\Models\TrainingAssignment;
 use App\Models\TrainingCourse;
 use App\Models\TrainingRule;
 use App\Models\User;
+use App\Notifications\TrainingActivity;
 use App\Support\Audit\Audit;
 use Carbon\CarbonInterface;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -194,6 +195,7 @@ class TrainingAssigner
                 ]);
                 $this->audit->record('training.assigned', $course, [], ['agent' => $agent->name, 'required' => $required, 'due' => $due?->toDateString()],
                     $row->organization, $by, $course->title.' → '.$agent->name);
+                $agent->notify(new TrainingActivity($row, TrainingActivity::ASSIGNED));
 
                 return $row;
             }
@@ -206,8 +208,10 @@ class TrainingAssigner
                 'rule_id' => $row->rule_id ?? ($options['rule_id'] ?? null),
             ];
             if ($due && ! $row->isDone() && ($reopened || ! $row->due_at || $due->lt($row->due_at))) {
-                $changes['due_at'] = $due;
+                // A new due date: its reminders are due again.
+                $changes += ['due_at' => $due, 'due_soon_notified_at' => null, 'overdue_notified_at' => null];
             }
+            $nowRequired = ! $row->is_required && $required && ! $row->isDone();
             if ($reopened) {
                 $changes += [
                     'status' => $row->completed_at ? TrainingAssignment::COMPLETED : ($row->started_at ? TrainingAssignment::IN_PROGRESS : TrainingAssignment::ASSIGNED),
@@ -219,6 +223,9 @@ class TrainingAssigner
             if ($reopened) {
                 $this->audit->record('training.assigned', $course, ['status' => 'revoked'], ['agent' => $agent->name, 'required' => $row->is_required],
                     $row->organization, $by, $course->title.' → '.$agent->name);
+            }
+            if ($reopened || $nowRequired) {
+                $agent->notify(new TrainingActivity($row, TrainingActivity::ASSIGNED));
             }
 
             return $row;

@@ -50,3 +50,5 @@ Schedule::command('social:publish-due')->everyMinute()->withoutOverlapping(5);
 
 // Agent company assignments: start scheduled ones and end expired ones (D40). Access itself never waits for this.
 Schedule::command('assignments:sweep')->everyFiveMinutes()->withoutOverlapping(10);
+// Agent University reminders: due soon, overdue, certification expiring or expired (sent once each).
+Schedule::command('training:sweep')->hourly()->withoutOverlapping(30);

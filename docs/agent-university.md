@@ -56,7 +56,46 @@ A company rule can be *required*, with an enforcement level:
 - the company *Training* tab;
 - the agent profile and the *Assignments* screen, before a supervisor confirms an assignment.
 
-Enforcing *restricted* and *blocking* in the workspace arrives with step A-4.
+**How each level is enforced** (on the server, for agents only; platform staff are never limited):
+
+| Level | What the agent sees and can do |
+|---|---|
+| Informational | Listed on the company's Training tab |
+| Warning | A reminder on every company page, linking to the training |
+| Restricted | Company information stays open. Logging calls and booking are refused in the workspace and the API, with the reason |
+| Blocking | Only the company's Training tab and its courses open. Every other company page redirects there; the API answers `403 training_required` |
+
+One company's requirement never limits work for another company.
+
+## Notifications and reminders
+
+| When | Who | Channels |
+|---|---|---|
+| Training given (or it becomes required) | Agent | Required: in-app and email. Optional: in-app only |
+| Required training due within 2 days | Agent | Once per due date |
+| Training overdue | Agent; for required training also whoever gave it | Once per due date |
+| Training completed | Whoever gave it | |
+| Certification expires within 30 days, then expired | Agent | Once each; not repeated if already renewed |
+
+- `training:sweep` runs hourly from the scheduler and sends the reminders.
+- Agents choose their channels and quiet hours under *Account › Notifications*.
+- Statuses never wait for the sweep: they follow from the dates.
+
+## Recommendations
+
+*Recommended* explains each suggestion. In order:
+1. A certification expiring or expired.
+2. A quiz not passed yet.
+3. Courses of a company the agent started serving in the last 30 days.
+4. Optional training a supervisor suggested.
+5. New courses.
+6. Courses other agents complete most.
+
+Only courses the agent may open are suggested.
+
+## Mobile
+
+The same features are available through `/api/v1/agent/training/…`, with the same rules ([api.md](api.md)).
 
 ## Records
 

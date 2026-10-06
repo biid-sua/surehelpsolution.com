@@ -48,7 +48,7 @@ class TrainingAssignment extends Model
 
     protected $fillable = [
         'course_id', 'agent_user_id', 'organization_id', 'rule_id', 'assigned_by_user_id', 'is_required', 'priority', 'status', 'assigned_at',
-        'due_at', 'version', 'required_version', 'cycle_started_at', 'started_at', 'last_accessed_at', 'completed_at', 'completed_version', 'expires_at',
+        'due_at', 'due_soon_notified_at', 'overdue_notified_at', 'version', 'required_version', 'cycle_started_at', 'started_at', 'last_accessed_at', 'completed_at', 'completed_version', 'expires_at',
         'progress_percent', 'best_score', 'seconds_spent', 'extra_attempts', 'revoked_at', 'revoked_by_user_id', 'revoke_reason',
     ];
 
@@ -60,6 +60,8 @@ class TrainingAssignment extends Model
             'is_required' => 'boolean',
             'assigned_at' => 'datetime',
             'due_at' => 'datetime',
+            'due_soon_notified_at' => 'datetime',
+            'overdue_notified_at' => 'datetime',
             'cycle_started_at' => 'datetime',
             'started_at' => 'datetime',
             'last_accessed_at' => 'datetime',

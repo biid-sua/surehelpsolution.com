@@ -87,8 +87,8 @@
                     <section aria-labelledby="sugg-h">
                         <h2 id="sugg-h" class="mb-3 text-base font-semibold text-ink">Recommended</h2>
                         <div class="space-y-3">
-                            @foreach ($suggested as $course)
-                                <x-university.course-card :course="$course" wire:key="sugg-{{ $course->id }}" />
+                            @foreach ($suggested as $pick)
+                                <x-university.course-card :course="$pick['course']" :reason="$pick['reason']" wire:key="sugg-{{ $pick['course']->id }}" />
                             @endforeach
                         </div>
                     </section>
@@ -121,6 +121,15 @@
             </x-ui.table>
         </x-ui.card>
     @elseif ($tab === 'recommended')
+        @if ($picks->isNotEmpty())
+            <h2 class="mb-3 text-base font-semibold text-ink">Picked for you</h2>
+            <div class="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                @foreach ($picks as $pick)
+                    <x-university.course-card :course="$pick['course']" :reason="$pick['reason']" :assignment="null" wire:key="pick-{{ $pick['course']->id }}" />
+                @endforeach
+            </div>
+            <h2 class="mb-3 text-base font-semibold text-ink">All courses open to you</h2>
+        @endif
         <div class="mb-4 flex flex-wrap gap-3">
             <div class="w-full max-w-sm">
                 <label for="u-search" class="sr-only">Search courses</label>
