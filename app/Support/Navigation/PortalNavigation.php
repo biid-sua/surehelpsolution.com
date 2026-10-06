@@ -29,7 +29,7 @@ class PortalNavigation
                 $this->item('Tasks', 'check-circle', 'app.tasks.index', 'app.tasks.*', 'tasks.view'),
                 $this->item('Escalations', 'alert', 'app.escalations.index', 'app.escalations.*', 'escalations.view'),
                 $this->item('Social', 'megaphone', 'app.social.index', 'app.social.*', 'social.view'),
-                $this->soon('Messages', 'chat'),
+                $this->item('Inbox', 'chat', 'app.inbox.index', 'app.inbox.*', 'messages.view'),
                 $this->item('Business', 'building', 'app.business.profile', 'app.business.*', 'organization.view'),
                 $this->item('Billing', 'card', 'app.billing', 'app.billing*', 'billing.view'),
                 $this->item('Team', 'users', 'app.settings.team', 'app.settings.team', 'users.view'),
@@ -84,10 +84,5 @@ class PortalNavigation
     private function item(string $label, string $icon, string $route, string $active, ?string $permission): array
     {
         return compact('label', 'icon', 'route', 'active', 'permission') + ['status' => 'live'];
-    }
-
-    private function soon(string $label, string $icon): array
-    {
-        return ['label' => $label, 'icon' => $icon, 'route' => null, 'active' => '', 'permission' => null, 'status' => 'soon'];
     }
 }

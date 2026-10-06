@@ -18,11 +18,15 @@ return [
         'meta' => [
             'client_id' => env('META_APP_ID'),
             'client_secret' => env('META_APP_SECRET'),
-            'graph_version' => env('META_GRAPH_VERSION', 'v24.0'),
+            'graph_version' => env('META_GRAPH_VERSION', 'v26.0'),
             'scopes' => [
                 'pages_show_list', 'pages_read_engagement', 'pages_manage_posts',
                 'instagram_basic', 'instagram_content_publish', 'business_management',
+                // Inbox (D37): Messenger and Instagram direct messages.
+                'pages_messaging', 'pages_manage_metadata', 'instagram_manage_messages',
             ],
+            // Any long random string; entered in the Meta app's webhook settings (docs/inbox.md).
+            'webhook_verify_token' => env('META_WEBHOOK_VERIFY_TOKEN'),
         ],
         'linkedin' => [
             'client_id' => env('LINKEDIN_CLIENT_ID'),

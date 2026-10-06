@@ -10,14 +10,30 @@ use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\DutyScheduleController;
 use App\Http\Controllers\Api\EscalationController;
+use App\Http\Controllers\Api\InboxController;
 use App\Http\Controllers\Api\KnowledgeController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\SocialPostController;
 use App\Http\Controllers\Api\TaskController;
+use App\Http\Controllers\Chat\WidgetController;
 use App\Http\Controllers\Webhooks\CalendarWebhookController;
+use App\Http\Controllers\Webhooks\MetaWebhookController;
 use Illuminate\Support\Facades\Route;
 
 // Public API routes (no authentication required)
+// Website chat widget (public, D37): each business's widget key, allowed sites and rate limits are checked in the controller.
+Route::get('/chat/widget.js', [WidgetController::class, 'script'])->name('chat.widget-js');
+Route::prefix('chat/{key}')->middleware('throttle:chat')->where(['key' => 'shw_[a-z0-9]{32}'])->group(function () {
+    Route::get('/config', [WidgetController::class, 'config']);
+    Route::get('/messages', [WidgetController::class, 'poll']);
+    Route::post('/messages', [WidgetController::class, 'send']);
+    Route::options('/{any?}', [WidgetController::class, 'options'])->where('any', '.*');
+});
+
+// Messenger and Instagram messages (signed by Meta with the app secret, D37).
+Route::get('/webhooks/meta', [MetaWebhookController::class, 'verify'])->middleware('throttle:60,1');
+Route::post('/webhooks/meta', [MetaWebhookController::class, 'receive'])->middleware('throttle:600,1')->name('webhooks.meta');
+
 // Calendar change notifications (no auth: verified by a per-connection secret, docs/calendar-sync.md).
 Route::prefix('webhooks/calendar')->name('webhooks.calendar.')->middleware('throttle:240,1')->group(function () {
     Route::post('/google', [CalendarWebhookController::class, 'google'])->name('google');
@@ -57,6 +73,9 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
             Route::get('/customers', [CustomerController::class, 'index']);
             Route::get('/customers/{ulid}', [CustomerController::class, 'show']);
         });
+        Route::get('/inbox/conversations', [InboxController::class, 'index'])->middleware('can:messages.view');
+        Route::get('/inbox/conversations/{ulid}', [InboxController::class, 'show'])->middleware('can:messages.view');
+        Route::post('/inbox/conversations/{ulid}/reply', [InboxController::class, 'reply'])->middleware('can:messages.send');
         Route::get('/social/posts', [SocialPostController::class, 'index'])->middleware('can:social.view');
         Route::post('/social/posts/{ulid}/approve', [SocialPostController::class, 'approve'])->middleware('can:social.manage');
         Route::post('/social/posts/{ulid}/request-changes', [SocialPostController::class, 'requestChanges'])->middleware('can:social.manage');

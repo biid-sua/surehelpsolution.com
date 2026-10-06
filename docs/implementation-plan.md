@@ -230,9 +230,9 @@ Added to the requirements on 2026-10-06 at the product owner's request.
 
 | Step | Scope | Depends on | Status |
 |---|---|---|---|
-| M-1 | Inbox: conversations and messages; website chat widget (snippet, per-business key, allowed domains); Facebook Messenger and Instagram DMs (signed webhooks, 24-hour / 7-day human-agent windows); client *Inbox* with filters, reply, assign, close, team notes; customer linking and timeline; `message.received` notifications | Meta App Review for messaging permissions (widget works without it) | in progress |
-| M-2 | AI assistant: `AiProvider` (Claude via the Anthropic PHP SDK); tool registry (business info, knowledge, services, availability, booking, customer details, task, escalate/hand over); modes off / suggest / auto per channel; hand-over rules; limits and usage metering; AI settings page | Anthropic API key | in progress |
-| M-3 | Feedback: helpful / not helpful on AI replies with corrections; corrections become guidelines the owner approves; assistant results | M-2 | in progress |
+| M-1 | Inbox: conversations and messages; website chat widget (snippet, per-business key, allowed domains); Facebook Messenger and Instagram DMs (signed webhooks, 24-hour / 7-day human-agent windows); client *Inbox* with filters, reply, assign, close, team notes; customer linking and timeline; `message.received` notifications | Meta App Review for messaging permissions (widget works without it) | **done** 2026-10-06 (setup: [inbox.md](inbox.md)) |
+| M-2 | AI assistant: `AiProvider` (Claude via the Anthropic PHP SDK); tool registry (business info, knowledge, services, availability, booking, customer details, task, escalate/hand over); modes off / suggest / auto per channel; hand-over rules; limits and usage metering; AI settings page | Anthropic API key | **done** 2026-10-06 (setup: [inbox.md](inbox.md)) |
+| M-3 | Feedback: helpful / not helpful on AI replies with corrections; corrections become guidelines the owner approves; assistant results | M-2 | **done** 2026-10-06 (setup: [inbox.md](inbox.md)) |
 
 ## 5. Later phases (outline, in spec order)
 

@@ -31,7 +31,7 @@ class Appointment extends Model
 {
     use BelongsToOrganization, StoresUtc;
 
-    public const SOURCES = ['portal', 'agent', 'api', 'chatbot', 'calendar'];
+    public const SOURCES = ['portal', 'agent', 'api', 'chatbot', 'calendar', 'ai'];
 
     protected $fillable = [
         'organization_id', 'customer_id', 'service_id', 'location_id', 'call_log_id', 'title', 'starts_at', 'ends_at',

@@ -11,6 +11,7 @@
     "require": {
         "php": "^8.2",
         "ext-zip": "*",
+        "anthropic-ai/sdk": "^0.54.0",
         "bacon/bacon-qr-code": "^3.0",
         "barryvdh/laravel-dompdf": "^3.1",
         "giggsey/libphonenumber-for-php-lite": "^9.0",

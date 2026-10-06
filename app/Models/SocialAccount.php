@@ -30,7 +30,7 @@ class SocialAccount extends Model
 
     protected $fillable = [
         'organization_id', 'network', 'external_id', 'name', 'handle', 'avatar_url', 'access_token', 'refresh_token',
-        'token_expires_at', 'meta', 'is_enabled', 'status', 'last_error', 'connected_by_user_id',
+        'token_expires_at', 'meta', 'is_enabled', 'status', 'last_error', 'connected_by_user_id', 'messaging_enabled',
     ];
 
     protected $hidden = ['access_token', 'refresh_token'];
@@ -44,6 +44,7 @@ class SocialAccount extends Model
             'token_expires_at' => 'datetime',
             'meta' => 'array',
             'is_enabled' => 'boolean',
+            'messaging_enabled' => 'boolean',
         ];
     }
 

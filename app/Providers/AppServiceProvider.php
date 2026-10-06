@@ -7,6 +7,8 @@ use App\Http\Middleware\ResolveOrganization;
 use App\Http\Middleware\RoleMiddleware;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\Ai\Contracts\AiProvider;
+use App\Services\Ai\Providers\ClaudeProvider;
 use App\Services\Billing\BillingSettings;
 use App\Services\Billing\Entitlements;
 use App\Services\Billing\Gateways\PaymentGateway;
@@ -39,6 +41,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(BusinessRules::class);
         $this->app->scoped(BillingSettings::class);
         $this->app->scoped(Entitlements::class);
+        // AI vendor behind one interface (spec §33, D38).
+        $this->app->singleton(AiProvider::class, ClaudeProvider::class);
         $this->app->bind(PaymentGateway::class, fn () => match (config('billing.gateway')) {
             default => $this->app->make(PayoneerGateway::class),
         });
@@ -76,6 +80,12 @@ class AppServiceProvider extends ServiceProvider
         // General API budget (spec §50): per user when signed in, per IP otherwise.
         RateLimiter::for('api', fn (Request $request) => Limit::perMinute(120)
             ->by($request->user()?->getAuthIdentifier() ? 'user:'.$request->user()->getAuthIdentifier() : 'ip:'.$request->ip()));
+
+        // Website chat (public): per visitor IP and widget, plus a ceiling per widget so one site can't flood a business.
+        RateLimiter::for('chat', fn (Request $request) => [
+            Limit::perMinute(20)->by('chat:'.$request->ip().':'.$request->route('key')),
+            Limit::perMinute(300)->by('chat-widget:'.$request->route('key')),
+        ]);
 
         RateLimiter::for('login', function (Request $request) {
             $email = Str::lower((string) $request->input('email'));

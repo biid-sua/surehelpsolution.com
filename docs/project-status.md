@@ -28,8 +28,12 @@ _As of 2026-10-06. Detailed tracker: [implementation-plan.md](implementation-pla
 - **Shift requests and coverage (D28):** agents ask to hand over a shift or for time off; schedulers approve or decline, and a grid shows hours with nobody on shift.
 - **One UI (D23):** the product now has a single version of every screen. The old admin and agent pages were rebuilt in the new design and deleted.
 - **Social publishing (G-1, D33):** Facebook, Instagram, LinkedIn and Google Business Profile posts, scheduled up to 12 months ahead with owner approval ([social.md](social.md)). Requirements for AI content with SEO and websites added to the spec (§41A–41C).
+- **Inbox and AI assistant (M-1 to M-3, D37–D39):**
+  - Website chat, Messenger and Instagram messages arrive in one inbox, with replies, notes and assignment.
+  - An AI assistant that answers (off / suggest / auto per channel), books appointments under the same rules as agents, creates follow-ups and hands over to a person.
+  - Feedback on AI replies becomes guidelines the owner approves ([inbox.md](inbox.md)).
 
-303 automated tests pass.
+329 automated tests pass.
 
 ---
 
@@ -110,6 +114,13 @@ _As of 2026-10-06. Detailed tracker: [implementation-plan.md](implementation-pla
 |---|---|
 | G-1 Social publishing | Businesses connect Facebook Pages, Instagram, LinkedIn and Google Business Profile, then write one post with optional per-account text, photos and Google offer/event details. They publish now or schedule up to 12 months ahead in their own timezone, with per-network checks and previews. Owner approval covers posts by managers and the SureHelp team. Includes a content calendar, media library, retries, alerts for lost access and failed posts, and mobile API approval. Each network goes live after its app review ([social.md](social.md)). |
 
+### Inbox and AI assistant (2026-10-06, decisions D37–D39)
+| Step | What it delivered |
+|---|---|
+| M-1 Inbox | One inbox for website chat (embeddable widget, limited to the business's sites), Facebook Messenger and Instagram DMs (signed webhooks; Meta's 24-hour and 7-day human-agent windows enforced). Replies, team notes, assignment, close/reopen, customer linking and timeline, "Needs you" notifications, mobile API |
+| M-2 AI assistant | Claude (official Anthropic SDK) behind a provider interface. Answers from the business's own information, checks real availability, books appointments under agent rules, saves customer details, creates follow-ups and hands over (escalation) when it should. Modes off / suggest / auto per channel; steps back when a person replies; limits, logging and an instant off switch |
+| M-3 Feedback | 👍 / 👎 on AI replies with "what should it have said"; corrections become guidelines the owner approves; 30-day assistant results |
+
 ### Merge of the cloud session (2026-10-04)
 - Branch `claude/phase-2-development-1yiwc2` merged into `develop` and pushed.
 - Two deploy-blocking bugs found by rehearsing the production upgrade on MariaDB and fixed: the appointments table couldn't be created on MySQL/MariaDB, and an older data backfill read a table that a later migration creates. Full upgrade and rollback now verified on a copy of real data.
@@ -122,7 +133,7 @@ _As of 2026-10-06. Detailed tracker: [implementation-plan.md](implementation-pla
 | Item | Notes |
 |---|---|
 | Content-Security-Policy header | Only possible after the public website stops loading scripts from CDNs (its redesign) |
-| G-3 Connect a website | Ownership check, embed snippet (booking, click-to-call, lead form), SEO health check |
+| G-3 Connect a website | The chat snippet exists (M-1). Still to add: ownership check, booking and click-to-call in the same snippet, SEO health check |
 
 ### B. Needs action from you (operations)
 | Item | Notes |
@@ -145,8 +156,8 @@ _As of 2026-10-06. Detailed tracker: [implementation-plan.md](implementation-pla
 | Mobile push notifications | Firebase service-account key (FCM v1) | Days |
 | Real-time updates and a background worker that keeps running (Reverb, Horizon) | Hosting move off cPanel (D6: Laravel Cloud / Forge) | Days |
 | Automatic card payments (billing works today with Payoneer and manual confirmation) | Payoneer Checkout (Hong Kong entity, ~$20k/month volume) or Stripe (US entity); tax advice | Weeks |
-| G-2 AI content studio (Phase 6 starts here, D34) | Anthropic API key and commercial terms / DPA in the Anthropic Console | Days |
-| Publishing to Facebook and Instagram | Meta App Review (`pages_manage_posts`, Instagram content publishing) and Business Verification (D33) | **Weeks, start now** |
+| **AI assistant going live (built)** and G-2 AI content studio | Anthropic API key, commercial terms and DPA in the Anthropic Console (`ANTHROPIC_API_KEY`, [inbox.md](inbox.md)) | Days |
+| Publishing to, and messages from, Facebook and Instagram | Meta App Review (`pages_manage_posts`, Instagram content publishing, **`pages_messaging`, `pages_manage_metadata`, `instagram_manage_messages`**), Business Verification, webhook set-up (D33, D37) | **Weeks, start now** |
 | Publishing to LinkedIn Company Pages | LinkedIn Community Management API access: registered company, verified Page, two-tier review with a screencast | 1–4 weeks per tier |
 | Google Business Profile posts | Business Profile API access request | Days to weeks |
 | TikTok public posts | TikTok Content Posting audit (posts stay private until then) | Weeks |

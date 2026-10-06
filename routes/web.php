@@ -56,6 +56,9 @@ use App\Livewire\Client\Customers\Index as CustomerIndex;
 use App\Livewire\Client\Customers\Show as CustomerShow;
 use App\Livewire\Client\Dashboard as ClientDashboard;
 use App\Livewire\Client\Escalations\Index as EscalationsIndex;
+use App\Livewire\Client\Inbox\Assistant as InboxAssistant;
+use App\Livewire\Client\Inbox\Channels as InboxChannels;
+use App\Livewire\Client\Inbox\Index as InboxIndex;
 use App\Livewire\Client\Results as ClientResults;
 use App\Livewire\Client\Settings\Notifications as NotificationSettings;
 use App\Livewire\Client\Settings\Privacy as PrivacySettings;
@@ -148,6 +151,13 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
     Route::middleware('can:integrations.manage')->whereIn('provider', ['google', 'microsoft'])->group(function () {
         Route::get('/integrations/calendar/{provider}/connect', [CalendarOAuthController::class, 'redirect'])->name('integrations.calendar.connect');
         Route::get('/integrations/calendar/{provider}/callback', [CalendarOAuthController::class, 'callback'])->name('integrations.calendar.callback');
+    });
+    // Inbox and AI assistant (spec §26, §26A, D37–D39)
+    Route::middleware('can:messages.view')->group(function () {
+        Route::get('/inbox', InboxIndex::class)->name('inbox.index');
+        Route::get('/inbox/channels', InboxChannels::class)->name('inbox.channels');
+        Route::get('/inbox/assistant', InboxAssistant::class)->middleware('can:ai.view')->name('inbox.assistant');
+        Route::get('/inbox/{conversation}', InboxIndex::class)->name('inbox.show');
     });
     // Social media (spec §41, D33)
     Route::middleware('can:social.view')->group(function () {

@@ -96,6 +96,9 @@ A client user only ever sees their own business. The business is resolved on the
 | POST | `/client/escalations/{id}/resolve` | `resolution_notes` required (422 without) |
 | PATCH | `/client/tasks/{id}` | Permission `tasks.update`. Any of the POST fields, plus `status`. Completing records who and when |
 | GET / PUT | `/client/profile` | `name`, `phone` editable. GET also returns `data.organization` |
+| GET | `/client/inbox/conversations?filter=attention\|ai\|open\|closed\|all&per_page` | Permission `messages.view`. Default `attention` (open and needing a person), latest first. `data.conversations[]`: `id` (ULID), `channel` (`web_chat`, `facebook`, `instagram`), `name`, `customer_id`, `status` (`open`, `closed`), `needs_human`, `ai_handling`, `unread`, `last_message_at`, `can_reply_until` (Meta channels: 7 days after the customer's last message). Paged like customers |
+| GET | `/client/inbox/conversations/{id}` | `data.conversation` and `data.messages[] {id, direction (in/out), from (customer/user/ai/system), author, text, attachments[], is_note, status (received/draft/pending/sent/failed), error, at}`. Marks it read |
+| POST | `/client/inbox/conversations/{id}/reply` | Permission `messages.send`. `text` (required), `note` (team-only note). **422** when the channel's window has closed or the channel refused it (`errors.text`). Replying pauses the AI in that conversation (docs/inbox.md) |
 | GET | `/client/social/posts?status=upcoming\|awaiting_approval\|published\|failed\|all&per_page` | Permission `social.view`. Default `upcoming` (waiting, scheduled, publishing), soonest first. `data.posts[]`: `id` (ULID), `status` (`draft`, `in_review`, `scheduled`, `publishing`, `published`, `partly_published`, `failed`, `cancelled`), `status_label`, `body`, `link_url`, `scheduled_at`, `published_at`, `source` (`manual`, `team`, `ai`), `author`, `review_note`, `accounts[] {network, name, status, url, error}`, `media[] {url, alt}` (signed links, valid 2 hours), `web_url`. Paged like customers. Tokens are never included |
 | POST | `/client/social/posts/{id}/approve` | Permission `social.manage` and **business owner** (403 otherwise). Posts waiting for approval only (422 otherwise) |
 | POST | `/client/social/posts/{id}/request-changes` | Same rules. `note` required: the post returns to draft with the note |
@@ -123,6 +126,7 @@ A staff member without the permission gets `403`. Dashboard: `dashboard.view`. A
 
 | Date | Change |
 |---|---|
+| 2026-10-06 (M-1) | `/client/inbox/conversations` (list, show, reply). Public website chat endpoints `/api/chat/{key}/…` and the Meta webhook `/api/webhooks/meta` are outside v1 (docs/inbox.md). |
 | 2026-10-06 (G-1) | `/client/social/posts` (list), `/approve`, `/request-changes` (G-1, D33). |
 | 2026-10-08 | `/client/knowledge`, `/client/rules` (read-only). |
 | 2026-10-07 | `/client/appointments` (list, book, show, move, status) and `/client/availability`. |

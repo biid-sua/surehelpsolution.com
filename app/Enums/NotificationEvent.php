@@ -35,7 +35,7 @@ enum NotificationEvent: string
      */
     public static function available(): array
     {
-        return [self::CallLogged, self::CallMissed, self::FollowUpCreated, self::FollowUpOverdue, self::TaskAssigned, self::EscalationCreated, self::AppointmentCreated, self::AppointmentUpdated, self::AppointmentCancelled, self::IntegrationDisconnected, self::InvoiceIssued, self::PaymentReceived, self::PaymentFailed, self::UsageAlert, self::MonthlyReport, self::SocialApprovalRequested, self::SocialPostFailed, self::SocialAccountDisconnected];
+        return [self::CallLogged, self::CallMissed, self::FollowUpCreated, self::FollowUpOverdue, self::TaskAssigned, self::EscalationCreated, self::AppointmentCreated, self::AppointmentUpdated, self::AppointmentCancelled, self::IntegrationDisconnected, self::InvoiceIssued, self::PaymentReceived, self::PaymentFailed, self::UsageAlert, self::MonthlyReport, self::SocialApprovalRequested, self::SocialPostFailed, self::SocialAccountDisconnected, self::MessageReceived];
     }
 
     public function isAvailable(): bool
@@ -89,6 +89,7 @@ enum NotificationEvent: string
             self::UsageAlert => 'When you\'ve used 80% and 100% of the calls your plan includes.',
             self::EscalationCreated => 'Something needs you now. Urgent escalations always reach you in the app and by email.',
             self::SocialApprovalRequested => 'A post written by your team or ours is ready for you to approve.',
+            self::MessageReceived => 'A customer wrote to you and a person needs to answer (not sent while your AI assistant is handling it).',
             self::SocialPostFailed => 'A scheduled post couldn\'t be published to one or more accounts.',
             self::SocialAccountDisconnected => 'We lost access to a connected social account.',
             default => '',
@@ -121,6 +122,7 @@ enum NotificationEvent: string
             self::TaskAssigned, self::FollowUpOverdue => 'tasks.view',
             self::AppointmentCreated, self::AppointmentUpdated, self::AppointmentCancelled => 'appointments.view',
             self::SocialApprovalRequested, self::SocialPostFailed, self::SocialAccountDisconnected => 'social.manage',
+            self::MessageReceived => 'messages.view',
             default => null,
         };
     }

@@ -259,7 +259,7 @@ class ClientPortalTest extends TestCase
         $this->actingAs($admin)->get(route('app.calls.index'))->assertForbidden();
     }
 
-    public function test_navigation_shows_core_items_and_coming_soon(): void
+    public function test_navigation_shows_core_items_all_live(): void
     {
         [$client] = $this->client();
 
@@ -268,8 +268,9 @@ class ClientPortalTest extends TestCase
             ->assertSee('Calls')
             ->assertSee('Calendar')
             ->assertSee('Customers')
-            ->assertSee('Soon')
-            ->assertDontSee('Social Media')
+            ->assertSee('Inbox')
+            ->assertSee('Social')
+            ->assertDontSee('Soon')
             ->assertSee('Skip to content');
     }
 }

@@ -15,7 +15,8 @@ $origins = array_filter(array_map('trim', explode(',', (string) env('CORS_ALLOWE
 
 return [
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    // The website chat widget (api/chat/*) checks each business's allowed sites itself (D37).
+    'paths' => ['api/v1/*', 'sanctum/csrf-cookie'],
 
     'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
