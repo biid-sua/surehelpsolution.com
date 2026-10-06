@@ -234,6 +234,17 @@ Added to the requirements on 2026-10-06 at the product owner's request.
 | M-2 | AI assistant: `AiProvider` (Claude via the Anthropic PHP SDK); tool registry (business info, knowledge, services, availability, booking, customer details, task, escalate/hand over); modes off / suggest / auto per channel; hand-over rules; limits and usage metering; AI settings page | Anthropic API key | **done** 2026-10-06 (setup: [inbox.md](inbox.md)) |
 | M-3 | Feedback: helpful / not helpful on AI replies with corrections; corrections become guidelines the owner approves; assistant results | M-2 | **done** 2026-10-06 (setup: [inbox.md](inbox.md)) |
 
+## 4i. Agent assignments and Agent University (spec §20A–20B, D40–D43)
+
+Requirements: [requirements/agent-university-and-assignments.md](requirements/agent-university-and-assignments.md). The brief's 12 phases are delivered in four steps:
+
+| Step | Brief phases | Scope | Status |
+|---|---|---|---|
+| A-1 | 1–2 | Assignment lifecycle on `agent_assignments` (status, dates, who, reason, history), current-assignment access everywhere, 404 for unassigned companies, auto-assignment off, assignment actions with checks, sweep for scheduled/expired, notifications, audit; cross-tenant tests | in progress |
+| A-2 | 3–4 | *My Companies*; company context with switcher and company pages (customers, appointments, messages, tasks, training) for agents; supervisor *Team* (agent list and profile) and *Assignments* (assign with pre-checks, schedule, suspend, resume, end, history); agent API for companies | planned |
+| A-3 | 5–9 | Agent University: categories, learning paths, versioned courses, modules, lessons of every type, private files, assessments and attempts, assignment rules and per-agent assignments, progress, certificates with expiry, learner pages, training management for supervisors, supervisor dashboard | planned |
+| A-4 | 10–12 | Training notifications and sweeps (due soon, overdue, expiring, expired, recertification), company readiness and enforcement levels, automatic company training on assignment, recommendations, training API, full security test suite | planned |
+
 ## 5. Later phases (outline, in spec order)
 
 | Phase | Scope (spec §) | First steps | Main external dependency |

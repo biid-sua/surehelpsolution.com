@@ -419,6 +419,54 @@ Start these early. The code can be built and tested with your own accounts befor
 - **No retraining:** nothing is fine-tuned, and feedback never changes behaviour without a person approving it.
 **Why:** Businesses can correct the assistant in their own words and see it improve the next day. Approval stops one bad correction from spreading.
 
+## D40 — Assignments have a lifecycle; access follows only current ones (2026-10-06)
+**Decision:**
+- **One table, extended:** the existing `agent_assignments` table gains status (scheduled, active, suspended, ended, revoked), start and end, who assigned and who ended it, reason, notes and type. Rows are never deleted, so the history stays complete. There is no second assignment table.
+- **"Current" is decided in the query:** status active or scheduled, started, and not past its end. Access is correct to the second even if the scheduler runs late; the scheduled sweep only updates labels and sends notices.
+- **Every access check uses current assignments.** The single relation `User::assignedOrganizations()` now means "currently assigned", so every existing check became strict at once: permissions, the agent workspace, client lists, call logging, quality reviews and the API.
+- **No hints:** an unassigned company and a company that doesn't exist give the same answer (404, or "not found" in forms and the API).
+- **Automatic assignment is switched off** (`TENANCY_AUTO_ASSIGN_AGENTS=false`). Assignments that already exist from the migration or auto-assignment stay active, so service doesn't stop overnight. The assignments screen flags them "Assigned automatically, please review" until a supervisor confirms or ends them.
+- **The brief's `company.*` permissions are not duplicated.** They are the existing names, checked per company: `organization.view`, `customers.view`, `calls.view`, `appointments.view`, `messages.view`, `calendar.view`.
+**Why:** The brief requires strict, auditable assignment. Extending the table we already have keeps one source of truth, and deciding "current" in the query means no security gap if a scheduled job is late.
+
+## D41 — Who manages assignments and training (2026-10-06)
+**Decision:**
+- **Assignments:**
+  - Platform admins and operations managers manage assignments for every company.
+  - **Agent supervisors** manage them only for companies they are currently assigned to themselves, through the existing "assigned" role scope.
+- **Training:**
+  - Supervisors create, edit and assign training for those companies.
+  - Platform-wide courses and certificate management stay with platform roles.
+- **Business owners, managers and staff never get** assignment or training-management permissions: they are excluded explicitly.
+- **Where the screens live:** in the agent portal (*Team*, *Assignments*, *Training management*). The admin console's company page uses the same actions.
+**Why:** It follows least privilege. A supervisor runs their own accounts, and a client can't move SureHelp's staff around.
+
+## D42 — Agent University: structure, versions and records (2026-10-06)
+**Decision:**
+- **Structure:** learning path → course → module → lesson. A lesson has a type (video, PDF, document, presentation, audio, text, external resource, quiz). A quiz lesson holds an assessment with single-answer, multiple-answer, true/false and scenario questions, a passing score, an attempt limit and an optional random subset.
+- **Courses:** platform-wide, or owned by one company (company-specific).
+- **Versions:**
+  - Authors edit a draft; *Publish* creates numbered version N with a change note.
+  - If the change is marked **"retake required"**, earlier completions become outdated and those agents' training reopens.
+  - Progress, attempts and certificates always record the version they were for; nothing is overwritten.
+- **Assignments are stored per agent:** one `training_assignments` row each, created from assignment rules (everyone, a role, a company's agents, or one agent). Status, due dates and reporting are per person. Team assignment waits for a team model, which doesn't exist yet.
+- **Progress is server-side:** per lesson and per attempt.
+- **Certificates:** a course can issue one, with a unique ID, a validity period and recertification.
+- **Files:** stored privately and served through signed links. Video can be uploaded or linked (YouTube / Vimeo).
+- **Audit:** the existing audit log is reused; there is no separate training audit table.
+**Why:** It covers every content type in the brief without being built around video, and keeps the history that compliance-style training needs.
+
+## D43 — Company readiness and how it's enforced (2026-10-06)
+**Decision:**
+- **Enforcement levels:** each required company course has one:
+  - **informational:** shown only;
+  - **warning** (default): a banner in the company workspace;
+  - **restricted:** the agent can see company information and training but can't log calls or book;
+  - **blocking:** only the company's training is available.
+- **Where it's enforced:** on the server, in the same place as assignment access. "Ready" means every required course for that company (and every platform or role requirement) is completed, on the current required version, and not expired.
+- **On a new assignment:** the agent automatically gets any required company training they're missing, with that requirement's due period. The supervisor sees readiness and a warning before confirming.
+**Why:** The brief asks for configurable enforcement rather than one blocking rule. Companies differ, and a hard block everywhere would stop service on day one.
+
 ## D10 — Telephony
 **Decision:** **Twilio** (Programmable Voice, TaskRouter, Voice JS SDK, Messaging) behind a `TelephonyProvider` interface, so the vendor can be swapped. Calls stay manually logged until then, but the Phase 2 `calls` table is designed for provider data (call SID, direction, timings, recording/transcript references). Telephony becomes **Phase 3b**, right after Calendar, because live call handling is the core of a receptionist product.
 **Action needed from you (long lead time):** create a Twilio account and start **A2P 10DLC** brand and campaign registration now. US SMS cannot go live without it, and approval takes weeks.

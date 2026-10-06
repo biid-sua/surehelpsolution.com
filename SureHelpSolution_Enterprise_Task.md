@@ -1104,6 +1104,40 @@ on a call.
 
 ------------------------------------------------------------------------
 
+# 20A. AGENT COMPANY ASSIGNMENT AND STRICT ACCESS CONTROL
+
+_Added 2026-10-06. Full requirements: docs/requirements/agent-university-and-assignments.md §2–3. Decisions D40–D41._
+
+An agent may only access companies explicitly assigned to them by an
+authorized supervisor or administrator, enforced server-side for every
+company-scoped query, nested resource and API endpoint (no reliance on
+the UI). Assignments have a lifecycle (scheduled, active, suspended,
+ended, revoked) with dates, who assigned them, reasons and full history.
+Agents work in one clearly shown company context at a time and switch
+only between their active assignments. Supervisors manage assignments
+in an "Agent Assignments" module with readiness, workload and training
+checks before confirming. Unauthorized companies are indistinguishable
+from non-existent ones.
+
+------------------------------------------------------------------------
+
+# 20B. AGENT UNIVERSITY
+
+_Added 2026-10-06. Full requirements: docs/requirements/agent-university-and-assignments.md §1, §3. Decisions D42–D43._
+
+The agents' learning platform: learning paths, versioned courses with
+modules and lessons of any content type (video, PDF, document,
+presentation, audio, text, external resource), quizzes and assessments,
+certifications with expiry and recertification, required and optional
+training assigned to an agent, a role, a company's agents or everyone,
+due dates, server-side progress, supervisor dashboards, notifications
+and recommendations. Company-specific training is assigned
+automatically when an agent is assigned to that company, and each
+company decides how strictly missing training is enforced
+(informational, warning, restricted, blocking).
+
+------------------------------------------------------------------------
+
 # 22. CLIENT KNOWLEDGE BASE
 
 Create a structured knowledge base.
