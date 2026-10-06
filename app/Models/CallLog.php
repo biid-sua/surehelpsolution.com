@@ -6,6 +6,7 @@ use App\Enums\CallOwnershipSource;
 use App\Enums\OutcomeCategory;
 use App\Models\Concerns\BelongsToOrganization;
 use App\Services\Calls\CallOutcomes;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -107,6 +108,22 @@ class CallLog extends Model
         'call_time' => 'datetime:H:i',
         'ownership_source' => CallOwnershipSource::class,
     ];
+
+    /**
+     * Calls an agent may still see (D40): those in companies they currently serve, plus calls with no
+     * company. Platform admins see everything. Applied in the query, never after loading.
+     *
+     * @param  Builder<CallLog>  $query
+     */
+    public function scopeVisibleToAgent(Builder $query, User $user): void
+    {
+        if ($user->isAdmin()) {
+            return;
+        }
+
+        $query->where(fn (Builder $q) => $q->whereNull('call_logs.organization_id')
+            ->orWhereIn('call_logs.organization_id', $user->assignedOrganizations()->select('organizations.id')));
+    }
 
     /**
      * @return BelongsTo<Customer, $this>

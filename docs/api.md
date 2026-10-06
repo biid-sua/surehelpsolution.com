@@ -50,7 +50,7 @@ Base URL: `https://surehelpsolution.com/api/v1`. All requests and responses are 
 - Every sign-in, sign-out, token refresh and device revocation is recorded in the audit log.
 
 ### Tenancy
-A client user only ever sees their own business. The business is resolved on the server, so no endpoint accepts an organization ID. Agents can only act for businesses they are assigned to.
+A client user only ever sees their own business. The business is resolved on the server, so no endpoint accepts an organization ID. Agents can only act for businesses they are currently assigned to (D40). A business they aren't assigned to answers exactly like one that doesn't exist: `404`, or `422 "The selected client was not found."` on `client_id`.
 
 ---
 
@@ -108,12 +108,21 @@ A client user only ever sees their own business. The business is resolved on the
 |---|---|---|
 | GET | `/agent/dashboard/kpi?period=today\|weekly\|monthly` | `data.kpi_data` |
 | GET | `/agent/dashboard/performance` | `data.performance_data` |
-| GET | `/agent/call-logs?status&limit&offset` | Own calls |
+| GET | `/agent/call-logs?status&limit&offset` | Own calls, for businesses the agent serves now |
 | POST | `/agent/call-logs` | Permission `calls.create` **in the client's business** (else 422 on `client_id`). `call_outcome` must be one of that business's active outcomes (else 422 on `call_outcome`). Optional `escalation_type` / `escalation_priority` for outcomes in the escalated category (default `urgent_issue`, priority from the type). Callback outcomes create a task; escalated outcomes raise an escalation. Notifies the business |
-| PUT | `/agent/call-logs/{id}` | Own calls, while still assigned to that business |
+| PUT | `/agent/call-logs/{id}` | Own calls, while still assigned to that business. Anything else is `404` |
 | GET | `/agent/clients` | Only businesses the agent is assigned to. Each client carries `call_outcomes: [{key, label, category}]`, the pick-list for that business (added P2-4a, additive) |
 | PUT | `/agent/call-logs/{id}` with a new `call_outcome` | Must be one of the call's business's active outcomes (else 422 on `call_outcome`) |
 | GET | `/duty-schedules`, `/duty-schedules/calendar` | Own shifts; staff with `users.view` see everyone's (and may pass `agent_id`) |
+| GET | `/agent/companies` | Businesses the agent is assigned to now: `data.companies[]` with `id` (ULID), `name`, `timezone`, `assignment {status, type, starts_at, ends_at}`. Platform staff see every business |
+| GET | `/agent/companies/{id}` | `data.company` with `appointments_today`. Permission `organization.view` there |
+| GET | `/agent/companies/{id}/customers?search&per_page` | Paged (`meta.page`, `per_page`, `total`, `last_page`). `customers.view` |
+| GET | `/agent/companies/{id}/customers/{customer}` | Looked up inside that business only. `customers.view` |
+| GET | `/agent/companies/{id}/appointments` | Next 14 days. `appointments.view` |
+| GET | `/agent/companies/{id}/calls?per_page` | Paged. `calls.view` |
+| GET | `/agent/companies/{id}/conversations` | Open conversations. `messages.view` |
+
+Every `/agent/companies/{id}/…` endpoint answers `404` when the business doesn't exist, the agent isn't currently assigned (scheduled, suspended, ended or revoked assignments give nothing), or the agent lacks the permission there.
 
 ### Admin — role `admin`, then each endpoint's permission (D32)
 A staff member without the permission gets `403`. Dashboard: `dashboard.view`. Analytics and agent performance: `reports.view`. Users: `users.view` (GET), `users.create` (POST), `users.update` (PUT), `users.delete` (DELETE). Call logs: `calls.view`. Duty schedules: `users.view` to read, `users.update` to create, change, delete or check conflicts.
@@ -126,6 +135,7 @@ A staff member without the permission gets `403`. Dashboard: `dashboard.view`. A
 
 | Date | Change |
 |---|---|
+| 2026-10-06 (A-1/A-2) | `/agent/companies` and its customers, appointments, calls and conversations. Unassigned businesses now answer `404` (was `403`) on `PUT /agent/call-logs/{id}`; `/agent/call-logs` lists only calls for businesses the agent serves now (D40). |
 | 2026-10-06 (M-1) | `/client/inbox/conversations` (list, show, reply). Public website chat endpoints `/api/chat/{key}/…` and the Meta webhook `/api/webhooks/meta` are outside v1 (docs/inbox.md). |
 | 2026-10-06 (G-1) | `/client/social/posts` (list), `/approve`, `/request-changes` (G-1, D33). |
 | 2026-10-08 | `/client/knowledge`, `/client/rules` (read-only). |

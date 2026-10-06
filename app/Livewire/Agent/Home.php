@@ -64,7 +64,7 @@ class Home extends Component
                 ->whereBetween('starts_at', [now()->subHour(), now()->addDay()])
                 ->with('organization:id,ulid,name,timezone')->orderBy('starts_at')->limit(8)->get(),
             'myCallsToday' => CallLog::withoutGlobalScopes()->where('user_id', $user->id)->where('created_at', '>=', now()->startOfDay())->count(),
-            'recentCalls' => CallLog::withoutGlobalScopes()->where('user_id', $user->id)->with('organization:id,ulid,name')->latest('created_at')->limit(5)->get(),
+            'recentCalls' => CallLog::withoutGlobalScopes()->where('user_id', $user->id)->visibleToAgent($user)->with('organization:id,ulid,name')->latest('created_at')->limit(5)->get(),
             'openStatus' => TaskStatus::Open,
         ]);
     }

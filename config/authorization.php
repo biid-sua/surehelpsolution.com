@@ -40,9 +40,22 @@ $all = [
     'audit_logs.view',
     'users.impersonate',
     'qa.review',
+    // Agent workforce (D40–D43): company assignments and Agent University.
+    'agent_assignments.view', 'agent_assignments.create', 'agent_assignments.update', 'agent_assignments.revoke',
+    'agent_university.view', 'agent_university.learn', 'agent_university.complete', 'agent_university.assessment',
+    'training.create', 'training.update', 'training.publish', 'training.assign', 'training.view_progress', 'training.manage_certifications',
 ];
 
 $except = fn (array $excluded) => array_values(array_diff($all, $excluded));
+
+// SureHelp's own workforce: never granted to a client business's people (D41).
+$workforce = [
+    'agent_assignments.view', 'agent_assignments.create', 'agent_assignments.update', 'agent_assignments.revoke',
+    'agent_university.view', 'agent_university.learn', 'agent_university.complete', 'agent_university.assessment',
+    'training.create', 'training.update', 'training.publish', 'training.assign', 'training.view_progress', 'training.manage_certifications',
+];
+
+$learner = ['agent_university.view', 'agent_university.learn', 'agent_university.complete', 'agent_university.assessment'];
 
 $agentWork = [
     'dashboard.view', 'organization.view',
@@ -96,12 +109,14 @@ return [
         'agent_supervisor' => [
             'label' => 'Agent Supervisor',
             'scope' => 'assigned',
-            'permissions' => array_merge($agentWork, ['calls.recording.view', 'knowledge_base.manage', 'reports.view', 'qa.review']),
+            'permissions' => array_merge($agentWork, $learner, ['calls.recording.view', 'knowledge_base.manage', 'reports.view', 'qa.review',
+                'agent_assignments.view', 'agent_assignments.create', 'agent_assignments.update', 'agent_assignments.revoke',
+                'training.create', 'training.update', 'training.publish', 'training.assign', 'training.view_progress']),
         ],
         'agent' => [
             'label' => 'Agent',
             'scope' => 'assigned',
-            'permissions' => $agentWork,
+            'permissions' => array_merge($agentWork, $learner),
         ],
     ],
 
@@ -111,11 +126,11 @@ return [
     'organization_roles' => [
         'owner' => [
             'label' => 'Business Owner',
-            'permissions' => $except(['audit_logs.view', 'users.impersonate', 'qa.review']),
+            'permissions' => $except(['audit_logs.view', 'users.impersonate', 'qa.review', ...$workforce]),
         ],
         'manager' => [
             'label' => 'Business Manager',
-            'permissions' => $except(['billing.manage', 'subscriptions.manage', 'users.delete', 'organization.update', 'audit_logs.view', 'users.impersonate', 'qa.review']),
+            'permissions' => $except(['billing.manage', 'subscriptions.manage', 'users.delete', 'organization.update', 'audit_logs.view', 'users.impersonate', 'qa.review', ...$workforce]),
         ],
         'staff' => [
             'label' => 'Staff',

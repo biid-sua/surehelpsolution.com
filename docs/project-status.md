@@ -121,6 +121,12 @@ _As of 2026-10-06. Detailed tracker: [implementation-plan.md](implementation-pla
 | M-2 AI assistant | Claude (official Anthropic SDK) behind a provider interface. Answers from the business's own information, checks real availability, books appointments under agent rules, saves customer details, creates follow-ups and hands over (escalation) when it should. Modes off / suggest / auto per channel; steps back when a person replies; limits, logging and an instant off switch |
 | M-3 Feedback | 👍 / 👎 on AI replies with "what should it have said"; corrections become guidelines the owner approves; 30-day assistant results |
 
+### Agent assignments (2026-10-06, decisions D40–D43)
+| Step | What it delivered |
+|---|---|
+| A-1 Strict assignments | Each agent–business assignment has a status (scheduled, active, suspended, ended, revoked), dates, who assigned or ended it and why, with full history. Access is checked on the server for every page, action and API call. A business an agent doesn't serve looks exactly like one that doesn't exist. Automatic assignment is off, and existing automatic ones are flagged for review. A five-minute sweep starts scheduled assignments and ends expired ones. Agents are notified, and every change is audited. Cross-company security tests |
+| A-2 Agent portal | *My companies*, with a company switcher and each company's customers, appointments, messages and tasks. Supervisors get *Team* (agents and their companies) and *Assignments* (checks before assigning: shifts, workload, open tasks; then schedule, suspend, resume, end, reassign, history). Agent API for companies ([api.md](api.md)) |
+
 ### Merge of the cloud session (2026-10-04)
 - Branch `claude/phase-2-development-1yiwc2` merged into `develop` and pushed.
 - Two deploy-blocking bugs found by rehearsing the production upgrade on MariaDB and fixed: the appointments table couldn't be created on MySQL/MariaDB, and an older data backfill read a table that a later migration creates. Full upgrade and rollback now verified on a copy of real data.
@@ -140,7 +146,7 @@ _As of 2026-10-06. Detailed tracker: [implementation-plan.md](implementation-pla
 |---|---|
 | **Before deploying the accounts release** | Tell staff and agents they'll need an authenticator app on their phone. Check outgoing email works (password resets, invitations). Set `SESSION_DRIVER=database`. See [deployment.md](deployment.md) |
 | Mobile app: two-step code field | Staff and agents can't sign in to the app until it sends `two_factor_code` ([api.md](api.md)) |
-| **Deploy `develop`** | Everything is merged. On the server: `composer install --no-dev -o`, `php artisan migrate --force`, `npm ci && npm run build`, `php artisan optimize`. Enable the PHP `zip` extension first |
+| **Deploy `develop`** | Everything is merged. On the server: `composer install --no-dev -o`, `php artisan migrate --force`, `npm ci && npm run build`, `php artisan optimize`. Enable the PHP `zip` extension first. Set `TENANCY_AUTO_ASSIGN_AGENTS=false`, then review automatic assignments under *Agent assignments* (admin menu) |
 | **Billing setup** | *Admin › Billing › Payment settings*: Payoneer payment link and receiving-account bank details. Then create plans and subscribe businesses ([billing.md](billing.md)) |
 | Production clean-up from P1-0 | Confirm `/.env` returns 403, rotate secrets if it was ever reachable, delete old `storage/logs/*.log` (they contain passwords), move `.zip`/old backups off the server, run `php artisan audit:call-ownership --details` |
 | Staging environment | Not set up yet; recommended before larger releases |

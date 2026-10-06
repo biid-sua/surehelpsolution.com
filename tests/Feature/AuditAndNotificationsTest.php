@@ -44,6 +44,7 @@ class AuditAndNotificationsTest extends TestCase
 
     private function logCallAs(User $agent, User $client, array $overrides = []): void
     {
+        $client->primaryOrganization()?->assignAgent($agent); // D40: agents only log calls for companies they serve
         $this->actingAs($agent)->postJson('/api/v1/agent/call-logs', array_merge([
             'client_id' => (string) $client->id,
             'call_date' => now()->toDateString(),

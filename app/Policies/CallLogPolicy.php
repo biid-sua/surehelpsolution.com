@@ -13,7 +13,8 @@ class CallLogPolicy
      */
     public function view(User $user, CallLog $callLog): bool
     {
-        if ($callLog->user_id === $user->id) {
+        // An agent's own call stays visible only while they still serve that company (D40).
+        if ($callLog->user_id === $user->id && $callLog->organization_id === null) {
             return true;
         }
 

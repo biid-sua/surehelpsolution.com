@@ -60,8 +60,8 @@ class AgentWorkspaceTest extends TestCase
         foreach ([1, 2, 3, 4, 5] as $day) {
             BusinessHour::create(['organization_id' => $organization->id, 'day_of_week' => $day, 'opens_at' => '08:00', 'closes_at' => '17:00']);
         }
-        if (! $assign) {
-            $organization->agents()->detach($this->agent->id);
+        if ($assign) {
+            $organization->assignAgent($this->agent);
         }
 
         return [$owner, $organization->fresh()];
@@ -89,7 +89,7 @@ class AgentWorkspaceTest extends TestCase
             ->assertSee('Rivera Plumbing')->assertSee('Open until 5 PM')->assertDontSee('Secret Dental');
 
         $this->get(route('agent.businesses.show', $mine))->assertOk()->assertSee('Who is calling?');
-        $this->get(route('agent.businesses.show', $notMine))->assertForbidden();
+        $this->get(route('agent.businesses.show', $notMine))->assertNotFound(); // D40: as if it didn't exist
 
         $client = User::factory()->create(['role' => 'client', 'is_active' => true, 'must_change_password' => false]);
         $this->actingAs($client)->get(route('agent.home'))->assertForbidden();
@@ -219,7 +219,8 @@ class AgentWorkspaceTest extends TestCase
 
         // Unassigned mid-call: the next action is refused.
         $org->agents()->detach($this->agent->id);
-        $component->call('save')->assertForbidden();
+        $this->actingAs($this->agent->fresh()); // each real request loads the user afresh
+        $component->call('save')->assertNotFound();
         $this->assertSame(0, CallLog::withoutGlobalScopes()->count());
     }
 }

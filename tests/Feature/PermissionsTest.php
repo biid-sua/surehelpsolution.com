@@ -161,7 +161,8 @@ class PermissionsTest extends TestCase
         $this->putJson("/api/v1/agent/call-logs/{$call->id}", ['notes' => 'ok'])->assertOk();
 
         $org->agents()->detach($agent->id);
-        $this->putJson("/api/v1/agent/call-logs/{$call->id}", ['notes' => 'again'])->assertForbidden();
+        Sanctum::actingAs($agent->fresh()); // each real request loads the user afresh
+        $this->putJson("/api/v1/agent/call-logs/{$call->id}", ['notes' => 'again'])->assertNotFound(); // D40: as if it didn't exist
 
         $other = $this->user('agent');
         $org->assignAgent($other);

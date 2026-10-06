@@ -42,6 +42,7 @@ class CalendarSyncTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        config(['tenancy.auto_assign_agents' => true]); // written before D40: every agent serves every business
         Notification::fake();
         Carbon::setTestNow(CarbonImmutable::parse('2026-10-05 08:00', self::TZ));
         config([

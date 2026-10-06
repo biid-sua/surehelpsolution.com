@@ -20,12 +20,6 @@ parameters:
 			path: app/Http/Controllers/Api/AdminDashboardController.php
 
 		-
-			message: '#^Cannot access property \$value on string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Http/Controllers/Api/AuthController.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$agent_name\.$#'
 			identifier: property.notFound
 			count: 4
@@ -94,12 +88,6 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
 			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/ClientDashboardController.php
-
-		-
-			message: '#^Cannot access property \$value on string\.$#'
-			identifier: property.nonObject
 			count: 1
 			path: app/Http/Controllers/Api/ClientDashboardController.php
 

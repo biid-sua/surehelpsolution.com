@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AdminDashboardController;
+use App\Http\Controllers\Api\AgentCompanyController;
 use App\Http\Controllers\Api\AgentDashboardController;
 use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\AuthController;
@@ -109,6 +110,14 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
         Route::post('/call-logs', [AgentDashboardController::class, 'createCallLog'])->middleware('can:calls.create');
         Route::put('/call-logs/{id}', [AgentDashboardController::class, 'updateCallLog']);
         Route::get('/clients', [AgentDashboardController::class, 'getClientsList']);
+        // Assigned companies (D40): the same check as the web portal; unassigned = 404.
+        Route::get('/companies', [AgentCompanyController::class, 'index']);
+        Route::get('/companies/{company}', [AgentCompanyController::class, 'show']);
+        Route::get('/companies/{company}/customers', [AgentCompanyController::class, 'customers']);
+        Route::get('/companies/{company}/customers/{customer}', [AgentCompanyController::class, 'customer']);
+        Route::get('/companies/{company}/appointments', [AgentCompanyController::class, 'appointments']);
+        Route::get('/companies/{company}/calls', [AgentCompanyController::class, 'calls']);
+        Route::get('/companies/{company}/conversations', [AgentCompanyController::class, 'conversations']);
     });
 
     // Admin Dashboard Routes

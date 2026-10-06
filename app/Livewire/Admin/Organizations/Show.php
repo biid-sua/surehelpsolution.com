@@ -2,13 +2,16 @@
 
 namespace App\Livewire\Admin\Organizations;
 
-use App\Enums\AgentAssignmentSource;
+use App\Actions\Assignments\AssignAgent;
+use App\Actions\Assignments\ChangeAssignment;
 use App\Livewire\Concerns\PlatformAdminOnly;
+use App\Models\AgentAssignment;
 use App\Models\Organization;
 use App\Models\User;
 use App\Services\Setup\SetupProgress;
 use App\Support\Audit\Audit;
 use Illuminate\Contracts\View\View;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -74,37 +77,42 @@ class Show extends Component
         $this->dispatch('toast', type: 'success', message: 'Business details saved.');
     }
 
-    public function assignAgent(): void
+    public function assignAgent(AssignAgent $assign): void
     {
         $organization = $this->organization();
-        $this->authorize('organization.update', $organization);
+        $this->authorize('agent_assignments.create', $organization);
 
         $this->validate(['agentToAdd' => ['required', 'integer']]);
-        $agent = User::where('role', 'agent')->where('is_active', true)->find($this->agentToAdd);
-
+        $agent = User::where('role', 'agent')->find($this->agentToAdd);
         if (! $agent) {
             $this->addError('agentToAdd', 'Choose an active agent.');
 
             return;
         }
 
-        $organization->assignAgent($agent, AgentAssignmentSource::Manual);
-        app(Audit::class)->record('agent.assigned', $organization, new: ['agent_id' => $agent->id, 'agent' => $agent->name]);
+        try {
+            $assign->handle($organization, $agent, auth()->user());
+        } catch (ValidationException $e) {
+            $this->addError('agentToAdd', implode(' ', array_merge(...array_values($e->errors()))));
+
+            return;
+        }
+
         $this->agentToAdd = '';
         $this->dispatch('toast', type: 'success', message: "{$agent->name} can now handle calls for {$organization->name}.");
     }
 
-    public function unassignAgent(int $agentId): void
+    /** Ends the agent's current assignment (kept in the history, D40). */
+    public function unassignAgent(int $agentId, ChangeAssignment $change): void
     {
         $organization = $this->organization();
-        $this->authorize('organization.update', $organization);
+        $this->authorize('agent_assignments.update', $organization);
 
-        $agent = $organization->agents()->whereKey($agentId)->first();
-        $organization->agents()->detach($agentId);
-        if ($agent) {
-            app(Audit::class)->record('agent.unassigned', $organization, old: ['agent_id' => $agent->id, 'agent' => $agent->name]);
+        $assignment = AgentAssignment::query()->where('organization_id', $organization->id)->where('agent_user_id', $agentId)->open()->latest('id')->first();
+        if ($assignment) {
+            $change->end($assignment, auth()->user(), 'Removed from the admin console');
         }
-        $this->dispatch('toast', type: 'success', message: 'Agent removed. They can no longer log calls for this business.');
+        $this->dispatch('toast', type: 'success', message: 'Agent removed. They can no longer see this business or log calls for it.');
     }
 
     public function render(): View
@@ -126,6 +134,7 @@ class Show extends Component
             'primaryTimezones' => self::PRIMARY_TIMEZONES,
             'otherTimezones' => array_values(array_diff(\DateTimeZone::listIdentifiers(), array_keys(self::PRIMARY_TIMEZONES))),
             'canUpdate' => auth()->user()->can('organization.update', $organization),
+            'canAssign' => auth()->user()->hasPermissionIn('agent_assignments.create', $organization),
             'setupCount' => app(SetupProgress::class)->count($organization),
             'canImpersonate' => auth()->user()->hasPermissionIn('users.impersonate'),
         ])->title($organization->name);

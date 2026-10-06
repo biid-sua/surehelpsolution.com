@@ -7,14 +7,13 @@ return [
     | Automatic agent assignment
     |--------------------------------------------------------------------------
     |
-    | While the shared agent pool serves every client (current operating model),
-    | new organizations are assigned to all active agents and new agents to all
-    | active organizations. Agents can still only act inside organizations they
-    | are assigned to — turn this off once ops manages assignments explicitly.
-    | See docs/decisions.md D3.
+    | Off by default (D40): agents only serve companies an authorized supervisor
+    | or administrator assigns them to. When on, new organizations are assigned
+    | to all active agents and new agents to all active organizations (the old
+    | shared-pool model of D3), recorded with source "automatic" for review.
     |
     */
 
-    'auto_assign_agents' => (bool) env('TENANCY_AUTO_ASSIGN_AGENTS', true),
+    'auto_assign_agents' => (bool) env('TENANCY_AUTO_ASSIGN_AGENTS', false),
 
 ];

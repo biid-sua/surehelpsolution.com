@@ -27,6 +27,7 @@ class ApiContractTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        config(['tenancy.auto_assign_agents' => true]); // written before D40: every agent serves every business
 
         $this->agent = User::factory()->create(['role' => 'agent', 'is_active' => true, 'password' => 'Secret123!', 'email' => 'agent@surehelp.test']);
         $this->admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);

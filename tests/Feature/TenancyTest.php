@@ -148,7 +148,7 @@ class TenancyTest extends TestCase
         $this->actingAs($agent)
             ->postJson('/api/v1/agent/call-logs', $this->payload(['client_id' => (string) $client->id]))
             ->assertStatus(422)
-            ->assertJsonPath('errors.client_id.0', 'You are not assigned to this client.');
+            ->assertJsonPath('errors.client_id.0', 'The selected client was not found.');
 
         Sanctum::actingAs($agent);
         $this->postJson('/api/v1/agent/call-logs', $this->payload(['client_id' => (string) $client->id]))
@@ -190,6 +190,7 @@ class TenancyTest extends TestCase
 
     public function test_admin_creating_a_client_provisions_an_organization(): void
     {
+        config(['tenancy.auto_assign_agents' => true]);
         $admin = $this->user('admin');
         $agent = $this->user('agent');
 
@@ -210,6 +211,7 @@ class TenancyTest extends TestCase
 
     public function test_new_agent_is_assigned_to_active_organizations_when_auto_assign_is_on(): void
     {
+        config(['tenancy.auto_assign_agents' => true]);
         [, $organization] = $this->client();
 
         Sanctum::actingAs($this->user('admin'));

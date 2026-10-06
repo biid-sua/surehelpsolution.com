@@ -55,7 +55,7 @@ class LogCall
         // The agent workspace names the business directly; the legacy form names its owner (client_id).
         if ($forOrganization) {
             if (! $agent->hasPermissionIn('calls.create', $forOrganization)) {
-                throw ValidationException::withMessages(['client_id' => ['You are not assigned to this client.']]);
+                throw ValidationException::withMessages(['client_id' => ['The selected client was not found.']]); // same answer as a client that doesn't exist (D40)
             }
             $organization = $forOrganization;
             $organizationId = $organization->getKey();
@@ -69,7 +69,7 @@ class LogCall
             }
 
             if (! $agent->hasPermissionIn('calls.create', $organization)) {
-                throw ValidationException::withMessages(['client_id' => ['You are not assigned to this client.']]);
+                throw ValidationException::withMessages(['client_id' => ['The selected client was not found.']]); // same answer as a client that doesn't exist (D40)
             }
 
             $organizationId = $organization->getKey();

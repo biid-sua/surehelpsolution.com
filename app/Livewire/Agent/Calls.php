@@ -46,7 +46,7 @@ class Calls extends Component
         return view('livewire.agent.calls', [
             'kpis' => $stats->kpis($userId, $period),
             'periods' => self::PERIODS,
-            'calls' => CallLog::withoutGlobalScopes()->where('user_id', $userId)->with('organization:id,ulid,name')
+            'calls' => CallLog::withoutGlobalScopes()->where('user_id', $userId)->visibleToAgent(auth()->user())->with('organization:id,ulid,name')
                 ->when($this->search !== '', function (Builder $query) {
                     $term = '%'.addcslashes(trim($this->search), '%_\\').'%';
                     $query->where(fn (Builder $q) => $q->where('caller_name', 'like', $term)->orWhere('caller_phone', 'like', $term)

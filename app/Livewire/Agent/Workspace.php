@@ -85,7 +85,8 @@ class Workspace extends Component
 
     private function authorizeFor(Organization $organization): void
     {
-        abort_unless(auth()->user()->hasPermissionIn('calls.create', $organization), 403);
+        // 404, not 403: an agent can't tell an unassigned company from one that doesn't exist (D40).
+        abort_unless(auth()->user()->hasPermissionIn('calls.create', $organization), 404);
     }
 
     private function resetCall(): void

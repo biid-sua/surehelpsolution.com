@@ -23,7 +23,7 @@ class CallExportController extends Controller
             fwrite($out, "\xEF\xBB\xBF"); // UTF-8 BOM so Excel shows accents correctly
             fputcsv($out, $columns);
 
-            CallLog::withoutGlobalScopes()->where('user_id', $user->id)->with('organization:id,name')
+            CallLog::withoutGlobalScopes()->where('user_id', $user->id)->visibleToAgent($user)->with('organization:id,name')
                 ->orderByDesc('created_at')->orderByDesc('id')
                 ->chunk(500, function ($calls) use ($out) {
                     foreach ($calls as $call) {

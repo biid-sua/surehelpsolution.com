@@ -39,6 +39,7 @@ class TasksTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        config(['tenancy.auto_assign_agents' => true]); // written before D40: every agent serves every business
         Notification::fake();
         $this->agent = User::factory()->create(['role' => 'agent', 'is_active' => true]);
     }

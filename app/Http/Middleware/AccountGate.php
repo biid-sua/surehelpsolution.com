@@ -7,6 +7,7 @@ use App\Services\Account\Impersonation;
 use App\Services\Account\LegalDocuments;
 use App\Services\Account\SignIn;
 use Closure;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -94,7 +95,16 @@ class AccountGate
         // A Livewire or JSON request can't follow a redirect to a page; 419 makes Livewire reload, landing on sign-in.
         return $request->expectsJson() || $request->hasHeader('X-Livewire')
             ? response()->json(['message' => $notice], 419)
-            : redirect()->route('login');
+            : $this->redirectTo(route('login'));
+    }
+
+    /**
+     * A plain redirect response, built directly: after a Livewire request in the same process (tests, Octane),
+     * the container's "redirect" service is Livewire's, which doesn't return a response.
+     */
+    private function redirectTo(string $url): RedirectResponse
+    {
+        return new RedirectResponse($url);
     }
 
     private function send(Request $request, string $route, ?string $status = null): Response
@@ -105,8 +115,9 @@ class AccountGate
         if ($request->isMethod('GET')) {
             $request->session()->put('url.intended', $request->fullUrl());
         }
+        $request->session()->flash('status', $status);
 
-        return redirect()->route($route)->with('status', $status);
+        return $this->redirectTo(route($route));
     }
 
     /** A Livewire poll (wire:poll) only refreshes; it isn't someone using the page. */

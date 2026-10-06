@@ -1,9 +1,10 @@
 <div>
+    <x-agent.company-bar :company="$organization" active="workspace" />
+
     {{-- Header: who we are answering for, their local time and whether they're open --}}
     <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div class="min-w-0">
-            <a href="{{ route('agent.home') }}" class="inline-flex items-center gap-1 text-sm text-muted hover:text-ink"><x-ui.icon name="arrow-left" class="size-4" /> All businesses</a>
-            <h1 class="mt-2 text-2xl font-semibold text-ink">{{ $organization->name }}</h1>
+            <h1 class="text-2xl font-semibold text-ink">{{ $organization->name }}</h1>
             <p class="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
                 <span @class(['inline-flex items-center gap-1.5 font-medium', 'text-emerald-300' => $status['open'], 'text-amber-300' => ! $status['open']])>
                     <span @class(['size-2 rounded-full', 'bg-emerald-400' => $status['open'], 'bg-amber-400' => ! $status['open']])></span>{{ $status['label'] }}

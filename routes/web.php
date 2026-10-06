@@ -33,10 +33,19 @@ use App\Livewire\Admin\Organizations\Show as OrganizationShow;
 use App\Livewire\Admin\Schedules\Index as AdminSchedules;
 use App\Livewire\Admin\Search as AdminSearch;
 use App\Livewire\Admin\Users\Index as AdminUsers;
+use App\Livewire\Agent\Assignments as AgentAssignments;
 use App\Livewire\Agent\Calls as AgentCalls;
+use App\Livewire\Agent\Companies as AgentCompanies;
+use App\Livewire\Agent\Company\Appointments as AgentCompanyAppointments;
+use App\Livewire\Agent\Company\Customers as AgentCompanyCustomers;
+use App\Livewire\Agent\Company\CustomerShow as AgentCompanyCustomer;
+use App\Livewire\Agent\Company\Messages as AgentCompanyMessages;
+use App\Livewire\Agent\Company\Tasks as AgentCompanyTasks;
 use App\Livewire\Agent\Home as AgentHome;
 use App\Livewire\Agent\Quality as AgentQuality;
 use App\Livewire\Agent\Schedule as AgentSchedule;
+use App\Livewire\Agent\Team as AgentTeam;
+use App\Livewire\Agent\TeamMember as AgentTeamMember;
 use App\Livewire\Agent\Workspace as AgentWorkspace;
 use App\Livewire\Client\Appointments\Index as AppointmentsIndex;
 use App\Livewire\Client\Billing\Index as ClientBilling;
@@ -195,7 +204,18 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
 // Agent workspace (spec §20–21)
 Route::prefix('agent')->name('agent.')->middleware(['auth.home', 'force.password.change', 'role:agent,admin', 'account.gate'])->group(function () {
     Route::get('/', AgentHome::class)->name('home');
+    Route::get('/companies', AgentCompanies::class)->name('companies');
     Route::get('/businesses/{organization}', AgentWorkspace::class)->name('businesses.show');
+    // Company context (spec §20A): every page re-checks the agent's current assignment and answers 404 otherwise.
+    Route::get('/businesses/{organization}/customers', AgentCompanyCustomers::class)->name('businesses.customers');
+    Route::get('/businesses/{organization}/customers/{customer}', AgentCompanyCustomer::class)->name('businesses.customers.show');
+    Route::get('/businesses/{organization}/appointments', AgentCompanyAppointments::class)->name('businesses.appointments');
+    Route::get('/businesses/{organization}/messages/{conversation?}', AgentCompanyMessages::class)->name('businesses.messages');
+    Route::get('/businesses/{organization}/tasks', AgentCompanyTasks::class)->name('businesses.tasks');
+    // Supervisors and platform staff (D41)
+    Route::get('/team', AgentTeam::class)->name('team');
+    Route::get('/team/{agent}', AgentTeamMember::class)->whereNumber('agent')->name('team.show');
+    Route::get('/assignments', AgentAssignments::class)->name('assignments');
     Route::get('/calls', AgentCalls::class)->name('calls');
     Route::get('/calls/export', AgentCallExportController::class)->name('calls.export');
     Route::get('/schedule', AgentSchedule::class)->name('schedule');

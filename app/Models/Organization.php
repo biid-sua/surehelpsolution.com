@@ -17,6 +17,7 @@ use Illuminate\Support\Str;
 /**
  * A client business — the tenant boundary for all business data.
  *
+ * @property OrganizationStatus $status
  * @property array<string, string>|null $setup_progress setup wizard step => done | skipped
  * @property int|null $retention_months months of history kept (null = all)
  * @property Carbon|null $closure_requested_at
@@ -97,9 +98,21 @@ class Organization extends Model
      */
     public function agents(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'agent_assignments', 'organization_id', 'agent_user_id')
-            ->withPivot(['is_primary', 'source'])
+        // Currently assigned agents only (D40); the full history is agentAssignments().
+        $relation = $this->belongsToMany(User::class, 'agent_assignments', 'organization_id', 'agent_user_id')
+            ->withPivot(['id', 'status', 'assignment_type', 'starts_at', 'ends_at', 'is_primary', 'source'])
             ->withTimestamps();
+        AgentAssignment::applyCurrent($relation);
+
+        return $relation;
+    }
+
+    /**
+     * @return HasMany<AgentAssignment, $this>
+     */
+    public function agentAssignments(): HasMany
+    {
+        return $this->hasMany(AgentAssignment::class)->latest('id');
     }
 
     /**
@@ -193,11 +206,25 @@ class Organization extends Model
         return $this->agents()->whereKey($agent->getKey())->exists();
     }
 
+    /**
+     * System-level assignment (tenancy backfill, optional auto-assignment). People assign through
+     * App\Actions\Assignments\AssignAgent, which checks permissions and records who did it.
+     */
     public function assignAgent(User $agent, AgentAssignmentSource $source = AgentAssignmentSource::Manual, bool $primary = false): void
     {
-        $this->agents()->syncWithoutDetaching([
-            $agent->getKey() => ['source' => $source->value, 'is_primary' => $primary],
-        ]);
+        $open = AgentAssignment::query()->where('organization_id', $this->getKey())->where('agent_user_id', $agent->getKey())->open()->exists();
+
+        if (! $open) {
+            AgentAssignment::create([
+                'organization_id' => $this->getKey(),
+                'agent_user_id' => $agent->getKey(),
+                'status' => AgentAssignment::ACTIVE,
+                'starts_at' => now(),
+                'source' => $source->value,
+                'is_primary' => $primary,
+                'status_changed_at' => now(),
+            ]);
+        }
     }
 
     public static function uniqueSlug(string $name): string

@@ -108,7 +108,7 @@ class AgentDashboardController extends Controller
             $offset = $request->get('offset', 0);
             $status = $request->get('status', 'all'); // all, new, service-requested, completed, etc.
 
-            $query = CallLog::where('user_id', $userId);
+            $query = CallLog::where('user_id', $userId)->visibleToAgent($user);
 
             // Filter by status if specified
             if ($status !== 'all') {
@@ -217,7 +217,8 @@ class AgentDashboardController extends Controller
             $user = Auth::user();
 
             $callLog = CallLog::find($id);
-            if (! $callLog) {
+            // A call in a company the agent doesn't serve looks exactly like one that doesn't exist (D40).
+            if (! $callLog || $user->cannot('view', $callLog)) {
                 return response()->json(['success' => false, 'message' => 'Call log not found'], 404);
             }
 

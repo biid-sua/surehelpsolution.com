@@ -39,6 +39,13 @@ class User extends Authenticatable
     private array $organizationRoleCache = [];
 
     /**
+     * Current-assignment answers per organization for this request (permission checks ask often).
+     *
+     * @var array<int, bool>
+     */
+    private array $assignmentCache = [];
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
@@ -204,15 +211,38 @@ class User extends Authenticatable
     }
 
     /**
-     * Organizations this agent is assigned to serve.
+     * Organizations this agent is **currently** assigned to serve (D40): active, started and not ended.
+     * Every access check goes through this relation, so suspended, ended, revoked or not-yet-started
+     * assignments give no access anywhere.
      *
      * @return BelongsToMany<Organization, $this>
      */
     public function assignedOrganizations(): BelongsToMany
     {
-        return $this->belongsToMany(Organization::class, 'agent_assignments', 'agent_user_id', 'organization_id')
-            ->withPivot(['is_primary', 'source'])
+        $relation = $this->belongsToMany(Organization::class, 'agent_assignments', 'agent_user_id', 'organization_id')
+            ->withPivot(['id', 'status', 'assignment_type', 'starts_at', 'ends_at', 'is_primary', 'source'])
             ->withTimestamps();
+        AgentAssignment::applyCurrent($relation);
+
+        return $relation;
+    }
+
+    /**
+     * Every assignment this agent ever had, newest first (history).
+     *
+     * @return HasMany<AgentAssignment, $this>
+     */
+    public function agentAssignments(): HasMany
+    {
+        return $this->hasMany(AgentAssignment::class, 'agent_user_id')->latest('id');
+    }
+
+    /** Whether this agent may work for the organization right now (memoised per request). */
+    public function isAssignedTo(Organization|int $organization): bool
+    {
+        $id = $organization instanceof Organization ? $organization->getKey() : $organization;
+
+        return $this->assignmentCache[$id] ??= $this->assignedOrganizations()->whereKey($id)->exists();
     }
 
     /**
@@ -269,7 +299,7 @@ class User extends Authenticatable
                 return true;
             }
 
-            if ($this->assignedOrganizations()->whereKey($organization->getKey())->exists()) {
+            if ($this->isAssignedTo($organization)) {
                 return true;
             }
         }

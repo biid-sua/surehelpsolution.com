@@ -62,7 +62,7 @@
                                         @endif
                                     </p>
                                 </div>
-                                @if ($canUpdate)
+                                @if ($canAssign)
                                     <x-ui.confirm id="unassign-{{ $agent->id }}" title="Remove {{ $agent->name }}?" confirm-label="Remove agent" action="unassignAgent({{ $agent->id }})">
                                         <x-slot:trigger><x-ui.button variant="ghost" size="sm">Remove</x-ui.button></x-slot:trigger>
                                         {{ $agent->name }} will immediately lose access to {{ $organization->name }} and can no longer log or edit its calls.
@@ -73,7 +73,7 @@
                     </ul>
                 @endif
 
-                @if ($canUpdate)
+                @if ($canAssign)
                     <form wire:submit="assignAgent" class="flex flex-wrap items-end gap-3 border-t border-line px-5 py-4">
                         <div class="min-w-56 flex-1">
                             <label for="agent-to-add" class="sh-label">Add an agent</label>

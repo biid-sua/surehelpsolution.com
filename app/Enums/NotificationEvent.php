@@ -17,6 +17,8 @@ enum NotificationEvent: string
     case AppointmentUpdated = 'appointment.updated';
     case AppointmentCancelled = 'appointment.cancelled';
     case MessageReceived = 'message.received';
+    case AssignmentStarted = 'assignment.started';
+    case AssignmentChanged = 'assignment.changed';
     case EscalationCreated = 'escalation.created';
     case PaymentFailed = 'payment.failed';
     case InvoiceIssued = 'invoice.issued';
@@ -35,7 +37,7 @@ enum NotificationEvent: string
      */
     public static function available(): array
     {
-        return [self::CallLogged, self::CallMissed, self::FollowUpCreated, self::FollowUpOverdue, self::TaskAssigned, self::EscalationCreated, self::AppointmentCreated, self::AppointmentUpdated, self::AppointmentCancelled, self::IntegrationDisconnected, self::InvoiceIssued, self::PaymentReceived, self::PaymentFailed, self::UsageAlert, self::MonthlyReport, self::SocialApprovalRequested, self::SocialPostFailed, self::SocialAccountDisconnected, self::MessageReceived];
+        return [self::CallLogged, self::CallMissed, self::FollowUpCreated, self::FollowUpOverdue, self::TaskAssigned, self::EscalationCreated, self::AppointmentCreated, self::AppointmentUpdated, self::AppointmentCancelled, self::IntegrationDisconnected, self::InvoiceIssued, self::PaymentReceived, self::PaymentFailed, self::UsageAlert, self::MonthlyReport, self::SocialApprovalRequested, self::SocialPostFailed, self::SocialAccountDisconnected, self::MessageReceived, self::AssignmentStarted, self::AssignmentChanged];
     }
 
     public function isAvailable(): bool
@@ -64,6 +66,8 @@ enum NotificationEvent: string
             self::AiEscalation => 'AI needs your attention',
             self::MonthlyReport => 'Monthly results report',
             self::UsageAlert => 'Plan usage',
+            self::AssignmentStarted => 'Assigned to a company',
+            self::AssignmentChanged => 'Company assignment changed',
             self::SocialApprovalRequested => 'Social post waiting for approval',
             self::SocialPostFailed => 'Social post didn\'t publish',
             self::SocialAccountDisconnected => 'Social account needs reconnecting',
@@ -90,6 +94,8 @@ enum NotificationEvent: string
             self::EscalationCreated => 'Something needs you now. Urgent escalations always reach you in the app and by email.',
             self::SocialApprovalRequested => 'A post written by your team or ours is ready for you to approve.',
             self::MessageReceived => 'A customer wrote to you and a person needs to answer (not sent while your AI assistant is handling it).',
+            self::AssignmentStarted => 'You start serving a company, now or on a planned date.',
+            self::AssignmentChanged => 'An assignment of yours ended, was paused or was scheduled.',
             self::SocialPostFailed => 'A scheduled post couldn\'t be published to one or more accounts.',
             self::SocialAccountDisconnected => 'We lost access to a connected social account.',
             default => '',
@@ -123,6 +129,7 @@ enum NotificationEvent: string
             self::AppointmentCreated, self::AppointmentUpdated, self::AppointmentCancelled => 'appointments.view',
             self::SocialApprovalRequested, self::SocialPostFailed, self::SocialAccountDisconnected => 'social.manage',
             self::MessageReceived => 'messages.view',
+            self::AssignmentStarted, self::AssignmentChanged => 'agent_university.view', // agents and supervisors only
             default => null,
         };
     }
