@@ -224,6 +224,16 @@ Added to the requirements on 2026-10-06 at the product owner's request. Order an
 | G-5 | Social and website analytics in Results (§41): reach, engagement, clicks, site visits, leads and bookings by source | G-1, G-3/G-4, provider approvals | planned |
 | G-6 | Growth ideas backlog (§41C): Google Business Profile sync, review-to-post, job photos to post, campaign packs, link-in-bio, last-minute openings, multi-location | G-1, G-2 | planned |
 
+## 4h. Inbox and AI assistant (spec §26, §26A, §33–34, §38; D37–D39)
+
+Added to the requirements on 2026-10-06 at the product owner's request.
+
+| Step | Scope | Depends on | Status |
+|---|---|---|---|
+| M-1 | Inbox: conversations and messages; website chat widget (snippet, per-business key, allowed domains); Facebook Messenger and Instagram DMs (signed webhooks, 24-hour / 7-day human-agent windows); client *Inbox* with filters, reply, assign, close, team notes; customer linking and timeline; `message.received` notifications | Meta App Review for messaging permissions (widget works without it) | in progress |
+| M-2 | AI assistant: `AiProvider` (Claude via the Anthropic PHP SDK); tool registry (business info, knowledge, services, availability, booking, customer details, task, escalate/hand over); modes off / suggest / auto per channel; hand-over rules; limits and usage metering; AI settings page | Anthropic API key | in progress |
+| M-3 | Feedback: helpful / not helpful on AI replies with corrections; corrections become guidelines the owner approves; assistant results | M-2 | in progress |
+
 ## 5. Later phases (outline, in spec order)
 
 | Phase | Scope (spec §) | First steps | Main external dependency |

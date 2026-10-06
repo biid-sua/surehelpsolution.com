@@ -1244,9 +1244,97 @@ Conversation
 
 Future channels must be pluggable.
 
+_Expanded 2026-10-06 at the product owner's request. Decisions: D37–D39._
+
+The business sees every customer message in one **Inbox** in the client
+portal, and answers from there. Channels, in order:
+
+-   website chat (SureHelp's own widget, added with one snippet; no
+    third-party approval needed)
+-   Facebook Messenger and Instagram direct messages (Meta Messenger
+    Platform; same Meta app as social publishing)
+-   SMS (after A2P 10DLC), email, Facebook / Instagram comments, WhatsApp
+    later
+-   not Google: Google discontinued Business Profile chat in July 2024
+
+Inbox features:
+
+-   conversation list with filters: needs a person, AI is handling,
+    waiting for the customer, closed; by channel; unread counts
+-   conversation view: messages with who sent each one (customer, team
+    member, AI), the customer's details and history, linked
+    appointments, tasks and escalations
+-   reply from the portal (and the mobile app later); the reply goes
+    out on the channel the customer used
+-   AI-suggested reply the person can send, edit or discard
+-   assign to a team member, close, reopen; notes visible only to the
+    team
+-   notifications for new messages that need a person
+-   respect each channel's rules: Meta allows replies within 24 hours of
+    the customer's last message; a person (never AI) may reply up to 7
+    days with Meta's human-agent tag; after that the inbox explains why
+    it can't send
+-   every message is stored with the customer's timeline
+
 ------------------------------------------------------------------------
 
-# 27. NOTIFICATION SYSTEM
+# 26A. AI MESSAGING ASSISTANT
+
+The business can let an AI assistant answer messages for them, acting
+within the same rules as a human agent (§20–23). Built on the AI
+architecture (§33), Business Brain (§34) and safety rules (§38).
+
+Modes, chosen per channel:
+
+-   **Off**: people answer everything
+-   **Suggest**: the AI drafts each reply; a person sends it
+-   **Auto**: the AI replies by itself and hands over to a person when it
+    should
+
+What it can do (through controlled tools only):
+
+-   answer from the Business Brain: services, prices the business shows,
+    hours, service area, policies, FAQs, knowledge base
+-   check real availability and **book appointments** under the
+    business's hours, rules and double-booking protection, after
+    confirming details with the customer (business can switch booking
+    off or require a person to confirm)
+-   capture the customer's name, phone, email and address into the CRM
+-   create call-back / follow-up tasks for the team
+-   raise escalations (urgent issues, complaints, refund requests,
+    anything it isn't sure about) and hand the conversation to a person
+
+Hand-over rules:
+
+-   the customer asks for a person, is upset, or raises something
+    sensitive (medical, legal, safety, payment disputes)
+-   the AI isn't confident or the answer isn't in the business's
+    information: it says so and a person takes over
+-   a team member replies: the AI steps back in that conversation until
+    the team hands it back
+-   outside Meta's 24-hour window the AI never replies
+
+Controls and safety:
+
+-   assistant name and tone; disclosure that the customer is talking to
+    an AI assistant
+-   business can turn the assistant off instantly, per channel or
+    everywhere
+-   every AI reply and tool call is logged and visible on the
+    conversation; AI messages are labelled
+-   limits: a maximum number of steps per reply, replies per
+    conversation per hour, and monthly AI usage per plan
+-   no other customers' data, no internal instructions, no invented
+    prices or promises (§38)
+
+Feedback (the business teaches the assistant):
+
+-   on every AI reply: helpful / not helpful, and "what should it have
+    said?"
+-   a correction becomes an **assistant guideline** the owner approves;
+    approved guidelines are used in every future reply
+-   assistant results: conversations handled, handed over, bookings made,
+    feedback score
 
 Create a centralized notification service.
 

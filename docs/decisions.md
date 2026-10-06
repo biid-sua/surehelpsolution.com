@@ -389,6 +389,36 @@ Start these early. The code can be built and tested with your own accounts befor
 - **G-6 Growth ideas backlog** (§41C), in priority order.
 **Why:** G-1 and G-3 deliver value without waiting for third-party approvals. G-2 needs only an API key. G-4 needs the domain and hosting decisions.
 
+## D37 — Inbox: our own website chat first, then Meta messaging (2026-10-06)
+**Decision:**
+- **One model for every channel:** conversations and messages, each conversation tied to a business and (when known) a customer. A `MessageChannel` adapter per channel sends replies.
+- **Website chat first.** The first channel is SureHelp's own website chat widget: one snippet, no third-party approval, works today, and it is the "connect your website" snippet from G-3.
+- **Meta second.** Facebook Messenger and Instagram direct messages come through the same Meta app as social publishing, with webhooks verified by `X-Hub-Signature-256`.
+- **Meta's windows are enforced in code.** Replies are allowed within 24 hours of the customer's last message. A person may reply up to 7 days with the `HUMAN_AGENT` tag; AI never uses that tag.
+- **No Google chat:** Google shut down Business Profile chat in July 2024.
+- **SMS** follows A2P 10DLC; **email** comes later.
+**Why:** The widget gives every business a working inbox and AI assistant immediately, while the Meta review runs. Enforcing the windows in code keeps businesses' pages out of trouble.
+**Action needed from you:** add `pages_messaging`, `pages_manage_metadata` and `instagram_manage_messages` to the Meta App Review (same app as D33), and set the webhook URL and verify token (docs/inbox.md).
+
+## D38 — The AI assistant: Claude, tools only, three modes (2026-10-06)
+**Decision:**
+- **Provider:** an `AiProvider` interface with a Claude implementation through the official Anthropic PHP SDK. Model `claude-opus-5-5`, effort configurable (`AI_EFFORT`, default `medium`).
+- **Modes per channel:** off, suggest (a person sends) or auto.
+- **Tools only:** the assistant acts only through application tools, the same actions agents use, scoped to the one business. Tools: business info, knowledge search, services, availability, book appointment (with the double-booking guard and business rules), save customer details, create task, escalate / hand over. It never touches the database directly.
+- **Limits:** at most 6 tool rounds per reply, 20 AI replies per conversation per hour, and monthly AI replies capped by plan (`ai_replies` limit).
+- **Logging:** every call's tokens and every tool call are recorded.
+- **Hand-over** when the customer asks for a person, on sensitive topics, low confidence or a team reply. AI messages are labelled and disclosed to customers as an AI assistant.
+- **Customer data:** only the current customer's own details reach the model.
+**Why:** It gives the "AI that works like an agent" the product owner asked for, with the same guardrails as a human agent, and stays switchable at any moment.
+**Action needed from you:** an Anthropic API key (`ANTHROPIC_API_KEY`). Until it's set, the assistant settings show "Coming soon" and the inbox works without AI.
+
+## D39 — Feedback becomes guidelines a person approves (2026-10-06)
+**Decision:**
+- **Rating:** team members rate each AI reply (helpful / not helpful) and can say what it should have said.
+- **Guidelines:** a correction becomes a draft **assistant guideline**. Approved guidelines (owner, or `ai.manage`) are added to the assistant's instructions for that business.
+- **No retraining:** nothing is fine-tuned, and feedback never changes behaviour without a person approving it.
+**Why:** Businesses can correct the assistant in their own words and see it improve the next day. Approval stops one bad correction from spreading.
+
 ## D10 — Telephony
 **Decision:** **Twilio** (Programmable Voice, TaskRouter, Voice JS SDK, Messaging) behind a `TelephonyProvider` interface, so the vendor can be swapped. Calls stay manually logged until then, but the Phase 2 `calls` table is designed for provider data (call SID, direction, timings, recording/transcript references). Telephony becomes **Phase 3b**, right after Calendar, because live call handling is the core of a receptionist product.
 **Action needed from you (long lead time):** create a Twilio account and start **A2P 10DLC** brand and campaign registration now. US SMS cannot go live without it, and approval takes weeks.
