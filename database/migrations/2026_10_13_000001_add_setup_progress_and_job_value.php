@@ -13,17 +13,25 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('organizations', function (Blueprint $table) {
-            $table->json('setup_progress')->nullable()->after('currency');      // step => done | skipped
-            $table->dateTime('setup_completed_at')->nullable()->after('setup_progress');
-            $table->unsignedInteger('average_job_value_cents')->nullable()->after('setup_completed_at');
-            $table->string('last_report_month', 7)->nullable()->after('average_job_value_cents');   // YYYY-MM, monthly email sent
-        });
+        // Each column only if missing: a run that stopped part-way on an older MySQL left some of them behind.
+        $columns = [
+            'setup_progress' => fn (Blueprint $t) => $t->json('setup_progress')->nullable()->after('currency'), // step => done | skipped
+            'setup_completed_at' => fn (Blueprint $t) => $t->dateTime('setup_completed_at')->nullable()->after('setup_progress'),
+            'average_job_value_cents' => fn (Blueprint $t) => $t->unsignedInteger('average_job_value_cents')->nullable()->after('setup_completed_at'),
+            'last_report_month' => fn (Blueprint $t) => $t->string('last_report_month', 7)->nullable()->after('average_job_value_cents'), // YYYY-MM, monthly email sent
+        ];
+        foreach ($columns as $name => $add) {
+            if (! Schema::hasColumn('organizations', $name)) {
+                Schema::table('organizations', $add);
+            }
+        }
 
         // Businesses that already set up hours or services before the wizard existed don't need it.
-        $configured = DB::table('business_hours')->select('organization_id')
-            ->union(DB::table('business_services')->select('organization_id'));
-        DB::table('organizations')->whereIn('id', $configured)->update(['setup_completed_at' => now()]);
+        // Two IN subqueries rather than a UNION: older MySQL rejects a parenthesised UNION inside IN.
+        DB::table('organizations')->whereNull('setup_completed_at')
+            ->where(fn ($q) => $q->whereIn('id', DB::table('business_hours')->select('organization_id'))
+                ->orWhereIn('id', DB::table('business_services')->select('organization_id')))
+            ->update(['setup_completed_at' => now()]);
     }
 
     public function down(): void
