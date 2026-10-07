@@ -600,3 +600,11 @@ Start these early. The code can be built and tested with your own accounts befor
 - **Not yet:** SMS (no provider yet), "request review" as its own action (an email with `{review_link}` covers it), escalations and appointment-created triggers. The engine was built so these can be added as new triggers and actions.
 
 **Why:** follow-ups and review requests are where businesses lose the most after the job. A small engine with history and safe re-checks is enough now and grows later.
+
+## D51 — Welcome emails for people added by staff (2026-10-23)
+**Decision:** when SureHelp staff add a person under *Users*, the person gets a "Welcome to SureHelp" email with a link to choose their own password. This is on by default and can be unticked.
+- **The link:** it works once and lasts 7 days. Its tokens live in their own table (`user_welcome_tokens`, broker `welcome`), so ordinary password-reset links keep their 60-minute limit.
+- **Using it:** the reset page accepts either kind of link. Choosing a password confirms the email address and clears the "must change password" flag.
+- **Backup:** staff still see the temporary password once, in case the email doesn't arrive.
+
+**Why:** passing temporary passwords around by chat or phone is error-prone and less safe. A link the person uses themselves is both easier and safer.

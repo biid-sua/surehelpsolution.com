@@ -51,7 +51,8 @@ class PasswordResetController extends Controller
             'password' => ['required', 'confirmed', PasswordRule::min(8)],
         ]);
 
-        $status = Password::broker()->reset($request->only('email', 'password', 'password_confirmation', 'token'), function (User $user, string $password) use ($signIn) {
+        $credentials = $request->only('email', 'password', 'password_confirmation', 'token');
+        $choose = function (User $user, string $password) use ($signIn) {
             // A reset proves the person reads this inbox, so it also confirms the email address.
             $user->forceFill([
                 'password' => $password,
@@ -60,7 +61,12 @@ class PasswordResetController extends Controller
             ])->save();
             $signIn->signOutEverywhere($user);
             app(Audit::class)->record('auth.password_reset', $user, actor: $user);
-        });
+        };
+        $status = Password::broker()->reset($credentials, $choose);
+        // A link from a welcome email (D51) is checked against its own, longer-lived tokens.
+        if ($status === Password::INVALID_TOKEN) {
+            $status = Password::broker('welcome')->reset($credentials, $choose);
+        }
 
         if ($status !== Password::PASSWORD_RESET) {
             return back()->withInput($request->only('email'))

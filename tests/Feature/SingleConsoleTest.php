@@ -9,9 +9,11 @@ use App\Models\AgentDutySchedule;
 use App\Models\CallLog;
 use App\Models\ContactSubmission;
 use App\Models\User;
+use App\Notifications\Account\WelcomeToSureHelp;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -81,6 +83,39 @@ class SingleConsoleTest extends TestCase
         $this->assertFalse($agent->fresh()->is_active);
         Livewire::test(Users::class)->call('toggleActive', $this->admin->id)->assertForbidden();
         $this->assertTrue($this->admin->fresh()->is_active);
+    }
+
+    public function test_new_people_get_a_welcome_link_to_choose_their_own_password(): void
+    {
+        Notification::fake();
+        $this->actingAs($this->admin);
+        $component = Livewire::test(Users::class)->call('startAdding')
+            ->set('draft.role', 'client')->set('draft.name', 'Nina Owner')->set('draft.email', 'nina@example.test')->set('draft.business_name', 'Nina Cleaning')
+            ->call('create')->assertHasNoErrors()->assertSee('We emailed nina@example.test');
+        $nina = User::where('email', 'nina@example.test')->firstOrFail();
+
+        $token = null;
+        Notification::assertSentTo($nina, WelcomeToSureHelp::class, function (WelcomeToSureHelp $n) use (&$token) {
+            $token = $n->token;
+
+            return $n->businessName === 'Nina Cleaning';
+        });
+
+        // The link still works six days later (a reset link would have expired), then only once.
+        auth()->logout();
+        $this->travel(6)->days();
+        $this->post(route('password.store'), ['token' => $token, 'email' => 'nina@example.test', 'password' => 'NewPass123!', 'password_confirmation' => 'NewPass123!'])
+            ->assertRedirect(route('login'));
+        $this->assertTrue(Hash::check('NewPass123!', $nina->fresh()->password));
+        $this->assertFalse($nina->fresh()->must_change_password);
+        $this->post(route('password.store'), ['token' => $token, 'email' => 'nina@example.test', 'password' => 'Other123!x', 'password_confirmation' => 'Other123!x'])
+            ->assertSessionHasErrors('email');
+
+        // Unticked: no email.
+        $this->actingAs($this->admin);
+        Livewire::test(Users::class)->call('startAdding')->set('sendWelcome', false)
+            ->set('draft.role', 'client')->set('draft.name', 'Quiet')->set('draft.email', 'quiet@example.test')->call('create');
+        Notification::assertNotSentTo(User::where('email', 'quiet@example.test')->firstOrFail(), WelcomeToSureHelp::class);
     }
 
     public function test_only_a_super_admin_manages_staff(): void

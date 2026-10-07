@@ -103,6 +103,13 @@ return [
             'expire' => 60,
             'throttle' => 60,
         ],
+        // Welcome emails for people added by SureHelp staff (D51): one week to choose a password.
+        'welcome' => [
+            'provider' => 'users',
+            'table' => 'user_welcome_tokens',
+            'expire' => 60 * 24 * 7,
+            'throttle' => 0,
+        ],
     ],
 
     /*

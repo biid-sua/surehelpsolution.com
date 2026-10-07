@@ -9,7 +9,11 @@
 
     @if ($issued)
         <x-ui.alert tone="success" class="mb-6" title="{{ $issued['reason'] === 'created' ? $issued['name'].' can sign in now' : 'New temporary password for '.$issued['name'] }}">
-            <p>Share these details privately. The password is shown only this once{{ $issued['reason'] === 'reset' ? ', and the old one no longer works' : '' }}.</p>
+            @if (! empty($issued['welcomed']))
+                <p>We emailed {{ $issued['email'] }} a link to choose their own password (valid for 7 days). If the email doesn't arrive, share the temporary password below privately. It's shown only this once.</p>
+            @else
+                <p>Share these details privately. The password is shown only this once{{ $issued['reason'] === 'reset' ? ', and the old one no longer works' : '' }}.</p>
+            @endif
             <dl class="mt-3 grid gap-x-6 gap-y-1 sm:grid-cols-[auto_1fr]">
                 <dt class="text-subtle">Sign-in email</dt><dd class="font-mono text-ink">{{ $issued['email'] }}</dd>
                 <dt class="text-subtle">Temporary password</dt><dd class="font-mono text-ink" data-testid="temporary-password">{{ $issued['password'] }}</dd>
@@ -68,6 +72,11 @@
                     <input id="u-pass" type="text" wire:model="draft.password" class="sh-input" placeholder="Leave empty to generate one" autocomplete="new-password">
                     @error('draft.password') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror
                 </div>
+                <label class="flex items-start gap-3 text-sm sm:col-span-2">
+                    <input type="checkbox" wire:model="sendWelcome" class="mt-0.5 size-4 rounded border-line-strong bg-surface-2 text-brand-500">
+                    <span><span class="font-medium text-ink">Email them a welcome link to choose their password</span>
+                        <span class="block text-xs text-subtle">Valid for 7 days. You'll still see a temporary password as a backup.</span></span>
+                </label>
                 <div class="flex justify-end gap-2 sm:col-span-2">
                     <x-ui.button variant="secondary" wire:click="cancelAdding">Cancel</x-ui.button>
                     <x-ui.button type="submit">Add user</x-ui.button>

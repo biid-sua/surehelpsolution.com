@@ -5,10 +5,12 @@ namespace App\Livewire\Admin\Users;
 use App\Actions\Users\CreateUser;
 use App\Livewire\Concerns\PlatformAdminOnly;
 use App\Models\User;
+use App\Notifications\Account\WelcomeToSureHelp;
 use App\Services\Account\SignIn;
 use App\Support\Audit\Audit;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
@@ -43,6 +45,9 @@ class Index extends Component
 
     /** @var array{name: string, email: string, phone: string, role: string, platform_role: string, business_name: string, password: string} */
     public array $draft = ['name' => '', 'email' => '', 'phone' => '', 'role' => 'client', 'platform_role' => '', 'business_name' => '', 'password' => ''];
+
+    /** Email the new person a link to choose their password (D51). */
+    public bool $sendWelcome = true;
 
     /** Shown once after creating a user or resetting a password, never stored. */
     public ?array $issued = null;
@@ -93,8 +98,14 @@ class Index extends Component
         $password = $this->draft['password'] ?: self::temporaryPassword();
         $user = $create->handle($this->draft, $password);
 
+        $welcomed = false;
+        if ($this->sendWelcome) {
+            $user->notify(new WelcomeToSureHelp(Password::broker('welcome')->createToken($user), $user->primaryOrganization()?->name));
+            $welcomed = true;
+        }
+
         $this->adding = false;
-        $this->issued = ['name' => $user->name, 'email' => $user->email, 'password' => $password, 'reason' => 'created'];
+        $this->issued = ['name' => $user->name, 'email' => $user->email, 'password' => $password, 'reason' => 'created', 'welcomed' => $welcomed];
         $this->resetDraft();
         $this->dispatch('toast', type: 'success', message: "{$user->name} added.");
     }
