@@ -133,6 +133,7 @@ _As of 2026-10-06. Detailed tracker: [implementation-plan.md](implementation-pla
 | A-5 Agents edit records (AGT-14) | In a company's *Appointments*, agents move an upcoming appointment to a free time (same strict hours and rules as booking) or cancel it with a reason the business sees. On a customer they edit details and add notes. In *My calls* they add notes to their own calls for 24 hours; notes are appended with name and time, never rewritten (D47) |
 | A-6 CSV exports (§91, CLI-07) | *Appointments* downloads the tab being viewed (upcoming, needs confirming, past, cancelled) as CSV in the business's time. *Results* downloads the month as CSV next to the PDF. Calls and customers already had CSV |
 | A-7 Dashboard and Results (§8.1, CLI-01) | Dashboard: *Appointments* and *New leads* cards, a custom date range (up to a year, compared with the same length before), *Customer activity* (new, returning, recent interactions) and real alerts for a disconnected calendar, overdue invoice or payment, customer messages unanswered for 30 minutes and overdue follow-ups, shown only to people who can act on them. Results, its PDF and CSV show how the month's appointments went (completed, no-show, cancelled, not yet marked) |
+| A-8 Admin console lists (§3.5) | *Calls*, *Appointments* and *Customers* across every business, with business, date and text filters (calls open inline with outcome and notes). *Usage* shows each business's month: answered calls against the plan's allowance, appointments, new customers and inbox messages, busiest first, with platform totals |
 
 ### Merge of the cloud session (2026-10-04)
 - Branch `claude/phase-2-development-1yiwc2` merged into `develop` and pushed.
@@ -147,7 +148,6 @@ A check of the master spec against the code (2026-10-23) found these gaps, in pr
 
 | # | Item | Notes |
 |---|---|---|
-| 8 | Admin console MVP pages | Platform-wide calls, appointments, customers and usage lists |
 | 9 | Self-service reschedule / cancel links in customer emails | Signed links, no login (CAL-09) |
 | 10 | Owner approval for agent bookings | Optional setting (CAL-08) |
 | 11 | Support tickets | Client creates a ticket, staff reply (§78, CLI-09) |
