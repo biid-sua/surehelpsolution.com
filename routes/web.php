@@ -97,6 +97,7 @@ use App\Livewire\Client\Social\Index as SocialIndex;
 use App\Livewire\Client\Social\Media as SocialMedia;
 use App\Livewire\Client\Tasks\Index as TasksIndex;
 use App\Livewire\Client\Website as ClientWebsite;
+use App\Livewire\Customer\ManageAppointment;
 use Illuminate\Support\Facades\Route;
 
 // Landing page
@@ -227,6 +228,9 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
 });
 
 // Agent workspace (spec §20–21)
+// A customer changes or cancels their own appointment from an emailed link (CAL-09, D48): signed, no login.
+Route::get('/appointment/{appointment}', ManageAppointment::class)->middleware(['signed', 'throttle:60,1'])->name('appointments.manage');
+
 Route::prefix('agent')->name('agent.')->middleware(['auth.home', 'force.password.change', 'role:agent,admin', 'account.gate'])->group(function () {
     Route::get('/', AgentHome::class)->name('home');
     Route::get('/companies', AgentCompanies::class)->name('companies');

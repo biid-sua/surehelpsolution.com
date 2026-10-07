@@ -34,7 +34,7 @@ class RescheduleAppointment
      * @throws ValidationException
      * @throws SlotUnavailable
      */
-    public function handle(Appointment $appointment, CarbonImmutable $startsAt, ?int $durationMinutes, User $actor, bool $strict = false): Appointment
+    public function handle(Appointment $appointment, CarbonImmutable $startsAt, ?int $durationMinutes, ?User $actor, bool $strict = false): Appointment
     {
         if (! $appointment->status->blocksTime()) {
             throw ValidationException::withMessages(['starts_at' => ['Only upcoming appointments can be moved. Book a new one instead.']]);
@@ -63,7 +63,7 @@ class RescheduleAppointment
 
         $change = "Moved from {$before}.";
         if ($appointment->customer) {
-            $this->timeline->handle($appointment->customer, TimelineEventType::AppointmentUpdated, 'Appointment moved to '.$appointment->whenLabel(), $change, $appointment, ['appointment' => $appointment->ulid], $actor->id);
+            $this->timeline->handle($appointment->customer, TimelineEventType::AppointmentUpdated, 'Appointment moved to '.$appointment->whenLabel(), $change, $appointment, ['appointment' => $appointment->ulid], $actor?->id);
         }
         $this->notify->handle($organization, new AppointmentActivity($appointment, NotificationEvent::AppointmentUpdated, $change), 'appointments.view', $actor);
 

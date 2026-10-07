@@ -21,6 +21,8 @@ class CustomerEmail extends Notification implements ShouldQueue
         public readonly string $body,
         public readonly string $fromName,
         public readonly ?string $replyTo = null,
+        public readonly ?string $actionUrl = null,
+        public readonly string $actionText = 'Change or cancel',
     ) {}
 
     /** @return list<string> */
@@ -38,6 +40,9 @@ class CustomerEmail extends Notification implements ShouldQueue
             ->salutation(' ');
         foreach (preg_split('/\n{2,}/', $this->body) ?: [] as $paragraph) {
             $mail->line(trim($paragraph));
+        }
+        if ($this->actionUrl) {
+            $mail->action($this->actionText, $this->actionUrl);
         }
         if ($this->replyTo) {
             $mail->replyTo($this->replyTo, $this->fromName);

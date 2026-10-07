@@ -13,6 +13,7 @@ use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Routing\Exceptions\InvalidSignatureException;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -48,6 +49,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // Order matters: the logger only observes (returns null), the renderer answers /api requests.
         $exceptions->render(new AuthorizationFailureLogger);
         $exceptions->render(new ApiExceptionRenderer);
+        // An old or altered appointment link from a customer email (CAL-09): explain, don't just say 403.
+        $exceptions->render(fn (InvalidSignatureException $e, $request) => $request->routeIs('appointments.manage')
+            ? response()->view('customer.link-expired', status: 403) : null);
 
         // /api always answers in JSON, even when a client forgets the Accept header.
         $exceptions->shouldRenderJsonWhen(fn ($request) => $request->is('api/*') || $request->expectsJson());

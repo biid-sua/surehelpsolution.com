@@ -10,6 +10,7 @@ use App\Models\BusinessProfile;
 use App\Models\MessageTemplate;
 use App\Models\Organization;
 use App\Notifications\CustomerEmail;
+use App\Services\Appointments\CustomerSelfService;
 use App\Services\Billing\FeatureAccess;
 use App\Support\Phone;
 use Illuminate\Support\Facades\Notification;
@@ -21,7 +22,13 @@ use Illuminate\Support\Facades\Notification;
  */
 class CustomerMessages
 {
-    public function __construct(private readonly RecordTimelineEvent $timeline) {}
+    /** Emails that carry the customer's change-or-cancel link (CAL-09). */
+    public const WITH_SELF_SERVICE = ['appointment_confirmed', 'appointment_reminder', 'appointment_changed'];
+
+    public function __construct(
+        private readonly RecordTimelineEvent $timeline,
+        private readonly CustomerSelfService $selfService,
+    ) {}
 
     /** @return array{subject: string, body: string, is_active: bool, lead_hours: int|null, custom: bool} */
     public function template(Organization $organization, string $key): array
@@ -102,7 +109,8 @@ class CustomerMessages
         $replyTo = BusinessProfile::query()->forOrganization($appointment->organization)->value('email') ?: $appointment->organization->owner?->email;
 
         Notification::route('mail', $appointment->customer->email)
-            ->notify(new CustomerEmail($subject, $body, $values['business'], $replyTo));
+            ->notify(new CustomerEmail($subject, $body, $values['business'], $replyTo,
+                in_array($key, self::WITH_SELF_SERVICE, true) ? $this->selfService->link($appointment) : null));
 
         $this->timeline->handle($appointment->customer, TimelineEventType::EmailSent, 'Email sent: '.config("customer_messages.templates.$key.label"),
             $subject, $appointment, ['template' => $key, 'to' => $appointment->customer->email]);

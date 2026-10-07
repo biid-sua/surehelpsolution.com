@@ -31,7 +31,7 @@ class ChangeAppointmentStatus
      * @throws ValidationException when the move isn't allowed
      * @throws SlotUnavailable when re-confirming a time someone else has since taken
      */
-    public function handle(Appointment $appointment, AppointmentStatus $status, User $actor, ?string $reason = null): Appointment
+    public function handle(Appointment $appointment, AppointmentStatus $status, ?User $actor, ?string $reason = null): Appointment
     {
         $old = $appointment->status;
         if ($old === $status) {
@@ -66,7 +66,7 @@ class ChangeAppointmentStatus
 
         if ($appointment->customer) {
             $type = $status === AppointmentStatus::Cancelled ? TimelineEventType::AppointmentCancelled : TimelineEventType::AppointmentUpdated;
-            $this->timeline->handle($appointment->customer, $type, 'Appointment '.mb_strtolower($status->label()).': '.$appointment->title, $reason ?: $appointment->whenLabel(), $appointment, ['appointment' => $appointment->ulid, 'status' => $status->value], $actor->id);
+            $this->timeline->handle($appointment->customer, $type, 'Appointment '.mb_strtolower($status->label()).': '.$appointment->title, $reason ?: $appointment->whenLabel(), $appointment, ['appointment' => $appointment->ulid, 'status' => $status->value], $actor?->id);
         }
 
         if ($status === AppointmentStatus::Cancelled) {

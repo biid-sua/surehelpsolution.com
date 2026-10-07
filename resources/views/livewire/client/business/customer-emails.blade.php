@@ -29,6 +29,19 @@
             <p class="border-t border-line px-5 py-3 text-xs text-subtle">Emails go to customers with an email address on file. Each one is noted on the customer's timeline.</p>
         </x-ui.card>
 
+        <x-ui.card class="lg:col-start-1" title="Customers change or cancel online" description="Confirmation, reminder and time-change emails get a button that opens a page where the customer can pick a new free time or cancel. No account needed; you're notified of every change.">
+            <form wire:submit="saveSelfService" class="flex flex-wrap items-end gap-3">
+                <div>
+                    <label for="ss-hours" class="sh-label">Allow it until</label>
+                    <select id="ss-hours" wire:model="changeHours" class="sh-input w-64" @disabled(! $canEdit)>
+                        <option value="off">Off: customers call us</option>
+                        @foreach ($hourOptions as $h)<option value="{{ $h }}">{{ $h }} hours before the appointment</option>@endforeach
+                    </select>
+                </div>
+                @if ($canEdit)<x-ui.button type="submit" size="sm">Save</x-ui.button>@endif
+            </form>
+        </x-ui.card>
+
         <div>
             @if ($editing)
                 <x-ui.card :title="$templates[$editing]['label']">

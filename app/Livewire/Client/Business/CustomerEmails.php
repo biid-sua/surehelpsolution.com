@@ -7,6 +7,7 @@ use App\Models\BusinessProfile;
 use App\Models\BusinessService;
 use App\Models\MessageTemplate;
 use App\Notifications\CustomerEmail;
+use App\Services\Appointments\CustomerSelfService;
 use App\Services\Messages\CustomerMessages;
 use App\Support\Audit\Audit;
 use Carbon\CarbonImmutable;
@@ -31,9 +32,25 @@ class CustomerEmails extends Component
     /** @var array{subject: string, body: string, is_active: bool, lead_hours: int|string|null} */
     public array $draft = ['subject' => '', 'body' => '', 'is_active' => true, 'lead_hours' => null];
 
+    /** Hours before an appointment that customers can still change it online, or "off" (CAL-09). */
+    public string $changeHours = 'off';
+
     public function mount(): void
     {
         $this->authorize('organization.view', $this->organization());
+        $hours = $this->organization()->customer_change_hours;
+        $this->changeHours = $hours === null ? 'off' : (string) $hours;
+    }
+
+    public function saveSelfService(Audit $audit): void
+    {
+        $organization = $this->organization();
+        $this->authorize('settings.manage', $organization);
+        $this->validate(['changeHours' => ['required', Rule::in(['off', ...array_map('strval', CustomerSelfService::HOUR_OPTIONS)])]]);
+
+        $organization->forceFill(['customer_change_hours' => $this->changeHours === 'off' ? null : (int) $this->changeHours])->save();
+        $audit->changes('organization.updated', $organization, ['customer_change_hours']);
+        $this->dispatch('toast', type: 'success', message: $this->changeHours === 'off' ? 'Customers will call you to change bookings.' : 'Saved. Emails now include a link to change or cancel.');
     }
 
     public function edit(string $key, CustomerMessages $messages): void
@@ -122,6 +139,7 @@ class CustomerEmails extends Component
             'placeholders' => config('customer_messages.placeholders'),
             'preview' => $this->editing ? ['subject' => $messages->render($this->draft['subject'], $values), 'body' => $messages->render($this->draft['body'], $values)] : null,
             'canEdit' => auth()->user()->can('settings.manage', $organization),
+            'hourOptions' => CustomerSelfService::HOUR_OPTIONS,
         ]);
     }
 

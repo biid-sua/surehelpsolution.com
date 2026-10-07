@@ -63,6 +63,10 @@ class BookAppointment
         if (! $status->blocksTime()) {
             throw ValidationException::withMessages(['status' => ['New appointments are confirmed, pending or tentative.']]);
         }
+        // Approval mode (CAL-08): bookings by SureHelp agents wait for the business to approve them.
+        if ($status === AppointmentStatus::Confirmed && self::needsApproval($organization, $actor)) {
+            $status = AppointmentStatus::Pending;
+        }
 
         $customer = $refs['customer'];
         $title = filled($data['title'] ?? null)
@@ -101,9 +105,18 @@ class BookAppointment
             $this->timeline->handle($customer, TimelineEventType::AppointmentCreated, 'Appointment booked: '.($service->name ?? $appointment->title), $appointment->whenLabel(), $appointment, ['appointment' => $appointment->ulid], $actor?->id);
         }
 
-        $this->notify->handle($organization, new AppointmentActivity($appointment, NotificationEvent::AppointmentCreated), 'appointments.view', $actor);
+        $approval = $status === AppointmentStatus::Pending && self::needsApproval($organization, $actor);
+        $this->notify->handle($organization, new AppointmentActivity($appointment, NotificationEvent::AppointmentCreated,
+            $approval ? 'Booked by '.$actor?->name.' from SureHelp. It waits for your approval: confirm it, or move or cancel it, in Appointments.' : null), 'appointments.view', $actor);
 
         return $appointment;
+    }
+
+    /** Booked by someone outside the business (a SureHelp agent or staff) while the owner approves those. */
+    public static function needsApproval(Organization $organization, ?User $actor): bool
+    {
+        return $organization->approve_agent_bookings && $actor !== null
+            && ! $organization->members()->whereKey($actor->id)->wherePivot('status', 'active')->exists();
     }
 
     /**

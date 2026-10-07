@@ -2,6 +2,13 @@
     <x-ui.page-header title="Business" description="Rules our agents and booking system follow for you. Most are checked automatically, so they can't be forgotten." />
     @include('livewire.client.business._tabs')
 
+    <x-ui.card class="mb-6" title="Approve our agents' bookings" description="On: appointments our agents book arrive as &quot;Needs confirming&quot; and the customer gets no confirmation until you confirm. Off: they're confirmed straight away.">
+        <label class="flex items-center gap-3 text-sm text-ink">
+            <input type="checkbox" @checked($approveAgentBookings) @disabled(! $canManage) wire:click="toggleApproval" class="size-4 rounded border-line-strong bg-surface-2 text-brand-500">
+            I approve bookings made by SureHelp agents
+        </label>
+    </x-ui.card>
+
     <x-ui.card :padding="false">
         @if ($rules->isEmpty())
             <x-ui.empty-state icon="shield" title="No rules yet"

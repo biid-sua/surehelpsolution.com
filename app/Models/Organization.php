@@ -24,6 +24,8 @@ use Illuminate\Support\Str;
  * @property Carbon|null $setup_completed_at
  * @property int|null $average_job_value_cents for estimated revenue in Results
  * @property string|null $last_report_month "Y-m" of the last monthly report sent
+ * @property bool $approve_agent_bookings agent bookings wait for the owner's approval (CAL-08)
+ * @property int|null $customer_change_hours customers may change or cancel online until this many hours before (CAL-09); null = not offered
  * @property int|null $retention_months months of history kept (null = all)
  * @property Carbon|null $closure_requested_at
  * @property Carbon|null $closes_at when a requested closure takes effect
@@ -50,6 +52,8 @@ class Organization extends Model
             'setup_progress' => 'array',
             'setup_completed_at' => 'datetime',
             'average_job_value_cents' => 'integer',
+            'approve_agent_bookings' => 'boolean',
+            'customer_change_hours' => 'integer',
             'retention_months' => 'integer',
             'closure_requested_at' => 'datetime',
             'closes_at' => 'datetime',

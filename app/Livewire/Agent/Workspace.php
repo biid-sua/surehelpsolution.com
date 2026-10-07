@@ -6,6 +6,7 @@ use App\Actions\Appointments\BookAppointment;
 use App\Actions\Calls\LogCall;
 use App\Actions\Customers\MatchOrCreateCustomer;
 use App\Actions\Tasks\CreateTask;
+use App\Enums\AppointmentStatus;
 use App\Enums\EscalationType;
 use App\Enums\OutcomeCategory;
 use App\Enums\TaskType;
@@ -199,8 +200,9 @@ class Workspace extends Component
         $category = $outcomes->category($organization, $this->entry['outcome']);
         $local = now($timezone);
 
+        $booked = null;
         try {
-            $call = DB::transaction(function () use ($logCall, $book, $createTask, $organization, $agent, $timezone, $category, $local) {
+            $call = DB::transaction(function () use ($logCall, $book, $createTask, $organization, $agent, $timezone, $category, $local, &$booked) {
                 $call = $logCall->handle($agent, [
                     'call_date' => $local->toDateString(),
                     'call_time' => $local->format('H:i'),
@@ -220,7 +222,7 @@ class Workspace extends Component
                 ], $organization);
 
                 if ($this->entry['book']) {
-                    $book->handle($organization, [
+                    $booked = $book->handle($organization, [
                         'starts_at' => CarbonImmutable::parse($this->entry['date'].' '.$this->entry['time'], $timezone),
                         'service_id' => $this->entry['service_id'] !== '' ? (int) $this->entry['service_id'] : null,
                         'customer_id' => $call->customer_id,
@@ -268,7 +270,8 @@ class Workspace extends Component
 
         $this->lastSaved = $call->call_id;
         $this->resetCall();
-        $this->dispatch('toast', type: 'success', message: "Call {$call->call_id} saved. The business has been notified.");
+        $this->dispatch('toast', type: 'success', message: "Call {$call->call_id} saved. The business has been notified."
+            .($booked?->status === AppointmentStatus::Pending ? ' The booking waits for the business to approve it.' : ''));
     }
 
     public function newCall(): void

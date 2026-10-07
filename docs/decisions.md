@@ -551,3 +551,20 @@ Start these early. The code can be built and tested with your own accounts befor
 - **Calls:** an agent adds notes only to calls they logged, in a company they still serve, for 24 hours after the call. Notes are appended with name and time and never rewritten, so what the business has read doesn't change. Later information goes on the customer instead.
 
 **Why:** Agents already held these permissions, but the web screens were read-only, so corrections went through the business or by phone. The limits keep agent changes visible and accountable.
+
+## D48 — Customers change their own bookings; owners can approve agents' bookings (2026-10-23)
+**Decision (CAL-09):** confirmation, reminder and time-change emails carry a "Change or cancel" button. It opens a page with the business's name. There the customer picks a new free time or cancels, without an account.
+- **The link:** it is signed and stops working when the appointment starts. A changed or old link shows "This link no longer works", not an error.
+- **Cut-off:** changes are allowed until the business's cut-off, set under *Business › Customer emails*: 2–72 hours before, default 24, or off. After that the page shows the business's phone number.
+- **Same rules as staff bookings:** a new time must be free and inside the business's hours and booking rules.
+- **Records:** every change notifies the business, goes on the customer's timeline, and is audited with no user (a customer did it). The usual "time changed" or "cancelled" email follows. A customer's cancellation is recorded as "Cancelled by the customer online", with their note.
+- **Limits:** at most 10 changes an hour per appointment.
+- **The default is on (24 hours) for existing businesses.** Customers could already phone to cancel, and the business hears about every change.
+
+**Decision (CAL-08):** *Business › Rules* has "I approve bookings made by SureHelp agents".
+- **When it is on:** anything booked by someone who isn't an active member of the business (our agents and staff) is saved as "Needs confirming" instead of confirmed.
+- **The owner's side:** the owner's notification says "Approve: …" and explains what to do.
+- **The customer's side:** the customer gets no confirmation until the owner confirms it.
+- **Bookings made by the business's own team are unaffected.**
+
+**Why:** customers expect to manage a booking from the email, and some owners want to check what is booked in their name before the customer is told.

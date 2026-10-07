@@ -31,6 +31,17 @@ class Rules extends Component
     /** @var array<string, mixed> */
     public array $config = [];
 
+    /** Agent bookings wait for the owner's approval (CAL-08). */
+    public function toggleApproval(Audit $audit): void
+    {
+        $organization = $this->organization();
+        $this->authorize('settings.manage', $organization);
+        $organization->forceFill(['approve_agent_bookings' => ! $organization->approve_agent_bookings])->save();
+        $audit->changes('organization.updated', $organization, ['approve_agent_bookings']);
+        $this->dispatch('toast', type: 'success', message: $organization->approve_agent_bookings
+            ? 'Bookings by our agents now wait for your approval.' : 'Bookings by our agents are confirmed straight away.');
+    }
+
     public function mount(): void
     {
         $this->authorize('organization.view', $this->organization());
@@ -155,6 +166,7 @@ class Rules extends Component
             'priorities' => EscalationPriority::cases(),
             'details' => BusinessRule::DETAILS,
             'canManage' => auth()->user()->can('settings.manage', $organization),
+            'approveAgentBookings' => $organization->approve_agent_bookings,
         ]);
     }
 }

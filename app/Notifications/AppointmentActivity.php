@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Enums\AppointmentStatus;
 use App\Enums\NotificationEvent;
 use App\Models\Appointment;
 use App\Models\User;
@@ -69,7 +70,9 @@ class AppointmentActivity extends Notification implements ShouldQueue
         return match ($this->event) {
             NotificationEvent::AppointmentCancelled => 'Cancelled: '.$this->appointment->title,
             NotificationEvent::AppointmentUpdated => 'Changed: '.$this->appointment->title,
-            default => 'Booked: '.$this->appointment->title,
+            default => $this->appointment->status === AppointmentStatus::Pending && $this->appointment->booked_by_user_id !== null
+                ? 'Approve: '.$this->appointment->title
+                : 'Booked: '.$this->appointment->title,
         };
     }
 
