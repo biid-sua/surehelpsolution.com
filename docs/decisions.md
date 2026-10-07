@@ -544,3 +544,10 @@ Start these early. The code can be built and tested with your own accounts befor
 
 **Why:** Plans and add-ons need to mean something, without hard-coding prices into features. Staff need an escape hatch for trials, special deals and support.
 
+## D47 — What agents may change on the web (2026-10-23)
+**Decision:** Agents work on records of the companies they currently serve (AGT-14). Each change needs the agent's permission in that company and is looked up inside it, so another company's record is "not found".
+- **Appointments:** only upcoming ones (pending, tentative, confirmed, in the future). Moving one uses strict booking: inside opening hours and the business's rules, at a free time. Owners can override those rules; agents can't. Cancelling needs a reason, which the business is told.
+- **Customers:** the same edit form and checks as the business portal (one shared action, `UpdateCustomer`), including consent recorded with the agent's name. Notes go on the customer's timeline.
+- **Calls:** an agent adds notes only to calls they logged, in a company they still serve, for 24 hours after the call. Notes are appended with name and time and never rewritten, so what the business has read doesn't change. Later information goes on the customer instead.
+
+**Why:** Agents already held these permissions, but the web screens were read-only, so corrections went through the business or by phone. The limits keep agent changes visible and accountable.
