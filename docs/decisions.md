@@ -608,3 +608,11 @@ Start these early. The code can be built and tested with your own accounts befor
 - **Backup:** staff still see the temporary password once, in case the email doesn't arrive.
 
 **Why:** passing temporary passwords around by chat or phone is error-prone and less safe. A link the person uses themselves is both easier and safer.
+
+## D52 — Idempotency keys on the mobile API (2026-10-23)
+**Decision:** the app's create endpoints accept an optional `Idempotency-Key` header: call logs, appointments, tasks, inbox replies and admin user creation.
+- **What it does:** the first response is remembered for 24 hours, per signed-in person and key. A retry returns it unchanged, marked `Idempotent-Replayed: true`.
+- **Edge cases:** the same key with a different body is refused (422). A concurrent duplicate gets 409. Server errors aren't remembered.
+- **Storage:** the application cache, so production's `CACHE_STORE` (database) keeps the keys across workers.
+
+**Why:** phones drop connections after the server has saved a call log or booking. Without a key, the app's retry creates a second one.

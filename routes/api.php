@@ -84,12 +84,12 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
         });
         Route::get('/inbox/conversations', [InboxController::class, 'index'])->middleware('can:messages.view');
         Route::get('/inbox/conversations/{ulid}', [InboxController::class, 'show'])->middleware('can:messages.view');
-        Route::post('/inbox/conversations/{ulid}/reply', [InboxController::class, 'reply'])->middleware('can:messages.send');
+        Route::post('/inbox/conversations/{ulid}/reply', [InboxController::class, 'reply'])->middleware(['can:messages.send', 'idempotent']);
         Route::get('/social/posts', [SocialPostController::class, 'index'])->middleware('can:social.view');
         Route::post('/social/posts/{ulid}/approve', [SocialPostController::class, 'approve'])->middleware('can:social.manage');
         Route::post('/social/posts/{ulid}/request-changes', [SocialPostController::class, 'requestChanges'])->middleware('can:social.manage');
         Route::get('/tasks', [TaskController::class, 'index'])->middleware('can:tasks.view');
-        Route::post('/tasks', [TaskController::class, 'store'])->middleware('can:tasks.create');
+        Route::post('/tasks', [TaskController::class, 'store'])->middleware(['can:tasks.create', 'idempotent']);
         Route::get('/tasks/{ulid}', [TaskController::class, 'show'])->middleware('can:tasks.view');
         Route::patch('/tasks/{ulid}', [TaskController::class, 'update'])->middleware('can:tasks.update');
         Route::middleware('can:appointments.view')->group(function () {
@@ -97,7 +97,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
             Route::get('/availability', [AppointmentController::class, 'availability']);
             Route::get('/appointments/{ulid}', [AppointmentController::class, 'show']);
         });
-        Route::post('/appointments', [AppointmentController::class, 'store'])->middleware('can:appointments.create');
+        Route::post('/appointments', [AppointmentController::class, 'store'])->middleware(['can:appointments.create', 'idempotent']);
         Route::patch('/appointments/{ulid}', [AppointmentController::class, 'update'])->middleware('can:appointments.view');
         Route::get('/escalations', [EscalationController::class, 'index'])->middleware('can:escalations.view');
         Route::get('/escalations/{ulid}', [EscalationController::class, 'show'])->middleware('can:escalations.view');
@@ -115,7 +115,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
         Route::get('/dashboard/kpi', [AgentDashboardController::class, 'getKpiData']);
         Route::get('/dashboard/performance', [AgentDashboardController::class, 'getPerformanceData']);
         Route::get('/call-logs', [AgentDashboardController::class, 'getCallLogs']);
-        Route::post('/call-logs', [AgentDashboardController::class, 'createCallLog'])->middleware('can:calls.create');
+        Route::post('/call-logs', [AgentDashboardController::class, 'createCallLog'])->middleware(['can:calls.create', 'idempotent']);
         Route::put('/call-logs/{id}', [AgentDashboardController::class, 'updateCallLog']);
         Route::get('/clients', [AgentDashboardController::class, 'getClientsList']);
         // Assigned companies (D40): the same check as the web portal; unassigned = 404.
@@ -149,7 +149,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
 
         // User management
         Route::get('/users', [AdminDashboardController::class, 'getUsers'])->middleware('can:users.view');
-        Route::post('/users', [AdminDashboardController::class, 'createUser'])->middleware('can:users.create');
+        Route::post('/users', [AdminDashboardController::class, 'createUser'])->middleware(['can:users.create', 'idempotent']);
         Route::put('/users/{id}', [AdminDashboardController::class, 'updateUser'])->middleware('can:users.update');
         Route::delete('/users/{id}', [AdminDashboardController::class, 'deleteUser'])->middleware('can:users.delete');
 

@@ -5,6 +5,7 @@ use App\Exceptions\AuthorizationFailureLogger;
 use App\Http\Middleware\AccountGate;
 use App\Http\Middleware\EnsureApiUserIsActive;
 use App\Http\Middleware\ForcePasswordChange;
+use App\Http\Middleware\Idempotent;
 use App\Http\Middleware\RedirectGuestsToHome;
 use App\Http\Middleware\RequireFeature;
 use App\Http\Middleware\ResolveOrganization;
@@ -32,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant' => ResolveOrganization::class,
             'account.gate' => AccountGate::class,
             'feature' => RequireFeature::class,
+            'idempotent' => Idempotent::class,
         ]);
 
         $middleware->append(SecurityHeaders::class);

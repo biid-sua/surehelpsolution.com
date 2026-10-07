@@ -43,6 +43,14 @@ Base URL: `https://surehelpsolution.com/api/v1`. All requests and responses are 
 - `POST /login`: 5 per minute per email+IP, 20 per minute per IP.
 - Everything else: 120 requests per minute per user (per IP when signed out).
 
+### Safe retries (`Idempotency-Key`, D52)
+`POST /agent/call-logs`, `POST /client/appointments`, `POST /client/tasks`, `POST /client/inbox/conversations/{id}/reply` and `POST /admin/users` accept an optional `Idempotency-Key` header (8–100 characters: letters, digits, `-`, `_`, `.`, `:`). Send a new random key, such as a UUID, for each thing the person creates, and the same key when you retry it.
+- **A retry with the same key and body within 24 hours:** returns the first response with `Idempotent-Replayed: true`, and nothing new is created.
+- **The same key with a different body:** `422`.
+- **A retry while the first attempt is still running:** `409`. Wait a moment and retry.
+- **Server errors (`5xx`) aren't remembered:** retry with the same key.
+- **Keys are per signed-in person.**
+
 ### Security
 - No browser CORS except from our own site (`CORS_ALLOWED_ORIGINS` adds more).
 - API responses are `Cache-Control: no-store`.
@@ -154,6 +162,7 @@ A staff member without the permission gets `403`. Dashboard: `dashboard.view`. A
 
 | Date | Change |
 |---|---|
+| 2026-10-23 | Optional `Idempotency-Key` header on create endpoints (D52). |
 | 2026-10-06 (A-4) | `/agent/training/…` (Agent University). Required training can now refuse company endpoints (`403 training_required`) and call logging (`422`) (D43). |
 | 2026-10-06 (A-1/A-2) | `/agent/companies` and its customers, appointments, calls and conversations. Unassigned businesses now answer `404` (was `403`) on `PUT /agent/call-logs/{id}`; `/agent/call-logs` lists only calls for businesses the agent serves now (D40). |
 | 2026-10-06 (M-1) | `/client/inbox/conversations` (list, show, reply). Public website chat endpoints `/api/chat/{key}/…` and the Meta webhook `/api/webhooks/meta` are outside v1 (docs/inbox.md). |
