@@ -58,8 +58,30 @@
                             </td>
                             <td class="hidden text-muted md:table-cell">{{ str($call->reason_for_call)->headline() }}</td>
                             <td><x-ui.badge :tone="$call->statusTone()">{{ $call->statusLabel() }}</x-ui.badge></td>
-                            <td class="whitespace-nowrap text-right text-muted" title="{{ $call->created_at->toDayDateTimeString() }}">{{ $call->created_at->diffForHumans() }}</td>
+                            <td class="whitespace-nowrap text-right text-muted" title="{{ $call->created_at->toDayDateTimeString() }}">
+                                {{ $call->created_at->diffForHumans() }}
+                                @if ($noting !== $call->id && \App\Actions\Calls\AddCallNote::open($call) && auth()->user()->can('update', $call))
+                                    <button type="button" wire:click="startNote({{ $call->id }})" class="ml-2 text-xs font-medium text-brand-300 hover:text-ink">Add note</button>
+                                @endif
+                            </td>
                         </tr>
+                        @if ($noting === $call->id)
+                            <tr wire:key="note-{{ $call->id }}">
+                                <td colspan="5">
+                                    <form wire:submit="saveNote" class="space-y-2">
+                                        @if ($call->notes)<p class="whitespace-pre-line text-sm text-muted">{{ $call->notes }}</p>@endif
+                                        <label for="call-note" class="sh-label">Add to this call's notes</label>
+                                        <textarea id="call-note" wire:model="note" rows="2" class="sh-input" maxlength="{{ \App\Actions\Calls\AddCallNote::MAX_LENGTH }}"></textarea>
+                                        @error('note') <p class="text-sm text-danger">{{ $message }}</p> @enderror
+                                        <p class="text-xs text-subtle">Added notes are stamped with your name and the time, and can't be changed later.</p>
+                                        <div class="flex gap-2">
+                                            <x-ui.button type="submit" size="sm">Add note</x-ui.button>
+                                            <x-ui.button size="sm" variant="ghost" wire:click="cancelNote">Cancel</x-ui.button>
+                                        </div>
+                                    </form>
+                                </td>
+                            </tr>
+                        @endif
                     @endforeach
                 </tbody>
             </x-ui.table>

@@ -1,17 +1,28 @@
 <div>
     <x-agent.company-bar :company="$company" active="customers" />
 
-    <div class="mb-4">
+    <div class="mb-4 flex flex-wrap items-start gap-3">
+        <div class="min-w-0 flex-1">
         <a href="{{ route('agent.businesses.customers', $company->ulid) }}" class="inline-flex items-center gap-1 text-sm text-muted hover:text-ink"><x-ui.icon name="arrow-left" class="size-4" /> Customers</a>
         <h1 class="mt-2 text-2xl font-semibold text-ink">{{ $customer->fullName() }}</h1>
         <p class="mt-1 text-sm text-muted">
             {{ $customer->displayPhone() ?? 'No phone' }}@if ($customer->email) · {{ $customer->email }}@endif
             · <x-ui.badge :tone="$customer->status->tone()">{{ $customer->status->label() }}</x-ui.badge>
         </p>
+        </div>
+        @if ($canUpdate)<x-ui.button variant="secondary" wire:click="edit">Edit details</x-ui.button>@endif
     </div>
 
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <x-ui.card title="History" :padding="false">
+            @if ($canUpdate)
+                <form wire:submit="addNote" class="border-b border-line px-5 py-4">
+                    <label for="c-note" class="sr-only">Add a note</label>
+                    <textarea id="c-note" wire:model="note" rows="2" class="sh-input" placeholder="Add a note for the business and other agents…"></textarea>
+                    @error('note') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror
+                    <div class="mt-2 flex justify-end"><x-ui.button type="submit" size="sm" variant="secondary">Add note</x-ui.button></div>
+                </form>
+            @endif
             @if ($timeline->isEmpty())
                 <x-ui.empty-state icon="clock" title="Nothing yet" description="Calls, bookings and messages appear here." />
             @else
@@ -52,4 +63,8 @@
             @endif
         </aside>
     </div>
+
+    @if ($canUpdate)
+        @include('partials.customer-edit-dialog')
+    @endif
 </div>
