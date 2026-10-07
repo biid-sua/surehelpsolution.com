@@ -6,6 +6,7 @@ use App\Http\Middleware\AccountGate;
 use App\Http\Middleware\EnsureApiUserIsActive;
 use App\Http\Middleware\ForcePasswordChange;
 use App\Http\Middleware\RedirectGuestsToHome;
+use App\Http\Middleware\RequireFeature;
 use App\Http\Middleware\ResolveOrganization;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\SecurityHeaders;
@@ -29,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'api.active' => EnsureApiUserIsActive::class,
             'tenant' => ResolveOrganization::class,
             'account.gate' => AccountGate::class,
+            'feature' => RequireFeature::class,
         ]);
 
         $middleware->append(SecurityHeaders::class);

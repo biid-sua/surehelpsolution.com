@@ -11,6 +11,7 @@ use App\Models\ChatWidget;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Services\Ai\Contracts\AiProvider;
+use App\Services\Billing\FeatureAccess;
 use App\Support\Phone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -52,8 +53,15 @@ class WidgetController extends Controller
 
         $phone = $widget->offers('call') ? Phone::normalize(BusinessProfile::query()->forOrganization($organization)->value('phone')) : null;
 
+        // Booking, click-to-call and the contact form need website tools in the plan (D46); chat doesn't.
+        $features = $widget->enabledFeatures();
+        if (! app(FeatureAccess::class)->allows($organization, 'website_tools')) {
+            $features = ['chat' => $features['chat']] + array_fill_keys(['booking', 'call', 'lead'], false);
+            $phone = null;
+        }
+
         return $this->cors(response()->json([
-            'features' => $widget->enabledFeatures(),
+            'features' => $features,
             'phone' => $phone ? ['tel' => $phone, 'label' => Phone::display($phone)] : null,
             'booking_confirm' => $widget->offers('booking') ? $widget->bookings_need_confirmation : null,
             'business' => $business,

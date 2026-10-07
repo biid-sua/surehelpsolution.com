@@ -251,6 +251,8 @@
         </div>
     @elseif ($tab === 'addons')
         <livewire:admin.billing.addons />
+    @elseif ($tab === 'features')
+        <livewire:admin.billing.features />
     @else
         <x-ui.card title="Payment settings" description="What clients see on invoices and the billing page.">
             <form wire:submit="saveSettings" class="grid gap-4 lg:grid-cols-2">

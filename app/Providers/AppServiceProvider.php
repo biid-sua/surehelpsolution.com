@@ -11,6 +11,7 @@ use App\Services\Ai\Contracts\AiProvider;
 use App\Services\Ai\Providers\ClaudeProvider;
 use App\Services\Billing\BillingSettings;
 use App\Services\Billing\Entitlements;
+use App\Services\Billing\FeatureAccess;
 use App\Services\Billing\Gateways\PaymentGateway;
 use App\Services\Billing\Gateways\PayoneerGateway;
 use App\Services\Calls\CallOutcomes;
@@ -41,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(BusinessRules::class);
         $this->app->scoped(BillingSettings::class);
         $this->app->scoped(Entitlements::class);
+        $this->app->scoped(FeatureAccess::class);
         // AI vendor behind one interface (spec §33, D38).
         $this->app->singleton(AiProvider::class, ClaudeProvider::class);
         $this->app->bind(PaymentGateway::class, fn () => match (config('billing.gateway')) {

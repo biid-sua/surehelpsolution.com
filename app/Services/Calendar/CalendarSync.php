@@ -7,6 +7,8 @@ use App\Exceptions\CalendarEventChanged;
 use App\Models\Appointment;
 use App\Models\CalendarBusyBlock;
 use App\Models\CalendarConnection;
+use App\Models\Organization;
+use App\Services\Billing\FeatureAccess;
 use App\Services\Calendar\Data\EventPayload;
 use App\Services\Calendar\Data\EventRef;
 use App\Services\Calendar\Data\PushChannel;
@@ -26,6 +28,14 @@ class CalendarSync
 {
     public function __construct(private readonly CalendarManager $calendars) {}
 
+    /** Calendar sync is a paid feature (D46): without it, connected calendars simply stop syncing. */
+    private function featureOn(int $organizationId): bool
+    {
+        $organization = Organization::find($organizationId);
+
+        return $organization !== null && app(FeatureAccess::class)->allows($organization, 'calendar_sync');
+    }
+
     /**
      * Refresh the mirrored busy times for one connection.
      *
@@ -33,6 +43,10 @@ class CalendarSync
      */
     public function pullBusy(CalendarConnection $connection): int
     {
+        if (! $this->featureOn($connection->organization_id)) {
+            return 0;
+        }
+
         try {
             $token = $this->calendars->accessToken($connection);
             $provider = $this->calendars->provider($connection->provider);
@@ -83,6 +97,10 @@ class CalendarSync
      */
     public function pushAppointment(Appointment $appointment): void
     {
+        if (! $this->featureOn($appointment->organization_id)) {
+            return;
+        }
+
         $connections = CalendarConnection::withoutGlobalScopes()
             ->where('organization_id', $appointment->organization_id)
             ->where('status', CalendarConnection::STATUS_ACTIVE)

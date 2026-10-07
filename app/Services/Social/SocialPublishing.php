@@ -10,6 +10,7 @@ use App\Jobs\PublishSocialTarget;
 use App\Models\SocialPost;
 use App\Models\SocialPostTarget;
 use App\Notifications\SocialPostFailed;
+use App\Services\Billing\FeatureAccess;
 use App\Services\Social\Data\PublishRequest;
 use App\Support\Audit\Audit;
 use Illuminate\Support\Facades\DB;
@@ -76,6 +77,9 @@ class SocialPublishing
         try {
             if (! $account || ! $account->is_enabled) {
                 throw new SocialPostRejected('This account was removed from SureHelp.');
+            }
+            if ($post->organization && ! app(FeatureAccess::class)->allows($post->organization, 'social_publishing')) {
+                throw new SocialPostRejected('Social publishing isn\'t included in this business\'s plan.');   // D46
             }
 
             $request = new PublishRequest(

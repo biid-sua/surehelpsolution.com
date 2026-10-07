@@ -530,3 +530,17 @@ Start these early. The code can be built and tested with your own accounts befor
 
 **Why:** Going live, pausing for non-payment and cancelling are everyday operations for the team. They need one place, a record of who did it and why, and an owner who's told.
 
+## D46 — Paid features: open to everyone, or only to plans that include them (2026-10-23)
+**Decision:** Five product features can be sold (FND-18, spec §30–31). Their keys are `calendar_sync`, `ai_assistant`, `social_publishing`, `website_tools` and `customer_emails`.
+- **Feature access** (Admin › Billing): each feature is "every business" (the default) or "only plans / add-ons that include it". A plan includes it by listing the key in its feature keys; an add-on does by having the key as its slug.
+- **Per business:** on the admin business page, staff with `billing.manage` can set each feature to "follow the plan", "always on" or "always off". The override wins.
+- **Enforced on the server, where the work happens:**
+  - **Pages:** the pages are behind `feature:` middleware. Owners are sent to Billing with "not in your plan"; others go to the dashboard.
+  - **Background work:** the AI assistant doesn't reply, appointment emails aren't sent, calendars don't sync, social posts fail with a clear reason, and website checks don't run.
+  - **Website snippet:** it keeps chat but hides booking, click-to-call and the contact form, whose endpoints answer 404.
+  - **Sidebar:** locked items stay listed with an "Upgrade" badge.
+- **Nothing is taken away by surprise:** every feature starts open to everyone. Changing one to "only plans" takes effect at once for businesses without it, and the admin page shows which plans and add-ons include each feature.
+- This corrects D30, which said add-on keys already unlocked features: nothing checked them until now.
+
+**Why:** Plans and add-ons need to mean something, without hard-coding prices into features. Staff need an escape hatch for trials, special deals and support.
+

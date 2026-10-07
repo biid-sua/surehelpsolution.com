@@ -10,6 +10,7 @@ use App\Models\BusinessProfile;
 use App\Models\MessageTemplate;
 use App\Models\Organization;
 use App\Notifications\CustomerEmail;
+use App\Services\Billing\FeatureAccess;
 use App\Support\Phone;
 use Illuminate\Support\Facades\Notification;
 
@@ -87,6 +88,9 @@ class CustomerMessages
     public function send(Appointment $appointment, string $key): bool
     {
         $appointment->loadMissing(['organization', 'customer', 'service']);
+        if (! app(FeatureAccess::class)->allows($appointment->organization, 'customer_emails')) {
+            return false;   // not in the business's plan (D46)
+        }
         $template = $this->template($appointment->organization, $key);
         if (! $template['is_active'] || ! $this->reachable($appointment)) {
             return false;

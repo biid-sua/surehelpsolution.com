@@ -42,7 +42,7 @@ class Index extends Component
     use PlatformAdminOnly;
     use WithPagination;
 
-    public const TABS = ['invoices' => 'Invoices', 'subscriptions' => 'Subscriptions', 'plans' => 'Plans', 'addons' => 'Add-ons', 'settings' => 'Payment settings'];
+    public const TABS = ['invoices' => 'Invoices', 'subscriptions' => 'Subscriptions', 'plans' => 'Plans', 'addons' => 'Add-ons', 'features' => 'Feature access', 'settings' => 'Payment settings'];
 
     #[Url(except: 'invoices')]
     public string $tab = 'invoices';

@@ -11,6 +11,7 @@ use App\Models\Message;
 use App\Services\Ai\Contracts\AiProvider;
 use App\Services\Ai\Data\AiRequest;
 use App\Services\Billing\Entitlements;
+use App\Services\Billing\FeatureAccess;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 
@@ -52,7 +53,8 @@ class ConversationAssistant
         $assistant = AiAssistant::for($organization);
         $mode = $assistant->modeFor($conversation->channel);
 
-        if ($mode === 'off' || ! $this->ai->isConfigured() || ! $conversation->isOpen()) {
+        if ($mode === 'off' || ! $this->ai->isConfigured() || ! $conversation->isOpen()
+            || ! app(FeatureAccess::class)->allows($organization, 'ai_assistant')) {   // not in the plan (D46)
             return null;
         }
 

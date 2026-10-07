@@ -142,6 +142,8 @@
 
         <div class="space-y-6">
         {{-- Setup wizard progress (spec ONB): where the business is stuck --}}
+        <livewire:admin.organizations.features :organization-id="$organization->id" />
+
         <x-ui.card title="Setup" :description="$organization->isSetUp() ? 'Finished '.$organization->setup_completed_at->format('M j, Y') : $setupCount['done'].' of '.$setupCount['total'].' steps done'" :padding="false">
             <ul class="divide-y divide-line">
                 @foreach (\App\Services\Setup\SetupProgress::STEPS as $key => [$title])

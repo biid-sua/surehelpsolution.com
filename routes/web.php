@@ -172,18 +172,18 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/billing/invoices/{invoice}/pdf', [ClientInvoiceController::class, 'pdf'])->name('billing.invoice.pdf');
     });
     Route::middleware('can:integrations.manage')->whereIn('provider', ['google', 'microsoft'])->group(function () {
-        Route::get('/integrations/calendar/{provider}/connect', [CalendarOAuthController::class, 'redirect'])->name('integrations.calendar.connect');
+        Route::get('/integrations/calendar/{provider}/connect', [CalendarOAuthController::class, 'redirect'])->middleware('feature:calendar_sync')->name('integrations.calendar.connect');
         Route::get('/integrations/calendar/{provider}/callback', [CalendarOAuthController::class, 'callback'])->name('integrations.calendar.callback');
     });
     // Inbox and AI assistant (spec §26, §26A, D37–D39)
     Route::middleware('can:messages.view')->group(function () {
         Route::get('/inbox', InboxIndex::class)->name('inbox.index');
         Route::get('/inbox/channels', InboxChannels::class)->name('inbox.channels');
-        Route::get('/inbox/assistant', InboxAssistant::class)->middleware('can:ai.view')->name('inbox.assistant');
+        Route::get('/inbox/assistant', InboxAssistant::class)->middleware(['can:ai.view', 'feature:ai_assistant'])->name('inbox.assistant');
         Route::get('/inbox/{conversation}', InboxIndex::class)->name('inbox.show');
     });
     // Social media (spec §41, D33)
-    Route::middleware('can:social.view')->group(function () {
+    Route::middleware(['can:social.view', 'feature:social_publishing'])->group(function () {
         Route::get('/social', SocialIndex::class)->name('social.index');
         Route::get('/social/accounts', SocialAccounts::class)->name('social.accounts');
         Route::get('/social/media', SocialMedia::class)->name('social.media');
@@ -191,7 +191,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/social/posts/new', SocialCompose::class)->middleware('can:social.manage')->name('social.posts.create');
         Route::get('/social/posts/{post}', SocialCompose::class)->name('social.posts.edit');
     });
-    Route::middleware('can:social.manage')->whereIn('connector', ['meta', 'linkedin', 'google'])->group(function () {
+    Route::middleware(['can:social.manage', 'feature:social_publishing'])->whereIn('connector', ['meta', 'linkedin', 'google'])->group(function () {
         Route::get('/social/connect/{connector}', [SocialOAuthController::class, 'redirect'])->name('social.connect');
         Route::get('/social/connect/{connector}/callback', [SocialOAuthController::class, 'callback'])->name('social.connect.callback');
     });
@@ -210,9 +210,9 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/business/outcomes', BusinessOutcomesPage::class)->name('business.outcomes');
         Route::get('/business/knowledge', BusinessKnowledgePage::class)->middleware('can:knowledge_base.view')->name('business.knowledge');
         Route::get('/business/rules', BusinessRulesPage::class)->name('business.rules');
-        Route::get('/business/emails', BusinessCustomerEmails::class)->name('business.emails');
-        Route::get('/business/calendars', BusinessCalendarsPage::class)->middleware('can:integrations.view')->name('business.calendars');
-        Route::get('/website', ClientWebsite::class)->middleware('can:integrations.view')->name('website');
+        Route::get('/business/emails', BusinessCustomerEmails::class)->middleware('feature:customer_emails')->name('business.emails');
+        Route::get('/business/calendars', BusinessCalendarsPage::class)->middleware(['can:integrations.view', 'feature:calendar_sync'])->name('business.calendars');
+        Route::get('/website', ClientWebsite::class)->middleware(['can:integrations.view', 'feature:website_tools'])->name('website');
     });
 });
 

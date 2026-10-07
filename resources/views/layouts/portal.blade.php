@@ -61,6 +61,7 @@
                             ])>
                             <x-ui.icon :name="$item['icon']" @class(['size-5', 'text-brand-300' => $item['current']]) />
                             <span class="flex-1">{{ $item['label'] }}</span>
+                            @if (! empty($item['locked']))<span class="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-300" title="Not in your plan">Upgrade</span>@endif
                         </a>
                     @endif
                 @endforeach
@@ -123,6 +124,9 @@
             </header>
 
             <main id="main" class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8" tabindex="-1">
+                @if (session('feature_locked'))
+                    <x-ui.alert tone="info" class="mb-6" title="Not in your plan">{{ session('feature_locked') }}</x-ui.alert>
+                @endif
                 {{ $slot }}
             </main>
         </div>

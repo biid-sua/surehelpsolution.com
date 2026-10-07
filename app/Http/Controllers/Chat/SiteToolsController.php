@@ -11,6 +11,7 @@ use App\Exceptions\SlotUnavailable;
 use App\Http\Controllers\Controller;
 use App\Models\BusinessService;
 use App\Models\ChatWidget;
+use App\Services\Billing\FeatureAccess;
 use App\Services\Rules\BusinessRules;
 use App\Services\Scheduling\Availability;
 use App\Services\Tasks\CallbackDueTime;
@@ -209,6 +210,7 @@ class SiteToolsController extends Controller
         abort_unless($widget->organization->isServing(), 404);   // paused or cancelled service: the website tools stay hidden (D45)
         abort_unless($widget->allowsOrigin($request->headers->get('Origin')), 403, 'This website may not use this widget.');
         abort_unless($widget->offers($feature), 404);
+        abort_unless(app(FeatureAccess::class)->allows($widget->organization, 'website_tools'), 404);   // D46
 
         return $widget;
     }

@@ -3,6 +3,8 @@
 namespace App\Support\Navigation;
 
 use App\Models\User;
+use App\Services\Billing\FeatureAccess;
+use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -14,7 +16,7 @@ use Illuminate\Support\Facades\Route;
 class PortalNavigation
 {
     /**
-     * @return list<array{label: string, icon: string, route: ?string, active: string, permission: ?string, status: string}>
+     * @return list<array{label: string, icon: string, route: ?string, active: string, permission: ?string, status: string, feature?: ?string}>
      */
     public function definition(string $portal): array
     {
@@ -28,10 +30,10 @@ class PortalNavigation
                 $this->item('Customers', 'users', 'app.customers.index', 'app.customers.*', 'customers.view'),
                 $this->item('Tasks', 'check-circle', 'app.tasks.index', 'app.tasks.*', 'tasks.view'),
                 $this->item('Escalations', 'alert', 'app.escalations.index', 'app.escalations.*', 'escalations.view'),
-                $this->item('Social', 'megaphone', 'app.social.index', 'app.social.*', 'social.view'),
+                $this->item('Social', 'megaphone', 'app.social.index', 'app.social.*', 'social.view', 'social_publishing'),
                 $this->item('Inbox', 'chat', 'app.inbox.index', 'app.inbox.*', 'messages.view'),
                 $this->item('Business', 'building', 'app.business.profile', 'app.business.*', 'organization.view'),
-                $this->item('Website', 'globe', 'app.website', 'app.website*', 'integrations.view'),
+                $this->item('Website', 'globe', 'app.website', 'app.website*', 'integrations.view', 'website_tools'),
                 $this->item('Billing', 'card', 'app.billing', 'app.billing*', 'billing.view'),
                 $this->item('Team', 'users', 'app.settings.team', 'app.settings.team', 'users.view'),
                 $this->item('Notifications', 'bell', 'app.settings.notifications', 'app.settings.notifications', null),
@@ -82,6 +84,9 @@ class PortalNavigation
             }
 
             $item['url'] = $item['route'] && Route::has($item['route']) ? route($item['route']) : null;
+            // A paid feature this business doesn't have: still listed, marked "Upgrade" (D46).
+            $organization = app(CurrentOrganization::class)->get();
+            $item['locked'] = ! empty($item['feature']) && $organization && ! app(FeatureAccess::class)->allows($organization, $item['feature']);
             $item['current'] = $item['route'] !== null && request()->routeIs(...explode('|', $item['active']));
             $items[] = $item;
         }
@@ -89,8 +94,8 @@ class PortalNavigation
         return $items;
     }
 
-    private function item(string $label, string $icon, string $route, string $active, ?string $permission): array
+    private function item(string $label, string $icon, string $route, string $active, ?string $permission, ?string $feature = null): array
     {
-        return compact('label', 'icon', 'route', 'active', 'permission') + ['status' => 'live'];
+        return compact('label', 'icon', 'route', 'active', 'permission', 'feature') + ['status' => 'live'];
     }
 }
