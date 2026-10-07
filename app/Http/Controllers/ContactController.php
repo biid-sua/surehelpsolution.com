@@ -21,8 +21,9 @@ class ContactController extends Controller
             'inquiry_type' => ['required', Rule::in(array_keys(ContactSubmission::INQUIRY_TYPES))],
             'message' => ['required', 'string', 'min:10', 'max:5000'],
             'privacy' => ['accepted'],
+            'sms_consent' => ['nullable', 'boolean'],
         ], [
-            'privacy.accepted' => 'Please confirm you agree to our Privacy Policy and communication preferences.',
+            'privacy.accepted' => 'Please confirm you agree to our Privacy Policy.',
         ]);
 
         $submission = ContactSubmission::create([
@@ -32,7 +33,8 @@ class ContactController extends Controller
             'company' => $validated['company'] ?? null,
             'inquiry_type' => $validated['inquiry_type'],
             'message' => $validated['message'],
-            'sms_consent' => true,
+            // Only what the visitor ticked: text-message consent is optional and never a condition (TCPA, A2P 10DLC).
+            'sms_consent' => $request->boolean('sms_consent'),
             'ip_address' => $request->ip(),
         ]);
 

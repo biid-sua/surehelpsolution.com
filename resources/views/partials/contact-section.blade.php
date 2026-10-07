@@ -151,9 +151,16 @@
                   <div class="form-check">
                     <input class="form-check-input @error('privacy') is-invalid @enderror" type="checkbox" id="contact_privacy" name="privacy" value="1" {{ old('privacy') ? 'checked' : '' }} required>
                     <label class="form-check-label" for="contact_privacy" style="font-size: 0.7rem; line-height: 1.2;">
-                      I agree to receive communications by text message about inquiries, confirm appoints, schedule appointments from Sure Help Solution. You may opt-out by replying STOP or ask for more information by replying HELP. Message frequency varies. Message and data rates may apply. You may review our <a href="{{ route('legal.privacy-policy') }}" target="_blank" rel="noopener">Privacy Policy</a> to learn how your data is used.<span class="required"></span>
+                      I agree to the <a href="{{ route('legal.privacy-policy') }}" target="_blank" rel="noopener">Privacy Policy</a>.<span class="required"></span>
                     </label>
                     @error('privacy')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                  </div>
+
+                  <div class="form-check mt-1">
+                    <input class="form-check-input" type="checkbox" id="contact_sms_consent" name="sms_consent" value="1" {{ old('sms_consent') ? 'checked' : '' }}>
+                    <label class="form-check-label" for="contact_sms_consent" style="font-size: 0.7rem; line-height: 1.2;">
+                      (Optional) I agree to receive communications by text message about inquiries, confirm appoints, schedule appointments from Sure Help Solution. You may opt-out by replying STOP or ask for more information by replying HELP. Message frequency varies. Message and data rates may apply. You may review our <a href="{{ route('legal.privacy-policy') }}" target="_blank" rel="noopener">Privacy Policy</a> to learn how your data is used.
+                    </label>
                   </div>
 
                   <p class="contact-sms-disclaimer" style="font-size: 0.7rem; line-height: 1.2;">

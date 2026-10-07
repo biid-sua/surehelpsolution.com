@@ -144,7 +144,6 @@ A check of the master spec against the code (2026-10-23) found these gaps, in pr
 
 | # | Item | Notes |
 |---|---|---|
-| 2 | Website contact form consent | `ContactController` records SMS consent for every enquiry (architecture audit). Record only what the visitor ticked |
 | 3 | Plan features and add-ons actually gate features | `Entitlements::allows()` has no callers yet; add feature flags per plan/add-on and use them on paid features |
 | 4 | Business status in the admin console | Go live, pause, cancel (ADM-02, ONB-11) |
 | 5 | Agents edit records on the web | Reschedule/cancel appointments, edit customers and add notes to calls they handled (agents hold the permissions; the screens are read-only) |

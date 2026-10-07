@@ -156,7 +156,7 @@ Before this audit: only the two default example tests. Now: [tests/Feature/Dashb
 | Medium | DOM XSS: dashboards build HTML from server data with `innerHTML` template strings (client dashboard fixed in the previous pass; 3 spots remain in `agent-dashboard.blade.php`). |
 | Medium | `/admin/users/debug` debug route enabled in production. |
 | Medium | CDN scripts without SRI; unpinned Chart.js. |
-| Medium | `ContactController` stores `sms_consent = true` for every submission regardless of what the visitor chose; consent is bundled with the privacy checkbox. This is a TCPA/consent-record concern for any future SMS use — legal review recommended. |
+| Medium | `ContactController` stores `sms_consent = true` for every submission regardless of what the visitor chose; consent is bundled with the privacy checkbox. This is a TCPA/consent-record concern for any future SMS use — legal review recommended. **Fixed 2026-10-23:** text-message consent is now a separate, optional checkbox and stored as given. |
 | Medium | Session cookie `secure` flag depends on `SESSION_SECURE_COOKIE` (unset). |
 | Low | Admin can create admins via API; no audit trail of any admin action. |
 | Low | `unique_id` uses `mt_rand` (not security-relevant, but collides more than necessary). |
