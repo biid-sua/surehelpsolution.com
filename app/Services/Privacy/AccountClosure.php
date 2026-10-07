@@ -34,6 +34,8 @@ class AccountClosure
         // personal data; social accounts hold access tokens.
         'ai_feedback', 'ai_guidelines', 'messages', 'ai_runs', 'conversations', 'ai_assistants', 'chat_widgets',
         'social_posts', 'social_accounts', 'websites',
+        // Support requests (D49); their attachment files are removed with the business's folder below.
+        'support_ticket_messages', 'support_tickets',
         'call_logs', 'appointments', 'tasks', 'escalations', 'customer_timeline_events', 'customers', 'tags',
         'knowledge_items', 'business_rules', 'business_services', 'business_hours', 'business_holidays',
         'business_locations', 'business_profiles', 'message_templates', 'calendar_busy_blocks', 'calendar_connections',
@@ -101,6 +103,7 @@ class AccountClosure
 
         // Uploaded photos and videos: through the model, so each file is removed from storage too.
         MediaAsset::withoutGlobalScopes()->where('organization_id', $organization->id)->each(fn (MediaAsset $asset) => $asset->delete());
+        Storage::disk('local')->deleteDirectory('support/'.$organization->id);
 
         foreach ($exports as $export) {
             if ($export->path) {

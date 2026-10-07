@@ -23,6 +23,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\PasswordChangeController;
+use App\Http\Controllers\SupportAttachmentController;
 use App\Livewire\Account\Notifications as AccountNotifications;
 use App\Livewire\Account\Profile as AccountProfile;
 use App\Livewire\Account\Security as AccountSecurity;
@@ -39,6 +40,7 @@ use App\Livewire\Admin\Organizations\Index as OrganizationIndex;
 use App\Livewire\Admin\Organizations\Show as OrganizationShow;
 use App\Livewire\Admin\Schedules\Index as AdminSchedules;
 use App\Livewire\Admin\Search as AdminSearch;
+use App\Livewire\Admin\Support\Index as AdminSupport;
 use App\Livewire\Admin\Usage\Index as AdminUsage;
 use App\Livewire\Admin\Users\Index as AdminUsers;
 use App\Livewire\Agent\Assignments as AgentAssignments;
@@ -95,6 +97,7 @@ use App\Livewire\Client\Social\Accounts as SocialAccounts;
 use App\Livewire\Client\Social\Compose as SocialCompose;
 use App\Livewire\Client\Social\Index as SocialIndex;
 use App\Livewire\Client\Social\Media as SocialMedia;
+use App\Livewire\Client\Support\Index as ClientSupport;
 use App\Livewire\Client\Tasks\Index as TasksIndex;
 use App\Livewire\Client\Website as ClientWebsite;
 use App\Livewire\Customer\ManageAppointment;
@@ -174,6 +177,10 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/settings/privacy/exports/{export}', ClientDataExportController::class)->name('settings.privacy.export');
     });
     Route::get('/tasks', TasksIndex::class)->middleware('can:tasks.view')->name('tasks.index');
+    Route::middleware('can:support.view')->group(function () {
+        Route::get('/support', ClientSupport::class)->name('support');
+        Route::get('/support/attachments/{message}', SupportAttachmentController::class)->whereNumber('message')->name('support.attachment');
+    });
     Route::middleware('can:billing.view')->group(function () {
         Route::get('/billing', ClientBilling::class)->name('billing');
         Route::get('/billing/invoices/{invoice}', [ClientInvoiceController::class, 'show'])->name('billing.invoice');
@@ -284,4 +291,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth.home', 'force.password
     Route::get('/schedule', AdminSchedules::class)->middleware('can:users.view')->name('schedule');
     Route::get('/enquiries', AdminEnquiries::class)->middleware('can:marketing.view')->name('enquiries');
     Route::get('/audit', AuditLogs::class)->middleware('can:audit_logs.view')->name('audit');
+    Route::middleware('can:support.manage')->group(function () {
+        Route::get('/support', AdminSupport::class)->name('support');
+        Route::get('/support/attachments/{message}', SupportAttachmentController::class)->whereNumber('message')->name('support.attachment');
+    });
 });

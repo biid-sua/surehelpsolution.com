@@ -568,3 +568,16 @@ Start these early. The code can be built and tested with your own accounts befor
 - **Bookings made by the business's own team are unaffected.**
 
 **Why:** customers expect to manage a booking from the email, and some owners want to check what is booked in their name before the customer is told.
+
+## D49 — Support requests (2026-10-23)
+**Decision:** businesses ask SureHelp for help under *Support* (spec §78, CLI-09). "Request a script change" opens the form already filled in for that.
+- **A request:** subject, category, priority, message and one optional attachment (up to 10 MB: PDF, images, text, Word or Excel). Each request gets an "SR-" number.
+- **Statuses:** open, in progress, waiting for customer, resolved, closed.
+  - A staff reply sets "waiting for customer" by default; staff can pick another status.
+  - A business reply reopens the request: "in progress" if someone has it, otherwise "open".
+  - A closed request can't be replied to; the business opens a new one.
+- **Who can do what:** new permissions `support.view`, `support.create` (owners, managers and staff in the business) and `support.manage` (SureHelp staff: super admin, operations manager, support agent). Agents get none of them.
+- **Notifications:** new requests and business replies go to the assignee, or to all support staff while it's unassigned. Staff replies, and resolving or closing, go to the business's people who can see support. People can turn these off in notification settings under "Support requests".
+- **Attachments:** stored privately and only downloaded through an authorized route. They are deleted with the business when its account closes, along with the requests.
+
+**Why:** requests by phone or email get lost. One thread per request, with a status, shows both sides where things stand.

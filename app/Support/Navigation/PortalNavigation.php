@@ -38,6 +38,7 @@ class PortalNavigation
                 $this->item('Team', 'users', 'app.settings.team', 'app.settings.team', 'users.view'),
                 $this->item('Notifications', 'bell', 'app.settings.notifications', 'app.settings.notifications', null),
                 $this->item('Data & privacy', 'shield', 'app.settings.privacy', 'app.settings.privacy*', 'organization.update'),
+                $this->item('Support', 'info', 'app.support', 'app.support*', 'support.view'),
             ],
             'admin' => [
                 $this->item('Overview', 'home', 'admin.home', 'admin.home', 'dashboard.view'),
@@ -49,6 +50,7 @@ class PortalNavigation
                 $this->item('Customers', 'users', 'admin.customers', 'admin.customers', 'customers.view'),
                 $this->item('Call review', 'inbox', 'admin.calls.review', 'admin.calls.review', 'calls.update'),
                 $this->item('Escalations', 'alert', 'admin.escalations', 'admin.escalations', 'escalations.view'),
+                $this->item('Support', 'info', 'admin.support', 'admin.support*', 'support.manage'),
                 $this->item('Call quality', 'check-circle', 'agent.quality', 'agent.quality', 'qa.review'),
                 $this->item('Billing', 'card', 'admin.billing', 'admin.billing', 'billing.view'),
                 $this->item('Usage', 'chart', 'admin.usage', 'admin.usage', 'billing.view'),

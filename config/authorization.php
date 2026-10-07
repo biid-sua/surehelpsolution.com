@@ -35,6 +35,8 @@ $all = [
     'reviews.view', 'reviews.manage',
     'social.view', 'social.manage',
     'settings.view', 'settings.manage',
+    // Support requests (spec §78, CLI-09): businesses open and follow them; SureHelp staff answer them.
+    'support.view', 'support.create', 'support.manage',
     // Platform-only (not in the spec §5 list): internal audit trail, spec §62; "view as client" for support (ADM-05);
     // scoring agents' calls (SUP-04).
     'audit_logs.view',
@@ -104,6 +106,7 @@ return [
                 'knowledge_base.view', 'integrations.view', 'billing.view', 'subscriptions.view',
                 'reports.view', 'settings.view',
                 'users.impersonate',
+                'support.view', 'support.manage',
             ],
         ],
         'agent_supervisor' => [
@@ -126,11 +129,11 @@ return [
     'organization_roles' => [
         'owner' => [
             'label' => 'Business Owner',
-            'permissions' => $except(['audit_logs.view', 'users.impersonate', 'qa.review', ...$workforce]),
+            'permissions' => $except(['audit_logs.view', 'users.impersonate', 'qa.review', 'support.manage', ...$workforce]),
         ],
         'manager' => [
             'label' => 'Business Manager',
-            'permissions' => $except(['billing.manage', 'subscriptions.manage', 'users.delete', 'organization.update', 'audit_logs.view', 'users.impersonate', 'qa.review', ...$workforce]),
+            'permissions' => $except(['billing.manage', 'subscriptions.manage', 'users.delete', 'organization.update', 'audit_logs.view', 'users.impersonate', 'qa.review', 'support.manage', ...$workforce]),
         ],
         'staff' => [
             'label' => 'Staff',
@@ -145,6 +148,7 @@ return [
                 'escalations.view', 'escalations.resolve',
                 'knowledge_base.view',
                 'reports.view',
+                'support.view', 'support.create',
             ],
         ],
     ],

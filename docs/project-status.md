@@ -135,6 +135,7 @@ _As of 2026-10-06. Detailed tracker: [implementation-plan.md](implementation-pla
 | A-7 Dashboard and Results (§8.1, CLI-01) | Dashboard: *Appointments* and *New leads* cards, a custom date range (up to a year, compared with the same length before), *Customer activity* (new, returning, recent interactions) and real alerts for a disconnected calendar, overdue invoice or payment, customer messages unanswered for 30 minutes and overdue follow-ups, shown only to people who can act on them. Results, its PDF and CSV show how the month's appointments went (completed, no-show, cancelled, not yet marked) |
 | A-8 Admin console lists (§3.5) | *Calls*, *Appointments* and *Customers* across every business, with business, date and text filters (calls open inline with outcome and notes). *Usage* shows each business's month: answered calls against the plan's allowance, appointments, new customers and inbox messages, busiest first, with platform totals |
 | A-9 Self-service and approval (CAL-08, CAL-09) | Customer emails carry a signed "Change or cancel" link: customers pick a new free time or cancel, until the business's cut-off (default 24 hours). Owners can switch on approval of bookings made by SureHelp agents; those wait as "Needs confirming" (D48) |
+| A-10 Support requests (§78, CLI-09) | *Support* for businesses (new request, "Request a script change", replies with attachments, close) and a staff queue in the admin console (needs us, mine, waiting, done; assign, reply, change status), with notifications both ways (D49) |
 
 ### Merge of the cloud session (2026-10-04)
 - Branch `claude/phase-2-development-1yiwc2` merged into `develop` and pushed.
@@ -149,7 +150,6 @@ A check of the master spec against the code (2026-10-23) found these gaps, in pr
 
 | # | Item | Notes |
 |---|---|---|
-| 11 | Support tickets | Client creates a ticket, staff reply (§78, CLI-09) |
 | 12 | Automation foundation | Simple triggers and actions, post-visit follow-up and review-request emails (§42–43) |
 | 13 | Smaller items | Logo upload; client-side search; more list filters; customer CSV import; idempotency keys on the mobile API's create endpoints; welcome email for users created by admins; inbox links to tasks and appointments |
 | – | Content-Security-Policy header | Only possible after the public website stops loading scripts from CDNs (its redesign) |

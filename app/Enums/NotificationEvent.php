@@ -35,13 +35,14 @@ enum NotificationEvent: string
     case SocialApprovalRequested = 'social.approval_requested';
     case SocialPostFailed = 'social.post_failed';
     case SocialAccountDisconnected = 'social.account_disconnected';
+    case SupportUpdate = 'support.update';
 
     /**
      * @return list<self>
      */
     public static function available(): array
     {
-        return [self::CallLogged, self::CallMissed, self::FollowUpCreated, self::FollowUpOverdue, self::TaskAssigned, self::EscalationCreated, self::AppointmentCreated, self::AppointmentUpdated, self::AppointmentCancelled, self::IntegrationDisconnected, self::InvoiceIssued, self::PaymentReceived, self::PaymentFailed, self::UsageAlert, self::MonthlyReport, self::SocialApprovalRequested, self::SocialPostFailed, self::SocialAccountDisconnected, self::MessageReceived, self::AssignmentStarted, self::AssignmentChanged, self::TrainingAssigned, self::TrainingDue, self::TrainingCompleted, self::CertificationExpiring];
+        return [self::CallLogged, self::CallMissed, self::FollowUpCreated, self::FollowUpOverdue, self::TaskAssigned, self::EscalationCreated, self::AppointmentCreated, self::AppointmentUpdated, self::AppointmentCancelled, self::IntegrationDisconnected, self::InvoiceIssued, self::PaymentReceived, self::PaymentFailed, self::UsageAlert, self::MonthlyReport, self::SocialApprovalRequested, self::SocialPostFailed, self::SocialAccountDisconnected, self::MessageReceived, self::AssignmentStarted, self::AssignmentChanged, self::TrainingAssigned, self::TrainingDue, self::TrainingCompleted, self::CertificationExpiring, self::SupportUpdate];
     }
 
     public function isAvailable(): bool
@@ -79,6 +80,7 @@ enum NotificationEvent: string
             self::SocialApprovalRequested => 'Social post waiting for approval',
             self::SocialPostFailed => 'Social post didn\'t publish',
             self::SocialAccountDisconnected => 'Social account needs reconnecting',
+            self::SupportUpdate => 'Support requests',
         };
     }
 
@@ -110,6 +112,7 @@ enum NotificationEvent: string
             self::CertificationExpiring => 'Thirty days before a certification expires, and when it has expired.',
             self::SocialPostFailed => 'A scheduled post couldn\'t be published to one or more accounts.',
             self::SocialAccountDisconnected => 'We lost access to a connected social account.',
+            self::SupportUpdate => 'Replies and status changes on support requests you can see.',
             default => '',
         };
     }
@@ -143,6 +146,7 @@ enum NotificationEvent: string
             self::MessageReceived => 'messages.view',
             self::AssignmentStarted, self::AssignmentChanged, self::TrainingAssigned, self::TrainingDue, self::CertificationExpiring => 'agent_university.view', // agents and supervisors only
             self::TrainingCompleted => 'training.view_progress',
+            self::SupportUpdate => 'support.view',
             default => null,
         };
     }
