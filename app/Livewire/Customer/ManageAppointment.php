@@ -134,6 +134,7 @@ class ManageAppointment extends Component
         return view('livewire.customer.manage-appointment', [
             'appointment' => $appointment,
             'business' => $profile?->display_name ?: $organization->name,
+            'logoUrl' => $profile?->logoUrl(),
             'phone' => $profile?->phone ? (Phone::display(Phone::normalize($profile->phone)) ?? $profile->phone) : null,
             'timezone' => $timezone,
             'canChange' => $selfService->canChange($appointment),

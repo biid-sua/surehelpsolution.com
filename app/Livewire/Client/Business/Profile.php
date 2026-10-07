@@ -8,9 +8,12 @@ use App\Models\BusinessProfile;
 use App\Support\Audit\Audit;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 
 /**
  * Business profile and primary location (spec §9). What agents and, later, the AI read about the business.
@@ -20,6 +23,7 @@ use Livewire\Component;
 class Profile extends Component
 {
     use ScopedToOrganization;
+    use WithFileUploads;
 
     /** US business timezones first; any IANA zone accepted. */
     public const TIMEZONES = [
@@ -34,6 +38,39 @@ class Profile extends Component
 
     /** @var array<string, mixed> */
     public array $form = [];
+
+    /** @var TemporaryUploadedFile|null */
+    public $logo = null;
+
+    /** Business logo (spec §9): shown in the portal and on customer pages. PNG, JPG or WebP, up to 2 MB. */
+    public function updatedLogo(Audit $audit): void
+    {
+        $organization = $this->organization();
+        $this->authorize('organization.update', $organization);
+        $this->validate(['logo' => ['required', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048', 'dimensions:min_width=32,min_height=32,max_width=4000,max_height=4000']], attributes: ['logo' => 'logo']);
+
+        $profile = BusinessProfile::firstOrCreate(['organization_id' => $organization->id]);
+        $old = $profile->logo_path;
+        $profile->forceFill(['logo_path' => $this->logo->store('logos/'.$organization->id, 'local')])->save();
+        if ($old) {
+            Storage::disk('local')->delete($old);
+        }
+        $audit->changes('business_profile.updated', $profile, ['logo_path']);
+        $this->logo = null;
+        $this->dispatch('toast', type: 'success', message: 'Logo updated.');
+    }
+
+    public function removeLogo(Audit $audit): void
+    {
+        $organization = $this->organization();
+        $this->authorize('organization.update', $organization);
+        $profile = BusinessProfile::query()->forOrganization($organization)->first();
+        if ($profile?->logo_path) {
+            Storage::disk('local')->delete($profile->logo_path);
+            $profile->forceFill(['logo_path' => null])->save();
+            $audit->changes('business_profile.updated', $profile, ['logo_path']);
+        }
+    }
 
     public function mount(): void
     {
@@ -130,6 +167,7 @@ class Profile extends Component
         return view('livewire.client.business.profile', [
             'organization' => $organization,
             'canEdit' => auth()->user()->can('organization.update', $organization),
+            'logoUrl' => BusinessProfile::query()->forOrganization($organization)->first()?->logoUrl(),
             'timezones' => self::TIMEZONES,
             'otherTimezones' => array_values(array_diff(\DateTimeZone::listIdentifiers(), array_keys(self::TIMEZONES))),
         ]);

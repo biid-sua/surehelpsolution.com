@@ -106,6 +106,7 @@ class AccountClosure
         // Uploaded photos and videos: through the model, so each file is removed from storage too.
         MediaAsset::withoutGlobalScopes()->where('organization_id', $organization->id)->each(fn (MediaAsset $asset) => $asset->delete());
         Storage::disk('local')->deleteDirectory('support/'.$organization->id);
+        Storage::disk('local')->deleteDirectory('logos/'.$organization->id);
 
         foreach ($exports as $export) {
             if ($export->path) {

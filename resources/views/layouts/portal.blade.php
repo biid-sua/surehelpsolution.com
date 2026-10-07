@@ -6,6 +6,7 @@
     $portal ??= ['admin' => 'admin', 'agent' => 'agent'][$user->role] ?? 'client';
     $navigation = app(\App\Support\Navigation\PortalNavigation::class)->for($user, $portal);
     $organization = app(\App\Support\Tenancy\CurrentOrganization::class)->get();
+    $businessLogo = $organization ? \App\Models\BusinessProfile::withoutGlobalScopes()->where('organization_id', $organization->id)->whereNotNull('logo_path')->first()?->logoUrl() : null;
     $portalLabel = ['client' => 'Business portal', 'admin' => 'Admin console', 'agent' => 'Agent workspace'][$portal] ?? '';
     $initials = collect(explode(' ', trim($user->name)))->filter()->take(2)->map(fn ($part) => mb_substr($part, 0, 1))->implode('');
 @endphp
@@ -95,6 +96,7 @@
                     <x-ui.icon name="menu" />
                 </button>
 
+                @if ($businessLogo)<img src="{{ $businessLogo }}" alt="" class="hidden size-9 rounded-lg object-contain sm:block">@endif
                 <div class="min-w-0 flex-1">
                     @if ($portal === 'admin' && Route::has('admin.search'))
                         {{-- Global search (spec ADM-09) --}}

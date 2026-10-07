@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\ImpersonationController;
 use App\Http\Controllers\Agent\CallExportController as AgentCallExportController;
 use App\Http\Controllers\Agent\TrainingFileController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BusinessLogoController;
 use App\Http\Controllers\Client\AppointmentExportController;
 use App\Http\Controllers\Client\CalendarEventsController;
 use App\Http\Controllers\Client\CalendarOAuthController;
@@ -239,6 +240,9 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
 });
 
 // Agent workspace (spec §20–21)
+// Business logos (public; shown on customer pages).
+Route::get('/logo/{business}', BusinessLogoController::class)->whereUlid('business')->middleware('throttle:120,1')->name('business.logo');
+
 // A customer changes or cancels their own appointment from an emailed link (CAL-09, D48): signed, no login.
 Route::get('/appointment/{appointment}', ManageAppointment::class)->middleware(['signed', 'throttle:60,1'])->name('appointments.manage');
 

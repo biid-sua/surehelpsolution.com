@@ -1,6 +1,9 @@
 <div>
     <x-ui.card>
-        <p class="text-sm font-medium text-brand-300">{{ $business }}</p>
+        <div class="flex items-center gap-3">
+            @if ($logoUrl)<img src="{{ $logoUrl }}" alt="" class="size-10 rounded-lg object-contain">@endif
+            <p class="text-sm font-medium text-brand-300">{{ $business }}</p>
+        </div>
         <h1 class="mt-1 text-xl font-semibold text-ink">Your appointment</h1>
 
         <dl class="mt-5 space-y-3 text-sm">

@@ -45,4 +45,10 @@ class BusinessProfile extends Model
             'closed_until' => 'date',
         ];
     }
+
+    /** Public address of the logo, or null. Changes with each upload, so it can be cached for long. */
+    public function logoUrl(): ?string
+    {
+        return $this->logo_path ? route('business.logo', ['business' => $this->organization->ulid, 'v' => substr(sha1($this->logo_path), 0, 8)]) : null;
+    }
 }

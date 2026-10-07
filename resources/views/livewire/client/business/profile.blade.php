@@ -6,6 +6,23 @@
         <x-ui.alert class="mb-6" tone="info">Only the business owner can change these details.</x-ui.alert>
     @endunless
 
+    <x-ui.card class="mb-6" title="Logo" description="Shown in your portal and on pages your customers open, such as changing an appointment.">
+        <div class="flex flex-wrap items-center gap-4">
+            <div class="grid size-20 place-items-center overflow-hidden rounded-xl bg-surface-2 ring-1 ring-line">
+                @if ($logoUrl)<img src="{{ $logoUrl }}" alt="Your logo" class="max-h-full max-w-full object-contain">@else<x-ui.icon name="photo" class="size-6 text-subtle" />@endif
+            </div>
+            @if ($canEdit)
+                <div>
+                    <input type="file" wire:model="logo" accept="image/png,image/jpeg,image/webp" aria-label="Upload a logo" class="block text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-ink">
+                    <p class="mt-1 text-xs text-subtle">PNG, JPG or WebP, up to 2 MB. A square or wide logo on a transparent background works best.</p>
+                    <span wire:loading wire:target="logo" class="text-xs text-muted">Uploading…</span>
+                    @error('logo') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror
+                </div>
+                @if ($logoUrl)<x-ui.button size="sm" variant="ghost" wire:click="removeLogo">Remove</x-ui.button>@endif
+            @endif
+        </div>
+    </x-ui.card>
+
     <form wire:submit="save" class="space-y-6">
         <fieldset @disabled(! $canEdit) class="space-y-6">
             <x-ui.card title="About the business">
