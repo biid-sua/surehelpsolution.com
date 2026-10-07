@@ -49,6 +49,9 @@ These aren't in the spec §5 list. Organization roles never get them.
 | `audit_logs.view` (P1-5) | The internal audit trail (spec §62) | Super Admin, Operations Manager |
 | `users.impersonate` (D26) | "View as client" for support | Super Admin, Operations Manager, Support Agent |
 | `qa.review` (D27) | Scoring agents' calls | Super Admin, Operations Manager, Agent Supervisor (assigned businesses only) |
+| `support.manage` (D49) | Answering every business's support requests | Super Admin, Operations Manager, Support Agent |
+
+`support.view` and `support.create` (D49) are ordinary business permissions: Owners, Managers and Staff can see and open their business's support requests, and Support Agents can see them. Agents have neither.
 
 ## Changing the catalogue
 
