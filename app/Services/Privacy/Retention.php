@@ -4,17 +4,21 @@ namespace App\Services\Privacy;
 
 use App\Enums\EscalationStatus;
 use App\Enums\TaskStatus;
+use App\Models\AiRun;
 use App\Models\Appointment;
 use App\Models\CallLog;
+use App\Models\Conversation;
 use App\Models\Customer;
 use App\Models\CustomerTimelineEvent;
 use App\Models\Escalation;
+use App\Models\Message;
 use App\Models\Organization;
 use App\Models\Task;
 
 /**
  * How long a business's history is kept (spec §56, task.md CMP-05). Each business chooses; older
- * calls, past appointments, finished tasks and escalations, timeline entries and archived customers
+ * calls, past appointments, finished tasks and escalations, inbox messages and AI records, timeline
+ * entries and archived customers
  * are deleted by the daily `data:retention` run. Open work is never deleted, whatever its age.
  */
 class Retention
@@ -43,6 +47,11 @@ class Retention
             'escalations' => Escalation::withoutGlobalScopes()->forOrganization($organization)
                 ->where('status', EscalationStatus::Resolved->value)->where('resolved_at', '<', $cutoff)->delete(),
             'timeline' => CustomerTimelineEvent::withoutGlobalScopes()->forOrganization($organization)->where('occurred_at', '<', $cutoff)->delete(),
+            'messages' => Message::withoutGlobalScopes()->where('organization_id', $organization->id)->where('created_at', '<', $cutoff)->delete(),
+            'ai_runs' => AiRun::withoutGlobalScopes()->where('organization_id', $organization->id)->where('created_at', '<', $cutoff)->delete(),
+            'conversations' => Conversation::withoutGlobalScopes()->where('organization_id', $organization->id)
+                ->where(fn ($q) => $q->whereNull('last_message_at')->orWhere('last_message_at', '<', $cutoff))
+                ->whereDoesntHave('messages')->delete(),
             'archived_customers' => Customer::onlyTrashed()->withoutGlobalScopes()->forOrganization($organization)->where('deleted_at', '<', $cutoff)->forceDelete(),
         ];
     }

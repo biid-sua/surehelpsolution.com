@@ -2,8 +2,10 @@
 
 namespace App\Actions\Customers;
 
+use App\Models\AiRun;
 use App\Models\Appointment;
 use App\Models\CallLog;
+use App\Models\Conversation;
 use App\Models\Customer;
 use App\Models\CustomerTimelineEvent;
 use App\Models\Escalation;
@@ -15,7 +17,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * A customer asked the business to delete their personal information (spec §57, CCPA-style).
  * Their name and contact details are removed from the record and from every call, appointment,
- * task and escalation about them; the timeline is deleted; the record is archived. Counts and
+ * task and escalation about them; the timeline and their inbox conversations are deleted; the record
+ * is archived. Counts and
  * outcomes stay, so the business's results don't change.
  */
 class EraseCustomer
@@ -37,6 +40,11 @@ class EraseCustomer
             $scope(Task::class)->update(['title' => 'Task ('.mb_strtolower(self::PLACEHOLDER).')', 'description' => null]);
             $scope(Escalation::class)->update(['details' => null, 'resolution_notes' => null]);
             CustomerTimelineEvent::withoutGlobalScopes()->where('customer_id', $customer->id)->delete();
+
+            // Their inbox conversations: messages and the AI assistant's records of them (tool inputs hold names and numbers).
+            $conversations = Conversation::withoutGlobalScopes()->where('organization_id', $customer->organization_id)->where('customer_id', $customer->id)->pluck('id');
+            AiRun::withoutGlobalScopes()->whereIn('conversation_id', $conversations)->delete();
+            Conversation::withoutGlobalScopes()->whereIn('id', $conversations)->delete();   // messages and feedback cascade
             $customer->tags()->detach();
 
             $customer->forceFill([

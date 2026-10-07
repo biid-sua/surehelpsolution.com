@@ -10,18 +10,22 @@ use App\Models\BusinessProfile;
 use App\Models\BusinessRule;
 use App\Models\BusinessService;
 use App\Models\CallLog;
+use App\Models\Conversation;
 use App\Models\Customer;
 use App\Models\DataExport;
 use App\Models\Escalation;
 use App\Models\Invoice;
 use App\Models\KnowledgeItem;
+use App\Models\Message;
+use App\Models\SocialPost;
 use App\Models\Task;
+use App\Models\Website;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
 use ZipArchive;
 
 /**
- * Everything a business has with us, as one ZIP of CSV files plus its settings as JSON (spec §91,
+ * Everything a business has with us (including inbox messages and social posts), as one ZIP of CSV files plus its settings as JSON (spec §91,
  * task.md CMP-07). Built in the background; the link works for 7 days.
  */
 class DataExporter
@@ -56,6 +60,17 @@ class DataExporter
                 'escalations.csv' => $this->csv("$dir/escalations.csv", Escalation::query()->forOrganization($organization),
                     ['Raised', 'Type', 'Priority', 'Status', 'Reason', 'Details', 'Resolved', 'Resolution'],
                     fn (Escalation $e) => [$time($e->created_at), $e->type->label(), $e->priority->label(), $e->status->label(), $e->reason, $e->details, $time($e->resolved_at), $e->resolution_notes]),
+                'conversations.csv' => $this->csv("$dir/conversations.csv", Conversation::withoutGlobalScopes()->where('organization_id', $organization->id)->with('customer:id,first_name,last_name'),
+                    ['Conversation', 'Channel', 'Contact', 'Customer', 'Status', 'Started', 'Last message'],
+                    fn (Conversation $c) => [$c->ulid, $c->channel->label(), $c->contact_name ?? $c->contact_handle, $c->customer?->fullName(), $c->status, $time($c->created_at), $time($c->last_message_at)]),
+                'messages.csv' => $this->csv("$dir/messages.csv", Message::withoutGlobalScopes()->where('organization_id', $organization->id)->with('conversation:id,ulid'),
+                    ['Conversation', 'Sent ('.$timezone.')', 'From', 'Internal note', 'Status', 'Message'],
+                    fn (Message $m) => [$m->conversation?->ulid, $time($m->sent_at ?? $m->created_at),
+                        $m->direction === Message::IN ? 'Customer' : (['ai' => 'AI assistant', 'user' => 'Team', 'system' => 'System'][$m->author_type] ?? $m->author_type),
+                        $m->is_note ? 'Yes' : 'No', $m->status, $m->body]),
+                'social_posts.csv' => $this->csv("$dir/social_posts.csv", SocialPost::withoutGlobalScopes()->where('organization_id', $organization->id),
+                    ['Status', 'Scheduled ('.$timezone.')', 'Published', 'Text', 'Link'],
+                    fn (SocialPost $p) => [$p->status->value, $time($p->scheduled_at), $time($p->published_at), $p->body, $p->link_url]),
                 'invoices.csv' => $this->csv("$dir/invoices.csv", Invoice::query()->forOrganization($organization),
                     ['Number', 'Issued', 'Due', 'Status', 'Total', 'Currency'],
                     fn (Invoice $i) => [$i->number, $time($i->issued_at), $time($i->due_at), $i->status->label(), number_format($i->total_cents / 100, 2, '.', ''), $i->currency]),
@@ -68,6 +83,7 @@ class DataExporter
                 'holidays' => BusinessHoliday::query()->forOrganization($organization)->get(['date', 'name', 'is_closed', 'opens_at', 'closes_at'])->toArray(),
                 'services' => BusinessService::query()->forOrganization($organization)->get()->makeHidden(['id', 'organization_id'])->toArray(),
                 'rules' => BusinessRule::query()->forOrganization($organization)->get()->makeHidden(['id', 'organization_id'])->toArray(),
+                'websites' => Website::withoutGlobalScopes()->where('organization_id', $organization->id)->get(['url', 'verified_at', 'last_checked_at', 'health_score'])->toArray(),
                 'knowledge' => KnowledgeItem::query()->forOrganization($organization)->get()->makeHidden(['id', 'organization_id'])->toArray(),
                 'exported_at' => now()->toIso8601String(),
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));

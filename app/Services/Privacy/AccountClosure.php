@@ -4,6 +4,7 @@ namespace App\Services\Privacy;
 
 use App\Enums\OrganizationStatus;
 use App\Models\DataExport;
+use App\Models\MediaAsset;
 use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\AccountClosureScheduled;
@@ -18,7 +19,9 @@ use Illuminate\Validation\ValidationException;
 /**
  * Closing a business account (task.md CMP-07). The owner asks; nothing is deleted for 30 days
  * and they can change their mind. Then the business's customers, calls, appointments, settings and
- * connections are deleted, its people's sign-ins are removed, and the subscription ends.
+ * connections are deleted (including inbox messages, AI records, social accounts and their tokens,
+ * uploaded media and websites), its people's sign-ins are removed, and the subscription ends.
+ * Agent training records stay: they are about SureHelp's agents, not the business's customers.
  * Invoices and payments are kept: tax law requires it.
  */
 class AccountClosure
@@ -27,6 +30,10 @@ class AccountClosure
 
     /** Business data deleted on closure, every row with the business's organization_id. */
     private const TABLES = [
+        // Inbox, AI assistant, social and websites (D37–D39, D33, D44): messages and AI tool calls hold
+        // personal data; social accounts hold access tokens.
+        'ai_feedback', 'ai_guidelines', 'messages', 'ai_runs', 'conversations', 'ai_assistants', 'chat_widgets',
+        'social_posts', 'social_accounts', 'websites',
         'call_logs', 'appointments', 'tasks', 'escalations', 'customer_timeline_events', 'customers', 'tags',
         'knowledge_items', 'business_rules', 'business_services', 'business_hours', 'business_holidays',
         'business_locations', 'business_profiles', 'message_templates', 'calendar_busy_blocks', 'calendar_connections',
@@ -91,6 +98,9 @@ class AccountClosure
 
             $this->audit->record('organization.closed', $organization, label: $organization->name);
         });
+
+        // Uploaded photos and videos: through the model, so each file is removed from storage too.
+        MediaAsset::withoutGlobalScopes()->where('organization_id', $organization->id)->each(fn (MediaAsset $asset) => $asset->delete());
 
         foreach ($exports as $export) {
             if ($export->path) {

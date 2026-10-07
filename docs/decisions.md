@@ -310,6 +310,12 @@ The audit log is visible to Super Admin and Operations Manager only, never to bu
 - **Retention:** each business chooses how long history is kept: 1, 2, 3, 5 or 7 years, or everything. **Default 3 years.** The daily `privacy:run` (04:20 UTC) deletes older calls, past appointments, finished tasks, resolved escalations, timeline entries and archived customers. Open work is never deleted. Recordings and transcripts will follow the same setting once telephony exists.
 - **Erasing one customer:** when a customer asks, owners and managers (`customers.delete`) choose "Erase personal data". Their name, contact details and notes are removed from the record and from every call, appointment, task and escalation about them; the timeline is deleted; the record is archived and its phone number freed. Counts and outcomes stay, so results don't change. The audit entry holds only the record's ID.
 - **Closing the account:** only the owner, after typing the business name and their password (5 tries per 10 minutes). Nothing changes for 30 days: calls are still answered, a banner shows the date, the owner gets an email, and "Keep my account" undoes it. Then `privacy:run` deletes the business's customers, calls, appointments, settings, calendar connections, invitations and agent assignments; ends the subscription; and for people who only belonged to this business, removes their name, email, phone, sign-in, two-step setup, API tokens and notifications. **Invoices and payments are kept** (tax records). The business row stays, marked cancelled, so invoices still have an owner.
+- **Later data (2026-10-23):** the same rules cover what arrived after D29:
+  - **Export:** inbox conversations and messages, social posts and websites are in the export.
+  - **Retention:** inbox messages and AI assistant records follow the retention period.
+  - **Erasing a customer:** deletes their conversations and the AI's records of them.
+  - **Closing the account:** deletes the inbox, AI settings, social accounts (with their access tokens), posts, uploaded media files and websites.
+  - **Not affected:** agent training records stay; they're about SureHelp's agents.
 - **Not legal advice:** these are the tools; the privacy policy and DPA describe the promises (spec §57: "Do not present legal compliance as guaranteed by the software").
 
 **Why:** Customers and regulators expect to get their data out and to have it deleted. Doing it in the product, with a grace period and an audit trail, is safer than doing it by hand on request.

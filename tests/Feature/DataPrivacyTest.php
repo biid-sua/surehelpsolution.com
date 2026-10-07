@@ -5,25 +5,39 @@ namespace Tests\Feature;
 use App\Actions\Appointments\BookAppointment;
 use App\Actions\Billing\IssueInvoice;
 use App\Actions\Customers\RecordTimelineEvent;
+use App\Actions\Inbox\ReceiveMessage;
 use App\Actions\Organizations\ProvisionUserTenancy;
+use App\Enums\InboxChannel;
 use App\Enums\OrganizationStatus;
+use App\Enums\SocialNetwork;
 use App\Enums\TimelineEventType;
+use App\Jobs\RespondToConversation;
+use App\Livewire\Client\Customers\Show;
 use App\Livewire\Client\Customers\Show as CustomerShow;
 use App\Livewire\Client\Settings\Privacy;
+use App\Models\AiRun;
 use App\Models\AuditLog;
 use App\Models\CallLog;
+use App\Models\Conversation;
 use App\Models\Customer;
 use App\Models\CustomerTimelineEvent;
 use App\Models\DataExport;
 use App\Models\Invoice;
+use App\Models\MediaAsset;
+use App\Models\Message;
 use App\Models\Organization;
+use App\Models\SocialAccount;
+use App\Models\SocialPost;
 use App\Models\Task;
 use App\Models\User;
+use App\Models\Website;
 use App\Notifications\AccountClosureScheduled;
 use App\Notifications\DataExportReady;
+use App\Services\Privacy\AccountClosure;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
@@ -279,5 +293,55 @@ class DataPrivacyTest extends TestCase
         $manager = User::factory()->create(['role' => 'client', 'is_active' => true, 'password' => Hash::make('Secret123!')]);
         $second->members()->attach($manager->id, ['role' => 'manager', 'status' => 'active']);
         $this->actingAs($manager)->get(route('app.settings.privacy'))->assertForbidden();
+    }
+
+    public function test_inbox_ai_social_and_website_data_follow_the_same_rules(): void
+    {
+        Notification::fake();
+        Bus::fake([RespondToConversation::class]);
+        [$owner, $org] = $this->business();
+        $receive = app(ReceiveMessage::class);
+        $old = $receive->handle($org, InboxChannel::WebChat, ['channel_key' => 'web', 'thread' => 'old-visitor', 'body' => 'Old question about pipes']);
+        $old->forceFill(['created_at' => now()->subMonths(40)])->save();
+        $old->conversation->forceFill(['last_message_at' => now()->subMonths(40)])->save();
+        $recent = $receive->handle($org, InboxChannel::WebChat, ['channel_key' => 'web', 'thread' => 'ana', 'body' => 'Hi, this is Ana, 512 555 0101', 'name' => 'Ana Lopez', 'phone' => '5125550101']);
+        $ana = Customer::withoutGlobalScopes()->where('phone_e164', '+15125550101')->first() ?? Customer::create(['organization_id' => $org->id, 'first_name' => 'Ana', 'phone' => '5125550101']);
+        $recent->conversation->forceFill(['customer_id' => $ana->id])->save();
+        AiRun::create(['organization_id' => $org->id, 'conversation_id' => $recent->conversation_id, 'mode' => 'auto', 'status' => 'replied',
+            'tool_calls' => [['name' => 'save_customer_details', 'input' => ['phone' => '5125550101']]]]);
+        SocialPost::create(['organization_id' => $org->id, 'body' => 'Spring tune-up special', 'status' => 'draft']);
+        SocialAccount::create(['organization_id' => $org->id, 'network' => SocialNetwork::Facebook, 'external_id' => '1', 'name' => 'Page', 'access_token' => 'secret-token', 'is_enabled' => true]);
+        Website::create(['organization_id' => $org->id, 'url' => 'https://rivera.test/', 'host' => 'rivera.test']);
+        Storage::disk('local')->put('media/photo.jpg', 'jpeg');
+        MediaAsset::create(['organization_id' => $org->id, 'disk' => 'local', 'path' => 'media/photo.jpg', 'original_name' => 'photo.jpg', 'mime' => 'image/jpeg', 'size_bytes' => 4]);
+
+        // The export includes messages and posts.
+        $this->actingAs($owner);
+        Livewire::test(Privacy::class)->call('requestExport');
+        $zip = new ZipArchive;
+        $zip->open(Storage::disk('local')->path(DataExport::sole()->path));
+        $this->assertStringContainsString('this is Ana', $zip->getFromName('messages.csv'));
+        $this->assertStringContainsString('Website chat', $zip->getFromName('conversations.csv'));
+        $this->assertStringContainsString('Spring tune-up', $zip->getFromName('social_posts.csv'));
+        $this->assertStringContainsString('rivera.test', $zip->getFromName('business.json'));
+        $zip->close();
+
+        // Retention removes old messages and their empty conversations.
+        $this->artisan('privacy:run');
+        $this->assertNull(Message::withoutGlobalScopes()->find($old->id));
+        $this->assertNull(Conversation::withoutGlobalScopes()->find($old->conversation_id));
+        $this->assertNotNull(Message::withoutGlobalScopes()->find($recent->id));
+
+        // Erasing Ana removes her conversation and the AI's record of it.
+        Livewire::test(Show::class, ['customer' => $ana->ulid])->call('erase');
+        $this->assertNull(Conversation::withoutGlobalScopes()->find($recent->conversation_id));
+        $this->assertSame(0, AiRun::withoutGlobalScopes()->count());
+
+        // Closing the account removes social tokens, posts, media files and websites.
+        app(AccountClosure::class)->close($org);
+        foreach (['social_accounts', 'social_posts', 'media_assets', 'websites', 'chat_widgets', 'conversations', 'messages'] as $table) {
+            $this->assertSame(0, DB::table($table)->where('organization_id', $org->id)->count(), $table);
+        }
+        Storage::disk('local')->assertMissing('media/photo.jpg');
     }
 }
