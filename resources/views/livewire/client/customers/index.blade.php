@@ -6,6 +6,7 @@
             @endif
             <x-ui.button variant="secondary" icon="download" :href="route('app.customers.export', array_filter(['search' => $search, 'status' => $status, 'tag' => $tag]))">Export CSV</x-ui.button>
             @if ($canCreate)
+                <x-ui.button variant="secondary" :href="route('app.customers.import')">Import CSV</x-ui.button>
                 <x-ui.button icon="users" wire:click="add">Add customer</x-ui.button>
             @endif
         </x-slot:actions>

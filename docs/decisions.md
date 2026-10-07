@@ -616,3 +616,16 @@ Start these early. The code can be built and tested with your own accounts befor
 - **Storage:** the application cache, so production's `CACHE_STORE` (database) keeps the keys across workers.
 
 **Why:** phones drop connections after the server has saved a call log or booking. Without a key, the app's retry creates a second one.
+
+## D53 — Importing customers from a spreadsheet (2026-10-23)
+**Decision:** *Customers › Import CSV* (needs `customers.create`) takes a CSV of up to 5,000 rows and 5 MB.
+- **Columns:** comma, semicolon or tab separated. Columns are matched to fields automatically from their names and can be changed; a "Full name" column is split into first and last name. A preview shows the first rows.
+- **Rows:**
+  - Each row needs a name, phone or email.
+  - Rows with an invalid email or phone are skipped and listed by row number (first 20).
+  - Existing customers are matched by phone, or by an email only one customer has. They're skipped, or, if the owner chooses, only their empty fields are filled; nothing is overwritten.
+- **Tags:** comma-separated tags are created as needed.
+- **Recorded as imported:** imported customers have source `import`, so they don't set off "new customer" automations (D50). The import is audited with its counts.
+- **Consent to text or email is never imported.** It must be recorded where the customer gave it (spec §57).
+
+**Why:** businesses arrive with a customer list. Re-typing it isn't realistic, and a careless import would duplicate customers or invent consent.
