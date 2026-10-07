@@ -131,6 +131,7 @@ _As of 2026-10-06. Detailed tracker: [implementation-plan.md](implementation-pla
 | A-3 Agent University | Courses for all agents or one company: modules and lessons (reading, video, PDF, documents, presentations, audio, links, quizzes), published as numbered versions, with "retake required" for important changes. Quizzes with four question types, pass mark, attempt limits and random sets. Rules give courses to everyone, a role, a company's agents or one agent, including new agents automatically. Agents get *University* (progress, required, overdue, recommended, history, certificates) and a *Training* tab per company. Supervisors get *Training* (course editor, learning paths, progress dashboard, certifications). Certificates expire and need renewing; company readiness shows on assignments. Two starter courses ([agent-university.md](agent-university.md)) |
 | A-4 Enforcement, reminders and API | Required company training is now enforced: warning shows a reminder; restricted stops call logging and booking; blocking leaves only the company's training open (web and API). Reminders: new training, due soon, overdue (also to whoever gave it), completed, and certifications expiring or expired, each sent once. Agents choose their channels under *Account › Notifications*. Recommendations say why. Training API for the mobile app ([api.md](api.md)) |
 | A-5 Agents edit records (AGT-14) | In a company's *Appointments*, agents move an upcoming appointment to a free time (same strict hours and rules as booking) or cancel it with a reason the business sees. On a customer they edit details and add notes. In *My calls* they add notes to their own calls for 24 hours; notes are appended with name and time, never rewritten (D47) |
+| A-6 CSV exports (§91, CLI-07) | *Appointments* downloads the tab being viewed (upcoming, needs confirming, past, cancelled) as CSV in the business's time. *Results* downloads the month as CSV next to the PDF. Calls and customers already had CSV |
 
 ### Merge of the cloud session (2026-10-04)
 - Branch `claude/phase-2-development-1yiwc2` merged into `develop` and pushed.
@@ -145,7 +146,6 @@ A check of the master spec against the code (2026-10-23) found these gaps, in pr
 
 | # | Item | Notes |
 |---|---|---|
-| 6 | CSV exports | Appointments and Results/report CSV (§91, CLI-07) |
 | 7 | Client dashboard and Results | Appointments today and new leads cards, custom date ranges, appointment outcomes (completed / cancelled / no-show), alerts for disconnected calendar, overdue invoice, unanswered message |
 | 8 | Admin console MVP pages | Platform-wide calls, appointments, customers and usage lists |
 | 9 | Self-service reschedule / cancel links in customer emails | Signed links, no login (CAL-09) |

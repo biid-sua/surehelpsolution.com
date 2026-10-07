@@ -13,6 +13,7 @@
                 @endforeach
             </select>
             <x-ui.button variant="secondary" icon="download" :href="route('app.results.pdf', ['month' => $period['key']])">PDF</x-ui.button>
+            <x-ui.button variant="secondary" icon="download" :href="route('app.results.csv', ['month' => $period['key']])">CSV</x-ui.button>
         </x-slot:actions>
     </x-ui.page-header>
 

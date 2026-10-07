@@ -295,21 +295,30 @@ class Index extends Component
         );
     }
 
+    /**
+     * One of the list's tabs, also used by the CSV export.
+     *
+     * @param  Builder<Appointment>  $query
+     */
+    public static function applyView(Builder $query, string $view, string $timezone): void
+    {
+        match ($view) {
+            'unconfirmed' => $query->whereIn('status', [AppointmentStatus::Pending->value, AppointmentStatus::Tentative->value])->where('ends_at', '>=', now())->orderBy('starts_at'),
+            'past' => $query->where('starts_at', '<', now())->where('status', '!=', AppointmentStatus::Cancelled->value)->latest('starts_at'),
+            'cancelled' => $query->where('status', AppointmentStatus::Cancelled->value)->latest('starts_at'),
+            default => $query->blocking()->where('ends_at', '>=', now($timezone)->startOfDay()->utc())->orderBy('starts_at'),
+        };
+    }
+
     public function render(Availability $availability): View
     {
         $organization = $this->organization();
         $timezone = $organization->timezoneOrDefault();
         $user = auth()->user();
-        $startOfToday = now($timezone)->startOfDay()->utc();
 
         $appointments = Appointment::query()->forOrganization($organization)
             ->with(['customer:id,ulid,first_name,last_name,company,phone,phone_e164', 'service:id,name', 'location:id,name'])
-            ->tap(fn (Builder $q) => match ($this->view) {
-                'unconfirmed' => $q->whereIn('status', [AppointmentStatus::Pending->value, AppointmentStatus::Tentative->value])->where('ends_at', '>=', now())->orderBy('starts_at'),
-                'past' => $q->where('starts_at', '<', now())->where('status', '!=', AppointmentStatus::Cancelled->value)->latest('starts_at'),
-                'cancelled' => $q->where('status', AppointmentStatus::Cancelled->value)->latest('starts_at'),
-                default => $q->blocking()->where('ends_at', '>=', $startOfToday)->orderBy('starts_at'),
-            })
+            ->tap(fn (Builder $q) => self::applyView($q, $this->view, $timezone))
             ->paginate(25);
 
         $selectedAppointment = $this->selected !== ''

@@ -1,10 +1,9 @@
 <div>
     <x-ui.page-header title="Appointments" description="Everything booked by our team and yours, in your business's time ({{ $timezone }}).">
-        @if ($can['create'])
-            <x-slot:actions>
-                <x-ui.button icon="calendar" wire:click="book">Book appointment</x-ui.button>
-            </x-slot:actions>
-        @endif
+        <x-slot:actions>
+            <x-ui.button variant="secondary" icon="download" :href="route('app.appointments.export', ['view' => $view])">Download CSV</x-ui.button>
+            @if ($can['create'])<x-ui.button icon="calendar" wire:click="book">Book appointment</x-ui.button>@endif
+        </x-slot:actions>
     </x-ui.page-header>
 
     <div class="mb-4 flex gap-1 overflow-x-auto border-b border-line" role="tablist" aria-label="Appointment views">

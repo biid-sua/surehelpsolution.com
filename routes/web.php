@@ -9,12 +9,14 @@ use App\Http\Controllers\Admin\ImpersonationController;
 use App\Http\Controllers\Agent\CallExportController as AgentCallExportController;
 use App\Http\Controllers\Agent\TrainingFileController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Client\AppointmentExportController;
 use App\Http\Controllers\Client\CalendarEventsController;
 use App\Http\Controllers\Client\CalendarOAuthController;
 use App\Http\Controllers\Client\CallExportController;
 use App\Http\Controllers\Client\CustomerExportController;
 use App\Http\Controllers\Client\DataExportController as ClientDataExportController;
 use App\Http\Controllers\Client\InvoiceController as ClientInvoiceController;
+use App\Http\Controllers\Client\ResultsCsvController;
 use App\Http\Controllers\Client\ResultsPdfController;
 use App\Http\Controllers\Client\SocialOAuthController;
 use App\Http\Controllers\ContactController;
@@ -151,6 +153,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
     Route::middleware('can:reports.view')->group(function () {
         Route::get('/results', ClientResults::class)->name('results');
         Route::get('/results/pdf', ResultsPdfController::class)->name('results.pdf');
+        Route::get('/results/csv', ResultsCsvController::class)->name('results.csv');
     });
     Route::middleware('can:calls.view')->group(function () {
         Route::get('/calls', ClientCalls::class)->name('calls.index');
@@ -195,7 +198,10 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/social/connect/{connector}', [SocialOAuthController::class, 'redirect'])->name('social.connect');
         Route::get('/social/connect/{connector}/callback', [SocialOAuthController::class, 'callback'])->name('social.connect.callback');
     });
-    Route::get('/appointments', AppointmentsIndex::class)->middleware('can:appointments.view')->name('appointments.index');
+    Route::middleware('can:appointments.view')->group(function () {
+        Route::get('/appointments', AppointmentsIndex::class)->name('appointments.index');
+        Route::get('/appointments/export', AppointmentExportController::class)->name('appointments.export');
+    });
     Route::get('/escalations', EscalationsIndex::class)->middleware('can:escalations.view')->name('escalations.index');
     Route::middleware('can:customers.view')->group(function () {
         Route::get('/customers', CustomerIndex::class)->name('customers.index');

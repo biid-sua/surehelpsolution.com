@@ -149,4 +149,18 @@ class ResultsTest extends TestCase
                 && $mail->rawAttachments[0]['name'] === 'rivera-plumbing-results-2026-10.pdf';
         });
     }
+
+    public function test_results_download_as_csv(): void
+    {
+        [$owner, $org] = $this->business();
+        $this->october($org);
+
+        $response = $this->actingAs($owner)->get(route('app.results.csv', ['month' => '2026-10']))->assertOk();
+        $csv = $response->streamedContent();
+        $this->assertStringContainsString('rivera-plumbing-results-2026-10.csv', $response->headers->get('Content-Disposition'));
+        $this->assertStringContainsString('"Results for Rivera Plumbing","October 2026"', $csv);
+        $this->assertStringContainsString('Summary,"Calls that booked a job",3,200', $csv);
+        $this->assertStringContainsString('Summary,"Estimated revenue",$750', $csv);
+        $this->assertStringContainsString('"Top reasons for calling","Service request",', $csv);
+    }
 }

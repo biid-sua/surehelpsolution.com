@@ -343,4 +343,28 @@ class AppointmentsTest extends TestCase
         $this->patchJson("/api/v1/client/appointments/{$theirs->ulid}", ['status' => 'cancelled'])->assertNotFound();
         $this->assertNotNull($other);
     }
+
+    public function test_appointments_download_as_csv_for_the_tab_shown(): void
+    {
+        [$owner, $org] = $this->business();
+        [, $other] = $this->business();
+        $make = fn (Organization $o, string $title, string $at, AppointmentStatus $status = AppointmentStatus::Confirmed) => Appointment::create([
+            'organization_id' => $o->id, 'title' => $title, 'timezone' => self::TZ, 'status' => $status,
+            'starts_at' => CarbonImmutable::parse($at, self::TZ), 'ends_at' => CarbonImmutable::parse($at, self::TZ)->addHour(), 'blocked_until' => CarbonImmutable::parse($at, self::TZ)->addHour(),
+        ]);
+        $make($org, 'Boiler service', '2026-10-06 10:00');
+        $make($org, '=HYPERLINK("x")', '2026-10-07 10:00');
+        $make($org, 'Called off', '2026-10-08 10:00', AppointmentStatus::Cancelled)->forceFill(['cancellation_reason' => 'Fixed it themselves'])->save();
+        $make($other, 'Someone else', '2026-10-06 11:00');
+
+        $csv = $this->actingAs($owner)->get(route('app.appointments.export'))->assertOk()->streamedContent();
+        $this->assertStringContainsString('2026-10-06,10:00,11:00,"Boiler service"', $csv);
+        $this->assertStringContainsString("'=HYPERLINK", $csv, 'formulas are neutralised');
+        $this->assertStringNotContainsString('Called off', $csv);
+        $this->assertStringNotContainsString('Someone else', $csv);
+
+        $cancelled = $this->get(route('app.appointments.export', ['view' => 'cancelled']))->assertOk()->streamedContent();
+        $this->assertStringContainsString('Fixed it themselves', $cancelled);
+        $this->assertStringNotContainsString('Boiler service', $cancelled);
+    }
 }
