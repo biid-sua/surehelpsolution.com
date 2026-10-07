@@ -4,6 +4,7 @@ namespace App\Actions\Customers;
 
 use App\Models\AiRun;
 use App\Models\Appointment;
+use App\Models\AutomationRun;
 use App\Models\CallLog;
 use App\Models\Conversation;
 use App\Models\Customer;
@@ -45,6 +46,13 @@ class EraseCustomer
             $conversations = Conversation::withoutGlobalScopes()->where('organization_id', $customer->organization_id)->where('customer_id', $customer->id)->pluck('id');
             AiRun::withoutGlobalScopes()->whereIn('conversation_id', $conversations)->delete();
             Conversation::withoutGlobalScopes()->whereIn('id', $conversations)->delete();   // messages and feedback cascade
+
+            // Automation steps for this customer or their appointments (D50) never run after erasure.
+            AutomationRun::withoutGlobalScopes()->where('organization_id', $customer->organization_id)
+                ->where(fn ($q) => $q->where(fn ($c) => $c->where('subject_type', 'customer')->where('subject_id', $customer->id))
+                    ->orWhere(fn ($a) => $a->where('subject_type', 'appointment')
+                        ->whereIn('subject_id', Appointment::withoutGlobalScopes()->where('customer_id', $customer->id)->select('id'))))
+                ->delete();
             $customer->tags()->detach();
 
             $customer->forceFill([

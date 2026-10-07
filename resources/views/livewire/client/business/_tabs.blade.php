@@ -8,6 +8,7 @@
         'app.business.rules' => 'Rules',
         'app.business.outcomes' => 'Call outcomes',
         'app.business.emails' => 'Customer emails',
+        'app.business.automations' => 'Automations',
         'app.business.calendars' => 'Calendar sync',
     ];
 @endphp

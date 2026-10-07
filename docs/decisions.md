@@ -581,3 +581,22 @@ Start these early. The code can be built and tested with your own accounts befor
 - **Attachments:** stored privately and only downloaded through an authorized route. They are deleted with the business when its account closes, along with the requests.
 
 **Why:** requests by phone or email get lost. One thread per request, with a status, shows both sides where things stand.
+
+## D50 — Automation foundation (2026-10-23)
+**Decision:** each business can set up automations under *Business › Automations* (spec §42–43). An automation is a trigger, optional conditions, a delay (up to 30 days) and one action.
+- **Triggers:** an appointment is completed, an appointment is cancelled, or a new customer or lead is added. Records copied in by a backfill or import don't count as new customers.
+- **Conditions:** only for certain services (appointment triggers).
+- **Actions:**
+  - Email the customer, in the business's name with placeholders. Optionally only to customers who agreed to email; this is on by default and on in the recipes.
+  - Create a follow-up task.
+  - Notify the team ("Automation messages" in notification settings).
+- **Recipes:** "Thank you and review request" (2 hours after a completed job), "Rebook cancelled appointments" (a task a day later) and "Tell the team about new leads".
+- **How runs work:**
+  - A trigger schedules one run per automation and subject, so a repeated trigger never doubles an email.
+  - `automations:run` runs due steps every minute, and first checks that each still applies. If the appointment is no longer completed or cancelled, the automation was switched off, or the business is paused, the step is cancelled.
+  - A step that can't apply (no email address, no consent, emails not in the plan) is "skipped".
+  - Errors retry up to 3 times, then show as "failed". The last 20 runs are listed on the page.
+- **Privacy:** erasing a customer deletes their pending and past runs. Closing an account deletes automations and their history.
+- **Not yet:** SMS (no provider yet), "request review" as its own action (an email with `{review_link}` covers it), escalations and appointment-created triggers. The engine was built so these can be added as new triggers and actions.
+
+**Why:** follow-ups and review requests are where businesses lose the most after the job. A small engine with history and safe re-checks is enough now and grows later.

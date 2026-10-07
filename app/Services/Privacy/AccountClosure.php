@@ -36,6 +36,8 @@ class AccountClosure
         'social_posts', 'social_accounts', 'websites',
         // Support requests (D49); their attachment files are removed with the business's folder below.
         'support_ticket_messages', 'support_tickets',
+        // Automations and their history (D50).
+        'automation_runs', 'automations',
         'call_logs', 'appointments', 'tasks', 'escalations', 'customer_timeline_events', 'customers', 'tags',
         'knowledge_items', 'business_rules', 'business_services', 'business_hours', 'business_holidays',
         'business_locations', 'business_profiles', 'message_templates', 'calendar_busy_blocks', 'calendar_connections',

@@ -7,12 +7,14 @@ use App\Jobs\PushAppointmentToCalendars;
 use App\Jobs\SendAppointmentEmail;
 use App\Models\Concerns\BelongsToOrganization;
 use App\Models\Concerns\StoresUtc;
+use App\Services\Automation\AutomationEngine;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -81,6 +83,13 @@ class Appointment extends Model
                     $appointment->forceFill(['reminder_sent_at' => null])->saveQuietly();   // remind about the new time
                 }
                 SendAppointmentEmail::dispatch($appointment->id, $email)->afterCommit();
+            }
+
+            // Automations (D50): a job just completed or was cancelled.
+            if ($appointment->wasChanged('status')
+                && in_array($appointment->status, [AppointmentStatus::Completed, AppointmentStatus::Cancelled], true)) {
+                $trigger = $appointment->status === AppointmentStatus::Completed ? 'appointment_completed' : 'appointment_cancelled';
+                DB::afterCommit(fn () => app(AutomationEngine::class)->fire($trigger, $appointment));
             }
 
             if ($relevant && CalendarConnection::withoutGlobalScopes()->where('organization_id', $appointment->organization_id)

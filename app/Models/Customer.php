@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\CustomerStatus;
 use App\Models\Concerns\BelongsToOrganization;
+use App\Services\Automation\AutomationEngine;
 use App\Support\Phone;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -62,6 +64,13 @@ class Customer extends Model
             }
             if ($customer->isDirty('email') && $customer->email !== null) {
                 $customer->email = Str::lower(trim($customer->email));
+            }
+        });
+
+        // Automations (D50): a new customer or lead, but not records copied in by a backfill or import.
+        static::created(function (Customer $customer) {
+            if (! in_array($customer->source, ['backfill', 'import'], true)) {
+                DB::afterCommit(fn () => app(AutomationEngine::class)->fire('customer_created', $customer));
             }
         });
     }

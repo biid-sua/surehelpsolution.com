@@ -47,6 +47,8 @@ Schedule::command('privacy:run')->dailyAt('04:20')->withoutOverlapping(60);
 
 // Social posts: SureHelp's own publishing queue (D33). Due posts and retries every minute.
 Schedule::command('social:publish-due')->everyMinute()->withoutOverlapping(5);
+// Automation steps that are due (D50).
+Schedule::command('automations:run')->everyMinute()->withoutOverlapping(5);
 
 // Agent company assignments: start scheduled ones and end expired ones (D40). Access itself never waits for this.
 Schedule::command('assignments:sweep')->everyFiveMinutes()->withoutOverlapping(10);
