@@ -42,6 +42,19 @@ class Index extends Component
     #[Url(except: 'upcoming')]
     public string $view = 'upcoming';
 
+    /** List filters: text (title or customer), dates (local, by start) and service. */
+    #[Url(except: '')]
+    public string $search = '';
+
+    #[Url(except: '')]
+    public string $from = '';
+
+    #[Url(except: '')]
+    public string $to = '';
+
+    #[Url(as: 'service', except: '')]
+    public string $serviceFilter = '';
+
     /** Opened from a notification, the calendar or a customer: ?appointment=<ulid>. */
     #[Url(as: 'appointment', except: '')]
     public string $selected = '';
@@ -79,7 +92,7 @@ class Index extends Component
 
     public function updated(string $property): void
     {
-        if ($property === 'view') {
+        if (in_array($property, ['view', 'search', 'from', 'to', 'serviceFilter'], true)) {
             $this->resetPage();
         }
         if ($property === 'form.service_id') {
@@ -240,6 +253,18 @@ class Index extends Component
         }
     }
 
+    /** @return array{search: string, from: string, to: string, service: string} */
+    public function filters(): array
+    {
+        return ['search' => $this->search, 'from' => $this->from, 'to' => $this->to, 'service' => $this->serviceFilter];
+    }
+
+    public function clearFilters(): void
+    {
+        $this->reset('search', 'from', 'to', 'serviceFilter');
+        $this->resetPage();
+    }
+
     public function close(): void
     {
         $this->booking = false;
@@ -299,9 +324,19 @@ class Index extends Component
      * One of the list's tabs, also used by the CSV export.
      *
      * @param  Builder<Appointment>  $query
+     * @param  array{search?: string, from?: string, to?: string, service?: string}  $filters
      */
-    public static function applyView(Builder $query, string $view, string $timezone): void
+    public static function applyView(Builder $query, string $view, string $timezone, array $filters = []): void
     {
+        $date = fn (string $d) => preg_match('/^\d{4}-\d{2}-\d{2}$/', $d) ? CarbonImmutable::parse($d, $timezone) : null;
+        $term = trim((string) ($filters['search'] ?? ''));
+        $query
+            ->when($term !== '', fn (Builder $q) => $q->where(fn (Builder $s) => $s->where('title', 'like', '%'.addcslashes($term, '%_\\').'%')
+                ->orWhereHas('customer', fn (Builder $c) => $c->search($term))))
+            ->when($date((string) ($filters['from'] ?? '')), fn (Builder $q, CarbonImmutable $d) => $q->where('starts_at', '>=', $d->startOfDay()->utc()))
+            ->when($date((string) ($filters['to'] ?? '')), fn (Builder $q, CarbonImmutable $d) => $q->where('starts_at', '<=', $d->endOfDay()->utc()))
+            ->when(ctype_digit((string) ($filters['service'] ?? '')), fn (Builder $q) => $q->where('service_id', (int) $filters['service']));
+
         match ($view) {
             'unconfirmed' => $query->whereIn('status', [AppointmentStatus::Pending->value, AppointmentStatus::Tentative->value])->where('ends_at', '>=', now())->orderBy('starts_at'),
             'past' => $query->where('starts_at', '<', now())->where('status', '!=', AppointmentStatus::Cancelled->value)->latest('starts_at'),
@@ -318,7 +353,7 @@ class Index extends Component
 
         $appointments = Appointment::query()->forOrganization($organization)
             ->with(['customer:id,ulid,first_name,last_name,company,phone,phone_e164', 'service:id,name', 'location:id,name'])
-            ->tap(fn (Builder $q) => self::applyView($q, $this->view, $timezone))
+            ->tap(fn (Builder $q) => self::applyView($q, $this->view, $timezone, $this->filters()))
             ->paginate(25);
 
         $selectedAppointment = $this->selected !== ''
@@ -349,6 +384,8 @@ class Index extends Component
             ],
             'timezone' => $timezone,
             'today' => now($timezone)->toDateString(),
+            'filterServices' => BusinessService::query()->forOrganization($organization)->orderBy('name')->get(['id', 'name']),
+            'filtered' => array_filter($this->filters()) !== [],
         ]);
     }
 }

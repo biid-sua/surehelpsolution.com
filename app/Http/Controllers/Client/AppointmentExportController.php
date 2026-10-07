@@ -23,7 +23,10 @@ class AppointmentExportController extends Controller
 
         $query = Appointment::query()->forOrganization($organization)
             ->with(['customer:id,first_name,last_name,company,phone,phone_e164,email', 'service:id,name', 'location:id,name', 'bookedBy:id,name', 'call:id,call_id'])
-            ->tap(fn ($q) => Index::applyView($q, $view, $timezone));
+            ->tap(fn ($q) => Index::applyView($q, $view, $timezone, [
+                'search' => (string) $request->query('search', ''), 'from' => (string) $request->query('from', ''),
+                'to' => (string) $request->query('to', ''), 'service' => (string) $request->query('service', ''),
+            ]));
 
         $columns = ['Date', 'Start ('.$timezone.')', 'End', 'Title', 'Service', 'Customer', 'Phone', 'Email', 'Address', 'Location',
             'Status', 'Booked by', 'Source', 'Call ID', 'Notes', 'Cancellation reason', 'Created'];

@@ -4,7 +4,7 @@
             @if ($duplicateCount)
                 <x-ui.button variant="secondary" icon="users" :href="route('app.customers.duplicates')">{{ $duplicateCount }} possible {{ \Illuminate\Support\Str::plural('duplicate', $duplicateCount) }}</x-ui.button>
             @endif
-            <x-ui.button variant="secondary" icon="download" :href="route('app.customers.export', array_filter(['search' => $search, 'status' => $status, 'tag' => $tag]))">Export CSV</x-ui.button>
+            <x-ui.button variant="secondary" icon="download" :href="route('app.customers.export', array_filter(['search' => $search, 'status' => $status, 'tag' => $tag, 'source' => $source]))">Export CSV</x-ui.button>
             @if ($canCreate)
                 <x-ui.button variant="secondary" :href="route('app.customers.import')">Import CSV</x-ui.button>
                 <x-ui.button icon="users" wire:click="add">Add customer</x-ui.button>
@@ -16,7 +16,7 @@
         <x-ui.alert tone="success" class="mb-6">{{ session('status') }}</x-ui.alert>
     @endif
 
-    <div class="mb-4 grid gap-3 sm:grid-cols-[1fr_12rem_12rem] sm:items-end">
+    <div class="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_12rem_12rem_12rem] lg:items-end">
         <div>
             <label for="cust-search" class="sh-label">Search</label>
             <div class="relative">
@@ -39,6 +39,15 @@
                 <option value="">All tags</option>
                 @foreach ($tags as $option)
                     <option value="{{ $option->id }}">{{ $option->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label for="cust-source" class="sh-label">Came from</label>
+            <select id="cust-source" wire:model.live="source" class="sh-input">
+                <option value="">Anywhere</option>
+                @foreach (['call' => 'A call', 'website' => 'Your website', 'message' => 'A message', 'chatbot' => 'The AI assistant', 'manual' => 'Added by your team', 'import' => 'An import', 'backfill' => 'Earlier calls'] as $key => $label)
+                    <option value="{{ $key }}">{{ $label }}</option>
                 @endforeach
             </select>
         </div>

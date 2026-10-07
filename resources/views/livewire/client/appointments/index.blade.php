@@ -1,7 +1,7 @@
 <div>
     <x-ui.page-header title="Appointments" description="Everything booked by our team and yours, in your business's time ({{ $timezone }}).">
         <x-slot:actions>
-            <x-ui.button variant="secondary" icon="download" :href="route('app.appointments.export', ['view' => $view])">Download CSV</x-ui.button>
+            <x-ui.button variant="secondary" icon="download" :href="route('app.appointments.export', array_filter(['view' => $view, 'search' => $search, 'from' => $from, 'to' => $to, 'service' => $serviceFilter]))">Download CSV</x-ui.button>
             @if ($can['create'])<x-ui.button icon="calendar" wire:click="book">Book appointment</x-ui.button>@endif
         </x-slot:actions>
     </x-ui.page-header>
@@ -20,9 +20,26 @@
         @endforeach
     </div>
 
+    <div class="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_12rem_9.5rem_9.5rem_auto] lg:items-end">
+        <div>
+            <label for="ap-search" class="sh-label">Search</label>
+            <input id="ap-search" type="search" wire:model.live.debounce.350ms="search" class="sh-input" placeholder="Customer or title…" autocomplete="off">
+        </div>
+        <div>
+            <label for="ap-service" class="sh-label">Service</label>
+            <select id="ap-service" wire:model.live="serviceFilter" class="sh-input">
+                <option value="">All services</option>
+                @foreach ($filterServices as $svc)<option value="{{ $svc->id }}">{{ $svc->name }}</option>@endforeach
+            </select>
+        </div>
+        <div><label for="ap-from" class="sh-label">From</label><input id="ap-from" type="date" wire:model.live="from" class="sh-input"></div>
+        <div><label for="ap-to" class="sh-label">To</label><input id="ap-to" type="date" wire:model.live="to" class="sh-input"></div>
+        @if ($filtered)<x-ui.button variant="ghost" wire:click="clearFilters">Clear</x-ui.button>@endif
+    </div>
+
     <x-ui.card :padding="false">
         <div class="relative">
-            <div wire:loading.flex wire:target="view,nextPage,previousPage" class="absolute inset-0 z-10 items-start justify-center bg-surface/60 pt-16">
+            <div wire:loading.flex wire:target="view,nextPage,previousPage,search,from,to,serviceFilter" class="absolute inset-0 z-10 items-start justify-center bg-surface/60 pt-16">
                 <span class="rounded-full bg-surface-2 px-3 py-1 text-xs text-muted ring-1 ring-line">Loading…</span>
             </div>
 

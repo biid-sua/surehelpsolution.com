@@ -36,6 +36,10 @@ class Index extends Component
     #[Url(except: '')]
     public string $tag = '';
 
+    /** Where the customer came from (Customer::SOURCES). */
+    #[Url(except: '')]
+    public string $source = '';
+
     public bool $adding = false;
 
     /** @var array<string, string> */
@@ -48,7 +52,7 @@ class Index extends Component
 
     public function updated(string $property): void
     {
-        if (in_array($property, ['search', 'status', 'tag'], true)) {
+        if (in_array($property, ['search', 'status', 'tag', 'source'], true)) {
             $this->resetPage();
         }
     }
@@ -117,6 +121,7 @@ class Index extends Component
             ->search($this->search)
             ->when(CustomerStatus::tryFrom($this->status), fn (Builder $q, CustomerStatus $s) => $q->where('status', $s))
             ->when($this->tag !== '', fn (Builder $q) => $q->whereHas('tags', fn (Builder $t) => $t->whereKey((int) $this->tag)))
+            ->when(in_array($this->source, Customer::SOURCES, true), fn (Builder $q) => $q->where('source', $this->source))
             ->orderByRaw('last_activity_at IS NULL')
             ->orderByDesc('last_activity_at')
             ->orderByDesc('id')

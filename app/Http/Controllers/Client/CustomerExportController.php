@@ -26,6 +26,7 @@ class CustomerExportController extends Controller
             ->search((string) $request->query('search', ''))
             ->when(CustomerStatus::tryFrom((string) $request->query('status')), fn (Builder $q, CustomerStatus $s) => $q->where('status', $s))
             ->when($request->filled('tag'), fn (Builder $q) => $q->whereHas('tags', fn (Builder $t) => $t->whereKey((int) $request->query('tag'))))
+            ->when(in_array($request->query('source'), Customer::SOURCES, true), fn (Builder $q) => $q->where('source', $request->query('source')))
             ->orderBy('id');
 
         $columns = ['First name', 'Last name', 'Company', 'Phone', 'Email', 'Address', 'Status', 'Source', 'Tags', 'OK to text', 'OK to email', 'Last activity ('.$timezone.')', 'Created'];

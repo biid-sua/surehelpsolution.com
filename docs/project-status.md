@@ -137,6 +137,7 @@ _As of 2026-10-06. Detailed tracker: [implementation-plan.md](implementation-pla
 | A-9 Self-service and approval (CAL-08, CAL-09) | Customer emails carry a signed "Change or cancel" link: customers pick a new free time or cancel, until the business's cut-off (default 24 hours). Owners can switch on approval of bookings made by SureHelp agents; those wait as "Needs confirming" (D48) |
 | A-10 Support requests (§78, CLI-09) | *Support* for businesses (new request, "Request a script change", replies with attachments, close) and a staff queue in the admin console (needs us, mine, waiting, done; assign, reply, change status), with notifications both ways (D49) |
 | A-11 Automations (§42–43) | *Business › Automations*: when a job is completed or cancelled, or a new lead arrives, wait, then email the customer (consent respected), create a task or notify the team. Three recipes, run history, retries, re-checks before running (D50) |
+| A-12 Smaller items | Logo upload (portal and customer pages); search box in the business portal (customers, calls, appointments, tasks); filters on appointments (text, dates, service; the CSV follows them), tasks (type, assignee) and customers (where they came from); customer CSV import (D53); `Idempotency-Key` on the app's create endpoints (D52); welcome email with a week-long "choose your password" link for people staff add (D51); inbox conversations show the customer's next appointment and open tasks with Book / Add task links |
 
 ### Merge of the cloud session (2026-10-04)
 - Branch `claude/phase-2-development-1yiwc2` merged into `develop` and pushed.
@@ -147,11 +148,10 @@ _As of 2026-10-06. Detailed tracker: [implementation-plan.md](implementation-pla
 ## 2. Pending
 
 ### A. Can be done now (no outside dependency)
-A check of the master spec against the code (2026-10-23) found these gaps, in priority order:
+Everything the 2026-10-23 audit found has been built (A-5 to A-12 above). What's left can't be done yet:
 
 | # | Item | Notes |
 |---|---|---|
-| 13 | Smaller items | Logo upload; client-side search; more list filters; customer CSV import; idempotency keys on the mobile API's create endpoints; welcome email for users created by admins; inbox links to tasks and appointments |
 | – | Content-Security-Policy header | Only possible after the public website stops loading scripts from CDNs (its redesign) |
 
 ### B. Needs action from you (operations)

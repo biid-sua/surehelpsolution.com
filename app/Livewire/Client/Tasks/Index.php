@@ -42,6 +42,13 @@ class Index extends Component
     #[Url(except: '')]
     public string $search = '';
 
+    /** Filters: task type, and who it's assigned to (a user id, or "none"). */
+    #[Url(except: '')]
+    public string $type = '';
+
+    #[Url(as: 'assignee', except: '')]
+    public string $assignee = '';
+
     /** Opened from a notification or link: ?task=<ulid>. */
     #[Url(as: 'task', except: '')]
     public string $focus = '';
@@ -73,7 +80,7 @@ class Index extends Component
 
     public function updated(string $property): void
     {
-        if (in_array($property, ['view', 'search'], true)) {
+        if (in_array($property, ['view', 'search', 'type', 'assignee'], true)) {
             $this->resetPage();
         }
     }
@@ -236,6 +243,9 @@ class Index extends Component
                 $term = '%'.addcslashes($this->search, '%_\\').'%';
                 $q->where(fn (Builder $w) => $w->where('title', 'like', $term)->orWhere('description', 'like', $term));
             })
+            ->when(TaskType::tryFrom($this->type), fn (Builder $q, TaskType $t) => $q->where('type', $t->value))
+            ->when($this->assignee === 'none', fn (Builder $q) => $q->whereNull('assigned_to_user_id'))
+            ->when(ctype_digit($this->assignee), fn (Builder $q) => $q->where('assigned_to_user_id', (int) $this->assignee))
             ->tap(fn (Builder $q) => match ($this->view) {
                 'mine' => $q->open()->where('assigned_to_user_id', auth()->id())->byUrgency(),
                 'overdue' => $q->overdue()->byUrgency(),
@@ -257,7 +267,7 @@ class Index extends Component
             ],
             'types' => TaskType::cases(),
             'priorities' => TaskPriority::cases(),
-            'team' => $this->editing ? $this->team() : collect(),
+            'team' => $this->team(),
             'editingTask' => $editingTask,
             'newFor' => $newFor,
             'canCreate' => auth()->user()->can('tasks.create', $organization),

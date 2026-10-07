@@ -24,11 +24,28 @@
         @endforeach
     </div>
 
-    <div class="mb-4 max-w-md">
-        <label for="task-search" class="sh-label">Search</label>
-        <div class="relative">
-            <x-ui.icon name="search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-subtle" />
-            <input id="task-search" type="search" wire:model.live.debounce.350ms="search" class="sh-input pl-9" placeholder="Title or details…" autocomplete="off">
+    <div class="mb-4 grid gap-3 sm:grid-cols-[minmax(0,28rem)_12rem_12rem] sm:items-end">
+        <div>
+            <label for="task-search" class="sh-label">Search</label>
+            <div class="relative">
+                <x-ui.icon name="search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-subtle" />
+                <input id="task-search" type="search" wire:model.live.debounce.350ms="search" class="sh-input pl-9" placeholder="Title or details…" autocomplete="off">
+            </div>
+        </div>
+        <div>
+            <label for="task-type" class="sh-label">Type</label>
+            <select id="task-type" wire:model.live="type" class="sh-input">
+                <option value="">All types</option>
+                @foreach ($types as $t)<option value="{{ $t->value }}">{{ $t->label() }}</option>@endforeach
+            </select>
+        </div>
+        <div>
+            <label for="task-assignee" class="sh-label">Assigned to</label>
+            <select id="task-assignee" wire:model.live="assignee" class="sh-input">
+                <option value="">Anyone</option>
+                <option value="none">Nobody yet</option>
+                @foreach ($team as $member)<option value="{{ $member->id }}">{{ $member->name }}</option>@endforeach
+            </select>
         </div>
     </div>
 
