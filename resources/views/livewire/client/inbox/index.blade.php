@@ -63,6 +63,22 @@
                             @if ($current->customer) · <a class="text-brand-300 underline" href="{{ route('app.customers.show', $current->customer->ulid) }}">customer record</a>@endif
                         </p>
                     </div>
+                    @if ($context)
+                        <div class="order-last flex basis-full flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
+                            @if ($context['canSeeAppointments'])
+                                @if ($context['next'])
+                                    <a href="{{ route('app.appointments.index', ['appointment' => $context['next']->ulid]) }}" class="inline-flex items-center gap-1 hover:text-ink"><x-ui.icon name="calendar" class="size-3.5" /> Next: {{ $context['next']->starts_at->setTimezone($timezone)->format('D M j, g:i A') }}</a>
+                                @else
+                                    <span class="inline-flex items-center gap-1"><x-ui.icon name="calendar" class="size-3.5" /> No upcoming appointment</span>
+                                @endif
+                            @endif
+                            @if ($context['canSeeTasks'] && $context['openTasks'] > 0)
+                                <a href="{{ route('app.customers.show', $current->customer->ulid) }}" class="inline-flex items-center gap-1 hover:text-ink"><x-ui.icon name="check-circle" class="size-3.5" /> {{ $context['openTasks'] }} open {{ str('task')->plural($context['openTasks']) }}</a>
+                            @endif
+                            @if ($context['canBook'])<a href="{{ route('app.appointments.index', ['book' => 1, 'customer' => $current->customer->ulid]) }}" class="font-medium text-brand-300 hover:underline">Book</a>@endif
+                            @if ($context['canTask'])<a href="{{ route('app.tasks.index', ['new' => 1, 'customer' => $current->customer->ulid]) }}" class="font-medium text-brand-300 hover:underline">Add task</a>@endif
+                        </div>
+                    @endif
                     <div class="ml-auto flex flex-wrap items-center gap-2">
                         @if ($canSend)
                             <label for="assign" class="sr-only">Assigned to</label>

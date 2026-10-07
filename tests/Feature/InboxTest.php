@@ -9,11 +9,14 @@ use App\Jobs\RespondToConversation;
 use App\Livewire\Client\Inbox\Channels;
 use App\Livewire\Client\Inbox\Index as Inbox;
 use App\Models\AiAssistant;
+use App\Models\Appointment;
 use App\Models\ChatWidget;
 use App\Models\Conversation;
+use App\Models\Customer;
 use App\Models\Message;
 use App\Models\Organization;
 use App\Models\SocialAccount;
+use App\Models\Task;
 use App\Models\User;
 use App\Notifications\InboxMessageReceived;
 use App\Services\Ai\Contracts\AiProvider;
@@ -281,6 +284,21 @@ class InboxTest extends TestCase
         // A new message reopens a closed conversation.
         $this->chat('POST', ChatWidget::for($org)->public_key.'/messages', ['body' => 'Hi']); // different visitor: new conversation
         $this->assertSame(2, Conversation::query()->forOrganization($org)->count());
+    }
+
+    public function test_a_conversation_shows_the_customers_next_appointment_and_open_tasks(): void
+    {
+        [$owner, $org] = $this->business();
+        $customer = Customer::create(['organization_id' => $org->id, 'first_name' => 'Ana']);
+        $conversation = Conversation::create(['organization_id' => $org->id, 'channel' => 'web_chat', 'channel_key' => 'web', 'external_thread_id' => 'c', 'contact_name' => 'Ana', 'customer_id' => $customer->id, 'last_inbound_at' => now()]);
+        $next = Appointment::create(['organization_id' => $org->id, 'customer_id' => $customer->id, 'title' => 'Visit', 'timezone' => 'UTC',
+            'starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addHour(), 'blocked_until' => now()->addDay()->addHour()]);
+        Task::create(['organization_id' => $org->id, 'customer_id' => $customer->id, 'title' => 'Send quote']);
+
+        $this->actingAs($owner)->get(route('app.inbox.show', $conversation))->assertOk()
+            ->assertSee(route('app.appointments.index', ['appointment' => $next->ulid]), false)
+            ->assertSee('1 open task')
+            ->assertSee(route('app.tasks.index', ['new' => 1, 'customer' => $customer->ulid]));
     }
 
     public function test_switching_messenger_on_subscribes_the_page(): void

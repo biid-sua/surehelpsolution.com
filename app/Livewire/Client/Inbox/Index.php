@@ -7,8 +7,11 @@ use App\Actions\Inbox\SendReply;
 use App\Enums\InboxChannel;
 use App\Livewire\Concerns\ScopedToOrganization;
 use App\Models\AiAssistant;
+use App\Models\Appointment;
 use App\Models\Conversation;
+use App\Models\Customer;
 use App\Models\Message;
+use App\Models\Task;
 use App\Services\Ai\Contracts\AiProvider;
 use App\Support\Audit\Audit;
 use Illuminate\Contracts\View\View;
@@ -240,6 +243,30 @@ class Index extends Component
             'aiMode' => $current ? ($ai->isConfigured() ? $assistant->modeFor($current->channel) : 'off') : 'off',
             'canSend' => auth()->user()->can('messages.send', $organization),
             'timezone' => $timezone,
+            'context' => $current?->customer ? $this->customerContext($current->customer) : null,
         ]);
+    }
+
+    /**
+     * What else is going on with this customer, for the conversation header: next appointment and open tasks.
+     *
+     * @return array{next: ?Appointment, openTasks: int, canBook: bool, canTask: bool, canSeeAppointments: bool, canSeeTasks: bool}
+     */
+    private function customerContext(Customer $customer): array
+    {
+        $organization = $this->organization();
+        $user = auth()->user();
+        $seeAppointments = $user->can('appointments.view', $organization);
+        $seeTasks = $user->can('tasks.view', $organization);
+
+        return [
+            'next' => $seeAppointments ? Appointment::query()->forOrganization($organization)->where('customer_id', $customer->id)->blocking()
+                ->where('starts_at', '>=', now())->orderBy('starts_at')->first() : null,
+            'openTasks' => $seeTasks ? Task::query()->forOrganization($organization)->where('customer_id', $customer->id)->open()->count() : 0,
+            'canBook' => $user->can('appointments.create', $organization),
+            'canTask' => $user->can('tasks.create', $organization),
+            'canSeeAppointments' => $seeAppointments,
+            'canSeeTasks' => $seeTasks,
+        ];
     }
 }
