@@ -92,6 +92,7 @@ use App\Livewire\Client\Inbox\Assistant as InboxAssistant;
 use App\Livewire\Client\Inbox\Channels as InboxChannels;
 use App\Livewire\Client\Inbox\Index as InboxIndex;
 use App\Livewire\Client\Results as ClientResults;
+use App\Livewire\Client\Search as ClientSearch;
 use App\Livewire\Client\Settings\Notifications as NotificationSettings;
 use App\Livewire\Client\Settings\Privacy as PrivacySettings;
 use App\Livewire\Client\Settings\Team as TeamSettings;
@@ -160,6 +161,7 @@ Route::prefix('account')->name('account.')->middleware(['auth.home', 'force.pass
 // Business portal (clients) — docs/implementation-plan.md P1-4
 Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.change', 'role:client', 'tenant', 'account.gate'])->group(function () {
     Route::get('/', ClientDashboard::class)->middleware('can:dashboard.view')->name('dashboard');
+    Route::get('/search', ClientSearch::class)->middleware('can:dashboard.view')->name('search');
     Route::get('/setup', SetupWizard::class)->middleware('can:organization.update')->name('setup');
     Route::middleware('can:reports.view')->group(function () {
         Route::get('/results', ClientResults::class)->name('results');

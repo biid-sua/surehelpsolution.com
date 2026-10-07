@@ -106,6 +106,14 @@
                             <input id="top-search" name="q" type="search" value="{{ request()->routeIs('admin.search') ? request('q') : '' }}" class="sh-input py-1.5 pl-9 text-sm" placeholder="Search businesses, people, callers, call IDs…" autocomplete="off">
                         </form>
                     @endif
+                    @if ($portal === 'client' && $organization && Route::has('app.search'))
+                        {{-- Search the business's customers, calls, appointments and tasks --}}
+                        <form method="GET" action="{{ route('app.search') }}" class="relative float-right ml-4 hidden w-72 md:block" role="search">
+                            <x-ui.icon name="search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-subtle" />
+                            <label for="app-top-search" class="sr-only">Search your business</label>
+                            <input id="app-top-search" name="q" type="search" value="{{ request()->routeIs('app.search') ? request('q') : '' }}" class="sh-input py-1.5 pl-9 text-sm" placeholder="Search customers, calls…" autocomplete="off">
+                        </form>
+                    @endif
                     @if ($organization)
                         <p class="truncate text-sm font-semibold text-ink">{{ $organization->name }}</p>
                         <p class="truncate text-xs text-subtle">{{ $organization->timezone ?? 'Timezone not set yet' }}</p>
