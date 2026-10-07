@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Actions\Organizations\ProvisionUserTenancy;
 use App\Livewire\Client\Results;
+use App\Models\Appointment;
 use App\Models\BusinessHour;
 use App\Models\CallLog;
 use App\Models\Customer;
@@ -97,6 +98,25 @@ class ResultsTest extends TestCase
         $this->assertSame('Service request', array_key_first($r['reasons']));
         $this->assertSame(1, $r['heatmap'][3][20], 'Wednesday 8 PM, business time');
         $this->assertSame(1, $r['outcomes']['spam']['count']);
+    }
+
+    public function test_results_show_how_appointments_went(): void
+    {
+        [$owner, $org] = $this->business();
+        foreach (['completed', 'completed', 'no_show', 'cancelled', 'confirmed'] as $i => $status) {
+            $at = CarbonImmutable::parse('2026-10-'.(10 + $i).' 10:00', self::TZ);
+            Appointment::create(['organization_id' => $org->id, 'title' => 'Job', 'timezone' => self::TZ, 'status' => $status,
+                'starts_at' => $at, 'ends_at' => $at->addHour(), 'blocked_until' => $at->addHour()]);
+        }
+
+        $report = app(ResultsReport::class);
+        $period = $report->month($org, '2026-10');
+        $outcomes = $report->compute($org, $period['start'], $period['end'])['appointment_outcomes'];
+        $this->assertSame([2, 1, 1, 1], [$outcomes['completed']['count'], $outcomes['upcoming']['count'], $outcomes['no_show']['count'], $outcomes['cancelled']['count']]);
+
+        $this->actingAs($owner)->get(route('app.results', ['month' => '2026-10']))->assertSee('How appointments went')->assertSee('No-show');
+        $this->assertStringContainsString('"Appointment outcomes",Completed,2', $this->get(route('app.results.csv', ['month' => '2026-10']))->streamedContent());
+        $this->get(route('app.results.pdf', ['month' => '2026-10']))->assertOk();
     }
 
     public function test_results_page_pdf_and_job_value(): void

@@ -36,6 +36,9 @@ class ResultsCsvController extends Controller
         foreach ($r['outcomes'] as $outcome) {
             $rows[] = ['Call outcomes', $outcome['label'], $outcome['count'], ''];
         }
+        foreach ($r['appointment_outcomes'] as $outcome) {
+            $rows[] = ['Appointment outcomes', $outcome['label'], $outcome['count'], ''];
+        }
         foreach ($r['reasons'] as $reason => $count) {
             $rows[] = ['Top reasons for calling', $reason, $count, ''];
         }

@@ -7,9 +7,15 @@ use App\Actions\Tasks\CreateCallbackTask;
 use App\Enums\OutcomeCategory;
 use App\Livewire\Client\Calls\Index as CallsIndex;
 use App\Livewire\Client\Dashboard;
+use App\Models\Appointment;
+use App\Models\CalendarConnection;
 use App\Models\CallLog;
+use App\Models\Conversation;
+use App\Models\Customer;
 use App\Models\Organization;
+use App\Models\Task;
 use App\Models\User;
+use App\Services\Metrics\DashboardAlerts;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
@@ -126,6 +132,57 @@ class ClientPortalTest extends TestCase
             ->assertSet('period', 'month')
             ->set('period', 'decade')
             ->assertSet('period', 'today');
+    }
+
+    public function test_dashboard_custom_range_new_cards_and_customer_activity(): void
+    {
+        Carbon::setTestNow('2026-10-20 12:00');
+        [$client, $org] = $this->client();
+        $org->forceFill(['timezone' => 'UTC'])->save();
+        $old = Customer::create(['organization_id' => $org->id, 'first_name' => 'Old', 'phone' => '+15125550111']);
+        $old->forceFill(['created_at' => '2026-08-01'])->save();
+        $this->callFor($org, ['created_at' => '2026-10-02 10:00', 'customer_id' => $old->id]);
+        $this->callFor($org, ['created_at' => '2026-09-25 10:00']);
+        $new = Customer::create(['organization_id' => $org->id, 'first_name' => 'New', 'phone' => '+15125550112']);
+        $new->forceFill(['created_at' => '2026-10-03 09:00'])->save();
+        Appointment::create(['organization_id' => $org->id, 'title' => 'Visit', 'timezone' => 'UTC',
+            'starts_at' => '2026-10-04 10:00', 'ends_at' => '2026-10-04 11:00', 'blocked_until' => '2026-10-04 11:00']);
+
+        $this->actingAs($client);
+        $page = Livewire::test(Dashboard::class)->set('period', 'custom')
+            ->assertSet('from', '2026-09-21')->assertSet('to', '2026-10-20')
+            ->set('from', '2026-10-01')->set('to', '2026-10-10');
+        $kpis = $page->viewData('kpis');
+        $this->assertSame(1, $kpis['calls']['value']);
+        $this->assertSame(0, $kpis['calls']['change'], 'one call in the 10 days before as well');
+        $this->assertSame(1, $kpis['appointments']['value']);
+        $this->assertSame(1, $kpis['leads']['value']);
+        $activity = $page->viewData('activity');
+        $this->assertSame(1, $activity['new']);
+        $this->assertSame(1, $activity['returning']);
+
+        $page->set('to', '2026-09-01')->assertSee('Pick a start date on or before the end date');
+        $this->assertSame(0, $page->viewData('kpis')['calls']['value'], 'falls back to today');
+    }
+
+    public function test_dashboard_alerts_are_real_and_for_people_who_can_act(): void
+    {
+        [$client, $org] = $this->client();
+        CalendarConnection::create(['organization_id' => $org->id, 'provider' => 'google', 'account_email' => 'cal@example.com', 'access_token' => 'x', 'status' => CalendarConnection::STATUS_NEEDS_REAUTH]);
+        Conversation::create(['organization_id' => $org->id, 'channel' => 'web_chat', 'channel_key' => 'web', 'external_thread_id' => 't1', 'contact_name' => 'Visitor',
+            'last_inbound_at' => now()->subHour(), 'last_message_at' => now()->subHour()]);
+        Conversation::create(['organization_id' => $org->id, 'channel' => 'web_chat', 'channel_key' => 'web', 'external_thread_id' => 't2', 'contact_name' => 'Answered',
+            'last_inbound_at' => now()->subHours(2), 'last_message_at' => now()->subHour()]);
+        Task::create(['organization_id' => $org->id, 'title' => 'Ring back', 'due_at' => now()->subDay()]);
+
+        $this->actingAs($client)->get(route('app.dashboard'))->assertOk()
+            ->assertSee('Your calendar is disconnected')
+            ->assertSee('1 message waiting for a reply')
+            ->assertSee('1 overdue follow-up')
+            ->assertDontSee('overdue invoice');
+
+        $alerts = app(DashboardAlerts::class)->for($org, User::factory()->create(['role' => 'client']));
+        $this->assertSame([], $alerts, 'someone outside the business sees none');
     }
 
     public function test_empty_dashboard_explains_what_happens_next(): void

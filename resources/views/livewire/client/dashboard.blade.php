@@ -11,8 +11,21 @@
                         ])>{{ $label }}</button>
                 @endforeach
             </div>
+            @if ($period === 'custom')
+                <div class="flex flex-wrap items-center gap-2">
+                    <label for="d-from" class="sr-only">From</label>
+                    <input id="d-from" type="date" wire:model.live.debounce.500ms="from" class="sh-input w-40">
+                    <span class="text-sm text-muted">to</span>
+                    <label for="d-to" class="sr-only">To</label>
+                    <input id="d-to" type="date" wire:model.live.debounce.500ms="to" class="sh-input w-40">
+                </div>
+            @endif
         </x-slot:actions>
     </x-ui.page-header>
+
+    @if (! $customValid)
+        <x-ui.alert tone="warning" class="mb-6">Pick a start date on or before the end date, up to {{ $maxDays }} days apart. Showing today until then.</x-ui.alert>
+    @endif
 
     @if (session('status'))
         <x-ui.alert tone="success" class="mb-6">{{ session('status') }}</x-ui.alert>
@@ -64,9 +77,14 @@
         </div>
     @endif
 
-    {{-- Alerts: only real, actionable conditions (spec §8.1). --}}
-    @if ($kpis['follow_ups']['value'] > 0 || ($period === 'today' && $kpis['missed']['value'] > 0))
+    {{-- Alerts: only real, actionable conditions (spec §8.1), for people who can act on them. --}}
+    @if ($alerts || $kpis['follow_ups']['value'] > 0 || ($period === 'today' && $kpis['missed']['value'] > 0))
         <div class="mb-6 space-y-3">
+            @foreach ($alerts as $alert)
+                <x-ui.alert :tone="$alert['tone']" :title="$alert['title']" wire:key="alert-{{ $alert['key'] }}">
+                    {{ $alert['body'] }} <a href="{{ $alert['url'] }}" class="font-semibold underline underline-offset-2">{{ $alert['action'] }}</a>
+                </x-ui.alert>
+            @endforeach
             @if ($kpis['follow_ups']['value'] > 0)
                 <x-ui.alert tone="warning" title="{{ $kpis['follow_ups']['value'] }} {{ \Illuminate\Support\Str::plural('caller', $kpis['follow_ups']['value']) }} waiting for a follow-up">
                     Callers asked to be called back. <a href="{{ route('app.tasks.index') }}" class="font-semibold underline underline-offset-2">Open tasks</a>
@@ -81,27 +99,31 @@
     @endif
 
     <div class="relative">
-        <div wire:loading.flex wire:target="period" class="absolute inset-0 z-10 items-start justify-center rounded-2xl bg-canvas/40 pt-24 backdrop-blur-[1px]">
+        <div wire:loading.flex wire:target="period,from,to" class="absolute inset-0 z-10 items-start justify-center rounded-2xl bg-canvas/40 pt-24 backdrop-blur-[1px]">
             <span class="rounded-full bg-surface-2 px-3 py-1 text-xs text-muted ring-1 ring-line">Updating…</span>
         </div>
 
         {{-- KPI cards --}}
-        <div class="grid grid-cols-2 gap-4 lg:grid-cols-5">
+        <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
             <x-ui.stat label="Calls" icon="phone" :value="number_format($kpis['calls']['value'])" :change="$kpis['calls']['change']"
                 hint="vs previous" :href="route('app.calls.index')" />
+            <x-ui.stat label="Appointments" icon="calendar" :value="number_format($kpis['appointments']['value'])" :change="$kpis['appointments']['change']"
+                hint="scheduled in this period" :href="route('app.appointments.index')" />
+            <x-ui.stat label="New leads" icon="users" :value="number_format($kpis['leads']['value'])" :change="$kpis['leads']['change']"
+                hint="new customer records" :href="route('app.customers.index')" />
             <x-ui.stat label="Service requests" icon="wrench" :value="number_format($kpis['service_requests']['value'])" :change="$kpis['service_requests']['change']"
                 hint="vs previous" :href="route('app.calls.index', ['view' => 'service'])" />
-            <x-ui.stat label="Scheduled" icon="calendar" :value="number_format($kpis['scheduled']['value'])" :change="$kpis['scheduled']['change']"
+            <x-ui.stat label="Calls that booked" icon="check-circle" :value="number_format($kpis['scheduled']['value'])" :change="$kpis['scheduled']['change']"
                 hint="vs previous" :href="route('app.calls.index', ['view' => 'scheduled'])" />
             <x-ui.stat label="Missed / dropped" icon="phone-x" :value="number_format($kpis['missed']['value'])" :change="$kpis['missed']['change']"
                 :invert="true" hint="vs previous" :href="route('app.calls.index', ['view' => 'missed'])" />
             <x-ui.stat label="Pending follow-ups" icon="callback" :value="number_format($kpis['follow_ups']['value'])"
-                hint="open right now" :href="route('app.tasks.index')" class="col-span-2 lg:col-span-1" />
+                hint="open right now" :href="route('app.tasks.index')" class="col-span-2" />
         </div>
 
         <div class="mt-6 grid gap-6 lg:grid-cols-3">
             {{-- Call volume --}}
-            <x-ui.card class="lg:col-span-2" title="Call volume" :description="$period === 'today' ? 'Calls per hour today' : 'Calls per day'">
+            <x-ui.card class="lg:col-span-2" title="Call volume" :description="$hourly ? 'Calls per hour' : 'Calls per day'">
                 @if (array_sum($series['data']) === 0)
                     <x-ui.empty-state icon="chart" title="No calls in this period yet"
                         description="As soon as our team answers a call for you, it shows up here." />
@@ -169,5 +191,35 @@
                 </x-ui.table>
             @endif
         </x-ui.card>
+
+        @if ($activity)
+            {{-- Customer activity (spec §8.1) --}}
+            <x-ui.card class="mt-6" title="Customer activity" :padding="false">
+                <x-slot:actions>
+                    <x-ui.button variant="ghost" size="sm" :href="route('app.customers.index')">Customers <x-ui.icon name="chevron-right" class="size-4" /></x-ui.button>
+                </x-slot:actions>
+                <div class="grid gap-6 p-5 md:grid-cols-[12rem_minmax(0,1fr)]">
+                    <dl class="grid grid-cols-2 gap-4 md:grid-cols-1">
+                        <div><dt class="text-xs text-subtle">New customers</dt><dd class="text-2xl font-semibold text-ink">{{ number_format($activity['new']) }}</dd></div>
+                        <div><dt class="text-xs text-subtle">Returning customers</dt><dd class="text-2xl font-semibold text-ink">{{ number_format($activity['returning']) }}</dd>
+                            <p class="text-xs text-subtle">called or booked again</p></div>
+                    </dl>
+                    <div class="min-w-0">
+                        <h3 class="text-sm font-semibold text-ink">Recent interactions</h3>
+                        @forelse ($activity['recent'] as $event)
+                            <div class="flex items-start gap-3 border-b border-line py-2 last:border-0" wire:key="act-{{ $event->id }}">
+                                <x-ui.icon :name="$event->type->icon()" class="mt-0.5 size-4 shrink-0 text-subtle" />
+                                <p class="min-w-0 flex-1 truncate text-sm text-ink">
+                                    @if ($event->customer)<a href="{{ route('app.customers.show', $event->customer->ulid) }}" class="font-medium hover:text-brand-300">{{ $event->customer->fullName() }}</a> · @endif{{ $event->title }}
+                                </p>
+                                <span class="whitespace-nowrap text-xs text-subtle">{{ $event->occurred_at?->diffForHumans() }}</span>
+                            </div>
+                        @empty
+                            <p class="mt-2 text-sm text-muted">Calls, bookings and messages with your customers will show here.</p>
+                        @endforelse
+                    </div>
+                </div>
+            </x-ui.card>
+        @endif
     </div>
 </div>

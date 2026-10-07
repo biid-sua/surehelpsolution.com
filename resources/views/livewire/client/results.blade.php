@@ -66,6 +66,20 @@
             </ul>
         </x-ui.card>
 
+        @php $apptTotal = array_sum(array_column($r['appointment_outcomes'], 'count')); @endphp
+        <x-ui.card title="How appointments went" description="Appointments that were scheduled in this month." :padding="false">
+            <ul class="divide-y divide-line">
+                @foreach ($r['appointment_outcomes'] as $key => $o)
+                    @continue($o['count'] === 0)
+                    <li class="px-5 py-3">
+                        <div class="flex items-center justify-between text-sm"><span class="text-ink">{{ $o['label'] }}</span><span class="tabular-nums text-muted">{{ number_format($o['count']) }}</span></div>
+                        <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-2"><div @class(['h-full rounded-full', 'bg-emerald-500' => $key === 'completed', 'bg-brand-500' => $key === 'upcoming', 'bg-amber-500' => $key === 'no_show', 'bg-white/30' => $key === 'cancelled']) style="width: {{ round($o['count'] / max(1, $apptTotal) * 100) }}%"></div></div>
+                    </li>
+                @endforeach
+                @if ($apptTotal === 0)<li class="px-5 py-4 text-sm text-muted">No appointments in {{ $period['label'] }}.</li>@endif
+            </ul>
+        </x-ui.card>
+
         <x-ui.card title="Why people called" :padding="false">
             <ul class="divide-y divide-line">
                 @forelse ($r['reasons'] as $reason => $n)

@@ -60,6 +60,15 @@
                 @endforeach
                 @if ($r['calls'] === 0)<tr><td class="muted">No calls this month.</td></tr>@endif
             </table>
+            @if (array_sum(array_column($r['appointment_outcomes'] ?? [], 'count')) > 0)
+                <h2>How appointments went</h2>
+                <table class="list">
+                    @foreach ($r['appointment_outcomes'] as $o)
+                        @continue($o['count'] === 0)
+                        <tr><td>{{ $o['label'] }}</td><td class="right">{{ number_format($o['count']) }}</td></tr>
+                    @endforeach
+                </table>
+            @endif
         </td>
         <td style="width:50%; vertical-align:top; padding-left:12px">
             <h2>Why people called</h2>

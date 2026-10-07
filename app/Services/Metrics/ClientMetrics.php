@@ -6,6 +6,8 @@ use App\Enums\AppointmentStatus;
 use App\Enums\OutcomeCategory;
 use App\Models\Appointment;
 use App\Models\CallLog;
+use App\Models\Customer;
+use App\Models\CustomerTimelineEvent;
 use App\Models\Organization;
 use App\Models\Task;
 use App\Services\Calls\CallOutcomes;
@@ -19,19 +21,26 @@ use Illuminate\Database\Eloquent\Collection;
  */
 class ClientMetrics
 {
-    public const PERIODS = ['today' => 'Today', 'week' => 'This week', 'month' => 'This month'];
+    public const PERIODS = ['today' => 'Today', 'week' => 'This week', 'month' => 'This month', 'custom' => 'Custom'];
+
+    public const MAX_CUSTOM_DAYS = 366;
 
     /**
-     * @return array{start: CarbonImmutable, end: CarbonImmutable, previousStart: CarbonImmutable, previousEnd: CarbonImmutable, timezone: string}
+     * The period's bounds in the business's timezone, and the period just before it of the same length.
+     * "custom" uses $from and $to (local dates, at most a year); invalid input falls back to today.
+     *
+     * @return array{start: CarbonImmutable, end: CarbonImmutable, previousStart: CarbonImmutable, previousEnd: CarbonImmutable, timezone: string, days: int}
      */
-    public function range(Organization $organization, string $period): array
+    public function range(Organization $organization, string $period, ?string $from = null, ?string $to = null): array
     {
         $timezone = $organization->timezone ?: config('app.timezone');
         $now = CarbonImmutable::now($timezone);
 
-        [$start, $end, $previousStart] = match ($period) {
-            'week' => [$now->startOfWeek(), $now->endOfWeek(), $now->subWeek()->startOfWeek()],
-            'month' => [$now->startOfMonth(), $now->endOfMonth(), $now->subMonthNoOverflow()->startOfMonth()],
+        $custom = $period === 'custom' ? self::customBounds($from, $to, $timezone) : null;
+        [$start, $end, $previousStart] = match (true) {
+            $custom !== null => [$custom[0], $custom[1], $custom[0]->subDays((int) $custom[0]->diffInDays($custom[1]->addSecond()))],
+            $period === 'week' => [$now->startOfWeek(), $now->endOfWeek(), $now->subWeek()->startOfWeek()],
+            $period === 'month' => [$now->startOfMonth(), $now->endOfMonth(), $now->subMonthNoOverflow()->startOfMonth()],
             default => [$now->startOfDay(), $now->endOfDay(), $now->subDay()->startOfDay()],
         };
 
@@ -41,7 +50,25 @@ class ClientMetrics
             'previousStart' => $previousStart,
             'previousEnd' => $start->subSecond(),
             'timezone' => $timezone,
+            'days' => (int) $start->diffInDays($end->addSecond()),
         ];
+    }
+
+    /**
+     * Valid custom bounds, or null.
+     *
+     * @return array{0: CarbonImmutable, 1: CarbonImmutable}|null
+     */
+    public static function customBounds(?string $from, ?string $to, string $timezone): ?array
+    {
+        $valid = fn (?string $d) => is_string($d) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $d) && checkdate((int) substr($d, 5, 2), (int) substr($d, 8, 2), (int) substr($d, 0, 4));
+        if (! $valid($from) || ! $valid($to)) {
+            return null;
+        }
+        $start = CarbonImmutable::parse($from, $timezone)->startOfDay();
+        $end = CarbonImmutable::parse($to, $timezone)->endOfDay();
+
+        return $start->lessThanOrEqualTo($end) && $start->diffInDays($end) < self::MAX_CUSTOM_DAYS ? [$start, $end] : null;
     }
 
     /**
@@ -49,9 +76,9 @@ class ClientMetrics
      *
      * @return array<string, array{value: int, change: int|null}>
      */
-    public function kpis(Organization $organization, string $period): array
+    public function kpis(Organization $organization, string $period, ?string $from = null, ?string $to = null): array
     {
-        $range = $this->range($organization, $period);
+        $range = $this->range($organization, $period, $from, $to);
         $current = $this->counts($organization, $range['start'], $range['end']);
         $previous = $this->counts($organization, $range['previousStart'], $range['previousEnd']);
 
@@ -74,14 +101,14 @@ class ClientMetrics
      *
      * @return array{labels: list<string>, data: list<int>}
      */
-    public function series(Organization $organization, string $period): array
+    public function series(Organization $organization, string $period, ?string $from = null, ?string $to = null): array
     {
-        $range = $this->range($organization, $period);
+        $range = $this->range($organization, $period, $from, $to);
         $timestamps = CallLog::query()->forOrganization($organization)
             ->whereBetween('created_at', [$range['start']->utc(), $range['end']->utc()])
             ->pluck('created_at');
 
-        if ($period === 'today') {
+        if ($range['days'] === 1) {
             $buckets = array_fill(0, 24, 0);
             foreach ($timestamps as $at) {
                 $buckets[(int) $at->copy()->setTimezone($range['timezone'])->format('G')]++;
@@ -155,6 +182,29 @@ class ClientMetrics
     }
 
     /**
+     * New and returning customers in the period, and the latest things that happened with customers.
+     *
+     * @return array{new: int, returning: int, recent: Collection<int, CustomerTimelineEvent>}
+     */
+    public function customerActivity(Organization $organization, string $period, ?string $from = null, ?string $to = null): array
+    {
+        $range = $this->range($organization, $period, $from, $to);
+        $window = [$range['start']->utc(), $range['end']->utc()];
+
+        return [
+            'new' => Customer::query()->forOrganization($organization)->whereBetween('created_at', $window)->count(),
+            // Known before the period, and called or booked again during it.
+            'returning' => Customer::query()->forOrganization($organization)->where('created_at', '<', $window[0])
+                ->where(fn ($q) => $q->whereHas('calls', fn ($c) => $c->whereBetween('created_at', $window))
+                    ->orWhereHas('appointments', fn ($a) => $a->whereBetween('created_at', $window)))
+                ->count(),
+            'recent' => CustomerTimelineEvent::query()->where('organization_id', $organization->id)
+                ->with('customer:id,ulid,first_name,last_name,company')
+                ->latest('occurred_at')->latest('id')->limit(6)->get(),
+        ];
+    }
+
+    /**
      * @return Collection<int, CallLog>
      */
     public function recentCalls(Organization $organization, int $limit = 6): Collection
@@ -168,7 +218,7 @@ class ClientMetrics
     /**
      * One aggregate query for all period counts (spec §65: no per-metric round trips).
      *
-     * @return array{calls: int, service_requests: int, scheduled: int, missed: int}
+     * @return array{calls: int, appointments: int, leads: int, service_requests: int, scheduled: int, missed: int}
      */
     private function counts(Organization $organization, CarbonImmutable $start, CarbonImmutable $end): array
     {
@@ -192,6 +242,9 @@ class ClientMetrics
 
         return [
             'calls' => (int) ($row->calls ?? 0),
+            'appointments' => Appointment::query()->forOrganization($organization)->where('status', '!=', AppointmentStatus::Cancelled->value)
+                ->whereBetween('starts_at', [$start->utc(), $end->utc()])->count(),
+            'leads' => Customer::query()->forOrganization($organization)->whereBetween('created_at', [$start->utc(), $end->utc()])->count(),
             'service_requests' => (int) ($row->service_requests ?? 0),
             'scheduled' => (int) ($row->scheduled ?? 0),
             'missed' => (int) ($row->missed ?? 0),

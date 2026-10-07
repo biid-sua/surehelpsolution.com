@@ -2,6 +2,7 @@
 
 namespace App\Services\Metrics;
 
+use App\Enums\AppointmentStatus;
 use App\Enums\OutcomeCategory;
 use App\Models\Appointment;
 use App\Models\BusinessHour;
@@ -41,6 +42,7 @@ class ResultsReport
      *     calls: int, answered: int, after_hours: int|null, leads: int, booked: int, appointments: int,
      *     revenue_cents: int|null, job_value_cents: int|null,
      *     outcomes: array<string, array{label: string, count: int}>,
+     *     appointment_outcomes: array<string, array{label: string, count: int}>,
      *     reasons: array<string, int>, heatmap: array<int, array<int, int>>, busiest: string|null,
      *     change: array<string, int|null>
      * }
@@ -107,6 +109,7 @@ class ResultsReport
             'revenue_cents' => $jobValue ? $booked * $jobValue : null,
             'job_value_cents' => $jobValue,
             'outcomes' => $outcomes,
+            'appointment_outcomes' => $this->appointmentOutcomes($organization, $start, $end),
             'reasons' => $reasons,
             'heatmap' => $heatmap,
             'busiest' => $busiest,
@@ -121,6 +124,30 @@ class ResultsReport
             foreach (['answered', 'after_hours', 'leads', 'booked'] as $key) {
                 $result['change'][$key] = ($previous[$key] ?? 0) > 0 && $result[$key] !== null ? (int) round(($result[$key] - $previous[$key]) / $previous[$key] * 100) : null;
             }
+        }
+
+        return $result;
+    }
+
+    /**
+     * What happened to the appointments that fell in the period (by their start time).
+     *
+     * @return array<string, array{label: string, count: int}>
+     */
+    private function appointmentOutcomes(Organization $organization, CarbonImmutable $start, CarbonImmutable $end): array
+    {
+        $counts = Appointment::query()->forOrganization($organization)->whereBetween('starts_at', [$start->utc(), $end->utc()])
+            ->toBase()->selectRaw('status, COUNT(*) as n')->groupBy('status')->pluck('n', 'status');
+
+        $groups = [
+            'completed' => ['Completed', [AppointmentStatus::Completed]],
+            'upcoming' => ['Booked, not yet marked done', [AppointmentStatus::Confirmed, AppointmentStatus::Pending, AppointmentStatus::Tentative]],
+            'no_show' => ['No-show', [AppointmentStatus::NoShow]],
+            'cancelled' => ['Cancelled', [AppointmentStatus::Cancelled]],
+        ];
+        $result = [];
+        foreach ($groups as $key => [$label, $statuses]) {
+            $result[$key] = ['label' => $label, 'count' => (int) collect($statuses)->sum(fn (AppointmentStatus $s) => (int) ($counts[$s->value] ?? 0))];
         }
 
         return $result;

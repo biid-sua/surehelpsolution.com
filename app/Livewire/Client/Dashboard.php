@@ -7,6 +7,7 @@ use App\Models\BusinessProfile;
 use App\Models\Escalation;
 use App\Services\Business\BusinessHours;
 use App\Services\Metrics\ClientMetrics;
+use App\Services\Metrics\DashboardAlerts;
 use App\Services\Setup\SetupProgress;
 use App\Support\Audit\Audit;
 use Illuminate\Contracts\View\View;
@@ -28,6 +29,13 @@ class Dashboard extends Component
     #[Url(except: 'today')]
     public string $period = 'today';
 
+    /** Custom range, local dates (Y-m-d). */
+    #[Url(except: '')]
+    public string $from = '';
+
+    #[Url(except: '')]
+    public string $to = '';
+
     public function mount(): void
     {
         $this->authorize('dashboard.view', $this->organization());
@@ -37,11 +45,18 @@ class Dashboard extends Component
     public function updatedPeriod(): void
     {
         $this->normalizePeriod();
+        if ($this->period === 'custom' && $this->from === '') {
+            $today = now($this->organization()->timezoneOrDefault())->toImmutable();
+            $this->from = $today->subDays(29)->toDateString();
+            $this->to = $today->toDateString();
+        }
     }
 
-    public function render(ClientMetrics $metrics): View
+    public function render(ClientMetrics $metrics, DashboardAlerts $alerts): View
     {
         $organization = $this->organization();
+        [$from, $to] = $this->period === 'custom' ? [$this->from, $this->to] : [null, null];
+        $customValid = $this->period !== 'custom' || ClientMetrics::customBounds($from, $to, $organization->timezoneOrDefault()) !== null;
         $hour = (int) now($organization->timezone ?: config('app.timezone'))->format('G');
         $partOfDay = $hour < 12 ? 'morning' : ($hour < 18 ? 'afternoon' : 'evening');
 
@@ -49,8 +64,13 @@ class Dashboard extends Component
             'organization' => $organization,
             'greeting' => 'Good '.$partOfDay.', '.Str::before(trim(auth()->user()->name).' ', ' '),
             'periods' => ClientMetrics::PERIODS,
-            'kpis' => $metrics->kpis($organization, $this->period),
-            'series' => $metrics->series($organization, $this->period),
+            'kpis' => $metrics->kpis($organization, $this->period, $from, $to),
+            'series' => $metrics->series($organization, $this->period, $from, $to),
+            'hourly' => $metrics->range($organization, $this->period, $from, $to)['days'] === 1,
+            'customValid' => $customValid,
+            'maxDays' => ClientMetrics::MAX_CUSTOM_DAYS,
+            'alerts' => $alerts->for($organization, auth()->user()),
+            'activity' => auth()->user()->can('customers.view', $organization) ? $metrics->customerActivity($organization, $this->period, $from, $to) : null,
             'schedule' => $metrics->todaysSchedule($organization),
             'recentCalls' => $metrics->recentCalls($organization),
             'away' => (function () use ($organization) {
