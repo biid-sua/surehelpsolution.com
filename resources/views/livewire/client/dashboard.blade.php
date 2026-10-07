@@ -17,6 +17,13 @@
     @if (session('status'))
         <x-ui.alert tone="success" class="mb-6">{{ session('status') }}</x-ui.alert>
     @endif
+    @if (in_array($organization->status->value, ['paused', 'cancelled'], true) && ! $organization->closed_at)
+        <x-ui.alert tone="warning" class="mb-6" :title="$organization->status->value === 'paused' ? 'Your SureHelp service is paused' : 'Your SureHelp service is cancelled'">
+            Our receptionists aren't answering for you and your website tools are hidden.
+            @if ($organization->status_reason) Reason: {{ $organization->status_reason }}. @endif
+            Contact us to {{ $organization->status->value === 'paused' ? 'resume' : 'restart' }} your service.
+        </x-ui.alert>
+    @endif
     @if ($organization->isClosing())
         <x-ui.alert tone="warning" class="mb-6" :title="'Your account closes on '.$organization->closes_at->setTimezone($organization->timezoneOrDefault())->format('l, F j')">
             After that day your data is deleted and calls are no longer answered.

@@ -35,7 +35,7 @@ _As of 2026-10-06. Detailed tracker: [implementation-plan.md](implementation-pla
 
 - **Connect a website (G-3, D44):** owners prove they own their site, get a health and SEO check with plain-language fixes (re-checked monthly), and the one snippet now offers chat, online booking, click-to-call and a contact form, all landing in the CRM ([websites.md](websites.md)).
 
-373 automated tests pass.
+377 automated tests pass.
 
 ---
 
@@ -145,7 +145,6 @@ A check of the master spec against the code (2026-10-23) found these gaps, in pr
 | # | Item | Notes |
 |---|---|---|
 | 3 | Plan features and add-ons actually gate features | `Entitlements::allows()` has no callers yet; add feature flags per plan/add-on and use them on paid features |
-| 4 | Business status in the admin console | Go live, pause, cancel (ADM-02, ONB-11) |
 | 5 | Agents edit records on the web | Reschedule/cancel appointments, edit customers and add notes to calls they handled (agents hold the permissions; the screens are read-only) |
 | 6 | CSV exports | Appointments and Results/report CSV (§91, CLI-07) |
 | 7 | Client dashboard and Results | Appointments today and new leads cards, custom date ranges, appointment outcomes (completed / cancelled / no-show), alerts for disconnected calendar, overdue invoice, unanswered message |

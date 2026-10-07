@@ -4,6 +4,8 @@ namespace App\Livewire\Admin\Organizations;
 
 use App\Actions\Assignments\AssignAgent;
 use App\Actions\Assignments\ChangeAssignment;
+use App\Actions\Organizations\ChangeOrganizationStatus;
+use App\Enums\OrganizationStatus;
 use App\Livewire\Concerns\PlatformAdminOnly;
 use App\Models\AgentAssignment;
 use App\Models\Organization;
@@ -44,6 +46,8 @@ class Show extends Component
 
     public string $agentToAdd = '';
 
+    public string $statusReason = '';
+
     public function mount(Organization $organization): void
     {
         $this->authorize('organization.view', $organization);
@@ -75,6 +79,33 @@ class Show extends Component
         app(Audit::class)->changes('organization.updated', $organization, ['name', 'timezone']);
 
         $this->dispatch('toast', type: 'success', message: 'Business details saved.');
+    }
+
+    /** Go live, resume or reactivate (D45). */
+    public function setActive(ChangeOrganizationStatus $change): void
+    {
+        $this->changeStatus(OrganizationStatus::Active, $change);
+    }
+
+    public function setPaused(ChangeOrganizationStatus $change): void
+    {
+        $this->changeStatus(OrganizationStatus::Paused, $change);
+    }
+
+    public function setCancelled(ChangeOrganizationStatus $change): void
+    {
+        $this->changeStatus(OrganizationStatus::Cancelled, $change);
+    }
+
+    private function changeStatus(OrganizationStatus $status, ChangeOrganizationStatus $change): void
+    {
+        $organization = $this->organization();
+        $this->authorize('organization.update', $organization);
+        $this->resetValidation();
+
+        $change->handle($organization, $status, auth()->user(), $this->statusReason);
+        $this->reset('statusReason');
+        $this->dispatch('toast', type: 'success', message: "{$organization->name} is now {$status->label()}. The owner has been told.");
     }
 
     public function assignAgent(AssignAgent $assign): void
@@ -137,6 +168,7 @@ class Show extends Component
             'canAssign' => auth()->user()->hasPermissionIn('agent_assignments.create', $organization),
             'setupCount' => app(SetupProgress::class)->count($organization),
             'canImpersonate' => auth()->user()->hasPermissionIn('users.impersonate'),
+            'transitions' => ChangeOrganizationStatus::TRANSITIONS[$organization->status->value],
         ])->title($organization->name);
     }
 }

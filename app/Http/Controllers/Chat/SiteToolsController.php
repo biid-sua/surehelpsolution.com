@@ -206,6 +206,7 @@ class SiteToolsController extends Controller
     private function widget(Request $request, string $key, string $feature): ChatWidget
     {
         $widget = ChatWidget::withoutGlobalScopes()->where('public_key', $key)->where('is_enabled', true)->with('organization')->firstOrFail();
+        abort_unless($widget->organization->isServing(), 404);   // paused or cancelled service: the website tools stay hidden (D45)
         abort_unless($widget->allowsOrigin($request->headers->get('Origin')), 403, 'This website may not use this widget.');
         abort_unless($widget->offers($feature), 404);
 

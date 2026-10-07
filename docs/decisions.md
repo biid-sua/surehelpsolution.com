@@ -516,3 +516,17 @@ Start these early. The code can be built and tested with your own accounts befor
 
 **Why:** Most small businesses already have a site that brings in few calls. Proving ownership first means we only crawl sites the business controls, and plain-language fixes plus booking and calling from every page turn visits into jobs.
 
+## D45 — Who switches a business's service on and off (2026-10-23)
+**Decision:** SureHelp staff with `organization.update` (Super Admin, Operations Manager) change a business's service status on its admin page. Support staff can see the status but not change it.
+- **Moves:**
+  - onboarding → active ("Go live");
+  - active ⇄ paused ("Pause" / "Resume");
+  - any status → cancelled;
+  - cancelled → active ("Reactivate").
+- **Reasons:** pausing and cancelling need a reason, which the owner sees in an email, in the app and on their dashboard banner. Every change is audited.
+- **While paused or cancelled:** agents no longer see the business, and the website snippet (chat, booking, contact form) stays hidden. The owner can still sign in, see their data and download it.
+- **Closed accounts:** an account the owner closed (D29) can't be reactivated, because its data is gone.
+- **Not automatic yet:** overdue invoices don't pause a business on their own. Staff decide, with the overdue reminders as the prompt (BIL-07 asks for this after a grace period; it waits for automatic payments).
+
+**Why:** Going live, pausing for non-payment and cancelling are everyday operations for the team. They need one place, a record of who did it and why, and an owner who's told.
+

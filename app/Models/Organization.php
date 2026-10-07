@@ -18,6 +18,8 @@ use Illuminate\Support\Str;
  * A client business — the tenant boundary for all business data.
  *
  * @property OrganizationStatus $status
+ * @property string|null $status_reason why staff last paused or cancelled the service
+ * @property Carbon|null $status_changed_at
  * @property array<string, string>|null $setup_progress setup wizard step => done | skipped
  * @property Carbon|null $setup_completed_at
  * @property int|null $average_job_value_cents for estimated revenue in Results
@@ -52,6 +54,7 @@ class Organization extends Model
             'closure_requested_at' => 'datetime',
             'closes_at' => 'datetime',
             'closed_at' => 'datetime',
+            'status_changed_at' => 'datetime',
         ];
     }
 
@@ -63,6 +66,12 @@ class Organization extends Model
             $organization->status ??= OrganizationStatus::Onboarding;
             $organization->currency ??= 'USD';
         });
+    }
+
+    /** The service is running: agents answer and the website tools show (onboarding counts, D45). */
+    public function isServing(): bool
+    {
+        return in_array($this->status, [OrganizationStatus::Active, OrganizationStatus::Onboarding], true);
     }
 
     public function isClosing(): bool

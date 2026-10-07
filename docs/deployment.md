@@ -111,6 +111,7 @@ PHP extensions: besides Laravel's defaults, `zip` is required (business data exp
 
 - **Migration** `2026_10_23_000001`: `websites` table; `chat_widgets.features` and `chat_widgets.bookings_need_confirmation`. Existing widgets keep showing chat only.
 - **Scheduler:** `websites:check` daily at 07:20 UTC queues monthly re-checks.
+- **Service status (D45):** migration `2026_10_23_000002` adds `organizations.status_reason` and `status_changed_at`. Businesses stay in their current status.
 - **Network:** the server makes outgoing HTTP(S) requests and DNS lookups to the businesses' websites. See [websites.md](websites.md).
 
 ## Production `.env` settings to check

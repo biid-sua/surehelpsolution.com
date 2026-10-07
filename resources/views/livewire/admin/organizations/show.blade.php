@@ -10,6 +10,55 @@
     <div class="grid gap-6 lg:grid-cols-3">
         <div class="space-y-6 lg:col-span-2">
             {{-- Business details --}}
+            @php
+                $serviceText = [
+                    'onboarding' => 'Setting up. Go live when the phone line is connected and the setup has been checked.',
+                    'active' => 'Live: agents answer calls and the website tools show.',
+                    'paused' => "Paused: agents don't see this business and the website tools are hidden.",
+                    'cancelled' => 'Cancelled: no service. The owner can still sign in and download their data.',
+                ][$organization->status->value];
+                $statusLabels = [
+                    'active' => $organization->status->value === 'onboarding' ? 'Go live' : ($organization->status->value === 'cancelled' ? 'Reactivate' : 'Resume'),
+                    'paused' => 'Pause',
+                    'cancelled' => 'Cancel service',
+                ];
+                $statusHelp = [
+                    'active' => 'Agents see this business again and its website tools show. The owner gets an email.',
+                    'paused' => 'Agents stop seeing this business and its website tools are hidden until you resume. The owner gets an email with your reason.',
+                    'cancelled' => 'The service stops. The owner keeps access to download their data and gets an email with your reason.',
+                ];
+            @endphp
+            <x-ui.card title="Service" :description="$serviceText">
+                <div class="flex flex-wrap items-center gap-2">
+                    <x-ui.badge :tone="$organization->status->value === 'active' ? 'success' : ($organization->status->value === 'cancelled' ? 'danger' : 'warning')" class="text-sm">{{ $organization->status->label() }}</x-ui.badge>
+                    @if ($organization->status_changed_at)<span class="text-xs text-subtle">since {{ $organization->status_changed_at->format('M j, Y') }}</span>@endif
+                </div>
+                @if ($organization->status_reason)<p class="mt-2 text-sm text-muted">Reason: {{ $organization->status_reason }}</p>@endif
+                @if ($organization->status->value === 'onboarding' && ! $organization->isSetUp())
+                    <p class="mt-2 text-sm text-amber-300">Setup isn't finished yet ({{ $setupCount['done'] }} of {{ $setupCount['total'] }} steps).</p>
+                @endif
+                @if ($canUpdate && $transitions && ! $organization->closed_at)
+                    <div class="mt-4 space-y-3">
+                        @if (array_intersect($transitions, ['paused', 'cancelled']))
+                            <div>
+                                <label for="status-reason" class="sh-label">Reason <span class="font-normal text-subtle">(needed to pause or cancel; the owner sees it)</span></label>
+                                <input id="status-reason" type="text" wire:model="statusReason" class="sh-input" maxlength="500" placeholder="e.g. Invoice INV-2026-0042 is 30 days overdue">
+                                @error('reason') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror
+                            </div>
+                        @endif
+                        @error('status') <p class="text-sm text-danger">{{ $message }}</p> @enderror
+                        <div class="flex flex-wrap gap-2">
+                            @foreach ($transitions as $to)
+                                <x-ui.confirm id="status-{{ $to }}" :title="$statusLabels[$to].'?'" :confirm-label="$statusLabels[$to]" :tone="$to === 'active' ? 'primary' : 'danger'" :action="'set'.ucfirst($to)">
+                                    <x-slot:trigger><x-ui.button size="sm" :variant="$to === 'active' ? 'primary' : ($to === 'cancelled' ? 'danger' : 'secondary')">{{ $statusLabels[$to] }}</x-ui.button></x-slot:trigger>
+                                    {{ $statusHelp[$to] }}
+                                </x-ui.confirm>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+            </x-ui.card>
+
             <x-ui.card title="Business details" description="Times on the client's dashboard and reports use this timezone.">
                 <form wire:submit="save" class="grid gap-4 sm:grid-cols-2">
                     <div>

@@ -129,7 +129,10 @@ class WidgetController extends Controller
 
     private function widget(string $key): ChatWidget
     {
-        return ChatWidget::withoutGlobalScopes()->where('public_key', $key)->where('is_enabled', true)->with('organization')->firstOrFail();
+        $widget = ChatWidget::withoutGlobalScopes()->where('public_key', $key)->where('is_enabled', true)->with('organization')->firstOrFail();
+        abort_unless($widget->organization->isServing(), 404);   // paused or cancelled service: the snippet stays hidden (D45)
+
+        return $widget;
     }
 
     private function allowed(Request $request, string $key): ChatWidget
