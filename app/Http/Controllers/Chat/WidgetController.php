@@ -11,6 +11,7 @@ use App\Models\ChatWidget;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Services\Ai\Contracts\AiProvider;
+use App\Support\Phone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -49,7 +50,12 @@ class WidgetController extends Controller
         $aiOn = $ai->isConfigured() && $assistant->modeFor(InboxChannel::WebChat) === 'auto';
         $business = BusinessProfile::query()->forOrganization($organization)->value('display_name') ?? $organization->name;
 
+        $phone = $widget->offers('call') ? Phone::normalize(BusinessProfile::query()->forOrganization($organization)->value('phone')) : null;
+
         return $this->cors(response()->json([
+            'features' => $widget->enabledFeatures(),
+            'phone' => $phone ? ['tel' => $phone, 'label' => Phone::display($phone)] : null,
+            'booking_confirm' => $widget->offers('booking') ? $widget->bookings_need_confirmation : null,
             'business' => $business,
             'title' => $widget->title,
             'greeting' => $widget->greeting ?: "Hi! How can we help? We'll reply right here.",
@@ -62,6 +68,7 @@ class WidgetController extends Controller
     public function send(Request $request, ReceiveMessage $receive, string $key): JsonResponse
     {
         $widget = $this->allowed($request, $key);
+        abort_unless($widget->offers('chat'), 404);
         $data = $this->payload($request);
 
         $body = trim((string) ($data['body'] ?? ''));
@@ -86,6 +93,7 @@ class WidgetController extends Controller
     public function poll(Request $request, string $key): JsonResponse
     {
         $widget = $this->allowed($request, $key);
+        abort_unless($widget->offers('chat'), 404);
         $token = $this->validToken($request->query('token'));
 
         return $this->cors(response()->json([

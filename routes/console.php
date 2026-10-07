@@ -52,3 +52,5 @@ Schedule::command('social:publish-due')->everyMinute()->withoutOverlapping(5);
 Schedule::command('assignments:sweep')->everyFiveMinutes()->withoutOverlapping(10);
 // Agent University reminders: due soon, overdue, certification expiring or expired (sent once each).
 Schedule::command('training:sweep')->hourly()->withoutOverlapping(30);
+// Monthly website health and SEO checks (spec §41B, D44).
+Schedule::command('websites:check')->dailyAt('07:20')->withoutOverlapping(60);

@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\SocialPostController;
 use App\Http\Controllers\Api\TaskController;
 use App\Http\Controllers\Api\TrainingController;
+use App\Http\Controllers\Chat\SiteToolsController;
 use App\Http\Controllers\Chat\WidgetController;
 use App\Http\Controllers\Webhooks\CalendarWebhookController;
 use App\Http\Controllers\Webhooks\MetaWebhookController;
@@ -30,6 +31,11 @@ Route::prefix('chat/{key}')->middleware('throttle:chat')->where(['key' => 'shw_[
     Route::get('/config', [WidgetController::class, 'config']);
     Route::get('/messages', [WidgetController::class, 'poll']);
     Route::post('/messages', [WidgetController::class, 'send']);
+    // Online booking and the contact form in the same snippet (spec §41B, D44).
+    Route::get('/booking/services', [SiteToolsController::class, 'services']);
+    Route::get('/booking/slots', [SiteToolsController::class, 'slots']);
+    Route::post('/booking', [SiteToolsController::class, 'book']);
+    Route::post('/lead', [SiteToolsController::class, 'lead']);
     Route::options('/{any?}', [WidgetController::class, 'options'])->where('any', '.*');
 });
 

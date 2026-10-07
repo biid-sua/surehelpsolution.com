@@ -28,7 +28,7 @@ class Task extends Model
 {
     use BelongsToOrganization, StoresUtc;
 
-    public const SOURCES = ['manual', 'call', 'backfill'];
+    public const SOURCES = ['manual', 'call', 'backfill', 'ai', 'website'];
 
     protected $fillable = [
         'organization_id', 'customer_id', 'call_log_id', 'type', 'title', 'description', 'priority', 'status',

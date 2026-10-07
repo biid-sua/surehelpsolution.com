@@ -489,3 +489,24 @@ Start these early. The code can be built and tested with your own accounts befor
 - **Audit log:** in-house `audit_logs` table (spec §62 shape), written through one `Audit` service.
 - **Quality gates:** PHPUnit feature/unit tests, Laravel Pint (Laravel preset), Larastan (level 5, raised over time), `composer audit` and `npm audit` in CI.
 - **Structure:** Controllers orchestrate; logic lives in `app/Actions` and `app/Services`; validation in Form Requests; authorization in Policies.
+
+## D44 — Connecting a business's own website (2026-10-23)
+**Decision:** A *Website* page (business portal, `integrations.view` to open, `integrations.manage` to change) connects the business's existing sites (spec §41B, G-3).
+- **Ownership:** each site (up to 5) is proven with a meta tag on the home page or a DNS TXT record on the domain (or its parent for `www.` sites). Only verified sites are checked.
+- **Health and SEO check:** we read the home page and up to 9 pages it links to, check up to 30 internal links, robots.txt and the sitemap.
+  - **What's checked:** HTTPS; titles; descriptions; one main heading per page; the phone (viewport) setting; response time and page size; image descriptions; broken links; "noindex" and a robots.txt that blocks everyone; a sitemap; LocalBusiness structured data; whether the business name, phone and town match the business profile; and whether the SureHelp snippet is on the site.
+  - **Report:** each finding is "fix soon", "worth fixing" or "looking good", with a plain-language fix and the pages concerned. The score starts at 100 and loses 15 per problem and 5 per tip.
+  - **Schedule:** checked on verification, on demand, and again every 30 days (`websites:check`, daily at 07:20 UTC). There are no ranking promises (spec §39).
+- **Fetching safely:** customer-supplied addresses are fetched only over http/https on the standard ports.
+  - **Addresses:** the host must resolve to public addresses only, and the connection is pinned to the address that was checked (no DNS rebinding).
+  - **Redirects:** every redirect is checked again, with 3 redirects at most.
+  - **Limits:** 10 seconds and 2 MB per page; verify and "check now" are limited per site.
+- **One snippet, four parts:** the existing chat snippet (D37) now also offers online booking, click-to-call and a contact form, each switched on separately. Chat stays on unless switched off.
+  - **Booking:** uses the same rules as agents and the AI assistant (opening hours, notice, buffers, calendar busy times). Bookings arrive as requests by default; the owner can confirm them automatically instead.
+  - **Contact form:** becomes a high-priority call-back (or follow-up) task with the message and the page it was sent from.
+  - **Into the CRM:** both match or create the customer (source "website").
+  - **Abuse protection:** a hidden field catches bots, and each visitor can send 5 accepted bookings or messages an hour, on top of the widget's existing limits and allowed sites.
+- **Later:** Google Search Console and Analytics (real search and traffic data), a site-visits count in Results (G-5), and the form inline on a page instead of in the floating panel.
+
+**Why:** Most small businesses already have a site that brings in few calls. Proving ownership first means we only crawl sites the business controls, and plain-language fixes plus booking and calling from every page turn visits into jobs.
+

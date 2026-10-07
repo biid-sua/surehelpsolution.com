@@ -31,6 +31,7 @@ class PortalNavigation
                 $this->item('Social', 'megaphone', 'app.social.index', 'app.social.*', 'social.view'),
                 $this->item('Inbox', 'chat', 'app.inbox.index', 'app.inbox.*', 'messages.view'),
                 $this->item('Business', 'building', 'app.business.profile', 'app.business.*', 'organization.view'),
+                $this->item('Website', 'globe', 'app.website', 'app.website*', 'integrations.view'),
                 $this->item('Billing', 'card', 'app.billing', 'app.billing*', 'billing.view'),
                 $this->item('Team', 'users', 'app.settings.team', 'app.settings.team', 'users.view'),
                 $this->item('Notifications', 'bell', 'app.settings.notifications', 'app.settings.notifications', null),

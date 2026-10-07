@@ -107,6 +107,12 @@ PHP extensions: besides Laravel's defaults, `zip` is required (business data exp
 - **Scheduler:** `quality:sample` runs daily at 05:40 UTC through the existing `schedule:run` cron.
 - **Assets:** run `npm ci && npm run build` (new styles on the review form).
 
+## Release "connect a website" (D44): specific notes
+
+- **Migration** `2026_10_23_000001`: `websites` table; `chat_widgets.features` and `chat_widgets.bookings_need_confirmation`. Existing widgets keep showing chat only.
+- **Scheduler:** `websites:check` daily at 07:20 UTC queues monthly re-checks.
+- **Network:** the server makes outgoing HTTP(S) requests and DNS lookups to the businesses' websites. See [websites.md](websites.md).
+
 ## Production `.env` settings to check
 
 | Key | Value |

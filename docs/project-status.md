@@ -33,7 +33,9 @@ _As of 2026-10-06. Detailed tracker: [implementation-plan.md](implementation-pla
   - An AI assistant that answers (off / suggest / auto per channel), books appointments under the same rules as agents, creates follow-ups and hands over to a person.
   - Feedback on AI replies becomes guidelines the owner approves ([inbox.md](inbox.md)).
 
-329 automated tests pass.
+- **Connect a website (G-3, D44):** owners prove they own their site, get a health and SEO check with plain-language fixes (re-checked monthly), and the one snippet now offers chat, online booking, click-to-call and a contact form, all landing in the CRM ([websites.md](websites.md)).
+
+373 automated tests pass.
 
 ---
 
@@ -138,10 +140,24 @@ _As of 2026-10-06. Detailed tracker: [implementation-plan.md](implementation-pla
 ## 2. Pending
 
 ### A. Can be done now (no outside dependency)
-| Item | Notes |
-|---|---|
-| Content-Security-Policy header | Only possible after the public website stops loading scripts from CDNs (its redesign) |
-| G-3 Connect a website | The chat snippet exists (M-1). Still to add: ownership check, booking and click-to-call in the same snippet, SEO health check |
+A check of the master spec against the code (2026-10-23) found these gaps, in priority order:
+
+| # | Item | Notes |
+|---|---|---|
+| 1 | Privacy tools cover the newer data | Export, retention, customer erasure and account closure don't yet include inbox messages, AI runs, social accounts (with access tokens), posts and media (D29 predates them) |
+| 2 | Website contact form consent | `ContactController` records SMS consent for every enquiry (architecture audit). Record only what the visitor ticked |
+| 3 | Plan features and add-ons actually gate features | `Entitlements::allows()` has no callers yet; add feature flags per plan/add-on and use them on paid features |
+| 4 | Business status in the admin console | Go live, pause, cancel (ADM-02, ONB-11) |
+| 5 | Agents edit records on the web | Reschedule/cancel appointments, edit customers and add notes to calls they handled (agents hold the permissions; the screens are read-only) |
+| 6 | CSV exports | Appointments and Results/report CSV (§91, CLI-07) |
+| 7 | Client dashboard and Results | Appointments today and new leads cards, custom date ranges, appointment outcomes (completed / cancelled / no-show), alerts for disconnected calendar, overdue invoice, unanswered message |
+| 8 | Admin console MVP pages | Platform-wide calls, appointments, customers and usage lists |
+| 9 | Self-service reschedule / cancel links in customer emails | Signed links, no login (CAL-09) |
+| 10 | Owner approval for agent bookings | Optional setting (CAL-08) |
+| 11 | Support tickets | Client creates a ticket, staff reply (§78, CLI-09) |
+| 12 | Automation foundation | Simple triggers and actions, post-visit follow-up and review-request emails (§42–43) |
+| 13 | Smaller items | Logo upload; client-side search; more list filters; customer CSV import; idempotency keys on the mobile API's create endpoints; welcome email for users created by admins; inbox links to tasks and appointments |
+| – | Content-Security-Policy header | Only possible after the public website stops loading scripts from CDNs (its redesign) |
 
 ### B. Needs action from you (operations)
 | Item | Notes |
@@ -207,7 +223,7 @@ Phase 8 Growth (D33–D36)
   ├─ G-1 social foundation ........ done; each network live after its app review (docs/social.md)
   ├─ G-2 AI content studio ........ needs Anthropic key; starts Phase 6 (AiService)
   │     └─ SEO posts, month plans, blog articles for G-4
-  ├─ G-3 connect a website ........ ready to build
+  ├─ G-3 connect a website ........ done (D44)
   ├─ G-4 SureHelp Sites ........... needs sites domain + Cloudflare; custom domains need hosting move
   └─ G-5 analytics in Results ..... after G-1/G-3 and provider approvals
 

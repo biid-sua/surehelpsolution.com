@@ -90,6 +90,7 @@ use App\Livewire\Client\Social\Compose as SocialCompose;
 use App\Livewire\Client\Social\Index as SocialIndex;
 use App\Livewire\Client\Social\Media as SocialMedia;
 use App\Livewire\Client\Tasks\Index as TasksIndex;
+use App\Livewire\Client\Website as ClientWebsite;
 use Illuminate\Support\Facades\Route;
 
 // Landing page
@@ -211,6 +212,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/business/rules', BusinessRulesPage::class)->name('business.rules');
         Route::get('/business/emails', BusinessCustomerEmails::class)->name('business.emails');
         Route::get('/business/calendars', BusinessCalendarsPage::class)->middleware('can:integrations.view')->name('business.calendars');
+        Route::get('/website', ClientWebsite::class)->middleware('can:integrations.view')->name('website');
     });
 });
 

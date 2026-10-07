@@ -10,24 +10,46 @@ use Illuminate\Support\Str;
  * A business's website chat widget (D37): its public key, look and the sites allowed to show it.
  *
  * @property list<string>|null $allowed_origins
+ * @property array<string, bool>|null $features
  */
 class ChatWidget extends Model
 {
     use BelongsToOrganization;
 
-    protected $fillable = ['organization_id', 'public_key', 'is_enabled', 'title', 'greeting', 'color', 'allowed_origins'];
+    protected $fillable = ['organization_id', 'public_key', 'is_enabled', 'title', 'greeting', 'color', 'allowed_origins', 'features', 'bookings_need_confirmation'];
 
-    protected $attributes = ['is_enabled' => true, 'title' => 'Chat with us', 'color' => '#7C3AED'];
+    /** What the one snippet can add to a website (spec §41B, D44). Chat is on unless switched off. */
+    public const FEATURES = [
+        'chat' => 'Chat',
+        'booking' => 'Online booking',
+        'call' => 'Click to call',
+        'lead' => 'Contact form',
+    ];
+
+    protected $attributes = ['is_enabled' => true, 'title' => 'Chat with us', 'color' => '#7C3AED', 'bookings_need_confirmation' => true];
 
     protected function casts(): array
     {
-        return ['is_enabled' => 'boolean', 'allowed_origins' => 'array'];
+        return ['is_enabled' => 'boolean', 'allowed_origins' => 'array', 'features' => 'array', 'bookings_need_confirmation' => 'boolean'];
     }
 
     public static function for(Organization $organization): self
     {
         return self::query()->forOrganization($organization)->first()
             ?? self::create(['organization_id' => $organization->id, 'public_key' => 'shw_'.Str::lower(Str::random(32))]);
+    }
+
+    public function offers(string $feature): bool
+    {
+        return (bool) ((($this->features ?? []) + ['chat' => true])[$feature] ?? false);
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    public function enabledFeatures(): array
+    {
+        return array_map(fn (string $f) => $this->offers($f), array_combine(array_keys(self::FEATURES), array_keys(self::FEATURES)));
     }
 
     /** An empty list allows any site; otherwise the page's origin must be one of them (or a subdomain). */

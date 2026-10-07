@@ -19,6 +19,9 @@ use Illuminate\Support\Str;
  *
  * @property OrganizationStatus $status
  * @property array<string, string>|null $setup_progress setup wizard step => done | skipped
+ * @property Carbon|null $setup_completed_at
+ * @property int|null $average_job_value_cents for estimated revenue in Results
+ * @property string|null $last_report_month "Y-m" of the last monthly report sent
  * @property int|null $retention_months months of history kept (null = all)
  * @property Carbon|null $closure_requested_at
  * @property Carbon|null $closes_at when a requested closure takes effect
