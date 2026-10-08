@@ -461,6 +461,7 @@ class AgentUniversityTest extends TestCase
             ->set('lessonFile', UploadedFile::fake()->create('rules.pdf', 200, 'application/pdf'))->call('saveLesson')->assertHasNoErrors();
         $this->assertNotNull(TrainingLesson::sole()->file_path);
         Storage::disk('local')->assertExists(TrainingLesson::sole()->file_path);
+        $editor->call('editLesson', TrainingLesson::sole()->id)->assertSee('rules.pdf')->assertSee('200 KB')->call('closeLesson'); // no intl needed
 
         $editor->set("newLesson.{$module->id}.title", 'Booking quiz')->set("newLesson.{$module->id}.type", 'quiz')->call('addLesson', $module->id)
             ->call('addQuestion')->set('questionForm.prompt', 'Earliest slot?')

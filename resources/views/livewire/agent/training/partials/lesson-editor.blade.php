@@ -33,7 +33,7 @@
                 @if ($editing->file_path && ! ($lessonForm['remove_file'] ?? false))
                     <p class="mb-2 flex flex-wrap items-center gap-3 text-sm text-muted">
                         <a href="{{ route('agent.training.file', [$course->ulid, $editing->ulid]) }}" target="_blank" class="text-brand-300 hover:text-brand-200">{{ $editing->file_name }}</a>
-                        <span class="text-xs text-subtle">{{ \Illuminate\Support\Number::fileSize((int) $editing->file_size) }}</span>
+                        <span class="text-xs text-subtle">{{ \App\Support\FileSize::label((int) $editing->file_size) }}</span>
                         <button type="button" wire:click="$set('lessonForm.remove_file', true)" class="text-xs text-danger hover:underline">Remove</button>
                     </p>
                 @endif

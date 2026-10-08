@@ -9,7 +9,7 @@
             <p class="mt-2 whitespace-pre-line text-sm text-ink">{{ $m->body }}</p>
             @if ($m->attachment_path)
                 <a href="{{ route($downloadRoute, $m->id) }}" class="mt-3 inline-flex items-center gap-2 rounded-lg bg-surface px-3 py-1.5 text-xs text-muted ring-1 ring-line hover:text-ink">
-                    <x-ui.icon name="download" class="size-4" /> {{ $m->attachment_name }} <span class="text-subtle">({{ \Illuminate\Support\Number::fileSize((int) $m->attachment_size) }})</span>
+                    <x-ui.icon name="download" class="size-4" /> {{ $m->attachment_name }} <span class="text-subtle">({{ \App\Support\FileSize::label((int) $m->attachment_size) }})</span>
                 </a>
             @endif
         </li>
