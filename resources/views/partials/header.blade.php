@@ -28,21 +28,21 @@
                   <div class="col-lg-4">
                     <h6 class="dropdown-header text-primary mb-3">Core Services</h6>
                     <div class="menu-item">
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="call-answering">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'call-answering') }}" data-preview="call-answering">
                         <i class="fas fa-phone-alt text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1">
                           <h6 class="mb-0">Call Answering Service</h6>
                           <small class="text-muted">24/7 Professional Call Support</small>
                         </div>
                       </a>
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="appointment-booking">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'appointment-booking') }}" data-preview="appointment-booking">
                         <i class="fas fa-calendar-check text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1">
                           <h6 class="mb-0">Appointment Booking</h6>
                           <small class="text-muted">Smart Scheduling System</small>
                         </div>
                       </a>
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="customer-management">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'customer-management') }}" data-preview="customer-management">
                         <i class="fas fa-users text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1">
                           <h6 class="mb-0">Customer Management</h6>
@@ -54,21 +54,21 @@
                   <div class="col-lg-4">
                     <h6 class="dropdown-header text-primary mb-3">Solutions</h6>
                     <div class="menu-item">
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="analytics-dashboard">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'surehelp-answer') }}" data-preview="analytics-dashboard">
                         <i class="fas fa-headset text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1">
                           <h6 class="mb-0">SureHelp Answer</h6>
                           <small class="text-muted">Smart Call Routing</small>
                         </div>
                       </a>
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="appointment-booking">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'surehelp-schedule') }}" data-preview="appointment-booking">
                         <i class="fas fa-tasks text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1">
                           <h6 class="mb-0">SureHelp Schedule</h6>
                           <small class="text-muted">Automated Booking</small>
                         </div>
                       </a>
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="integration-market">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'surehelp-intelligence') }}" data-preview="integration-market">
                         <i class="fas fa-brain text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1">
                           <h6 class="mb-0">SureHelp Intelligence</h6>
@@ -109,21 +109,21 @@
                   <div class="col-lg-3">
                     <h6 class="dropdown-header text-primary mb-3">By Business Size</h6>
                     <div class="menu-item">
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="small-business">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'small-business') }}" data-preview="small-business">
                         <i class="fas fa-store text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1">
                           <h6 class="mb-0">Small Business</h6>
                           <small class="text-muted">1-10 Employees</small>
                         </div>
                       </a>
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="growing-business">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'growing-business') }}" data-preview="growing-business">
                         <i class="fas fa-building text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1">
                           <h6 class="mb-0">Growing Business</h6>
                           <small class="text-muted">11-50 Employees</small>
                         </div>
                       </a>
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="enterprise">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'enterprise') }}" data-preview="enterprise">
                         <i class="fas fa-city text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1">
                           <h6 class="mb-0">Enterprise</h6>
@@ -136,21 +136,21 @@
                     <h6 class="dropdown-header text-primary mb-3">By Industry</h6>
                     <div class="menu-item"><div class="row g-4">
                         <div class="col-lg-4">
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="health-personal-care">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'health-personal-care') }}" data-preview="health-personal-care">
                         <i class="fas fa-heart text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1">
                           <h6 class="mb-0">Health & Personal Care</h6>
                           <small class="text-muted">Wellness & Personal Services</small>
                         </div>
                       </a>
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="home-property-services">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'home-property-services') }}" data-preview="home-property-services">
                         <i class="fas fa-home text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1">
                           <h6 class="mb-0">Home & Property Services</h6>
                           <small class="text-muted">Maintenance & Property Care</small>
                         </div>
                       </a>
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="specialty-trades">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'specialty-trades') }}" data-preview="specialty-trades">
                         <i class="fas fa-tools text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1">
                           <h6 class="mb-0">Specialty Trades & Construction</h6>
@@ -159,21 +159,21 @@
                       </a>
                       </div>
                       <div class="col-lg-4">
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="legal-financial">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'legal-financial') }}" data-preview="legal-financial">
                         <i class="fas fa-balance-scale text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1">
                           <h6 class="mb-0">Legal & Financial Services</h6>
                           <small class="text-muted">Professional Services</small>
                         </div>
                       </a>
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="education-coaching">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'education-coaching') }}" data-preview="education-coaching">
                         <i class="fas fa-graduation-cap text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1">
                           <h6 class="mb-0">Education & Coaching</h6>
                           <small class="text-muted">Learning & Development</small>
                         </div>
                       </a>
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="retail-ecommerce">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'retail-ecommerce') }}" data-preview="retail-ecommerce">
                         <i class="fas fa-shopping-cart text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1">
                             <h6 class="mb-0">Retail & eCommerce Support</h6>
@@ -182,21 +182,21 @@
                     </a>
                       </div>
                       <div class="col-lg-4">
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="event-venue">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'event-venue') }}" data-preview="event-venue">
                         <i class="fas fa-calendar-alt text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1">
                           <h6 class="mb-0">Event & Venue Services</h6>
                           <small class="text-muted">Event Management</small>
                         </div>
                       </a>
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="nonprofits-ministries">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'nonprofits-ministries') }}" data-preview="nonprofits-ministries">
                         <i class="fas fa-hands-helping text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1">
                           <h6 class="mb-0">Nonprofits & Ministries</h6>
                           <small class="text-muted">Mission-driven Organizations</small>
                         </div>
                       </a>
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="franchise-businesses">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'franchise-businesses') }}" data-preview="franchise-businesses">
                         <i class="fas fa-store-alt text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1">
                             <h6 class="mb-0">Franchise Businesses & Multi-location Chains</h6>
@@ -229,7 +229,7 @@
           </li>
           
           <li class="nav-item px-2">
-            <a class="nav-link" href="#pricing">
+            <a class="nav-link" href="{{ route('home') }}#pricing">
               <i class="fas fa-tag me-1"></i>Pricing
             </a>
           </li>
@@ -245,21 +245,21 @@
                   <div class="col-lg-4">
                     <h6 class="dropdown-header text-primary mb-3">Learn & Grow</h6>
                     <div class="menu-item">
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="success-stories">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'success-stories') }}" data-preview="success-stories">
                         <i class="fas fa-book text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1">
                           <h6 class="mb-0">Success Stories</h6>
                           <small class="text-muted">Customer Case Studies</small>
                         </div>
                       </a>
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="roi-calculator">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'roi-calculator') }}" data-preview="roi-calculator">
                         <i class="fas fa-calculator text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1" data-bs-toggle="modal" data-bs-target="#roiCalculatorModal">
                           <h6 class="mb-0">ROI Calculator</h6>
                           <small class="text-muted">Measure Your Savings</small>
                         </div>
                       </a>
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="implementation-guide">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'implementation-guide') }}" data-preview="implementation-guide">
                         <i class="fas fa-graduation-cap text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1">
                           <h6 class="mb-0">Implementation Guide</h6>
@@ -271,21 +271,21 @@
                   <div class="col-lg-4">
                     <h6 class="dropdown-header text-primary mb-3">Support</h6>
                     <div class="menu-item">
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="support-center">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'help-center') }}" data-preview="support-center">
                         <i class="fas fa-life-ring text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1">
                           <h6 class="mb-0">Help Center</h6>
                           <small class="text-muted">Guides & Documentation</small>
                         </div>
                       </a>
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="implementation-guide">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'webinars-training') }}" data-preview="implementation-guide">
                         <i class="fas fa-video text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1">
                           <h6 class="mb-0">Webinars & Training</h6>
                           <small class="text-muted">Live & Recorded Sessions</small>
                         </div>
                       </a>
-                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="#" data-preview="api-documentation">
+                      <a class="dropdown-item rounded-3 p-3 mb-2 d-flex align-items-center" href="{{ route('pages.show', 'integrations') }}" data-preview="api-documentation">
                         <i class="fas fa-puzzle-piece text-primary fs-4 me-3"></i>
                         <div class="flex-grow-1">
                           <h6 class="mb-0">Integration Directory</h6>
@@ -316,7 +316,7 @@
           </li>
           
           <li class="nav-item px-2">
-            <a class="nav-link" href="#contact">
+            <a class="nav-link" href="{{ route('home') }}#contact">
               <i class="fas fa-envelope me-1"></i>Contact
             </a>
           </li>

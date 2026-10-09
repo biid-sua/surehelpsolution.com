@@ -25,6 +25,7 @@ use App\Http\Controllers\Client\SocialOAuthController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MediaController;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\PasswordChangeController;
 use App\Http\Controllers\SupportAttachmentController;
 use App\Livewire\Account\Notifications as AccountNotifications;
@@ -113,6 +114,8 @@ use Illuminate\Support\Facades\Route;
 // Landing page
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:6,10')->name('contact.store');
+// Pages behind the site menus: products, solutions, resources, company (config/pages.php).
+Route::get('/{page}', [PageController::class, 'show'])->whereIn('page', array_keys(config('pages')))->name('pages.show');
 
 // Legal pages
 Route::get('/terms-of-use', [HomeController::class, 'termsOfUse'])->name('legal.terms-of-use');

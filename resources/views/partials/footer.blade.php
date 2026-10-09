@@ -49,44 +49,44 @@
                 <div class="footer-col">
                     <h5>What we do</h5>
                     <ul>
-                        <li><a href="#">Call Answering</a></li>
-                        <li><a href="#">Appointment Booking</a></li>
-                        <li><a href="#">Customer Management</a></li>
-                        <li><a href="#">Analytics Dashboard</a></li>
-                        <li><a href="#">Integration Market</a></li>
+                        <li><a href="{{ route('pages.show', 'call-answering') }}">Call Answering</a></li>
+                        <li><a href="{{ route('pages.show', 'appointment-booking') }}">Appointment Booking</a></li>
+                        <li><a href="{{ route('pages.show', 'customer-management') }}">Customer Management</a></li>
+                        <li><a href="{{ route('pages.show', 'analytics-dashboard') }}">Analytics Dashboard</a></li>
+                        <li><a href="{{ route('pages.show', 'integrations') }}">Integration Market</a></li>
                     </ul>
                 </div>
 
                 <div class="footer-col">
                     <h5>Who we serve</h5>
                     <ul>
-                        <li><a href="#">Small Business</a></li>
-                        <li><a href="#">Growing Business</a></li>
-                        <li><a href="#">Enterprise</a></li>
-                        <li><a href="#">Healthcare</a></li>
-                        <li><a href="#">Home Services</a></li>
+                        <li><a href="{{ route('pages.show', 'small-business') }}">Small Business</a></li>
+                        <li><a href="{{ route('pages.show', 'growing-business') }}">Growing Business</a></li>
+                        <li><a href="{{ route('pages.show', 'enterprise') }}">Enterprise</a></li>
+                        <li><a href="{{ route('pages.show', 'health-personal-care') }}">Healthcare</a></li>
+                        <li><a href="{{ route('pages.show', 'home-property-services') }}">Home Services</a></li>
                     </ul>
                 </div>
 
                 <div class="footer-col">
                     <h5>Resources</h5>
                     <ul>
-                        <li><a href="#">Success Stories</a></li>
-                        <li><a href="#" data-bs-toggle="modal" data-bs-target="#roiCalculatorModal">ROI Calculator</a></li>
-                        <li><a href="#">Implementation Guide</a></li>
-                        <li><a href="#">Support Center</a></li>
-                        <li><a href="#">API Documentation</a></li>
+                        <li><a href="{{ route('pages.show', 'success-stories') }}">Success Stories</a></li>
+                        <li><a href="{{ route('pages.show', 'roi-calculator') }}" data-bs-toggle="modal" data-bs-target="#roiCalculatorModal">ROI Calculator</a></li>
+                        <li><a href="{{ route('pages.show', 'implementation-guide') }}">Implementation Guide</a></li>
+                        <li><a href="{{ route('pages.show', 'help-center') }}">Support Center</a></li>
+                        <li><a href="{{ route('pages.show', 'api-documentation') }}">API Documentation</a></li>
                     </ul>
                 </div>
 
                 <div class="footer-col">
                     <h5>Who we are</h5>
                     <ul>
-                        <li><a href="#">About Us</a></li>
-                        <li><a href="#">Careers</a></li>
-                        <li><a href="#">Press & Media</a></li>
+                        <li><a href="{{ route('pages.show', 'about') }}">About Us</a></li>
+                        <li><a href="{{ route('pages.show', 'careers') }}">Careers</a></li>
+                        <li><a href="{{ route('pages.show', 'press') }}">Press & Media</a></li>
                         <li><a href="{{ route('home') }}#contact">Contact Us</a></li>
-                        <li><a href="#">Partner Program</a></li>
+                        <li><a href="{{ route('pages.show', 'partners') }}">Partner Program</a></li>
                     </ul>
                 </div>
 

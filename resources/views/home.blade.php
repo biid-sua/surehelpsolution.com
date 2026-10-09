@@ -1635,7 +1635,7 @@
             <span class="feature-list-text">Instant message delivery</span>
                         </li>
                     </ul>
-        <a href="#" class="demo-button">Learn More</a>
+        <a href="{{ route('pages.show', 'call-answering') }}" class="demo-button">Learn More</a>
                 </div>
 
       <!-- Feature 2 -->
@@ -1667,7 +1667,7 @@
             <span class="feature-list-text">Time zone handling</span>
                         </li>
                     </ul>
-        <a href="#" class="demo-button">Learn More</a>
+        <a href="{{ route('pages.show', 'appointment-booking') }}" class="demo-button">Learn More</a>
                 </div>
 
       <!-- Feature 3 -->
@@ -1699,7 +1699,7 @@
             <span class="feature-list-text">Follow-up automation</span>
                         </li>
                     </ul>
-        <a href="#" class="demo-button">Learn More</a>
+        <a href="{{ route('pages.show', 'customer-management') }}" class="demo-button">Learn More</a>
                 </div>
 
       <!-- Feature 4 -->
@@ -1731,7 +1731,7 @@
             <span class="feature-list-text">ROI tracking</span>
                         </li>
                     </ul>
-        <a href="#" class="demo-button">Learn More</a>
+        <a href="{{ route('pages.show', 'analytics-dashboard') }}" class="demo-button">Learn More</a>
                 </div>
 
       <!-- Feature 5 -->
@@ -1763,7 +1763,7 @@
             <span class="feature-list-text">API access</span>
                         </li>
                     </ul>
-        <a href="#" class="demo-button">Learn More</a>
+        <a href="{{ route('pages.show', 'integrations') }}" class="demo-button">Learn More</a>
                 </div>
 
       <!-- Feature 6 -->
@@ -1795,7 +1795,7 @@
             <span class="feature-list-text">Regular audits</span>
                         </li>
                     </ul>
-        <a href="#" class="demo-button">Learn More</a>
+        <a href="{{ route('legal.data-security') }}" class="demo-button">Learn More</a>
                 </div>
             </div>
 
@@ -1887,7 +1887,7 @@
         <div class="cta-container text-center mt-5">
             <h3 class="cta-title">Ready to launch your business support in 48 hours?</h3>
             <div class="cta-buttons" style="justify-content: center; align-items: center; gap: 1rem;">
-                <a href="#" class="cta-button"><span>Get Started Today</span><i class="fas fa-arrow-right"></i></a>
+                <a href="#contact" class="cta-button"><span>Get Started Today</span><i class="fas fa-arrow-right"></i></a>
                 <button type="button" class="roi-calculator-btn" data-bs-toggle="modal" data-bs-target="#roiCalculatorModal">
                     <i class="fas fa-calculator"></i>
                     <span>Calculate Your Loss</span>
@@ -1915,9 +1915,9 @@
                 <div class="new-company-item"><i class="fas fa-handshake"></i><span>No long-term lock-in</span></div>
             </div>
             <div class="cta-buttons">
-                <a href="#" class="cta-button primary"><span>Start Your Free Setup</span><i class="fas fa-arrow-right"></i></a>
+                <a href="#contact" class="cta-button primary"><span>Start Your Free Setup</span><i class="fas fa-arrow-right"></i></a>
                 <span class="cta-divider">or</span>
-                <a href="#" class="cta-button secondary"><span>Book a Demo</span><i class="fas fa-calendar-alt"></i></a>
+                <a href="#contact" class="cta-button secondary"><span>Book a Demo</span><i class="fas fa-calendar-alt"></i></a>
             </div>
         </div>
     </div>
@@ -1980,9 +1980,9 @@
         <div class="testimonial-cta">
             <h3>Want results like these?</h3>
             <div class="cta-buttons">
-                <a href="#" class="cta-button primary"><span>Start Your Free Setup</span><i class="fas fa-arrow-right"></i></a>
+                <a href="#contact" class="cta-button primary"><span>Start Your Free Setup</span><i class="fas fa-arrow-right"></i></a>
                 <span class="cta-divider">or</span>
-                <a href="#" class="cta-button secondary"><span>Book a Demo Now</span><i class="fas fa-calendar-alt"></i></a>
+                <a href="#contact" class="cta-button secondary"><span>Book a Demo Now</span><i class="fas fa-calendar-alt"></i></a>
             </div>
         </div>
     </div>
@@ -2159,7 +2159,7 @@
                         <li><i class="fas fa-check"></i> Industry compliance (HIPAA, Legal, etc.)</li>
                         <li><i class="fas fa-check"></i> Dedicated team & custom integrations</li>
                     </ul>
-                    <a href="#" class="enterprise-cta"><span>Contact Us for Custom Pricing</span><i class="fas fa-arrow-right"></i></a>
+                    <a href="#contact" class="enterprise-cta"><span>Contact Us for Custom Pricing</span><i class="fas fa-arrow-right"></i></a>
                 </div>
             </div>
         </div> -->
