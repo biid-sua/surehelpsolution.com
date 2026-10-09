@@ -1,11 +1,35 @@
-<x-site.legal
-    title="Data Processing Addendum (DPA)"
-    lead="GDPR and data protection compliance for our services"
-    updated="Last Updated: August 2025"
->
-<!-- Table of Contents -->
-        <div class="table-of-contents">
+@extends('layouts.app')
+
+@section('title', 'Data Processing Addendum (DPA) - SureHelp Solution')
+@section('description', 'GDPR and data protection compliance for our services')
+
+@section('styles')
+<link href="{{ asset('assets/css/legal-pages.css') }}" rel="stylesheet">
+@endsection
+
+@section('content')
+<div class="legal-pages-wrapper">
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="hero-content text-center" data-aos="fade-up">
+            <h1 class="page-title">Data Processing Addendum (DPA)</h1>
+            <p class="page-subtitle">GDPR and data protection compliance for our services</p>
+            <div class="last-updated">
+                <i class="fas fa-calendar-alt"></i>
+                Last Updated: August 2025
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Content Section -->
+<section class="content-section">
+    <div class="container">
+        <!-- Table of Contents -->
+        <div class="table-of-contents" data-aos="fade-up">
             <h2 class="toc-title">
+                <i class="fas fa-list"></i>
                 Table of Contents
             </h2>
             <ul class="toc-list">
@@ -31,8 +55,9 @@
         </div>
 
         <!-- Legal Content -->
-        <div class="legal-card" id="introduction">
+        <div class="legal-card" id="introduction" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-file-contract"></i>
                 Introduction
             </h3>
             <div class="section-content">
@@ -45,8 +70,9 @@
             </div>
         </div>
 
-        <div class="legal-card" id="definitions">
+        <div class="legal-card" id="definitions" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-book"></i>
                 Definitions
             </h3>
             <div class="section-content">
@@ -119,8 +145,9 @@
             </div>
         </div>
 
-        <div class="legal-card" id="term">
+        <div class="legal-card" id="term" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-clock"></i>
                 Term
             </h3>
             <div class="section-content">
@@ -128,8 +155,9 @@
             </div>
         </div>
 
-        <div class="legal-card" id="processing">
+        <div class="legal-card" id="processing" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-cogs"></i>
                 Processing of Customer Personal Data
             </h3>
             <div class="section-content">
@@ -148,8 +176,9 @@
             </div>
         </div>
 
-        <div class="legal-card" id="personnel">
+        <div class="legal-card" id="personnel" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-users"></i>
                 Provider Personnel
             </h3>
             <div class="section-content">
@@ -168,8 +197,9 @@
             </div>
         </div>
 
-        <div class="legal-card" id="sub-processors">
+        <div class="legal-card" id="sub-processors" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-network-wired"></i>
                 Sub-processors
             </h3>
             <div class="section-content">
@@ -188,8 +218,9 @@
             </div>
         </div>
 
-        <div class="legal-card" id="security">
+        <div class="legal-card" id="security" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-shield-alt"></i>
                 Security
             </h3>
             <div class="section-content">
@@ -208,8 +239,9 @@
             </div>
         </div>
 
-        <div class="legal-card" id="cross-border">
+        <div class="legal-card" id="cross-border" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-globe"></i>
                 Cross-Border Transfers
             </h3>
             <div class="section-content">
@@ -228,8 +260,9 @@
             </div>
         </div>
 
-        <div class="legal-card" id="data-subject-rights">
+        <div class="legal-card" id="data-subject-rights" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-user-check"></i>
                 Data Subject Rights
             </h3>
             <div class="section-content">
@@ -249,8 +282,9 @@
             </div>
         </div>
 
-        <div class="legal-card" id="security-incident">
+        <div class="legal-card" id="security-incident" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-exclamation-triangle"></i>
                 Security Incident Response
             </h3>
             <div class="section-content">
@@ -269,8 +303,9 @@
             </div>
         </div>
 
-        <div class="legal-card" id="impact-assessment">
+        <div class="legal-card" id="impact-assessment" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-clipboard-check"></i>
                 Data Protection Impact Assessment
             </h3>
             <div class="section-content">
@@ -289,8 +324,9 @@
             </div>
         </div>
 
-        <div class="legal-card" id="return-destruction">
+        <div class="legal-card" id="return-destruction" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-trash-alt"></i>
                 Return or Destruction of Personal Data
             </h3>
             <div class="section-content">
@@ -309,8 +345,9 @@
             </div>
         </div>
 
-        <div class="legal-card" id="audit">
+        <div class="legal-card" id="audit" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-search"></i>
                 Audit
             </h3>
             <div class="section-content">
@@ -329,8 +366,9 @@
             </div>
         </div>
 
-        <div class="legal-card" id="jurisdiction">
+        <div class="legal-card" id="jurisdiction" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-balance-scale"></i>
                 Jurisdiction and Governing Law
             </h3>
             <div class="section-content">
@@ -338,8 +376,9 @@
             </div>
         </div>
 
-        <div class="legal-card" id="indemnification">
+        <div class="legal-card" id="indemnification" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-handshake"></i>
                 Indemnification; Limitations on Liability
             </h3>
             <div class="section-content">
@@ -347,8 +386,9 @@
             </div>
         </div>
 
-        <div class="legal-card" id="severance">
+        <div class="legal-card" id="severance" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-cut"></i>
                 Severance
             </h3>
             <div class="section-content">
@@ -356,8 +396,9 @@
             </div>
         </div>
 
-        <div class="legal-card" id="exhibit-a">
+        <div class="legal-card" id="exhibit-a" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-file-alt"></i>
                 Exhibit A: Details of Processing
             </h3>
             <div class="section-content">
@@ -373,8 +414,9 @@
             </div>
         </div>
 
-        <div class="legal-card" id="exhibit-b">
+        <div class="legal-card" id="exhibit-b" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-shield-virus"></i>
                 Exhibit B: Security Measures
             </h3>
             <div class="section-content">
@@ -392,4 +434,143 @@
                 </div>
             </div>
         </div>
-</x-site.legal>
+    </div>
+</section>
+
+<!-- Download Section -->
+<section class="content-section">
+    <div class="container">
+        <div class="download-section">
+            <h3 class="download-title">
+                <i class="fas fa-download"></i>
+                Download Data Processing Addendum
+            </h3>
+            <p class="download-description">
+                Download a PDF copy of this Data Processing Addendum for your records and GDPR compliance documentation.
+            </p>
+            <button class="download-button" onclick="downloadPDF('data-processing-addendum')">
+                <i class="fas fa-file-pdf"></i>
+                Download PDF
+            </button>
+        </div>
+    </div>
+</section>
+</div>
+@endsection
+
+@section('scripts')
+<script>
+// PDF Download Function
+function downloadPDF(documentType) {
+    // For now, we'll create a simple alert. In a real implementation, 
+    // this would trigger a server-side PDF generation or redirect to a PDF file.
+    alert('PDF download functionality will be implemented. Document type: ' + documentType);
+    
+    // Future implementation would be something like:
+    // window.open('/download/' + documentType + '.pdf', '_blank');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Add smooth scroll for TOC links
+    const tocLinks = document.querySelectorAll('.toc-list a');
+    tocLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').substring(1);
+            const targetElement = document.getElementById(targetId);
+            
+            if (targetElement) {
+                targetElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                
+                // Highlight the target section
+                targetElement.style.background = 'rgba(79, 70, 229, 0.1)';
+                setTimeout(() => {
+                    targetElement.style.background = '';
+                }, 2000);
+            }
+        });
+    });
+
+    // Add reading progress indicator
+    const progressBar = document.createElement('div');
+    progressBar.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 0%;
+        height: 4px;
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        z-index: 10000;
+        transition: width 0.3s ease;
+    `;
+    document.body.appendChild(progressBar);
+
+    // Update progress on scroll
+    window.addEventListener('scroll', () => {
+        const scrollTop = window.pageYOffset;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const scrollPercent = (scrollTop / docHeight) * 100;
+        progressBar.style.width = scrollPercent + '%';
+    });
+
+    // Add section visibility tracking
+    const sections = document.querySelectorAll('.legal-card');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, { threshold: 0.1 });
+
+    sections.forEach(section => {
+        section.style.opacity = '0';
+        section.style.transform = 'translateY(30px)';
+        section.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(section);
+    });
+
+    // Add definition search functionality
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Search definitions...';
+    searchInput.style.cssText = `
+        width: 100%;
+        padding: 1rem 1.5rem;
+        border: 2px solid rgba(79, 70, 229, 0.2);
+        border-radius: 12px;
+        font-size: 1rem;
+        margin-bottom: 2rem;
+        background: white;
+        transition: all 0.3s ease;
+    `;
+    
+    const definitionsSection = document.querySelector('#definitions');
+    if (definitionsSection) {
+        definitionsSection.insertBefore(searchInput, definitionsSection.querySelector('.section-content'));
+        
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const definitions = document.querySelectorAll('.definition-item');
+            
+            definitions.forEach(definition => {
+                const term = definition.querySelector('.definition-term').textContent.toLowerCase();
+                const description = definition.querySelector('.definition-description').textContent.toLowerCase();
+                
+                if (term.includes(searchTerm) || description.includes(searchTerm)) {
+                    definition.style.display = 'block';
+                    definition.style.background = searchTerm ? 'rgba(79, 70, 229, 0.05)' : '';
+                } else {
+                    definition.style.display = 'none';
+                }
+            });
+        });
+    }
+});
+</script>
+@endsection
+

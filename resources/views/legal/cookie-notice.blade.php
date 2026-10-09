@@ -1,11 +1,35 @@
-<x-site.legal
-    title="Cookie Notice"
-    lead="How we use cookies to enhance your browsing experience"
-    updated="Last Updated: August 2025"
->
-<!-- Table of Contents -->
-        <div class="table-of-contents">
+@extends('layouts.app')
+
+@section('title', 'Cookie Notice - SureHelp Solution')
+@section('description', 'How we use cookies to enhance your browsing experience')
+
+@section('styles')
+<link href="{{ asset('assets/css/legal-pages.css') }}" rel="stylesheet">
+@endsection
+
+@section('content')
+<div class="legal-pages-wrapper">
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="hero-content text-center" data-aos="fade-up">
+            <h1 class="page-title">Cookie Notice</h1>
+            <p class="page-subtitle">How we use cookies to enhance your browsing experience</p>
+            <div class="last-updated">
+                <i class="fas fa-calendar-alt"></i>
+                Last Updated: August 2025
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Content Section -->
+<section class="content-section">
+    <div class="container">
+        <!-- Table of Contents -->
+        <div class="table-of-contents" data-aos="fade-up">
             <h2 class="toc-title">
+                <i class="fas fa-list"></i>
                 Table of Contents
             </h2>
             <ul class="toc-list">
@@ -21,8 +45,9 @@
         </div>
 
         <!-- Legal Content -->
-        <div class="legal-card" id="introduction">
+        <div class="legal-card" id="introduction" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-cookie-bite"></i>
                 Introduction
             </h3>
             <div class="section-content">
@@ -35,8 +60,9 @@
             </div>
         </div>
 
-        <div class="legal-card" id="what-are-cookies">
+        <div class="legal-card" id="what-are-cookies" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-question-circle"></i>
                 What Are Cookies?
             </h3>
             <div class="section-content">
@@ -55,35 +81,37 @@
             </div>
         </div>
 
-        <div class="legal-card" id="types-of-cookies">
+        <div class="legal-card" id="types-of-cookies" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-th-large"></i>
                 Types of Cookies We Use
             </h3>
             <div class="section-content">
                 <div class="cookie-type">
-                    <h5>Strictly Necessary Cookies</h5>
+                    <h5><i class="fas fa-shield-alt"></i>Strictly Necessary Cookies</h5>
                     <p>Required for the operation of our Site, including login authentication, security, and call answering portal access. These cookies cannot be disabled as they are essential for basic site functionality.</p>
                 </div>
                 
                 <div class="cookie-type">
-                    <h5>Performance & Analytics Cookies</h5>
+                    <h5><i class="fas fa-chart-line"></i>Performance & Analytics Cookies</h5>
                     <p>Collect information about how visitors use our Site, helping us improve functionality and measure service quality. These cookies help us understand which pages are most popular and how users navigate our site.</p>
                 </div>
                 
                 <div class="cookie-type">
-                    <h5>Functionality Cookies</h5>
+                    <h5><i class="fas fa-cog"></i>Functionality Cookies</h5>
                     <p>Remember choices you make (such as language, region, or saved preferences) to provide a more personalized experience. These cookies enhance your browsing experience by remembering your preferences.</p>
                 </div>
                 
                 <div class="cookie-type">
-                    <h5>Advertising Cookies</h5>
+                    <h5><i class="fas fa-bullhorn"></i>Advertising Cookies</h5>
                     <p>Used to deliver relevant marketing campaigns and measure effectiveness. These may include cookies from trusted third-party partners to help us provide you with relevant content and offers.</p>
                 </div>
             </div>
         </div>
 
-        <div class="legal-card" id="how-we-use">
+        <div class="legal-card" id="how-we-use" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-cogs"></i>
                 How We Use Cookies
             </h3>
             <div class="section-content">
@@ -104,8 +132,9 @@
             </div>
         </div>
 
-        <div class="legal-card" id="third-party">
+        <div class="legal-card" id="third-party" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-external-link-alt"></i>
                 Third-Party Cookies
             </h3>
             <div class="section-content">
@@ -126,8 +155,9 @@
             </div>
         </div>
 
-        <div class="legal-card" id="managing-cookies">
+        <div class="legal-card" id="managing-cookies" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-sliders-h"></i>
                 Managing Cookies
             </h3>
             <div class="section-content">
@@ -183,8 +213,9 @@
             </div>
         </div>
 
-        <div class="legal-card" id="updates">
+        <div class="legal-card" id="updates" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-sync-alt"></i>
                 Updates to This Notice
             </h3>
             <div class="section-content">
@@ -202,8 +233,9 @@
             </div>
         </div>
 
-        <div class="legal-card" id="contact">
+        <div class="legal-card" id="contact" data-aos="fade-up">
             <h3 class="section-title">
+                <i class="fas fa-envelope"></i>
                 Contact Us
             </h3>
             <div class="section-content">
@@ -213,15 +245,234 @@
                     <h4>Contact Information:</h4>
                     <div class="row">
                         <div class="col-md-6">
-                            <p><strong>Email:</strong><br><a href="mailto:{{ config('company.email') }}">{{ config('company.email') }}</a></p>
-                            <p><strong>Website:</strong><br>www.surehelpsolution.com</p>
+                            <p><i class="fas fa-envelope me-2"></i><strong>Email:</strong><br><a href="mailto:{{ config('company.email') }}">{{ config('company.email') }}</a></p>
+                            <p><i class="fas fa-globe me-2"></i><strong>Website:</strong><br>www.surehelpsolution.com</p>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>Phone:</strong><br><a href="tel:{{ config('marketing.phone_href') }}">{{ config('marketing.phone') }}</a></p>
+                            <p><i class="fas fa-phone me-2"></i><strong>Phone:</strong><br>1-800-SUREHELP (1-800-787-3435)</p>
                             @include('partials.company-address', ['format' => 'legal'])
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-</x-site.legal>
+    </div>
+</section>
+
+<!-- Download Section -->
+<section class="content-section">
+    <div class="container">
+        <div class="download-section">
+            <h3 class="download-title">
+                <i class="fas fa-download"></i>
+                Download Cookie Notice
+            </h3>
+            <p class="download-description">
+                Download a PDF copy of this Cookie Notice for your records and compliance documentation.
+            </p>
+            <button class="download-button" onclick="downloadPDF('cookie-notice')">
+                <i class="fas fa-file-pdf"></i>
+                Download PDF
+            </button>
+        </div>
+    </div>
+</section>
+</div>
+@endsection
+
+
+@section('scripts')
+<script>
+// PDF Download Function
+function downloadPDF(documentType) {
+    // For now, we'll create a simple alert. In a real implementation, 
+    // this would trigger a server-side PDF generation or redirect to a PDF file.
+    alert('PDF download functionality will be implemented. Document type: ' + documentType);
+    
+    // Future implementation would be something like:
+    // window.open('/download/' + documentType + '.pdf', '_blank');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Enhanced cookie toggle functionality
+    document.querySelectorAll('.toggle-switch').forEach(toggle => {
+        toggle.addEventListener('click', function() {
+            const cookieType = this.getAttribute('data-cookie-type');
+            
+            // Don't allow disabling necessary cookies
+            if (cookieType === 'necessary') {
+                showNotification('Necessary cookies cannot be disabled as they are required for basic site functionality.', 'warning');
+                return;
+            }
+            
+            this.classList.toggle('active');
+            
+            // Save preference to localStorage
+            const isActive = this.classList.contains('active');
+            localStorage.setItem(`cookie_${cookieType}`, isActive);
+            
+            // Show feedback with animation
+            const status = isActive ? 'enabled' : 'disabled';
+            const type = isActive ? 'success' : 'info';
+            showNotification(`${cookieType.replace('-', ' ')} cookies have been ${status}`, type);
+            
+            // Add visual feedback
+            this.style.transform = 'scale(1.1)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 200);
+        });
+    });
+
+    // Load saved cookie preferences
+    document.querySelectorAll('.toggle-switch').forEach(toggle => {
+        const cookieType = toggle.getAttribute('data-cookie-type');
+        if (cookieType !== 'necessary') {
+            const saved = localStorage.getItem(`cookie_${cookieType}`);
+            if (saved === 'false') {
+                toggle.classList.remove('active');
+            }
+        }
+    });
+
+    // Add smooth scroll for TOC links
+    const tocLinks = document.querySelectorAll('.toc-list a');
+    tocLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').substring(1);
+            const targetElement = document.getElementById(targetId);
+            
+            if (targetElement) {
+                targetElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                
+                // Highlight the target section
+                targetElement.style.background = 'rgba(79, 70, 229, 0.1)';
+                setTimeout(() => {
+                    targetElement.style.background = '';
+                }, 2000);
+            }
+        });
+    });
+
+    // Cookie type hover effects
+    document.querySelectorAll('.cookie-type').forEach(type => {
+        type.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-8px) scale(1.02)';
+        });
+        
+        type.addEventListener('mouseleave', function() {
+            this.style.transform = '';
+        });
+    });
+});
+
+// Notification system
+function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    const existingNotifications = document.querySelectorAll('.cookie-notification');
+    existingNotifications.forEach(notification => notification.remove());
+    
+    const notification = document.createElement('div');
+    notification.className = `cookie-notification cookie-notification-${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+        <button class="notification-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    // Add notification styles
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? 'linear-gradient(135deg, #10b981, #059669)' : 
+                     type === 'warning' ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 
+                     'linear-gradient(135deg, #3b82f6, #2563eb)'};
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        max-width: 400px;
+        animation: slideInRight 0.3s ease-out;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    `;
+    
+    const content = notification.querySelector('.notification-content');
+    content.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex: 1;
+    `;
+    
+    const closeBtn = notification.querySelector('.notification-close');
+    closeBtn.style.cssText = `
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 0.25rem;
+        border-radius: 4px;
+        transition: background 0.2s ease;
+    `;
+    
+    closeBtn.addEventListener('mouseenter', () => {
+        closeBtn.style.background = 'rgba(255, 255, 255, 0.2)';
+    });
+    
+    closeBtn.addEventListener('mouseleave', () => {
+        closeBtn.style.background = 'none';
+    });
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 4 seconds
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.style.animation = 'slideOutRight 0.3s ease-out';
+            setTimeout(() => notification.remove(), 300);
+        }
+    }, 4000);
+}
+
+// Add notification animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
+</script>
+@endsection

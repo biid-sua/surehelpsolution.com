@@ -1,11 +1,2 @@
 User-agent: *
-Disallow: /app
-Disallow: /agent
-Disallow: /admin
-Disallow: /account
-Disallow: /api
-Disallow: /appointment/
-Disallow: /invitations/
-Disallow: /reset-password/
-
-Sitemap: https://surehelpsolution.com/sitemap.xml
+Disallow:

@@ -26,7 +26,6 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\PasswordChangeController;
-use App\Http\Controllers\SiteController;
 use App\Http\Controllers\SupportAttachmentController;
 use App\Livewire\Account\Notifications as AccountNotifications;
 use App\Livewire\Account\Profile as AccountProfile;
@@ -111,17 +110,9 @@ use App\Livewire\Client\Website as ClientWebsite;
 use App\Livewire\Customer\ManageAppointment;
 use Illuminate\Support\Facades\Route;
 
-// Public website (D55)
+// Landing page
 Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::get('/services/{service}', [SiteController::class, 'service'])->whereIn('service', array_keys(config('marketing.services')))->name('site.services.show');
-Route::get('/how-it-works', [SiteController::class, 'how'])->name('site.how');
-Route::get('/industries', [SiteController::class, 'industries'])->name('site.industries.index');
-Route::get('/industries/{industry}', [SiteController::class, 'industry'])->whereIn('industry', array_keys(config('marketing.industries')))->name('site.industries.show');
-Route::get('/pricing', [SiteController::class, 'pricing'])->name('site.pricing');
-Route::get('/about', [SiteController::class, 'about'])->name('site.about');
-Route::get('/contact', [SiteController::class, 'contact'])->name('site.contact');
 Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:6,10')->name('contact.store');
-Route::get('/sitemap.xml', [SiteController::class, 'sitemap'])->name('site.sitemap');
 
 // Legal pages
 Route::get('/terms-of-use', [HomeController::class, 'termsOfUse'])->name('legal.terms-of-use');
