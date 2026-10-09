@@ -1,35 +1,11 @@
-@extends('layouts.app')
-
-@section('title', 'Privacy Policy - SureHelp Solution')
-@section('description', 'How we collect, use, and protect your personal information')
-
-@section('styles')
-<link href="{{ asset('assets/css/legal-pages.css') }}" rel="stylesheet">
-@endsection
-
-@section('content')
-<div class="legal-pages-wrapper">
-<!-- Hero Section -->
-<section class="hero-section">
-    <div class="container">
-        <div class="hero-content text-center" data-aos="fade-up">
-            <h1 class="page-title">Privacy Policy</h1>
-            <p class="page-subtitle">How we collect, use, and protect your personal information</p>
-            <div class="last-updated">
-                <i class="fas fa-calendar-alt"></i>
-                Last Updated: August 2025
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Content Section -->
-<section class="content-section">
-    <div class="container">
-        <!-- Table of Contents -->
-        <div class="table-of-contents" data-aos="fade-up">
+<x-site.legal
+    title="Privacy Policy"
+    lead="How we collect, use, and protect your personal information"
+    updated="Last Updated: August 2025"
+>
+<!-- Table of Contents -->
+        <div class="table-of-contents">
             <h2 class="toc-title">
-                <i class="fas fa-list"></i>
                 Table of Contents
             </h2>
             <ul class="toc-list">
@@ -50,9 +26,8 @@
         </div>
 
         <!-- Legal Content -->
-        <div class="legal-card" id="introduction" data-aos="fade-up">
+        <div class="legal-card" id="introduction">
             <h3 class="section-title">
-                <i class="fas fa-file-contract"></i>
                 Introduction
             </h3>
             <div class="section-content">
@@ -67,9 +42,8 @@
             </div>
         </div>
 
-        <div class="legal-card" id="information-collection" data-aos="fade-up">
+        <div class="legal-card" id="information-collection">
             <h3 class="section-title">
-                <i class="fas fa-database"></i>
                 Information We Collect
             </h3>
             <div class="section-content">
@@ -86,9 +60,8 @@
             </div>
         </div>
 
-        <div class="legal-card" id="information-use" data-aos="fade-up">
+        <div class="legal-card" id="information-use">
             <h3 class="section-title">
-                <i class="fas fa-cogs"></i>
                 How We Use Information
             </h3>
             <div class="section-content">
@@ -106,9 +79,8 @@
             </div>
         </div>
 
-        <div class="legal-card" id="sms-communications" data-aos="fade-up">
+        <div class="legal-card" id="sms-communications">
             <h3 class="section-title">
-                <i class="fas fa-comment-dots"></i>
                 Text Message Communications
             </h3>
             <div class="section-content">
@@ -127,9 +99,8 @@
             </div>
         </div>
 
-        <div class="legal-card" id="information-sharing" data-aos="fade-up">
+        <div class="legal-card" id="information-sharing">
             <h3 class="section-title">
-                <i class="fas fa-share-alt"></i>
                 Information Sharing
             </h3>
             <div class="section-content">
@@ -146,9 +117,8 @@
             </div>
         </div>
 
-        <div class="legal-card" id="data-security" data-aos="fade-up">
+        <div class="legal-card" id="data-security">
             <h3 class="section-title">
-                <i class="fas fa-shield-alt"></i>
                 Data Security
             </h3>
             <div class="section-content">
@@ -165,9 +135,8 @@
             </div>
         </div>
 
-        <div class="legal-card" id="data-retention" data-aos="fade-up">
+        <div class="legal-card" id="data-retention">
             <h3 class="section-title">
-                <i class="fas fa-clock"></i>
                 Data Retention
             </h3>
             <div class="section-content">
@@ -175,9 +144,8 @@
             </div>
         </div>
 
-        <div class="legal-card" id="your-rights" data-aos="fade-up">
+        <div class="legal-card" id="your-rights">
             <h3 class="section-title">
-                <i class="fas fa-user-check"></i>
                 Your Rights
             </h3>
             <div class="section-content">
@@ -195,9 +163,8 @@
             </div>
         </div>
 
-        <div class="legal-card" id="cookies" data-aos="fade-up">
+        <div class="legal-card" id="cookies">
             <h3 class="section-title">
-                <i class="fas fa-cookie-bite"></i>
                 Cookies and Tracking
             </h3>
             <div class="section-content">
@@ -205,9 +172,8 @@
             </div>
         </div>
 
-        <div class="legal-card" id="third-party" data-aos="fade-up">
+        <div class="legal-card" id="third-party">
             <h3 class="section-title">
-                <i class="fas fa-external-link-alt"></i>
                 Third-Party Services
             </h3>
             <div class="section-content">
@@ -215,9 +181,8 @@
             </div>
         </div>
 
-        <div class="legal-card" id="children-privacy" data-aos="fade-up">
+        <div class="legal-card" id="children-privacy">
             <h3 class="section-title">
-                <i class="fas fa-child"></i>
                 Children's Privacy
             </h3>
             <div class="section-content">
@@ -225,9 +190,8 @@
             </div>
         </div>
 
-        <div class="legal-card" id="changes" data-aos="fade-up">
+        <div class="legal-card" id="changes">
             <h3 class="section-title">
-                <i class="fas fa-sync-alt"></i>
                 Changes to This Policy
             </h3>
             <div class="section-content">
@@ -235,9 +199,8 @@
             </div>
         </div>
 
-        <div class="legal-card" id="contact" data-aos="fade-up">
+        <div class="legal-card" id="contact">
             <h3 class="section-title">
-                <i class="fas fa-envelope"></i>
                 Contact Us
             </h3>
             <div class="section-content">
@@ -247,8 +210,8 @@
                     <h4>Contact Information:</h4>
                     <div class="row">
                         <div class="col-md-6">
-                            <p><i class="fas fa-envelope me-2"></i><strong>Privacy Email:</strong><br><a href="mailto:{{ config('company.email') }}">{{ config('company.email') }}</a></p>
-                            <p><i class="fas fa-phone me-2"></i><strong>Phone:</strong><br>1-800-SUREHELP (1-800-787-3435)</p>
+                            <p><strong>Privacy Email:</strong><br><a href="mailto:{{ config('company.email') }}">{{ config('company.email') }}</a></p>
+                            <p><strong>Phone:</strong><br><a href="tel:{{ config('marketing.phone_href') }}">{{ config('marketing.phone') }}</a></p>
                         </div>
                         <div class="col-md-6">
                             @include('partials.company-address', ['format' => 'legal'])
@@ -257,105 +220,4 @@
                 </div>
             </div>
         </div>
-    </div>
-</section>
-
-<!-- Download Section -->
-<section class="content-section">
-    <div class="container">
-        <div class="download-section">
-            <h3 class="download-title">
-                <i class="fas fa-download"></i>
-                Download Privacy Policy
-            </h3>
-            <p class="download-description">
-                Download a PDF copy of this Privacy Policy for your records and compliance documentation.
-            </p>
-            <button class="download-button" onclick="downloadPDF('privacy-policy')">
-                <i class="fas fa-file-pdf"></i>
-                Download PDF
-            </button>
-        </div>
-    </div>
-</section>
-</div>
-@endsection
-
-@section('scripts')
-<script>
-// PDF Download Function
-function downloadPDF(documentType) {
-    // For now, we'll create a simple alert. In a real implementation, 
-    // this would trigger a server-side PDF generation or redirect to a PDF file.
-    alert('PDF download functionality will be implemented. Document type: ' + documentType);
-    
-    // Future implementation would be something like:
-    // window.open('/download/' + documentType + '.pdf', '_blank');
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Add smooth scroll for TOC links
-    const tocLinks = document.querySelectorAll('.toc-list a');
-    tocLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const targetId = this.getAttribute('href').substring(1);
-            const targetElement = document.getElementById(targetId);
-            
-            if (targetElement) {
-                targetElement.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-                
-                // Highlight the target section
-                targetElement.style.background = 'rgba(79, 70, 229, 0.1)';
-                setTimeout(() => {
-                    targetElement.style.background = '';
-                }, 2000);
-            }
-        });
-    });
-
-    // Add reading progress indicator
-    const progressBar = document.createElement('div');
-    progressBar.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 0%;
-        height: 4px;
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-        z-index: 10000;
-        transition: width 0.3s ease;
-    `;
-    document.body.appendChild(progressBar);
-
-    // Update progress on scroll
-    window.addEventListener('scroll', () => {
-        const scrollTop = window.pageYOffset;
-        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-        const scrollPercent = (scrollTop / docHeight) * 100;
-        progressBar.style.width = scrollPercent + '%';
-    });
-
-    // Add section visibility tracking
-    const sections = document.querySelectorAll('.legal-card');
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.style.opacity = '1';
-                entry.target.style.transform = 'translateY(0)';
-            }
-        });
-    }, { threshold: 0.1 });
-
-    sections.forEach(section => {
-        section.style.opacity = '0';
-        section.style.transform = 'translateY(30px)';
-        section.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-        observer.observe(section);
-    });
-});
-</script>
-@endsection
+</x-site.legal>

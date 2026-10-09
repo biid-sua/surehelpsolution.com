@@ -55,6 +55,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Livewire's script URL is root-relative. When the app runs in a sub-folder (a local XAMPP
+        // install), the browser would ask the server root for it and every page's scripts would
+        // fail; add the folder. At a domain root (production) the base path is empty: unchanged.
+        if (! app()->runningInConsole() && ($base = request()->getBasePath()) !== '' && ! config('livewire.asset_url')) {
+            config(['livewire.asset_url' => $base.'/livewire/livewire'.(config('app.debug') ? '' : '.min').'.js']);
+        }
+
         // Lesson files (Agent University) can be larger than Livewire's 12 MB default. Each form
         // still validates its own limit and file types.
         config([

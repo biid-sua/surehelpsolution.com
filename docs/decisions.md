@@ -639,3 +639,17 @@ Start these early. The code can be built and tested with your own accounts befor
 - **One-time setup:** the redirect URIs `/agent/calendar/connect/google/callback` and `/agent/calendar/connect/microsoft/callback` are registered next to the business ones.
 
 **Why:** agents asked to see when they're working next to their own commitments, and to have their shifts in the calendar on their phone.
+
+## D55 — The public website: rebuilt, honest, and every link real (2026-10-25)
+**Decision:** the public site is rebuilt on the portals' toolkit (Tailwind and Vite, its own small stylesheet, Alpine through Livewire), with no outside CDNs.
+- **Pages:** home; five service pages; How it works; Industries and eight industry pages; Pricing; About; Contact (the `?topic=` from each button picks the reason); FAQ; the six legal pages in the same design; sitemap.xml; robots.txt; branded 403, 404, 500 and 503 pages.
+- **One source for the words:** `config/marketing.php` holds services, plans, promises and FAQs. Industry details come from `config/industries.php`, the same source as the setup wizard.
+- **Only claims we can stand behind:**
+  - Removed: "500+ clients", "thousands of businesses", invented testimonials, and SOC 2, ISO 27001, PCI, SOX, cloud-provider and 24/7 security-team claims.
+  - The Data Security page now describes the controls the platform really has, with a fake "1-800-SUREHELP" number replaced by the real one.
+  - Testimonials appear only when real, permitted quotes are added to the config.
+- **Contact form:** a hidden spam trap, rate limiting (6 per 10 minutes), and visitors return to the form they used. The SMS consent wording is kept for carrier review, with its typo fixed.
+- **Sub-folder installs (local XAMPP):** Livewire's script and update addresses now include the folder, so the portals work locally too. Production, at a domain root, is unaffected.
+- **Left for the owner and counsel:** the wording of the Privacy Policy, Terms, Cookie Notice, DPA and BAA is unchanged. The DPA promises an "ISO 27001 compliant security program", and the Terms and DPA name Delaware law while the company address is in Wyoming.
+
+**Why:** the old page had dead menu links, CDN dependencies and claims a new company can't support. Under FTC rules on endorsements and deceptive claims, invented reviews and certifications are a legal risk, not just a credibility one.

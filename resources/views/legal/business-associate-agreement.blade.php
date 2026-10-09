@@ -1,35 +1,11 @@
-@extends('layouts.app')
-
-@section('title', 'Business Associate Agreement (BAA) - SureHelp Solution')
-@section('description', 'HIPAA compliance for healthcare organizations')
-
-@section('styles')
-<link href="{{ asset('assets/css/legal-pages.css') }}" rel="stylesheet">
-@endsection
-
-@section('content')
-<div class="legal-pages-wrapper">
-<!-- Hero Section -->
-<section class="hero-section">
-    <div class="container">
-        <div class="hero-content text-center" data-aos="fade-up">
-            <h1 class="page-title">Business Associate Agreement (BAA)</h1>
-            <p class="page-subtitle">HIPAA compliance for healthcare organizations</p>
-            <div class="last-updated">
-                <i class="fas fa-calendar-alt"></i>
-                Last Updated: August 2025
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Content Section -->
-<section class="content-section">
-    <div class="container">
-        <!-- Table of Contents -->
-        <div class="table-of-contents" data-aos="fade-up">
+<x-site.legal
+    title="Business Associate Agreement (BAA)"
+    lead="HIPAA compliance for healthcare organizations"
+    updated="Last Updated: August 2025"
+>
+<!-- Table of Contents -->
+        <div class="table-of-contents">
             <h2 class="toc-title">
-                <i class="fas fa-list"></i>
                 Table of Contents
             </h2>
             <ul class="toc-list">
@@ -45,9 +21,8 @@
         </div>
 
         <!-- Legal Content -->
-        <div class="legal-card" id="introduction" data-aos="fade-up">
+        <div class="legal-card" id="introduction">
             <h3 class="section-title">
-                <i class="fas fa-file-contract"></i>
                 Introduction
             </h3>
             <div class="section-content">
@@ -60,9 +35,8 @@
             </div>
         </div>
 
-        <div class="legal-card" id="definitions" data-aos="fade-up">
+        <div class="legal-card" id="definitions">
             <h3 class="section-title">
-                <i class="fas fa-book"></i>
                 Definitions
             </h3>
             <div class="section-content">
@@ -82,9 +56,8 @@
             </div>
         </div>
 
-        <div class="legal-card" id="business-associate-obligations" data-aos="fade-up">
+        <div class="legal-card" id="business-associate-obligations">
             <h3 class="section-title">
-                <i class="fas fa-shield-alt"></i>
                 Obligations of Business Associate
             </h3>
             <div class="section-content">
@@ -105,9 +78,8 @@
             </div>
         </div>
 
-        <div class="legal-card" id="permitted-uses" data-aos="fade-up">
+        <div class="legal-card" id="permitted-uses">
             <h3 class="section-title">
-                <i class="fas fa-check-circle"></i>
                 Permitted Uses and Disclosures by Business Associate
             </h3>
             <div class="section-content">
@@ -124,9 +96,8 @@
             </div>
         </div>
 
-        <div class="legal-card" id="covered-entity-obligations" data-aos="fade-up">
+        <div class="legal-card" id="covered-entity-obligations">
             <h3 class="section-title">
-                <i class="fas fa-user-shield"></i>
                 Obligations of Covered Entity
             </h3>
             <div class="section-content">
@@ -144,9 +115,8 @@
             </div>
         </div>
 
-        <div class="legal-card" id="term-termination" data-aos="fade-up">
+        <div class="legal-card" id="term-termination">
             <h3 class="section-title">
-                <i class="fas fa-clock"></i>
                 Term and Termination
             </h3>
             <div class="section-content">
@@ -161,9 +131,8 @@
             </div>
         </div>
 
-        <div class="legal-card" id="miscellaneous" data-aos="fade-up">
+        <div class="legal-card" id="miscellaneous">
             <h3 class="section-title">
-                <i class="fas fa-cogs"></i>
                 Miscellaneous
             </h3>
             <div class="section-content">
@@ -179,9 +148,8 @@
             </div>
         </div>
 
-        <div class="legal-card" id="signatures" data-aos="fade-up">
+        <div class="legal-card" id="signatures">
             <h3 class="section-title">
-                <i class="fas fa-signature"></i>
                 Signatures
             </h3>
             <div class="section-content">
@@ -212,119 +180,4 @@
                 </div>
             </div>
         </div>
-    </div>
-</section>
-
-<!-- Download Section -->
-<section class="content-section">
-    <div class="container">
-        <div class="download-section">
-            <h3 class="download-title">
-                <i class="fas fa-download"></i>
-                Download Business Associate Agreement
-            </h3>
-            <p class="download-description">
-                Download a PDF copy of this Business Associate Agreement for your records and compliance documentation.
-            </p>
-            <button class="download-button" onclick="downloadPDF('business-associate-agreement')">
-                <i class="fas fa-file-pdf"></i>
-                Download PDF
-            </button>
-        </div>
-    </div>
-</section>
-</div>
-@endsection
-
-@section('scripts')
-<script>
-// PDF Download Function
-function downloadPDF(documentType) {
-    // For now, we'll create a simple alert. In a real implementation, 
-    // this would trigger a server-side PDF generation or redirect to a PDF file.
-    alert('PDF download functionality will be implemented. Document type: ' + documentType);
-    
-    // Future implementation would be something like:
-    // window.open('/download/' + documentType + '.pdf', '_blank');
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Add smooth scroll for TOC links
-    const tocLinks = document.querySelectorAll('.toc-list a');
-    tocLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const targetId = this.getAttribute('href').substring(1);
-            const targetElement = document.getElementById(targetId);
-            
-            if (targetElement) {
-                targetElement.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-                
-                // Highlight the target section
-                targetElement.style.background = 'rgba(79, 70, 229, 0.1)';
-                setTimeout(() => {
-                    targetElement.style.background = '';
-                }, 2000);
-            }
-        });
-    });
-
-    // Add reading progress indicator
-    const progressBar = document.createElement('div');
-    progressBar.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 0%;
-        height: 4px;
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-        z-index: 10000;
-        transition: width 0.3s ease;
-    `;
-    document.body.appendChild(progressBar);
-
-    // Update progress on scroll
-    window.addEventListener('scroll', () => {
-        const scrollTop = window.pageYOffset;
-        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-        const scrollPercent = (scrollTop / docHeight) * 100;
-        progressBar.style.width = scrollPercent + '%';
-    });
-
-    // Add section visibility tracking
-    const sections = document.querySelectorAll('.legal-card');
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.style.opacity = '1';
-                entry.target.style.transform = 'translateY(0)';
-            }
-        });
-    }, { threshold: 0.1 });
-
-    sections.forEach(section => {
-        section.style.opacity = '0';
-        section.style.transform = 'translateY(30px)';
-        section.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-        observer.observe(section);
-    });
-
-    // Add signature section interactions
-    document.querySelectorAll('.signature-section').forEach(section => {
-        section.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-8px) scale(1.02)';
-            this.style.boxShadow = '0 20px 60px rgba(79, 70, 229, 0.2)';
-        });
-        
-        section.addEventListener('mouseleave', function() {
-            this.style.transform = '';
-            this.style.boxShadow = '';
-        });
-    });
-});
-</script>
-@endsection
-
+</x-site.legal>

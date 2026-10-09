@@ -11,6 +11,7 @@ use App\Http\Middleware\RequireFeature;
 use App\Http\Middleware\ResolveOrganization;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\SubfolderLivewire;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -37,6 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->append(SecurityHeaders::class);
+        $middleware->append(SubfolderLivewire::class); // local sub-folder installs only
 
         // Guests are sent to the sign-in page; the API never redirects, it answers 401.
         $middleware->redirectGuestsTo(fn ($request) => $request->is('api/*') ? null : route('login'));
