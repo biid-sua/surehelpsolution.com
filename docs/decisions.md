@@ -629,3 +629,13 @@ Start these early. The code can be built and tested with your own accounts befor
 - **Consent to text or email is never imported.** It must be recorded where the customer gave it (spec §57).
 
 **Why:** businesses arrive with a customer list. Re-typing it isn't realistic, and a careless import would duplicate customers or invent consent.
+
+## D54 — Agents' own calendars on My calendar (2026-10-24)
+**Decision:** agents get *My calendar* in the agent portal: their shifts, approved time off and the appointments they booked, shown in their own time zone, next to their own Google or Microsoft calendar.
+- **Busy times:** read live for the range on screen (cached for 5 minutes) and never stored. Only times are shown, never titles or attendees.
+- **Shifts copied in:** shifts for the next 60 days are copied into the calendar the agent chooses. They update when the plan changes and are deleted when a shift is removed. Shifts belong to SureHelp, so our copy wins over edits made in the external calendar. Turning copying off or disconnecting removes our events.
+- **Kept apart from business calendars:** agents' connections are a separate table. A business's calendar feeds its booking availability; an agent's never does. Only the agent sees their own connection.
+- **Same safeguards as business connections:** a one-time state bound to the user, tokens encrypted on the server, lost access flagged and the agent told in the app.
+- **One-time setup:** the redirect URIs `/agent/calendar/connect/google/callback` and `/agent/calendar/connect/microsoft/callback` are registered next to the business ones.
+
+**Why:** agents asked to see when they're working next to their own commitments, and to have their shifts in the calendar on their phone.

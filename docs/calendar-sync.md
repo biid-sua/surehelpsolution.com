@@ -42,7 +42,9 @@ Until a provider is configured, businesses see "Coming soon" for it. Replace `ht
    - Scopes: `openid`, `email`, `.../auth/calendar.readonly`, `.../auth/calendar.events`.
    - While in **Testing**, add each test business's Google account under *Test users* (up to 100).
 4. **Credentials › Create credentials › OAuth client ID**: type **Web application**.
-   - Authorized redirect URI: `https://YOUR-DOMAIN/app/integrations/calendar/google/callback`
+   - Authorized redirect URIs (both):
+     - `https://YOUR-DOMAIN/app/integrations/calendar/google/callback` (businesses)
+     - `https://YOUR-DOMAIN/agent/calendar/connect/google/callback` (agents' own calendars, D54)
 5. Put the client ID and secret in `.env`:
    ```
    GOOGLE_CALENDAR_CLIENT_ID=...
@@ -54,7 +56,9 @@ Until a provider is configured, businesses see "Coming soon" for it. Replace `ht
 
 1. In [Microsoft Entra admin center](https://entra.microsoft.com/) › **App registrations › New registration**.
    - Name "SureHelp"; supported account types **Accounts in any organizational directory and personal Microsoft accounts**.
-   - Redirect URI (Web): `https://YOUR-DOMAIN/app/integrations/calendar/microsoft/callback`
+   - Redirect URIs (Web), both:
+     - `https://YOUR-DOMAIN/app/integrations/calendar/microsoft/callback` (businesses)
+     - `https://YOUR-DOMAIN/agent/calendar/connect/microsoft/callback` (agents' own calendars, D54)
 2. **API permissions › Add › Microsoft Graph › Delegated**: `openid`, `email`, `offline_access`, `User.Read`, `Calendars.ReadWrite`. Admin consent isn't needed for these.
 3. **Certificates & secrets › New client secret** (24 months). Put a reminder in your calendar to rotate it before it expires.
 4. `.env`:
@@ -79,3 +83,11 @@ Until a provider is configured, businesses see "Coming soon" for it. Replace `ht
 | "Sync problem" | A temporary provider error. It retries every 10 minutes; details are in `last_error` and the log. |
 | Booking flagged "changed directly in your calendar" | Someone edited our event in Google/Outlook. Update the booking in SureHelp; we don't overwrite their change. |
 | `redirect_uri_mismatch` (Google) / `AADSTS50011` (Microsoft) | The redirect URI registered doesn't exactly match `APP_URL` + the path above (check https, www, trailing slash). |
+
+## Agents' own calendars (D54)
+
+Agents connect their personal Google or Microsoft calendar under *Agent portal › My calendar*. It uses the same app registration and `.env` keys as businesses. Only the second redirect URI above has to be added.
+
+- **Busy times** from the calendars the agent ticks appear on My calendar as "Busy", without titles. They're read live, never stored, and never used for any business's booking availability.
+- **Shifts** for the next 60 days are copied into the calendar the agent chooses. They follow changes and disappear when removed. `agent-calendars:sync` catches up nightly at 03:40.
+- **Lost access:** the agent is told in the app and sees a "Reconnect" banner.

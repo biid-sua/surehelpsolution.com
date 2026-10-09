@@ -134,6 +134,8 @@ document.addEventListener('alpine:init', () => {
                 });
             } else if (props.kind === 'visit') {
                 tags.append(this.tag('visits'));
+            } else if (['shift', 'leave', 'booking'].includes(props.kind)) {
+                tags.append(this.tag(props.source)); // agent's My calendar
             }
             box.append(tags);
             box.title = [arg.event.title, props.status, props.calendar].filter(Boolean).join(' · ');

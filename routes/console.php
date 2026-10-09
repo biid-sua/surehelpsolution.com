@@ -54,5 +54,7 @@ Schedule::command('automations:run')->everyMinute()->withoutOverlapping(5);
 Schedule::command('assignments:sweep')->everyFiveMinutes()->withoutOverlapping(10);
 // Agent University reminders: due soon, overdue, certification expiring or expired (sent once each).
 Schedule::command('training:sweep')->hourly()->withoutOverlapping(30);
+// Agents' own calendars: nightly catch-up of copied shifts (D54). Changes are copied as they happen.
+Schedule::command('agent-calendars:sync')->dailyAt('03:40')->withoutOverlapping(60);
 // Monthly website health and SEO checks (spec §41B, D44).
 Schedule::command('websites:check')->dailyAt('07:20')->withoutOverlapping(60);

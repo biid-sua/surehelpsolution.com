@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+use App\Observers\AgentDutyScheduleObserver;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+// Agents' own calendars follow shift changes (D54).
+#[ObservedBy([AgentDutyScheduleObserver::class])]
 class AgentDutySchedule extends Model
 {
     public const SHIFT_TYPES = ['morning' => 'Morning', 'afternoon' => 'Afternoon', 'evening' => 'Evening', 'night' => 'Night', 'off' => 'Day off'];

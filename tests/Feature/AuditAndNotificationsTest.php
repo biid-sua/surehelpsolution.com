@@ -282,6 +282,17 @@ class AuditAndNotificationsTest extends TestCase
         Livewire::test(NotificationBell::class)->assertViewHas('unread', 2)->call('markAllRead')->assertViewHas('unread', 0);
     }
 
+    public function test_bell_sends_a_signed_out_page_to_sign_in_instead_of_failing(): void
+    {
+        [$owner] = $this->business();
+        $this->actingAs($owner);
+        $bell = Livewire::test(NotificationBell::class);
+
+        auth()->logout(); // e.g. signed out in another tab, then the bell polls
+        $bell->call('$refresh')->assertRedirect(route('login'));
+        $bell->call('markAllRead')->assertRedirect(route('login'));
+    }
+
     // Scheduler -------------------------------------------------------------
 
     public function test_scheduler_runs_queue_worker_and_retention(): void

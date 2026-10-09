@@ -203,6 +203,9 @@
 .src-dot-visits { background: #10b981; }
 .src-dot-google { background: #4285f4; }
 .src-dot-microsoft { background: #0ea5e9; }
+.src-dot-shifts { background: #10b981; }
+.src-dot-leave { background: #f59e0b; }
+.src-dot-bookings { background: var(--color-brand-400); }
 
 .fc-src-event { display: flex; min-width: 0; flex-direction: column; gap: 0.125rem; padding: 0.0625rem 0.125rem; overflow: hidden; }
 .fc-src-line { display: flex; min-width: 0; gap: 0.25rem; }
@@ -214,6 +217,9 @@
 .fc-src-tag.src-tag-microsoft { background: #0369a1; }
 .fc-src-tag.src-tag-surehelp { background: rgb(255 255 255 / 0.18); }
 .fc-src-tag.src-tag-visits { background: #065f46; }
+.fc-src-tag.src-tag-shifts { background: #065f46; }
+.fc-src-tag.src-tag-leave { background: #92400e; }
+.fc-src-tag.src-tag-bookings { background: rgb(255 255 255 / 0.18); }
 .fc-src-tag.is-conflict { background: #b45309; }
 .fc-timegrid-event .fc-src-tags { flex-wrap: nowrap; overflow: hidden; }
 .fc-list-event .fc-src-event { flex-direction: row; align-items: center; gap: 0.5rem; }

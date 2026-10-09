@@ -10,11 +10,25 @@ use Livewire\Component;
 /**
  * In-app notifications (NTF-02). Polls every 30 s until real-time push (Reverb) arrives.
  * Only ever reads the signed-in user's own notifications.
+ *
+ * A poll can arrive after the session ended (signed out in another tab, idle timeout): then the
+ * page is sent to sign-in instead of failing.
  */
 class NotificationBell extends Component
 {
+    public function boot(): void
+    {
+        if (! auth()->check()) {
+            $this->skipRender();
+            $this->redirectRoute('login');
+        }
+    }
+
     public function open(string $id): mixed
     {
+        if (! auth()->check()) {
+            return null;
+        }
         $notification = $this->find($id);
         $notification->markAsRead();
 
@@ -23,7 +37,7 @@ class NotificationBell extends Component
 
     public function markAllRead(): void
     {
-        auth()->user()->unreadNotifications()->update(['read_at' => now()]);
+        auth()->user()?->unreadNotifications()->update(['read_at' => now()]);
     }
 
     private function find(string $id): DatabaseNotification

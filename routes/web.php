@@ -6,6 +6,8 @@ use App\Http\Controllers\Account\PasswordResetController;
 use App\Http\Controllers\Account\TermsController;
 use App\Http\Controllers\Account\TwoFactorChallengeController;
 use App\Http\Controllers\Admin\ImpersonationController;
+use App\Http\Controllers\Agent\CalendarEventsController as AgentCalendarEventsController;
+use App\Http\Controllers\Agent\CalendarOAuthController as AgentCalendarOAuthController;
 use App\Http\Controllers\Agent\CallExportController as AgentCallExportController;
 use App\Http\Controllers\Agent\TrainingFileController;
 use App\Http\Controllers\AuthController;
@@ -45,6 +47,7 @@ use App\Livewire\Admin\Support\Index as AdminSupport;
 use App\Livewire\Admin\Usage\Index as AdminUsage;
 use App\Livewire\Admin\Users\Index as AdminUsers;
 use App\Livewire\Agent\Assignments as AgentAssignments;
+use App\Livewire\Agent\Calendar as AgentCalendar;
 use App\Livewire\Agent\Calls as AgentCalls;
 use App\Livewire\Agent\Companies as AgentCompanies;
 use App\Livewire\Agent\Company\Appointments as AgentCompanyAppointments;
@@ -280,6 +283,11 @@ Route::prefix('agent')->name('agent.')->middleware(['auth.home', 'force.password
     Route::get('/calls', AgentCalls::class)->name('calls');
     Route::get('/calls/export', AgentCallExportController::class)->name('calls.export');
     Route::get('/schedule', AgentSchedule::class)->name('schedule');
+    // My calendar and the agent's own Google / Microsoft calendar (D54)
+    Route::get('/calendar', AgentCalendar::class)->name('calendar');
+    Route::get('/calendar/events', AgentCalendarEventsController::class)->middleware('throttle:120,1')->name('calendar.events');
+    Route::get('/calendar/connect/{provider}', [AgentCalendarOAuthController::class, 'redirect'])->whereIn('provider', ['google', 'microsoft'])->name('calendar.connect');
+    Route::get('/calendar/connect/{provider}/callback', [AgentCalendarOAuthController::class, 'callback'])->whereIn('provider', ['google', 'microsoft'])->name('calendar.callback');
     Route::get('/quality', AgentQuality::class)->name('quality');
 });
 

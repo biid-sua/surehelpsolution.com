@@ -4,7 +4,9 @@ namespace App\Services\Calendar;
 
 use App\Actions\Notifications\NotifyOrganization;
 use App\Exceptions\CalendarAuthorizationLost;
+use App\Models\AgentCalendarConnection;
 use App\Models\CalendarConnection;
+use App\Notifications\AgentCalendarDisconnected;
 use App\Notifications\CalendarDisconnected;
 use App\Services\Calendar\Contracts\CalendarProvider;
 use App\Services\Calendar\Providers\GoogleCalendarProvider;
@@ -45,7 +47,7 @@ class CalendarManager
      *
      * @throws CalendarAuthorizationLost
      */
-    public function accessToken(CalendarConnection $connection): string
+    public function accessToken(CalendarConnection|AgentCalendarConnection $connection): string
     {
         if ($connection->status === CalendarConnection::STATUS_NEEDS_REAUTH) {
             throw new CalendarAuthorizationLost('This calendar needs to be reconnected.');
@@ -81,13 +83,21 @@ class CalendarManager
     /**
      * Access was revoked or expired: flag it and tell the business once.
      */
-    public function lost(CalendarConnection $connection, string $reason): void
+    public function lost(CalendarConnection|AgentCalendarConnection $connection, string $reason): void
     {
         if ($connection->status === CalendarConnection::STATUS_NEEDS_REAUTH) {
             return;
         }
 
         $connection->forceFill(['status' => CalendarConnection::STATUS_NEEDS_REAUTH, 'last_error' => $reason])->save();
+        if ($connection instanceof AgentCalendarConnection) {
+            // An agent's own calendar (D54): only they are told.
+            $this->audit->record('agent_calendar.access_lost', $connection, new: ['provider' => $connection->provider, 'reason' => $reason],
+                actor: $connection->user, label: $this->provider($connection->provider)->label());
+            $connection->user?->notify(new AgentCalendarDisconnected($connection));
+
+            return;
+        }
         $this->audit->record('calendar.access_lost', $connection, new: ['provider' => $connection->provider, 'reason' => $reason],
             organization: $connection->organization, label: $this->provider($connection->provider)->label());
 
