@@ -153,7 +153,7 @@ Everything the 2026-10-23 audit found has been built (A-5 to A-12 above). What's
 
 | # | Item | Notes |
 |---|---|---|
-| – | Content-Security-Policy header | Only possible after the public website stops loading scripts from CDNs (its redesign) |
+| – | Content-Security-Policy header | Now possible: the public site no longer loads anything from CDNs (D55). Remaining work: nonces for Livewire's inline scripts |
 
 ### B. Needs action from you (operations)
 | Item | Notes |
