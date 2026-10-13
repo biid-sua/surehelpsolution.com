@@ -28,6 +28,12 @@ class AppointmentResource extends JsonResource
             'source' => $this->source,
             'notes' => $this->notes,
             'address' => $this->address,
+            // Where it happens (D56): address | business | remote; null on older bookings. The parts are null unless entered separately.
+            'location_mode' => $this->location_mode,
+            'place_name' => $this->place_name,
+            'place_type' => $this->place_type,
+            'address_parts' => $this->address_line1 !== null ? ['line1' => $this->address_line1, 'line2' => $this->address_line2, 'city' => $this->city,
+                'state' => $this->state, 'postal_code' => $this->postal_code, 'country' => $this->country] : null,
             'customer' => $this->whenLoaded('customer', fn () => $this->customer ? ['id' => $this->customer->ulid, 'name' => $this->customer->fullName(), 'phone' => $this->customer->displayPhone()] : null),
             'service' => $this->whenLoaded('service', fn () => $this->service ? ['id' => $this->service->id, 'name' => $this->service->name] : null),
             'location' => $this->whenLoaded('location', fn () => $this->location ? ['id' => $this->location->id, 'name' => $this->location->name] : null),

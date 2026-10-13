@@ -12,6 +12,7 @@ use App\Enums\OutcomeCategory;
 use App\Enums\TaskType;
 use App\Exceptions\SlotUnavailable;
 use App\Livewire\Concerns\AgentWorkspaceOnly;
+use App\Livewire\Concerns\EditsVisitLocation;
 use App\Models\Appointment;
 use App\Models\BusinessProfile;
 use App\Models\BusinessService;
@@ -48,6 +49,7 @@ use Livewire\Component;
 class Workspace extends Component
 {
     use AgentWorkspaceOnly;
+    use EditsVisitLocation;
 
     #[Locked]
     public int $organizationId;
@@ -100,13 +102,35 @@ class Workspace extends Component
         abort_unless(auth()->user()->hasPermissionIn('calls.create', $organization), 404);
     }
 
+    protected function locationPath(): string
+    {
+        return 'entry.location';
+    }
+
+    protected function locationOrganizationId(): int
+    {
+        return $this->organizationId;
+    }
+
+    protected function locationCustomer(Organization $organization): ?Customer
+    {
+        return $this->customerId ? Customer::query()->forOrganization($organization)->find($this->customerId) : null;
+    }
+
+    protected function locationCalendarChanged(): void
+    {
+        $this->entry['time'] = '';
+        $this->suggestions = [];
+    }
+
     private function resetCall(): void
     {
         $this->entry = [
-            'phone' => '', 'name' => '', 'email' => '', 'address' => '',
+            'phone' => '', 'name' => '', 'email' => '',
             'reason' => '', 'outcome' => '', 'escalation_type' => EscalationType::UrgentIssue->value,
             'notes' => '',
             'book' => false, 'service_id' => '', 'date' => '', 'time' => '',
+            'location' => $this->blankLocation(),
             'follow_up' => false, 'follow_up_title' => '', 'follow_up_date' => '',
         ];
         $this->customerId = null;
@@ -122,6 +146,13 @@ class Workspace extends Component
             // A different number or email means a different match: ask again.
             $this->customerId = null;
             $this->newCustomer = false;
+            $this->forgetCustomerLocation();
+        }
+        if ($property === 'entry.time') {
+            // An exact time typed by the agent; some browsers add seconds ("08:06:00").
+            $this->entry['time'] = substr((string) $this->entry['time'], 0, 5);
+            $this->suggestions = [];
+            $this->resetValidation('entry.time');
         }
         if (in_array($property, ['entry.service_id', 'entry.date'], true)) {
             $this->entry['time'] = '';
@@ -142,13 +173,15 @@ class Workspace extends Component
         $this->entry['name'] = $this->entry['name'] !== '' ? $this->entry['name'] : trim($customer->first_name.' '.$customer->last_name);
         $this->entry['phone'] = $this->entry['phone'] !== '' ? $this->entry['phone'] : (string) $customer->displayPhone();
         $this->entry['email'] = $this->entry['email'] !== '' ? $this->entry['email'] : (string) $customer->email;
-        $this->entry['address'] = $this->entry['address'] !== '' ? $this->entry['address'] : (string) $customer->singleLineAddress();
+
+        $this->offerCustomerLocation($customer);
     }
 
     public function differentPerson(): void
     {
         $this->customerId = null;
         $this->newCustomer = true;
+        $this->forgetCustomerLocation();
     }
 
     public function pickTime(string $localDateTime): void
@@ -174,7 +207,6 @@ class Workspace extends Component
             'entry.phone' => ['nullable', 'string', 'max:20'],
             'entry.name' => ['nullable', 'string', 'max:255'],
             'entry.email' => ['nullable', 'email', 'max:255'],
-            'entry.address' => ['nullable', 'string', 'max:255'],
             'entry.reason' => ['required', Rule::in(array_keys(CallLog::REASONS))],
             'entry.outcome' => ['required', 'string'],
             'entry.escalation_type' => ['nullable', Rule::enum(EscalationType::class)],
@@ -186,6 +218,12 @@ class Workspace extends Component
             'entry.follow_up_date' => ['exclude_unless:entry.follow_up,true', 'nullable', 'date_format:Y-m-d'],
         ], ['entry.time.required' => 'Pick a time.', 'entry.reason.required' => 'Why did they call?', 'entry.outcome.required' => 'How did the call end?'],
             ['entry.follow_up_title' => 'follow-up']);
+
+        $where = $this->entry['book'] ? $this->validatedLocation($organization, cannotSave: $this->customerId === null && blank($this->entry['phone']) && blank($this->entry['email'])
+            ? 'Add the caller\'s phone or email so the location can be saved to their record.' : null) : null;
+        if ($this->entry['book'] && $where === null) {
+            return;
+        }
 
         if (filled($this->entry['phone']) || filled($this->entry['email'])) {
             // A likely match the agent hasn't answered yet: ask before merging (spec §15).
@@ -202,7 +240,7 @@ class Workspace extends Component
 
         $booked = null;
         try {
-            $call = DB::transaction(function () use ($logCall, $book, $createTask, $organization, $agent, $timezone, $category, $local, &$booked) {
+            $call = DB::transaction(function () use ($logCall, $book, $createTask, $organization, $agent, $timezone, $category, $local, $where, &$booked) {
                 $call = $logCall->handle($agent, [
                     'call_date' => $local->toDateString(),
                     'call_time' => $local->format('H:i'),
@@ -214,11 +252,13 @@ class Workspace extends Component
                     'agent_name' => Str::before(trim($agent->name).' ', ' '),
                     'status' => $this->entry['book'] ? 'service-requested' : 'new',
                     'service_request' => (bool) $this->entry['book'],
-                    'service_location' => $this->entry['address'] ?: null,
+                    'service_location' => $where['summary'] ?? null,
                     'notes' => $this->entry['notes'] ?: null,
                     'escalation_type' => $category === OutcomeCategory::Escalated ? $this->entry['escalation_type'] : null,
                     'customer_id' => $this->customerId,
                     'new_customer' => $this->newCustomer,
+                    // A newly typed address also fills in a customer record that has none.
+                    'address_parts' => $where !== null && $where['saved'] === null ? ($where['booking']['address_parts'] ?? null) : null,
                 ], $organization);
 
                 if ($this->entry['book']) {
@@ -227,9 +267,10 @@ class Workspace extends Component
                         'service_id' => $this->entry['service_id'] !== '' ? (int) $this->entry['service_id'] : null,
                         'customer_id' => $call->customer_id,
                         'call_log_id' => $call->id,
-                        'address' => $this->entry['address'] ?: null,
                         'notes' => $this->entry['notes'] ?: null,
+                        ...$where['booking'],
                     ], $agent, 'agent', strict: true);
+                    $this->rememberLocation($organization, $booked, $where);
                 }
 
                 if ($this->entry['follow_up']) {
@@ -255,9 +296,8 @@ class Workspace extends Component
             return;
         } catch (ValidationException $e) {
             foreach ($e->errors() as $field => $messages) {
-                $target = match ($field) {
+                $target = $this->locationErrorField($field) ?? match ($field) {
                     'starts_at' => 'entry.time',
-                    'address' => 'entry.address',
                     'client_id' => 'customer',
                     'call_outcome' => 'entry.outcome',
                     default => 'entry.'.$field,
@@ -300,13 +340,13 @@ class Workspace extends Component
         $slots = [];
         if ($this->entry['book'] && preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $this->entry['date'])) {
             $slots = $availability->slots($organization, $this->entry['date'], (int) ($service->duration_minutes ?? BookAppointment::DEFAULT_DURATION),
-                (int) ($service->buffer_minutes ?? 0), $service?->location_id, serviceId: $service?->id);
+                (int) ($service->buffer_minutes ?? 0), $this->calendarLocationId($service?->location_id), serviceId: $service?->id);
         }
 
         $knowledge = KnowledgeItem::query()->forOrganization($organization)->forAgents()
             ->search($this->knowledgeSearch)->ordered()->limit($this->knowledgeSearch !== '' ? 20 : 12)->get();
 
-        return view('livewire.agent.workspace', [
+        return view('livewire.agent.workspace', ($this->entry['book'] ? $this->locationViewData($organization) : []) + [
             'organization' => $organization,
             'profile' => $profile,
             'status' => $hours->status($organization),

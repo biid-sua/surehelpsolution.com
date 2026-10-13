@@ -246,7 +246,7 @@ class CalendarSync
             CarbonImmutable::instance($appointment->ends_at),
             $appointment->organization?->timezoneOrDefault() ?? $appointment->timezone,
             $description,
-            $appointment->address ?? $appointment->location?->name,
+            $appointment->location_mode === Appointment::LOCATION_REMOTE ? 'Remote' : ($appointment->address ?? $appointment->location?->name),
             $appointment->ulid,
         );
     }

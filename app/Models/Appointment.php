@@ -33,11 +33,19 @@ class Appointment extends Model
 {
     use BelongsToOrganization, StoresUtc;
 
+    /** Where an appointment happens (D56). Null on bookings made before structured locations. */
+    public const LOCATION_ADDRESS = 'address';
+
+    public const LOCATION_BUSINESS = 'business';
+
+    public const LOCATION_REMOTE = 'remote';
+
     public const SOURCES = ['portal', 'agent', 'api', 'chatbot', 'calendar', 'ai', 'website'];
 
     protected $fillable = [
         'organization_id', 'customer_id', 'service_id', 'location_id', 'call_log_id', 'title', 'starts_at', 'ends_at',
         'blocked_until', 'timezone', 'status', 'source', 'notes', 'address', 'booked_by_user_id', 'confirmed_at',
+        'location_mode', 'place_name', 'place_type', 'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country', 'customer_location_id',
         'completed_at', 'cancelled_at', 'cancellation_reason', 'external_refs',
     ];
 
@@ -172,6 +180,18 @@ class Appointment extends Model
     }
 
     /** "Tue 14 Oct, 2:00 – 3:30 PM" in the business's time. */
+    /** Where it happens, for people: "Remote (no address)", "Main office", or "Lake house · 12 Main St, Austin, TX 78701" (D56). */
+    public function whereLabel(): ?string
+    {
+        if ($this->location_mode === self::LOCATION_REMOTE) {
+            return 'Remote (no address)';
+        }
+        $label = collect([$this->place_name, in_array($this->location_mode, [null, self::LOCATION_BUSINESS], true) ? $this->location?->name : null, $this->address])
+            ->filter(fn ($part) => filled($part))->unique()->implode(' · ');
+
+        return $label !== '' ? $label : null;
+    }
+
     public function whenLabel(): string
     {
         $start = $this->localStart();

@@ -5,10 +5,12 @@ namespace App\Services\Rules;
 use App\Enums\BusinessRuleType;
 use App\Enums\EscalationPriority;
 use App\Enums\EscalationType;
+use App\Models\Appointment;
 use App\Models\BusinessRule;
 use App\Models\BusinessService;
 use App\Models\Customer;
 use App\Models\Organization;
+use App\Support\Geo\Address;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -48,7 +50,7 @@ class BusinessRules
     /**
      * Rule breaches for a proposed booking, keyed by field (empty when fine).
      *
-     * @param  array{address?: ?string}  $details
+     * @param  array{address?: ?string, location_mode?: ?string, address_parts?: ?array<string, mixed>}  $details
      * @return array<string, string>
      */
     public function bookingViolations(Organization $organization, CarbonImmutable $start, ?BusinessService $service, ?Customer $customer, array $details = []): array
@@ -70,12 +72,16 @@ class BusinessRules
             $violations['starts_at'] ??= 'The business only books up to '.$maxDays.' days ahead.';
         }
 
-        $address = trim((string) ($details['address'] ?? '')) ?: $customer?->singleLineAddress();
+        // Remote appointments have no visit address, so address rules don't apply to them (D56).
+        $remote = ($details['location_mode'] ?? null) === Appointment::LOCATION_REMOTE;
+        $parts = is_array($details['address_parts'] ?? null) ? Address::normalize($details['address_parts']) : null;
+        $address = $remote ? null : (($parts ? Address::singleLine($parts) : null)
+            ?? (trim((string) ($details['address'] ?? '')) ?: $customer?->singleLineAddress()));
 
         foreach ($this->ofType($organization, BusinessRuleType::RequireDetail) as $rule) {
             $field = $rule->config['field'] ?? '';
             $missing = match ($field) {
-                'address' => blank($address),
+                'address' => ! $remote && blank($address),
                 'phone' => blank($customer?->phone),
                 'email' => blank($customer?->email),
                 default => false,
@@ -88,7 +94,7 @@ class BusinessRules
         $areas = $this->ofType($organization, BusinessRuleType::ServiceArea);
         if ($areas->isNotEmpty() && filled($address)) {
             $allowed = $areas->flatMap(fn (BusinessRule $r) => (array) ($r->config['postal_codes'] ?? []))->map(fn ($z) => (string) $z)->all();
-            $zip = self::postalCode((string) $address) ?? $customer?->postal_code;
+            $zip = ($parts['postal_code'] ?? null) ?? self::postalCode((string) $address) ?? $customer?->postal_code;
 
             if ($zip === null) {
                 $violations['address'] ??= 'Include the ZIP code so we can check the service area.';

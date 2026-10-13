@@ -169,11 +169,12 @@ class AgentWorkspaceTest extends TestCase
             ->assertDontSeeHtml("pickTime('2026-10-07 09:00')")->assertSeeHtml("pickTime('2026-10-07 10:30')")
             ->call('pickTime', '2026-10-07 10:30')
             ->call('save')
-            ->assertHasErrors('entry.address');
+            ->assertHasErrors(['entry.location.line1', 'entry.location.city', 'entry.location.state', 'entry.location.postal_code']);
         $this->assertSame(0, CallLog::withoutGlobalScopes()->count(), 'call and booking are saved together or not at all');
 
         // A time someone else took meanwhile: refused with suggestions, still nothing saved.
-        $component->set('entry.address', '500 Congress Ave, Austin, TX 78701')->set('entry.time', '09:00')->call('save')->assertHasErrors('entry.time')->assertNotSet('suggestions', []);
+        $component->set('entry.location.line1', '500 Congress Ave')->set('entry.location.city', 'Austin')
+            ->set('entry.location.state', 'TX')->set('entry.location.postal_code', '78701')->set('entry.time', '09:00')->call('save')->assertHasErrors('entry.time')->assertNotSet('suggestions', []);
         $this->assertSame(0, CallLog::withoutGlobalScopes()->count());
 
         $component->call('pickTime', '2026-10-07 10:30')->call('save')->assertHasNoErrors();
@@ -185,6 +186,8 @@ class AgentWorkspaceTest extends TestCase
         $this->assertSame('10:30', $appointment->localStart()->format('H:i'));
         $this->assertSame($this->agent->id, $appointment->booked_by_user_id);
         $this->assertTrue($call->service_request);
+        $this->assertSame('500 Congress Ave, Austin, TX 78701', $appointment->address);
+        $this->assertSame('500 Congress Ave, Austin, TX 78701', $call->service_location);
     }
 
     public function test_follow_ups_and_escalations_from_the_call(): void

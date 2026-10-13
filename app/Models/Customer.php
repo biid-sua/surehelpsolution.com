@@ -102,6 +102,16 @@ class Customer extends Model
     }
 
     /**
+     * Places saved for future bookings, most recently used first (D56).
+     *
+     * @return HasMany<CustomerLocation, $this>
+     */
+    public function locations(): HasMany
+    {
+        return $this->hasMany(CustomerLocation::class)->orderByDesc('last_used_at')->latest('id');
+    }
+
+    /**
      * @return HasMany<CustomerTimelineEvent, $this>
      */
     public function timeline(): HasMany

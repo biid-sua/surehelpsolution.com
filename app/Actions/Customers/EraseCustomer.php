@@ -8,6 +8,7 @@ use App\Models\AutomationRun;
 use App\Models\CallLog;
 use App\Models\Conversation;
 use App\Models\Customer;
+use App\Models\CustomerLocation;
 use App\Models\CustomerTimelineEvent;
 use App\Models\Escalation;
 use App\Models\Task;
@@ -37,7 +38,9 @@ class EraseCustomer
                 'caller_name' => self::PLACEHOLDER, 'caller_phone' => null, 'caller_email' => null,
                 'service_location' => null, 'notes' => null,
             ]);
-            $scope(Appointment::class)->update(['title' => 'Appointment ('.mb_strtolower(self::PLACEHOLDER).')', 'address' => null, 'notes' => null]);
+            $scope(Appointment::class)->update(['title' => 'Appointment ('.mb_strtolower(self::PLACEHOLDER).')', 'address' => null, 'notes' => null,
+                'place_name' => null, 'address_line1' => null, 'address_line2' => null, 'city' => null, 'state' => null, 'postal_code' => null, 'customer_location_id' => null]);
+            $scope(CustomerLocation::class)->delete();
             $scope(Task::class)->update(['title' => 'Task ('.mb_strtolower(self::PLACEHOLDER).')', 'description' => null]);
             $scope(Escalation::class)->update(['details' => null, 'resolution_notes' => null]);
             CustomerTimelineEvent::withoutGlobalScopes()->where('customer_id', $customer->id)->delete();

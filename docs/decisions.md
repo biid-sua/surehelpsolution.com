@@ -653,3 +653,26 @@ Start these early. The code can be built and tested with your own accounts befor
 - **Left for the owner and counsel:** the wording of the Privacy Policy, Terms, Cookie Notice, DPA and BAA is unchanged. The DPA promises an "ISO 27001 compliant security program", and the Terms and DPA name Delaware law while the company address is in Wyoming.
 
 **Why:** the old page had dead menu links, CDN dependencies and claims a new company can't support. Under FTC rules on endorsements and deceptive claims, invented reviews and certifications are a legal risk, not just a credibility one.
+
+## D56 — Where an agent's booking happens: exact address, saved place or remote (2026-10-26)
+**Decision:** when an agent books an appointment in the workspace, a *Location* section asks where it happens. It replaces the single "Address" box in step 1.
+- **Specify exact address:** an optional display name ("Lake house"), a location type (residential, commercial, other), country, address lines 1 and 2, city, state or province, and ZIP or postal code.
+  - The US and Canada get a state or province list and a checked ZIP or postal code format. Other countries type the region, and the postal code is optional.
+  - The default country is the business's primary location's country, or the US.
+- **Use saved location:** the confirmed caller's places (the address on their record, then places saved earlier, most recently used first), and the business's own locations.
+  - Confirming a caller picks their most recent place, unless the agent has already started typing an address.
+  - Picking a business location books on that location's calendar, so the free times follow it.
+- **Remote (no address):** for phone or video appointments. "Require the visit address" and service-area rules don't apply.
+- **Save this location for future use:** saves the place on the customer's record. The same street and postal code again updates the saved place instead of adding a copy. It needs the caller's phone or email, so there is a customer to save it to.
+- **Stored in parts:** appointments store the mode, display name, type and each address part. `address` stays the one-line form that emails, calendars, rules, exports and the API already read. The API also returns `location_mode`, `place_name`, `place_type` and `address_parts`.
+- **Customer records:** a new customer, or one without an address, gets the typed address in its separate fields instead of one line.
+- **Service area:** checked against the ZIP field rather than a ZIP found in free text.
+- **Privacy:** erasing a customer deletes their saved places and clears the address parts on their appointments. The business data export includes `customer_locations.csv`.
+- **Calls without a booking:** no longer ask for an address. The address belongs to a visit, and anything else the caller says goes in the notes.
+
+**Why:** one free-text box gave the business addresses it couldn't rely on: missing ZIP codes, guessed states, and no way to say an appointment is by phone. Separate fields make addresses usable for dispatch and service-area checks, and saved places spare a returning caller from repeating their address.
+
+**Amendment (2026-10-26): the business's own booking form.** *Appointments › Book appointment* has the same Location section. One implementation serves both portals: `EditsVisitLocation` for the logic and `partials/visit-location` for the view.
+- **The address stays optional for the business:** with nothing typed, the booking has no address, as before. Once any part is typed, the full address is required.
+- **The separate "Location" dropdown is gone:** the business's locations are listed under *Use saved location*. A service tied to a location selects it, and the free times follow the chosen location.
+- **Customers:** choosing a customer offers their saved places, most recent first. A new customer typed into the form gets the address on their record. *Save this location* needs an existing customer or a new customer's phone number.

@@ -12,12 +12,14 @@ use App\Models\Appointment;
 use App\Models\BusinessLocation;
 use App\Models\BusinessService;
 use App\Models\Customer;
+use App\Models\CustomerLocation;
 use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\AppointmentActivity;
 use App\Services\Rules\BusinessRules;
 use App\Services\Scheduling\Availability;
 use App\Support\Audit\Audit;
+use App\Support\Geo\Address;
 use Carbon\CarbonImmutable;
 use Illuminate\Validation\ValidationException;
 
@@ -38,7 +40,7 @@ class BookAppointment
     ) {}
 
     /**
-     * @param  array{starts_at: CarbonImmutable, duration_minutes?: ?int, service_id?: ?int, location_id?: ?int, customer_id?: ?int, call_log_id?: ?int, notes?: ?string, address?: ?string, status?: AppointmentStatus|string|null, title?: ?string}  $data  starts_at is an instant in any timezone
+     * @param  array{starts_at: CarbonImmutable, duration_minutes?: ?int, service_id?: ?int, location_id?: ?int, customer_id?: ?int, call_log_id?: ?int, notes?: ?string, address?: ?string, status?: AppointmentStatus|string|null, title?: ?string, location_mode?: ?string, place_name?: ?string, place_type?: ?string, address_parts?: ?array<string, mixed>, customer_location_id?: ?int}  $data  starts_at is an instant in any timezone; address_parts (D56) take precedence over the one-line address
      * @param  bool  $strict  agents and automated booking must keep to opening hours and the business's rules; the business itself may book any time
      *
      * @throws ValidationException for bad references, past times, or (strict) times outside hours or against a rule
@@ -69,6 +71,7 @@ class BookAppointment
         }
 
         $customer = $refs['customer'];
+        $where = self::where($organization, $data, $refs['location'], $customer);
         $title = filled($data['title'] ?? null)
             ? trim((string) $data['title'])
             : trim(($service->name ?? 'Appointment').($customer ? ' · '.$customer->fullName() : ''));
@@ -88,7 +91,7 @@ class BookAppointment
                 'status' => $status,
                 'source' => $source,
                 'notes' => filled($data['notes'] ?? null) ? trim((string) $data['notes']) : null,
-                'address' => filled($data['address'] ?? null) ? trim((string) $data['address']) : null,
+                ...$where,
                 'booked_by_user_id' => $actor?->id,
                 'confirmed_at' => $status === AppointmentStatus::Confirmed ? now() : null,
             ]), $service?->id);
@@ -110,6 +113,61 @@ class BookAppointment
             $approval ? 'Booked by '.$actor?->name.' from SureHelp. It waits for your approval: confirm it, or move or cancel it, in Appointments.' : null), 'appointments.view', $actor);
 
         return $appointment;
+    }
+
+    /**
+     * Where the appointment happens, as stored (D56): the parts of an exact address, a business location, or remote.
+     * `address` is always the one-line form, so everything that reads older bookings keeps working.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     *
+     * @throws ValidationException
+     */
+    private static function where(Organization $organization, array $data, ?BusinessLocation $location, ?Customer $customer): array
+    {
+        $mode = $data['location_mode'] ?? null;
+        if ($mode !== null && ! in_array($mode, [Appointment::LOCATION_ADDRESS, Appointment::LOCATION_BUSINESS, Appointment::LOCATION_REMOTE], true)) {
+            throw ValidationException::withMessages(['location_mode' => ['Choose an address, one of the business\'s locations, or remote.']]);
+        }
+        $where = [
+            'location_mode' => $mode,
+            'customer_location_id' => null,
+            'place_name' => filled($data['place_name'] ?? null) ? mb_substr(trim((string) $data['place_name']), 0, 100) : null,
+            'place_type' => isset(Address::TYPES[$data['place_type'] ?? '']) ? $data['place_type'] : null,
+        ];
+        $none = ['address' => null, 'address_line1' => null, 'address_line2' => null, 'city' => null, 'state' => null, 'postal_code' => null, 'country' => null];
+
+        if ($mode === Appointment::LOCATION_REMOTE) {
+            return $where + $none;
+        }
+        if ($mode === Appointment::LOCATION_BUSINESS) {
+            if (! $location) {
+                throw ValidationException::withMessages(['location_id' => ['Choose one of your locations.']]);
+            }
+
+            return ['place_type' => null] + $where + ['address' => $location->singleLine() ?: null] + $none;
+        }
+
+        if (! empty($data['customer_location_id'])) {
+            $saved = CustomerLocation::query()->forOrganization($organization)->whereKey($data['customer_location_id'])->first();
+            if (! $saved || $saved->customer_id !== $customer?->id) {
+                throw ValidationException::withMessages(['customer_location_id' => ['Choose one of this customer\'s saved locations.']]);
+            }
+            $where['customer_location_id'] = $saved->id;
+        }
+
+        if (is_array($data['address_parts'] ?? null)) {
+            $parts = Address::normalize($data['address_parts']);
+
+            return $where + [
+                'address' => Address::singleLine($parts, $location?->country ?: 'US'),
+                'address_line1' => $parts['line1'], 'address_line2' => $parts['line2'], 'city' => $parts['city'],
+                'state' => $parts['state'], 'postal_code' => $parts['postal_code'], 'country' => $parts['country'],
+            ];
+        }
+
+        return $where + ['address' => filled($data['address'] ?? null) ? trim((string) $data['address']) : null] + $none;
     }
 
     /** Booked by someone outside the business (a SureHelp agent or staff) while the owner approves those. */

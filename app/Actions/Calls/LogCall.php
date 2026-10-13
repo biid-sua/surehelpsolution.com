@@ -116,7 +116,7 @@ class LogCall
         ], actor: $agent);
 
         if ($organization) {
-            $this->linkCustomer($call, $organization, $agent, array_intersect_key($data, ['customer_id' => true, 'new_customer' => true]));
+            $this->linkCustomer($call, $organization, $agent, array_intersect_key($data, ['customer_id' => true, 'new_customer' => true, 'address_parts' => true]));
             $this->createCallbackTask($call, $organization, $agent);
             $this->raiseEscalation($call, $organization, $agent, $data);
             $this->notify->handle($organization, new CallActivity($call, self::eventFor($call)), 'calls.view');
@@ -130,7 +130,7 @@ class LogCall
      * A failure here must never lose the call itself, so it is reported, not thrown.
      */
     /**
-     * @param  array{customer_id?: mixed, new_customer?: mixed}  $choice
+     * @param  array{customer_id?: mixed, new_customer?: mixed, address_parts?: mixed}  $choice  address_parts: the visit address in separate fields (D56)
      */
     private function linkCustomer(CallLog $call, Organization $organization, User $agent, array $choice = []): void
     {
@@ -140,6 +140,7 @@ class LogCall
                 'phone' => $call->caller_phone,
                 'email' => $call->caller_email,
                 'address' => $call->service_location,
+                'address_parts' => is_array($choice['address_parts'] ?? null) ? $choice['address_parts'] : null,
             ];
 
             // The agent confirmed who this is (workspace), or said it is someone new; otherwise match automatically.

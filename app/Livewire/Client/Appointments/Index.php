@@ -8,12 +8,13 @@ use App\Actions\Appointments\RescheduleAppointment;
 use App\Actions\Customers\MatchOrCreateCustomer;
 use App\Enums\AppointmentStatus;
 use App\Exceptions\SlotUnavailable;
+use App\Livewire\Concerns\EditsVisitLocation;
 use App\Livewire\Concerns\ScopedToOrganization;
 use App\Models\Appointment;
 use App\Models\BusinessHour;
-use App\Models\BusinessLocation;
 use App\Models\BusinessService;
 use App\Models\Customer;
+use App\Models\Organization;
 use App\Services\Scheduling\Availability;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
@@ -34,6 +35,7 @@ use Livewire\WithPagination;
 #[Title('Appointments')]
 class Index extends Component
 {
+    use EditsVisitLocation;
     use ScopedToOrganization;
     use WithPagination;
 
@@ -61,7 +63,7 @@ class Index extends Component
 
     public bool $booking = false;
 
-    /** @var array<string, string> */
+    /** @var array<string, mixed> the booking or move form; `location` holds the Location section (D56) */
     public array $form = [];
 
     public string $customerSearch = '';
@@ -95,10 +97,20 @@ class Index extends Component
         if (in_array($property, ['view', 'search', 'from', 'to', 'serviceFilter'], true)) {
             $this->resetPage();
         }
+        if ($property === 'form.time') {
+            // An exact time typed in; some browsers add seconds ("08:06:00").
+            $this->form['time'] = substr((string) $this->form['time'], 0, 5);
+            $this->resetValidation('form.time');
+        }
         if ($property === 'form.service_id') {
             $service = $this->service();
             $this->form['duration_minutes'] = (string) ($service->duration_minutes ?? BookAppointment::DEFAULT_DURATION);
-            if ($service?->location_id) {
+            if ($service?->location_id && ! $this->rescheduling) {
+                $location = $this->location();
+                if (($location['mode'] === 'address' && blank($location['line1'])) || $this->bookingCalendar() !== '') {
+                    $this->changeLocation(['mode' => 'saved', 'saved' => 'b:'.$service->location_id]);
+                }
+            } elseif ($service?->location_id) {
                 $this->form['location_id'] = (string) $service->location_id;
             }
         }
@@ -124,13 +136,16 @@ class Index extends Component
             'customer_id' => (string) ($customer->id ?? ''),
             'new_name' => '', 'new_phone' => '',
             'service_id' => (string) ($services->count() === 1 ? $services->first()->id : ''),
-            'location_id' => '',
             'date' => now($organization->timezoneOrDefault())->toDateString(),
             'time' => '',
             'duration_minutes' => (string) ($services->count() === 1 ? $services->first()->duration_minutes : BookAppointment::DEFAULT_DURATION),
             'status' => AppointmentStatus::Confirmed->value,
-            'notes' => '', 'address' => '',
+            'notes' => '',
+            'location' => $this->blankLocation($services->count() === 1 ? $services->first()->location_id : null),
         ];
+        if ($customer) {
+            $this->offerCustomerLocation($customer);
+        }
         $this->booking = true;
     }
 
@@ -139,11 +154,13 @@ class Index extends Component
         $customer = Customer::query()->forOrganization($this->organization())->whereKey($id)->firstOrFail();
         $this->form['customer_id'] = (string) $customer->id;
         $this->customerSearch = '';
+        $this->offerCustomerLocation($customer);
     }
 
     public function clearCustomer(): void
     {
         $this->form['customer_id'] = '';
+        $this->forgetCustomerLocation();
     }
 
     public function pickTime(string $localDateTime): void
@@ -165,13 +182,18 @@ class Index extends Component
             'form.duration_minutes' => ['required', 'integer', 'min:5', 'max:1440'],
         ] + ($moving ? [] : [
             'form.service_id' => ['nullable', 'integer'],
-            'form.location_id' => ['nullable', 'integer'],
             'form.status' => ['required', 'in:confirmed,pending,tentative'],
             'form.notes' => ['nullable', 'string', 'max:5000'],
-            'form.address' => ['nullable', 'string', 'max:255'],
             'form.new_name' => ['nullable', 'string', 'max:200'],
             'form.new_phone' => ['nullable', 'string', 'max:40'],
         ]), ['form.time.required' => 'Pick a time.'], ['form.date' => 'date', 'form.time' => 'time', 'form.duration_minutes' => 'length']);
+
+        // The business may book without an address; anything typed must be a complete address (D56).
+        $where = $moving ? null : $this->validatedLocation($organization, optional: true,
+            cannotSave: $this->form['customer_id'] === '' && blank($this->form['new_phone']) ? 'Choose the customer, or add a new customer\'s phone, so the location can be saved to their record.' : null);
+        if (! $moving && $where === null) {
+            return;
+        }
 
         $start = CarbonImmutable::parse($this->form['date'].' '.$this->form['time'], $organization->timezoneOrDefault());
         $this->suggestions = [];
@@ -183,19 +205,20 @@ class Index extends Component
             } else {
                 $customerId = $this->form['customer_id'] !== '' ? (int) $this->form['customer_id'] : null;
                 if ($customerId === null && (filled($this->form['new_name']) || filled($this->form['new_phone']))) {
-                    $customerId = $match->handle($organization, ['name' => $this->form['new_name'], 'phone' => $this->form['new_phone']], 'manual', auth()->id())['customer']->id ?? null;
+                    $customerId = $match->handle($organization, ['name' => $this->form['new_name'], 'phone' => $this->form['new_phone'],
+                        'address_parts' => $where['saved'] === null ? ($where['booking']['address_parts'] ?? null) : null], 'manual', auth()->id())['customer']->id ?? null;
                 }
 
                 $appointment = $book->handle($organization, [
                     'starts_at' => $start,
                     'duration_minutes' => (int) $this->form['duration_minutes'],
                     'service_id' => $this->form['service_id'] !== '' ? (int) $this->form['service_id'] : null,
-                    'location_id' => $this->form['location_id'] !== '' ? (int) $this->form['location_id'] : null,
                     'customer_id' => $customerId,
                     'status' => $this->form['status'],
                     'notes' => $this->form['notes'],
-                    'address' => $this->form['address'],
+                    ...$where['booking'],
                 ], auth()->user(), 'portal');
+                $this->rememberLocation($organization, $appointment, $where);
                 $message = 'Booked for '.$appointment->whenLabel().'.';
             }
         } catch (SlotUnavailable $e) {
@@ -205,7 +228,7 @@ class Index extends Component
             return;
         } catch (ValidationException $e) {
             foreach ($e->errors() as $field => $messages) {
-                $this->addError('form.'.($field === 'starts_at' ? 'time' : $field), $messages[0]);
+                $this->addError($this->locationErrorField($field) ?? 'form.'.($field === 'starts_at' ? 'time' : $field), $messages[0]);
             }
 
             return;
@@ -271,6 +294,29 @@ class Index extends Component
         $this->rescheduling = null;
     }
 
+    protected function locationPath(): string
+    {
+        return 'form.location';
+    }
+
+    protected function locationOrganizationId(): int
+    {
+        return $this->organization()->id;
+    }
+
+    protected function locationCustomer(Organization $organization): ?Customer
+    {
+        $id = $this->form['customer_id'] ?? '';
+
+        return $id !== '' ? Customer::query()->forOrganization($organization)->find((int) $id) : null;
+    }
+
+    protected function locationCalendarChanged(): void
+    {
+        $this->form['time'] = '';
+        $this->suggestions = [];
+    }
+
     private function find(string $ulid, bool $fail = true): ?Appointment
     {
         $query = Appointment::query()->forOrganization($this->organization())->where('ulid', $ulid);
@@ -313,7 +359,7 @@ class Index extends Component
             $this->form['date'],
             max(5, (int) ($this->form['duration_minutes'] ?: BookAppointment::DEFAULT_DURATION)),
             (int) ($service->buffer_minutes ?? 0),
-            ($this->form['location_id'] ?? '') !== '' ? (int) $this->form['location_id'] : null,
+            $this->rescheduling ? (($this->form['location_id'] ?? '') !== '' ? (int) $this->form['location_id'] : null) : $this->calendarLocationId($service?->location_id),
             $ignore,
             null,
             $service?->id,
@@ -362,14 +408,14 @@ class Index extends Component
 
         $customerId = $this->form['customer_id'] ?? '';
 
-        return view('livewire.client.appointments.index', [
+        return view('livewire.client.appointments.index', ($this->booking && ! $this->rescheduling ? $this->locationViewData($organization, optional: true) : []) + [
             'appointments' => $appointments,
             'views' => self::VIEWS,
             'unconfirmedCount' => Appointment::query()->forOrganization($organization)
                 ->whereIn('status', [AppointmentStatus::Pending->value, AppointmentStatus::Tentative->value])->where('ends_at', '>=', now())->count(),
             'selectedAppointment' => $selectedAppointment,
             'services' => $this->booking ? $this->bookableServices() : collect(),
-            'locations' => $this->booking ? BusinessLocation::query()->forOrganization($organization)->orderByDesc('is_primary')->orderBy('name')->get(['id', 'name']) : collect(),
+
             'slots' => $this->slots($availability),
             'hasHours' => $organization->id && BusinessHour::query()->forOrganization($organization)->exists(),
             'pickedCustomer' => $customerId !== '' ? Customer::query()->forOrganization($organization)->find((int) $customerId) : null,

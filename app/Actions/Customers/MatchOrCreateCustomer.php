@@ -5,6 +5,7 @@ namespace App\Actions\Customers;
 use App\Enums\CustomerStatus;
 use App\Models\Customer;
 use App\Models\Organization;
+use App\Support\Geo\Address;
 use App\Support\Phone;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Str;
@@ -19,7 +20,7 @@ use Illuminate\Support\Str;
 class MatchOrCreateCustomer
 {
     /**
-     * @param  array{name?: ?string, phone?: ?string, email?: ?string, address?: ?string}  $caller
+     * @param  array{name?: ?string, phone?: ?string, email?: ?string, address?: ?string, address_parts?: ?array<string, mixed>}  $caller
      * @return array{customer: Customer, created: bool}|null null when there is nothing to identify the caller by
      */
     public function handle(Organization $organization, array $caller, string $source = 'call', ?int $actorId = null): ?array
@@ -35,7 +36,7 @@ class MatchOrCreateCustomer
 
         $existing = $this->find($organization, $e164, $email);
         if ($existing) {
-            $this->enrich($existing, $phone, $email, $name, $caller['address'] ?? null);
+            $this->enrich($existing, $phone, $email, $name, $caller);
 
             return ['customer' => $existing, 'created' => false];
         }
@@ -54,7 +55,7 @@ class MatchOrCreateCustomer
                 'last_name' => $last,
                 'phone' => $phone !== '' ? $phone : null,
                 'email' => $email !== '' ? $email : null,
-                'address_line1' => filled($caller['address'] ?? null) ? Str::limit(trim((string) $caller['address']), 250, '') : null,
+                ...self::addressFields($caller),
                 'status' => CustomerStatus::Lead,
                 'source' => in_array($source, Customer::SOURCES, true) ? $source : 'manual',
                 'created_by_user_id' => $actorId,
@@ -98,11 +99,11 @@ class MatchOrCreateCustomer
     /**
      * The agent confirmed this is the same person: add what we didn't know, never overwrite.
      *
-     * @param  array{name?: ?string, phone?: ?string, email?: ?string, address?: ?string}  $caller
+     * @param  array{name?: ?string, phone?: ?string, email?: ?string, address?: ?string, address_parts?: ?array<string, mixed>}  $caller
      */
     public function confirm(Customer $customer, array $caller): Customer
     {
-        $this->enrich($customer, trim((string) ($caller['phone'] ?? '')), Str::lower(trim((string) ($caller['email'] ?? ''))), trim((string) ($caller['name'] ?? '')), $caller['address'] ?? null);
+        $this->enrich($customer, trim((string) ($caller['phone'] ?? '')), Str::lower(trim((string) ($caller['email'] ?? ''))), trim((string) ($caller['name'] ?? '')), $caller);
 
         return $customer;
     }
@@ -111,7 +112,7 @@ class MatchOrCreateCustomer
      * The agent said this is a different person, e.g. a spouse calling from the same number.
      * A number belongs to one customer, so a number already on file is left off the new record.
      *
-     * @param  array{name?: ?string, phone?: ?string, email?: ?string, address?: ?string}  $caller
+     * @param  array{name?: ?string, phone?: ?string, email?: ?string, address?: ?string, address_parts?: ?array<string, mixed>}  $caller
      */
     public function createDistinct(Organization $organization, array $caller, string $source = 'call', ?int $actorId = null): Customer
     {
@@ -127,7 +128,7 @@ class MatchOrCreateCustomer
             'last_name' => $last,
             'phone' => $phone !== '' && ! $phoneTaken ? $phone : null,
             'email' => $email !== '' ? $email : null,
-            'address_line1' => filled($caller['address'] ?? null) ? Str::limit(trim((string) $caller['address']), 250, '') : null,
+            ...self::addressFields($caller),
             'status' => CustomerStatus::Lead,
             'source' => in_array($source, Customer::SOURCES, true) ? $source : 'manual',
             'created_by_user_id' => $actorId,
@@ -158,7 +159,10 @@ class MatchOrCreateCustomer
         return null;
     }
 
-    private function enrich(Customer $customer, string $phone, string $email, string $name, ?string $address): void
+    /**
+     * @param  array{address?: ?string, address_parts?: ?array<string, mixed>}  $caller
+     */
+    private function enrich(Customer $customer, string $phone, string $email, string $name, array $caller): void
     {
         [$first, $last] = $this->splitName($name);
 
@@ -168,12 +172,32 @@ class MatchOrCreateCustomer
             'phone' => ! $customer->phone && $phone !== '' && ! Customer::query()->forOrganization($customer->organization_id)
                 ->where('phone_e164', Phone::normalize($phone))->exists() ? $phone : null,
             'email' => ! $customer->email && $email !== '' ? $email : null,
-            'address_line1' => ! $customer->address_line1 && filled($address) ? Str::limit(trim((string) $address), 250, '') : null,
         ], fn ($value) => $value !== null));
+        if (! $customer->address_line1) {
+            $customer->fill(array_filter(self::addressFields($caller), fn ($value) => $value !== null));
+        }
 
         if ($customer->isDirty()) {
             $customer->save();
         }
+    }
+
+    /**
+     * The caller's address for the customer record: separate fields when the agent entered them that way (D56),
+     * otherwise the one line as given.
+     *
+     * @param  array{address?: ?string, address_parts?: ?array<string, mixed>}  $caller
+     * @return array<string, ?string>
+     */
+    private static function addressFields(array $caller): array
+    {
+        if (is_array($caller['address_parts'] ?? null)) {
+            $p = Address::normalize($caller['address_parts']);
+
+            return ['address_line1' => $p['line1'], 'address_line2' => $p['line2'], 'city' => $p['city'], 'state' => $p['state'], 'postal_code' => $p['postal_code']];
+        }
+
+        return ['address_line1' => filled($caller['address'] ?? null) ? Str::limit(trim((string) $caller['address']), 250, '') : null];
     }
 
     /**

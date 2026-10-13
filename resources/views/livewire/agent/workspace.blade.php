@@ -52,11 +52,6 @@
                         <input id="c-email" type="email" wire:model.live.debounce.600ms="entry.email" class="sh-input" autocomplete="off">
                         @error('entry.email') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror
                     </div>
-                    <div>
-                        <label for="c-address" class="sh-label">Address</label>
-                        <input id="c-address" type="text" wire:model="entry.address" class="sh-input" placeholder="Street, city, ZIP" autocomplete="off">
-                        @error('entry.address') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror
-                    </div>
                 </div>
 
                 {{-- Customer match: the agent confirms before anything is merged --}}
@@ -146,6 +141,7 @@
                             <input id="c-date" type="date" wire:model.live="entry.date" min="{{ $localNow->toDateString() }}" class="sh-input">
                             @error('entry.date') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror
                         </div>
+                        @include('partials.visit-location')
                         <div class="sm:col-span-2">
                             <span class="sh-label">Free times ({{ $timezone }})</span>
                             @if ($slots !== [])
@@ -160,6 +156,11 @@
                             @else
                                 <p class="text-sm text-muted">No free times that day within the business's hours and rules. Try another day or offer a call-back.</p>
                             @endif
+                            {{-- Any minute the caller asks for (e.g. 8:06 AM); hours, rules and clashes are still checked on save. --}}
+                            <div class="mt-3 flex flex-wrap items-center gap-2">
+                                <label for="c-time" class="text-sm text-subtle">{{ $slots !== [] ? 'Or set an exact time' : 'Exact time' }}</label>
+                                <input id="c-time" type="time" step="60" wire:model.live.debounce.500ms="entry.time" class="sh-input w-36">
+                            </div>
                             @error('entry.time') <p class="mt-2 text-sm text-danger" role="alert">{{ $message }}</p> @enderror
                             @if ($suggestions !== [])
                                 <div class="mt-2 flex flex-wrap gap-2">

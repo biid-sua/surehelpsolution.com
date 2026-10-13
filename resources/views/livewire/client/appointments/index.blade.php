@@ -72,7 +72,7 @@
                                 <span class="min-w-0 flex-1">
                                     <span class="block truncate text-sm font-medium text-ink">{{ $appointment->title }}</span>
                                     <span class="block truncate text-xs text-muted">
-                                        {{ $appointment->customer?->displayPhone() ?? '' }}{{ $appointment->location ? ' · '.$appointment->location->name : '' }}{{ $appointment->address ? ' · '.$appointment->address : '' }}
+                                        {{ $appointment->customer?->displayPhone() ?? '' }}{{ ($where = $appointment->whereLabel()) ? ' · '.$where : '' }}
                                     </span>
                                 </span>
                                 <x-ui.badge :tone="$appointment->status->tone()">{{ $appointment->status->label() }}</x-ui.badge>
@@ -111,8 +111,8 @@
                     @if ($a->service)
                         <div><dt class="text-xs font-medium uppercase tracking-wide text-subtle">Service</dt><dd class="mt-1 text-ink">{{ $a->service->name }}</dd></div>
                     @endif
-                    @if ($a->location || $a->address)
-                        <div><dt class="text-xs font-medium uppercase tracking-wide text-subtle">Where</dt><dd class="mt-1 text-ink">{{ collect([$a->location?->name, $a->address])->filter()->join(' · ') }}</dd></div>
+                    @if ($where = $a->whereLabel())
+                        <div><dt class="text-xs font-medium uppercase tracking-wide text-subtle">Where</dt><dd class="mt-1 text-ink">{{ $where }}</dd></div>
                     @endif
                     @if ($a->notes)
                         <div><dt class="text-xs font-medium uppercase tracking-wide text-subtle">Notes</dt><dd class="mt-1 whitespace-pre-line text-ink">{{ $a->notes }}</dd></div>
@@ -205,15 +205,13 @@
                             </select>
                             @error('form.service_id') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror
                         </div>
-                        @if ($locations->count() > 1)
-                            <div>
-                                <label for="b-location" class="sh-label">Location</label>
-                                <select id="b-location" wire:model.live="form.location_id" class="sh-input">
-                                    <option value="">Any / on site</option>
-                                    @foreach ($locations as $location)<option value="{{ $location->id }}">{{ $location->name }}</option>@endforeach
-                                </select>
-                            </div>
-                        @endif
+                        <div>
+                            <label for="b-status" class="sh-label">Status</label>
+                            <select id="b-status" wire:model="form.status" class="sh-input">
+                                @foreach ($statuses as $status)<option value="{{ $status->value }}">{{ $status->label() }}</option>@endforeach
+                            </select>
+                        </div>
+                        @if ($booking) @include('partials.visit-location') @endif
                     @endunless
 
                     <div>
@@ -243,8 +241,8 @@
                             <p class="text-sm text-muted">{{ $hasHours ? 'No free times that day.' : 'Add opening hours to see free times.' }} Enter a time below.</p>
                         @endif
                         <div class="mt-2 flex items-center gap-2">
-                            <label for="b-time" class="text-sm text-subtle">{{ $slots !== [] ? 'Or another time' : 'Time' }}</label>
-                            <input id="b-time" type="time" wire:model="form.time" class="sh-input w-36">
+                            <label for="b-time" class="text-sm text-subtle">{{ $slots !== [] ? 'Or set an exact time' : 'Exact time' }}</label>
+                            <input id="b-time" type="time" step="60" wire:model.live.debounce.500ms="form.time" class="sh-input w-36">
                         </div>
                         @error('form.time') <p class="mt-2 text-sm text-danger" role="alert">{{ $message }}</p> @enderror
                         @if ($suggestions !== [])
@@ -257,16 +255,6 @@
                     </div>
 
                     @unless ($rescheduling)
-                        <div>
-                            <label for="b-status" class="sh-label">Status</label>
-                            <select id="b-status" wire:model="form.status" class="sh-input">
-                                @foreach ($statuses as $status)<option value="{{ $status->value }}">{{ $status->label() }}</option>@endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label for="b-address" class="sh-label">Address (for visits)</label>
-                            <input id="b-address" type="text" wire:model="form.address" class="sh-input" maxlength="255">
-                        </div>
                         <div class="sm:col-span-2">
                             <label for="b-notes" class="sh-label">Notes</label>
                             <textarea id="b-notes" wire:model="form.notes" rows="2" class="sh-input"></textarea>

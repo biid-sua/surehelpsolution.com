@@ -12,6 +12,7 @@ use App\Models\BusinessService;
 use App\Models\CallLog;
 use App\Models\Conversation;
 use App\Models\Customer;
+use App\Models\CustomerLocation;
 use App\Models\DataExport;
 use App\Models\Escalation;
 use App\Models\Invoice;
@@ -47,6 +48,9 @@ class DataExporter
                     fn (Customer $c) => [$c->first_name, $c->last_name, $c->company, $c->displayPhone(), $c->email, $c->singleLineAddress(), $c->status->label(), $c->source,
                         $c->tags->pluck('name')->implode(', '), $c->sms_consent ? 'Yes' : 'No', $time($c->sms_consent_at), $c->email_consent ? 'Yes' : 'No', $time($c->email_consent_at),
                         $c->notes, $time($c->created_at), $time($c->deleted_at)]),
+                'customer_locations.csv' => $this->csv("$dir/customer_locations.csv", CustomerLocation::query()->forOrganization($organization)->with('customer:id,first_name,last_name'),
+                    ['Customer', 'Name', 'Type', 'Address line 1', 'Address line 2', 'City', 'State', 'Postal code', 'Country', 'Last used'],
+                    fn (CustomerLocation $l) => [$l->customer?->fullName(), $l->name, $l->type, $l->address_line1, $l->address_line2, $l->city, $l->state, $l->postal_code, $l->country, $time($l->last_used_at)]),
                 'calls.csv' => $this->csv("$dir/calls.csv", CallLog::query()->forOrganization($organization),
                     ['Call ID', 'Logged at ('.$timezone.')', 'Caller', 'Phone', 'Email', 'Reason', 'Outcome', 'Status', 'Service requested', 'Service date', 'Service window', 'Service location', 'Agent', 'Notes'],
                     fn (CallLog $c) => [$c->call_id, $time($c->created_at), $c->caller_name, $c->caller_phone, $c->caller_email, $c->reason_for_call, $c->call_outcome, $c->statusLabel(),
