@@ -32,7 +32,7 @@ PHP extensions: besides Laravel's defaults, `zip` is required (business data exp
 
   Preview the backfill on a copy first with `php artisan tenancy:backfill --dry-run` (after the table migrations), or run `php artisan audit:call-ownership --details` beforehand.
 - **Mobile users with tokens older than 30 days are signed out once** (token expiry, D8).
-- Root `.htaccess` now blocks direct access to source and secrets. After deploying, confirm `https://surehelpsolution.com/.env` returns **403**.
+- Root `.htaccess` sends every request into `public/` and refuses secrets. After deploying, confirm `https://surehelpsolution.com/.env` returns **403**, `/app/Models/User.php` returns **404**, and `/app` (the client portal) redirects to `/login` when signed out. A 403 on `/app` means an old `.htaccess` is still blocking the portal by folder name.
 - Server-side clean-up (once): rotate `APP_KEY`/DB/mail secrets if `.env` was ever reachable, delete `storage/logs/*.log`, remove `*.zip` and `old …` folders.
 
 ## Release P1-4 (new portals) — specific notes

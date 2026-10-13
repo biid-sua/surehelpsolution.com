@@ -1,23 +1,28 @@
+# Root folders such as app/ share names with routes (/app); never append a slash to them, or Laravel strips it again in a loop.
+DirectorySlash Off
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # SECURITY: the project root is the web root, so block every non-public file.
-    # Secrets, dependency manifests, logs and backup archives:
-    RewriteRule (^|/)(\.env.*|\.git.*|composer\.(json|lock)|package(-lock)?\.json|artisan|error_log|php\.ini|\.user\.ini|phpunit\.xml|vite\.config\.js|fix-encoding\.php|task\.md|.*\.zip|.*\.log)$ - [F,L,NC]
-    # Application source and old copies (only public/ may be served):
-    RewriteRule ^(app|bootstrap|config|database|docs|resources|routes|storage|tests|vendor|old[^/]*|Old[^/]*|SHS[^/]*)(/|$) - [F,L,NC]
-    RewriteRule ^[^/]*\.md$ - [F,L,NC]
+    # Force HTTPS on the canonical host (must run before the rewrite into public/ below).
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP:X-Forwarded-SSL} !on
+    RewriteCond %{HTTP_HOST} ^(www\.)?surehelpsolution\.com$ [NC]
+    RewriteRule ^(.*)$ https://surehelpsolution.com/$1 [R=301,L]
 
-    # Handle Angular and other client-side routing
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
+    # SECURITY: the project root is the web root, so secrets, manifests, logs and archives are refused outright.
+    RewriteRule (^|/)(\.env.*|\.git.*|composer\.(json|lock)|package(-lock)?\.json|artisan|error_log|php\.ini|\.user\.ini|phpunit\.xml|vite\.config\.js|fix-encoding\.php|task\.md|.*\.zip|.*\.log)$ - [F,L,NC]
+
+    # Drop trailing slashes here; after the rewrite below, public/.htaccess would redirect to /public/... instead.
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Serve every request from public/, whether or not a same-named file or folder exists at the root.
+    # Source folders are never reachable, and URLs that share a folder's name still reach Laravel:
+    # the client portal lives at /app and uploads at /storage, so those must not be blocked by name.
+    RewriteCond %{REQUEST_URI} !^/public/
     RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>
-RewriteCond %{HTTPS} off
-RewriteCond %{HTTP:X-Forwarded-SSL} !on
-RewriteCond %{HTTP_HOST} ^surehelpsolution\.com$ [OR]
-RewriteCond %{HTTP_HOST} ^www\.surehelpsolution\.com$
-RewriteRule ^(.*)$ "https\:\/\/surehelpsolution\.com\/$1" [R=301,L]
 
 # BEGIN cPanel-generated php ini directives, do not edit
 # Manual editing of this file may result in unexpected behavior.
