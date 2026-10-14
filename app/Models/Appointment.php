@@ -102,7 +102,11 @@ class Appointment extends Model
 
             if ($relevant && CalendarConnection::withoutGlobalScopes()->where('organization_id', $appointment->organization_id)
                 ->where('status', CalendarConnection::STATUS_ACTIVE)->whereNotNull('write_calendar_id')->exists()) {
-                PushAppointmentToCalendars::dispatch($appointment->id)->afterCommit();
+                // Web requests: straight after the response is sent, so the calendar has it within seconds.
+                // Console and queue work (and tests): through the queue as before.
+                app()->runningInConsole()
+                    ? PushAppointmentToCalendars::dispatch($appointment->id)->afterCommit()
+                    : PushAppointmentToCalendars::dispatchAfterResponse($appointment->id);
             }
         });
     }

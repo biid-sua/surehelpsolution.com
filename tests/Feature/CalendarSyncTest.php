@@ -297,13 +297,17 @@ class CalendarSyncTest extends TestCase
         $this->post('/api/webhooks/calendar/google', [], ['X-Goog-Channel-ID' => 'chan-1', 'X-Goog-Channel-Token' => 'wrong', 'X-Goog-Resource-State' => 'exists'])->assertNoContent();
         Bus::assertNotDispatched(SyncCalendarConnection::class);
         $this->post('/api/webhooks/calendar/google', [], ['X-Goog-Channel-ID' => 'chan-1', 'X-Goog-Channel-Token' => 'g-secret', 'X-Goog-Resource-State' => 'exists'])->assertNoContent();
-        Bus::assertDispatched(SyncCalendarConnection::class, fn ($job) => $job->connectionId === $google->id);
+        Bus::assertDispatchedAfterResponse(SyncCalendarConnection::class, fn ($job) => $job->connectionId === $google->id);
+        // A burst for the same change: one sync now, then a queued follow-up instead of another immediate one.
+        $this->post('/api/webhooks/calendar/google', [], ['X-Goog-Channel-ID' => 'chan-1', 'X-Goog-Channel-Token' => 'g-secret', 'X-Goog-Resource-State' => 'exists'])->assertNoContent();
+        Bus::assertDispatchedAfterResponseTimes(SyncCalendarConnection::class, 1);
+        Bus::assertDispatched(SyncCalendarConnection::class, fn ($job) => $job->connectionId === $google->id && $job->delay !== null);
 
         $this->post('/api/webhooks/calendar/microsoft?validationToken=hello%20graph')->assertOk()->assertSee('hello graph')->assertHeader('Content-Type', 'text/plain; charset=UTF-8');
         $this->postJson('/api/webhooks/calendar/microsoft', ['value' => [['subscriptionId' => 'sub-1', 'clientState' => 'nope']]])->assertStatus(202);
         Bus::assertNotDispatched(SyncCalendarConnection::class, fn ($job) => $job->connectionId === $microsoft->id);
         $this->postJson('/api/webhooks/calendar/microsoft', ['value' => [['subscriptionId' => 'sub-1', 'clientState' => 'm-secret']]])->assertStatus(202);
-        Bus::assertDispatched(SyncCalendarConnection::class, fn ($job) => $job->connectionId === $microsoft->id);
+        Bus::assertDispatchedAfterResponse(SyncCalendarConnection::class, fn ($job) => $job->connectionId === $microsoft->id);
     }
 
     public function test_webhooks_find_the_connection_through_the_channel_index(): void

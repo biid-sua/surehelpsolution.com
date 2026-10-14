@@ -133,6 +133,12 @@ class CalendarConnection extends Model
     /**
      * @return list<PushChannel>
      */
+    /** The provider tells us about changes as they happen (at least one unexpired push channel). */
+    public function hasLiveUpdates(): bool
+    {
+        return collect($this->pushChannels())->contains(fn (PushChannel $c) => $c->expiresAt->isFuture());
+    }
+
     public function pushChannels(): array
     {
         return array_map(fn (array $c) => new PushChannel($c['calendar_id'], $c['id'], $c['resource_id'] ?? null, CarbonImmutable::parse($c['expires_at'])), $this->push_channels ?? []);

@@ -27,6 +27,9 @@
                 @if ($connection)
                     <p class="mt-3 text-sm text-muted">
                         Last synced: {{ $connection->last_synced_at ? $connection->last_synced_at->diffForHumans() : 'not yet' }}
+                        @if ($connection->status === 'active')
+                            · @if ($connection->hasLiveUpdates())<span class="text-emerald-300">Live: changes arrive within seconds</span>@else<span>Checked every 5 minutes</span>@endif
+                        @endif
                         @if ($connection->status === 'needs_reauth')
                             <span class="mt-1 block text-danger">We lost access to this calendar. New bookings aren't being added to it and its busy times may be out of date.</span>
                         @elseif ($connection->last_error)

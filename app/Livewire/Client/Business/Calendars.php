@@ -11,6 +11,7 @@ use App\Services\Calendar\CalendarSync;
 use App\Support\Audit\Audit;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Bus;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -68,7 +69,8 @@ class Calendars extends Component
         $connection->forceFill(['write_calendar_id' => $write ?: null, 'busy_calendar_ids' => $busy])->save();
         $audit->changes('calendar.updated', $connection, ['write_calendar_id', 'busy_calendar_ids']);
 
-        SyncCalendarConnection::dispatch($connection->id);
+        // Right after the page answers, not whenever the queue gets to it.
+        Bus::dispatchAfterResponse(new SyncCalendarConnection($connection->id));
         $sync->ensurePush($connection);
         $this->dispatch('toast', type: 'success', message: 'Saved. Busy times are being refreshed.');
     }

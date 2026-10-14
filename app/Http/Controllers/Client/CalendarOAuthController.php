@@ -12,6 +12,7 @@ use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Str;
 
 /**
@@ -107,7 +108,8 @@ class CalendarOAuthController extends Controller
         $audit->record($existing ? 'calendar.reconnected' : 'calendar.connected', $connection,
             new: ['provider' => $provider, 'account' => $email], organization: $current->get(), label: $adapter->label());
 
-        SyncCalendarConnection::dispatch($connection->id);
+        // Right after the page answers, not whenever the queue gets to it.
+        Bus::dispatchAfterResponse(new SyncCalendarConnection($connection->id));
         $sync->ensurePush($connection);
 
         return $back->with('success', $adapter->label().' connected'.($email ? ' ('.$email.')' : '').'.');

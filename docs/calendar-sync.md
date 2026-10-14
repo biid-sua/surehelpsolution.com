@@ -6,14 +6,18 @@ Businesses connect their own calendar under **Business › Calendar sync**. Sure
 - mirrors busy times from the calendars they choose, so agents and the booking engine never offer a time they're busy;
 - never overwrites an event someone changed directly in their calendar: the booking is flagged for a person to fix instead.
 
+**Live updates need:** `APP_URL` on `https://`, `CALENDAR_PUSH_ENABLED=true` (default), and `/api/webhooks/calendar/google` and `/api/webhooks/calendar/microsoft` reachable from the internet. *Business › Calendar sync* shows "Live: changes arrive within seconds" when the provider is notifying us, or "Checked every 5 minutes" when it isn't.
+
 Only start and end times of other events are stored, never titles, descriptions or attendees. Tokens are encrypted in the database and never sent to the browser.
 
 How it runs:
 
 | What | When |
 |---|---|
-| Push a booking change to the calendar | Right after the booking is saved (queued job) |
-| Refresh busy times | Within seconds via push notifications, and every 10 minutes as a safety net (`calendar:sync`) |
+| Push a booking change to the calendar | Within seconds: straight after the page that saved it answers (from the queue for changes made by scheduled jobs or the API worker) |
+| Copy bookings the calendar doesn't have yet | With every sync, e.g. bookings made before connecting |
+| Refresh busy times | Within seconds via push notifications (sync runs right after the provider's notification is answered; a burst within 5 seconds gets one queued follow-up), and every 5 minutes as a safety net (`calendar:sync`) |
+| Calendar pages in SureHelp | Refresh every 30 seconds while open, and when the tab is looked at again |
 | Renew push notifications | Twice a day (`calendar:sync --renew-push`) |
 | Lost access (revoked, password change) | The connection is flagged, the owner gets a "needs reconnecting" alert once, and agents see "Calendar not synced" on that business |
 

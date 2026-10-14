@@ -174,8 +174,19 @@ document.addEventListener('alpine:init', () => {
                 },
             });
             this.instance.render();
+
+            // Live: refresh every 30 seconds while the page is in view, and as soon as it's looked at again.
+            this.refresher = setInterval(() => {
+                if (document.visibilityState === 'visible') this.instance?.refetchEvents();
+            }, 30000);
+            this.onVisible = () => {
+                if (document.visibilityState === 'visible') this.instance?.refetchEvents();
+            };
+            document.addEventListener('visibilitychange', this.onVisible);
         },
         destroy() {
+            clearInterval(this.refresher);
+            document.removeEventListener('visibilitychange', this.onVisible);
             this.instance?.destroy();
         },
     }));
