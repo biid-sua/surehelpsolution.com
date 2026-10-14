@@ -2,6 +2,7 @@
 
 namespace App\Services\Calendar;
 
+use App\Enums\AppointmentStatus;
 use App\Exceptions\CalendarAuthorizationLost;
 use App\Exceptions\CalendarEventChanged;
 use App\Models\Appointment;
@@ -95,7 +96,7 @@ class CalendarSync
     /**
      * Bring every connected calendar of the appointment's business in line with the appointment.
      */
-    public function pushAppointment(Appointment $appointment): void
+    public function pushAppointment(Appointment $appointment, ?int $onlyConnectionId = null): void
     {
         if (! $this->featureOn($appointment->organization_id)) {
             return;
@@ -105,6 +106,7 @@ class CalendarSync
             ->where('organization_id', $appointment->organization_id)
             ->where('status', CalendarConnection::STATUS_ACTIVE)
             ->whereNotNull('write_calendar_id')
+            ->when($onlyConnectionId, fn ($q) => $q->whereKey($onlyConnectionId))
             ->get();
 
         $refs = $appointment->external_refs ?? [];
@@ -149,6 +151,35 @@ class CalendarSync
         }
 
         $appointment->forceFill(['external_refs' => $refs ?: null])->saveQuietly();
+    }
+
+    /**
+     * Copy upcoming bookings that aren't in this calendar yet: ones made before it was connected, before
+     * a calendar to add bookings to was chosen, or while it was unreachable. Runs with every sync.
+     *
+     * @return int bookings copied
+     */
+    public function pushMissing(CalendarConnection $connection, int $limit = 200): int
+    {
+        if (! $connection->isActive() || $connection->write_calendar_id === null || ! $this->featureOn($connection->organization_id)) {
+            return 0;
+        }
+
+        $key = $connection->refKey();
+        $missing = Appointment::withoutGlobalScopes()->where('organization_id', $connection->organization_id)
+            ->whereIn('status', AppointmentStatus::blockingValues())
+            ->where('ends_at', '>', now())
+            ->where('starts_at', '<', now()->addDays((int) config('calendar.sync_days_ahead', 90)))
+            ->orderBy('starts_at')
+            ->get()
+            ->filter(fn (Appointment $a) => ! isset(($a->external_refs ?? [])[$key]))
+            ->take($limit);
+
+        foreach ($missing as $appointment) {
+            $this->pushAppointment($appointment, $connection->id);
+        }
+
+        return $missing->count();
     }
 
     /**

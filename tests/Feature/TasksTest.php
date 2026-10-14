@@ -115,6 +115,8 @@ class TasksTest extends TestCase
 
     public function test_callback_due_time_follows_business_hours(): void
     {
+        // Set up before the times below, so the agent's assignment has already started (D40).
+        Carbon::setTestNow(Carbon::parse('2026-10-01 09:00', 'America/Chicago'));
         [$owner, $org] = $this->business('America/Chicago');
         $this->weekdayHours($org);
 

@@ -214,6 +214,28 @@ class CalendarSyncTest extends TestCase
         $this->actingAs($owner)->get(route('app.business.calendars'))->assertSee('changed directly in your calendar');
     }
 
+    public function test_bookings_made_before_connecting_are_added_to_the_calendar_on_the_next_sync(): void
+    {
+        [$owner, $org] = $this->business();
+        $this->googleFakes();
+        $before = app(BookAppointment::class)->handle($org, ['starts_at' => CarbonImmutable::parse('2026-10-06 09:00', self::TZ), 'title' => 'Booked before connecting']);
+        $past = app(BookAppointment::class)->handle($org, ['starts_at' => CarbonImmutable::parse('2026-10-06 11:00', self::TZ), 'title' => 'Done already']);
+        app(ChangeAppointmentStatus::class)->handle($past, AppointmentStatus::Cancelled, $owner);
+        $this->assertNull($before->fresh()->external_refs);
+
+        $connection = $this->connection($org);
+        $this->actingAs($owner);
+        Livewire::test(Calendars::class)->call('syncNow', 'google')
+            ->assertDispatched('toast', fn ($name, $params) => str_contains($params['message'], '1 booking added to your calendar'));
+
+        $this->assertSame('evt-1', collect($before->fresh()->external_refs)->first()['event_id']);
+        $this->assertNull($past->fresh()->external_refs, 'cancelled bookings are not copied');
+        $this->assertCount(1, Http::recorded(fn (Request $r) => $r->method() === 'POST' && str_ends_with($r->url(), '/calendars/primary-cal/events')));
+
+        // Already copied: the next sync adds nothing.
+        $this->assertSame(0, app(CalendarSync::class)->pushMissing($connection->fresh()));
+    }
+
     public function test_cancelling_removes_the_event_and_our_own_events_are_not_busy(): void
     {
         [$owner, $org] = $this->business();

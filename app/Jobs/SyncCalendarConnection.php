@@ -35,6 +35,7 @@ class SyncCalendarConnection implements ShouldBeUnique, ShouldQueue
 
         if ($connection && $connection->isActive()) {
             $sync->pullBusy($connection);
+            $sync->pushMissing($connection->refresh());
         }
     }
 }

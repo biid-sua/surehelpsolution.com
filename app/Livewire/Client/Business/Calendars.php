@@ -79,10 +79,12 @@ class Calendars extends Component
         $connection = $this->connection($provider);
 
         $count = $sync->pullBusy($connection);
+        $copied = $sync->pushMissing($connection->refresh());
         $connection->refresh();
 
         $this->dispatch('toast', type: $connection->last_error ? 'error' : 'success',
-            message: $connection->last_error ? 'Sync failed: we\'ll keep retrying automatically.' : "Up to date: {$count} busy ".str('period')->plural($count).' found.');
+            message: $connection->last_error ? 'Sync failed: we\'ll keep retrying automatically.'
+                : "Up to date: {$count} busy ".str('period')->plural($count).' found'.($copied ? ", {$copied} ".str('booking')->plural($copied).' added to your calendar' : '').'.');
     }
 
     public function disconnect(string $provider, CalendarManager $calendars, CalendarSync $sync, Audit $audit): void

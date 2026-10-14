@@ -76,6 +76,8 @@ Until a provider is configured, businesses see "Coming soon" for it. Replace `ht
 - The queue worker must run (it already does through the scheduler on cPanel) so booking changes reach calendars.
 
 ## Troubleshooting
+- **"My event doesn't show as busy."** Only events set to show the person as Busy count, as in Google and Outlook themselves. Google makes all-day events, holidays and birthdays Free by default (change "Show as" to Busy on the event). Google Tasks and appointment-schedule openings aren't calendar events and never count. Outlook events shown as Free or Working elsewhere don't count.
+- **"A booking isn't in my Google or Outlook calendar."** Bookings are copied when they're made or changed, and every sync (every 10 minutes, or *Sync now*) also copies upcoming bookings that aren't there yet, for example ones made before the calendar was connected or before a calendar to add bookings to was chosen. A booking with a "Google" or "Outlook" tag on the Calendar page has a copy there.
 
 | Symptom | Meaning / fix |
 |---|---|

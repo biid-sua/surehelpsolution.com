@@ -39,5 +39,5 @@
         </div>
     </x-ui.card>
 
-    <p class="mt-3 text-xs text-subtle">Busy times show only that you're busy, never what the event is. Tags on a booking show which of your calendars hold a copy.</p>
+    <p class="mt-3 text-xs text-subtle">Busy times show only that you're busy, never what the event is, and only for events your calendar shows as Busy (all-day events and holidays are usually Free). Tags on a booking show which of your calendars hold a copy.</p>
 </div>

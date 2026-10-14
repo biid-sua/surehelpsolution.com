@@ -56,6 +56,8 @@
                                         </label>
                                     @endforeach
                                 </div>
+                                <p class="mt-2 text-xs text-subtle">Only events set to show you as <span class="font-medium text-muted">Busy</span> block bookings, just as in {{ $key === 'google' ? 'Google' : 'Outlook' }} itself.
+                                    {{ $key === 'google' ? 'Google marks all-day events, holidays and birthdays as Free unless you change "Show as" on the event. Tasks and appointment-schedule openings never count.' : 'Events shown as Free or Working elsewhere don\'t count.' }}</p>
                             </fieldset>
                             <div class="flex flex-wrap gap-2">
                                 <x-ui.button type="submit" size="sm">Save</x-ui.button>
