@@ -76,13 +76,13 @@ Until a provider is configured, businesses see "Coming soon" for it. Replace `ht
 - The queue worker must run (it already does through the scheduler on cPanel) so booking changes reach calendars.
 
 ## Troubleshooting
-- **"My event doesn't show as busy."** Only events set to show the person as Busy count, as in Google and Outlook themselves. Google makes all-day events, holidays and birthdays Free by default (change "Show as" to Busy on the event). Google Tasks and appointment-schedule openings aren't calendar events and never count. Outlook events shown as Free or Working elsewhere don't count.
-- **"A booking isn't in my Google or Outlook calendar."** Bookings are copied when they're made or changed, and every sync (every 10 minutes, or *Sync now*) also copies upcoming bookings that aren't there yet, for example ones made before the calendar was connected or before a calendar to add bookings to was chosen. A booking with a "Google" or "Outlook" tag on the Calendar page has a copy there.
 
 | Symptom | Meaning / fix |
 |---|---|
 | "Needs reconnecting" | Access was removed or expired. The owner clicks **Reconnect**. |
 | "Sync problem" | A temporary provider error. It retries every 10 minutes; details are in `last_error` and the log. |
+| An event doesn't show as busy | Only events shown as Busy count, as in Google and Outlook. Google makes all-day events, holidays and birthdays Free by default: change "Show as" to Busy on the event. Google Tasks and appointment-schedule openings aren't events and never count. Outlook events shown as Free or Working elsewhere don't count. |
+| A booking isn't in Google or Outlook | Bookings are copied when made or changed, and every sync (every 10 minutes, or **Sync now**) also copies upcoming bookings that are missing, such as ones made before connecting or before a calendar to add bookings to was chosen. A booking tagged "Google" or "Outlook" on the Calendar page has a copy there. |
 | Booking flagged "changed directly in your calendar" | Someone edited our event in Google/Outlook. Update the booking in SureHelp; we don't overwrite their change. |
 | `redirect_uri_mismatch` (Google) / `AADSTS50011` (Microsoft) | The redirect URI registered doesn't exactly match `APP_URL` + the path above (check https, www, trailing slash). |
 
