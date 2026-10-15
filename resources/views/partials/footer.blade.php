@@ -5,7 +5,7 @@
             <div class="footer-brand">
                 <a class="footer-logo" href="{{ route('home') }}">
                     <div class="logo-icon">
-                        <img src="{{ asset('assets/img/logo.png') }}" alt="SHS Logo" style="width: 100%; height: 100%; object-fit: contain;">
+                        <img src="{{ asset('assets/img/logo.png') }}" alt="SureHelp Solutions" width="505" height="128" style="width: 100%; height: 100%; object-fit: contain;">
                     </div>
                     <!-- <div class="logo-text">
                         <span class="brand-name">Sure Help Solutions</span>

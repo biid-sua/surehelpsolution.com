@@ -28,6 +28,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PasswordChangeController;
+use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\SupportAttachmentController;
 use App\Livewire\Account\Notifications as AccountNotifications;
 use App\Livewire\Account\Profile as AccountProfile;
@@ -116,6 +117,9 @@ use Illuminate\Support\Facades\Route;
 
 // Landing page
 Route::get('/', [HomeController::class, 'index'])->name('home');
+// Search engines (D58): the sitemap and robots.txt are built from the routes.
+Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])->name('seo.sitemap');
+Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('seo.robots');
 Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:6,10')->name('contact.store');
 // Pages behind the site menus: products, solutions, resources, company (config/pages.php).
 Route::get('/{page}', [PageController::class, 'show'])->whereIn('page', array_keys(config('pages')))->name('pages.show');

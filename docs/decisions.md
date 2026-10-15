@@ -714,3 +714,31 @@ Start these early. The code can be built and tested with your own accounts befor
 - **Privacy:** closing an account deletes SEO tasks, website check history, Search Console numbers and the Search Console connection.
 
 **Why:** the request was that clients can take SEO from us, that the SEO work is done with AI tokens, and that the section shows statistics to see the difference. Real Search Console numbers with a "went live" marker make the effect visible, instead of claiming one. Review before publishing keeps a person responsible for what goes on the business's site.
+
+## D58 — Search engine optimisation for surehelpsolution.com (2026-10-27)
+**Decision:** the public website is built to rank. Only the public pages are indexed, and every claim made to search engines is one the page itself makes.
+- **One place for search content:** `config/site.php` holds:
+  - the business facts used in structured data;
+  - a search title (at most about 60 characters) and description (120–160 characters) for every page, written around what people search for, such as "answering service for small business", "medical answering service" and "answering service for plumbers";
+  - the FAQs.
+- **Every public page** (`partials/site-head`):
+  - a canonical URL without the query string, so `?utm=` copies don't compete;
+  - robots `max-image-preview:large`;
+  - Open Graph and X cards with a 1200 × 630 share image (`assets/img/share.png`);
+  - a theme colour.
+- **Structured data** (`App\Support\SiteSchema`, JSON-LD):
+  - `Organization` and `WebSite` on the home page;
+  - `BreadcrumbList` on inner pages;
+  - `Service` on product and industry pages;
+  - `FAQPage` on `/faq` and on the main service pages.
+  - The FAQs are rendered from the same config as the page, so the two can't drift apart.
+  - No ratings or reviews are marked up, because the site has none it can show.
+- **Crawling:**
+  - `/sitemap.xml` is generated from the routes (new menu pages appear automatically).
+  - `/robots.txt` is generated and blocks the portals, the API, self-service links and media. The static `public/robots.txt` is removed so it can't shadow the generated one.
+  - Every non-public response carries `X-Robots-Tag: noindex, nofollow` (`SearchIndexing` middleware), so a shared portal or appointment link never appears in Google.
+- **Page structure:** section headings on the service, FAQ and legal pages are now H2s, with questions as H3s (one H1 per page).
+- **Speed:** the hero image is served as WebP (42 KB instead of 931 KB) with dimensions and alt text. Menu images load lazily, and connections to the CDNs open early.
+- **Accuracy fixes found on the way:** the FAQ said Apple Calendar and SMS/phone message delivery. The product syncs with Google and Microsoft calendars and delivers to the portal, the app and email, so those answers now say that. The commented-out "trusted by" logos of companies we don't serve were taken out of the HTML.
+
+**Why:** the site had no sitemap, canonical tags, structured data or share cards; its titles were generic ("Small Business - SureHelp Solution"); and the portals were open to crawlers. Ranking also depends on things outside the code (Search Console, Google Business Profile, links, reviews, regular content), which are listed in [website-seo.md](website-seo.md).

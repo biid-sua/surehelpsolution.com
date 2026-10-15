@@ -1,7 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Data Security Statement - SureHelp Solution')
-@section('description', 'Our commitment to protecting your data with enterprise-grade security')
+@section('title', config('site.meta.data-security.title'))
+
+@push('schema')
+{!! \App\Support\SiteSchema::script([\App\Support\SiteSchema::breadcrumbs([['Data Security Statement', route('legal.data-security')]])]) !!}
+@endpush
+@section('description', 'How SureHelp Solutions protects your business and customer data: encryption, access controls, audit logs, backups and secure development.')
 
 @section('styles')
 <link href="{{ asset('assets/css/legal-pages.css') }}" rel="stylesheet">
@@ -46,10 +50,10 @@
 
         <!-- Legal Content -->
         <div class="legal-card" id="introduction" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-shield-alt"></i>
                 Introduction
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>SureHelp Solution ("SHS") is committed to protecting the security and privacy of your data. This Data Security Statement outlines our comprehensive security measures, practices, and commitments to ensure your information remains secure.</p>
                 
@@ -61,10 +65,10 @@
         </div>
 
         <div class="legal-card" id="security-framework" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-cogs"></i>
                 Security Framework
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="highlight-box">
                     <h4>Our Security Framework Includes:</h4>
@@ -80,10 +84,10 @@
         </div>
 
         <div class="legal-card" id="data-encryption" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-lock"></i>
                 Data Encryption
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="highlight-box">
                     <h4>Encryption Standards:</h4>
@@ -99,10 +103,10 @@
         </div>
 
         <div class="legal-card" id="access-controls" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-user-shield"></i>
                 Access Controls
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="highlight-box">
                     <h4>Access Control Measures:</h4>
@@ -118,10 +122,10 @@
         </div>
 
         <div class="legal-card" id="infrastructure" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-server"></i>
                 Infrastructure Security
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="highlight-box">
                     <h4>Infrastructure Security Measures:</h4>
@@ -137,10 +141,10 @@
         </div>
 
         <div class="legal-card" id="monitoring" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-eye"></i>
                 Monitoring & Incident Response
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="highlight-box">
                     <h4>Monitoring & Response:</h4>
@@ -156,10 +160,10 @@
         </div>
 
         <div class="legal-card" id="compliance" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-certificate"></i>
                 Compliance & Certifications
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="highlight-box">
                     <h4>Compliance Standards:</h4>
@@ -175,10 +179,10 @@
         </div>
 
         <div class="legal-card" id="contact" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-envelope"></i>
                 Contact Us
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>For security-related questions or to report a security incident, please contact us:</p>
                 

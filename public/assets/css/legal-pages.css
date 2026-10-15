@@ -771,7 +771,8 @@ html {
   opacity: 1;
 }
 
-.faq-item h5 {
+.faq-item h5,
+.faq-item h3 {
   color: var(--primary-color);
   font-weight: 600;
   margin-bottom: 1.25rem;
@@ -779,7 +780,8 @@ html {
   transition: all 0.3s ease;
 }
 
-.faq-item:hover h5 {
+.faq-item:hover h5,
+.faq-item:hover h3 {
   color: var(--secondary-color);
   transform: translateX(5px);
 }

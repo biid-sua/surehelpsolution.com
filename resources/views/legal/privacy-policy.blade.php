@@ -1,7 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Privacy Policy - SureHelp Solution')
-@section('description', 'How we collect, use, and protect your personal information')
+@section('title', config('site.meta.privacy-policy.title'))
+
+@push('schema')
+{!! \App\Support\SiteSchema::script([\App\Support\SiteSchema::breadcrumbs([['Privacy Policy', route('legal.privacy-policy')]])]) !!}
+@endpush
+@section('description', 'How SureHelp Solutions collects, uses, shares and protects personal information, and the choices and rights you have over your data.')
 
 @section('styles')
 <link href="{{ asset('assets/css/legal-pages.css') }}" rel="stylesheet">
@@ -51,10 +55,10 @@
 
         <!-- Legal Content -->
         <div class="legal-card" id="introduction" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-file-contract"></i>
                 Introduction
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>SureHelp Solutions ("SHS," "we," "our," or "us") is committed to protecting and respecting your privacy. We will only use your personal information to administer your account and to provide the products and services you requested from us. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our services.</p>
                 
@@ -68,10 +72,10 @@
         </div>
 
         <div class="legal-card" id="information-collection" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-database"></i>
                 Information We Collect
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="highlight-box">
                     <h4>Types of Information We Collect:</h4>
@@ -87,10 +91,10 @@
         </div>
 
         <div class="legal-card" id="information-use" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-cogs"></i>
                 How We Use Information
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="highlight-box">
                     <h4>We Use Your Information To:</h4>
@@ -107,10 +111,10 @@
         </div>
 
         <div class="legal-card" id="sms-communications" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-comment-dots"></i>
                 Text Message Communications
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>If you opt in on our website or through another channel, SureHelp Solutions may send you text messages about inquiries, appointment confirmations, and appointment scheduling related to our call answering and business support services.</p>
 
@@ -128,10 +132,10 @@
         </div>
 
         <div class="legal-card" id="information-sharing" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-share-alt"></i>
                 Information Sharing
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="highlight-box">
                     <h4>We May Share Information With:</h4>
@@ -147,10 +151,10 @@
         </div>
 
         <div class="legal-card" id="data-security" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-shield-alt"></i>
                 Data Security
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="highlight-box">
                     <h4>Security Measures:</h4>
@@ -166,20 +170,20 @@
         </div>
 
         <div class="legal-card" id="data-retention" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-clock"></i>
                 Data Retention
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>We retain your personal information only as long as necessary to provide our services, comply with legal obligations, resolve disputes, and enforce our agreements. Call recordings and transcripts are typically retained for 90 days unless a longer retention period is required.</p>
             </div>
         </div>
 
         <div class="legal-card" id="your-rights" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-user-check"></i>
                 Your Rights
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="highlight-box">
                     <h4>You Have the Right To:</h4>
@@ -196,50 +200,50 @@
         </div>
 
         <div class="legal-card" id="cookies" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-cookie-bite"></i>
                 Cookies and Tracking
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>We use cookies and similar technologies to enhance your experience, analyze usage, and provide personalized content. You can control cookie preferences through your browser settings. For more details, please see our <a href="{{ route('legal.cookie-notice') }}" style="color: var(--accent-color);">Cookie Notice</a>.</p>
             </div>
         </div>
 
         <div class="legal-card" id="third-party" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-external-link-alt"></i>
                 Third-Party Services
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>Our services may integrate with third-party platforms and services. These third parties have their own privacy policies, and we encourage you to review them. We are not responsible for the privacy practices of third-party services.</p>
             </div>
         </div>
 
         <div class="legal-card" id="children-privacy" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-child"></i>
                 Children's Privacy
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>Our services are not directed to children under 13 years of age. We do not knowingly collect personal information from children under 13. If we become aware that we have collected personal information from a child under 13, we will take steps to delete such information.</p>
             </div>
         </div>
 
         <div class="legal-card" id="changes" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-sync-alt"></i>
                 Changes to This Policy
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last Updated" date. We encourage you to review this Privacy Policy periodically.</p>
             </div>
         </div>
 
         <div class="legal-card" id="contact" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-envelope"></i>
                 Contact Us
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>If you have any questions about this Privacy Policy or our data practices, please contact us:</p>
                 

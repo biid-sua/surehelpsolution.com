@@ -1,7 +1,15 @@
 @extends('layouts.app')
 
-@section('title', 'SureHelp Solutions - Professional Call Management Platform')
-@section('description', 'Never miss a customer call again with SureHelp Solutions. Professional call answering service platform for growing businesses.')
+@section('title', config('site.meta.home.title'))
+@section('description', config('site.meta.home.description'))
+
+@push('schema')
+{!! \App\Support\SiteSchema::script([
+    \App\Support\SiteSchema::organization(),
+    \App\Support\SiteSchema::website(),
+    \App\Support\SiteSchema::service('24/7 live call answering service', config('site.meta.home.description'), url('/')),
+]) !!}
+@endpush
 
 @section('styles')
   <style>
@@ -1535,20 +1543,7 @@
               <p class="client-text">Our clients report an average of 30% more booked appointments in the first 30 days</p>
             </div>
             
-            <!-- <div class="client-section">
-                <p class="client-text">Trusted by 500+ growing businesses</p>
-                <div class="client-logos">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg" alt="Microsoft"
-                        style="height: 23px;">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg" alt="IBM" style="height: 25px;">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" alt="Google"
-                        style="height: 30px;">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" alt="Netflix"
-                        style="height: 35px;">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" alt="Apple"
-                        style="height: 35px;">
-                </div>
-            </div> -->
+            {{-- Client logos removed until we have permission to show real customers. --}}
         </div>
 
         <div class="right-content" style="margin-top: -135px;">
@@ -1563,7 +1558,7 @@
 
                             <div class="call-visualization">
                                 <div class="call-ring">
-                                    <img src="assets/img/agent.png" style="width: 100%;">
+                                    <picture><source srcset="{{ asset('assets/img/agent.webp') }}" type="image/webp"><img src="{{ asset('assets/img/agent.png') }}" alt="SureHelp live receptionist answering a customer call" width="836" height="940" loading="lazy" decoding="async" style="width: 100%; height: auto;"></picture>
                                 </div>
                                 <!-- <div class="call-ring">
                                     <i class="fas fa-phone call-icon"></i>
@@ -1591,7 +1586,7 @@
                         <div>Secure & Reliable</div>
                     </div>
                 </div>
-                <img src="assets/img/agent.png" style="width: 100%;">
+                <picture><source srcset="{{ asset('assets/img/agent.webp') }}" type="image/webp"><img src="{{ asset('assets/img/agent.png') }}" alt="SureHelp live receptionist answering a customer call" width="836" height="940" fetchpriority="high" decoding="async" style="width: 100%; height: auto;"></picture>
             </div>
         </div>
     </div>

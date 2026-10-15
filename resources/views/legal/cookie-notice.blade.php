@@ -1,7 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Cookie Notice - SureHelp Solution')
-@section('description', 'How we use cookies to enhance your browsing experience')
+@section('title', config('site.meta.cookie-notice.title'))
+
+@push('schema')
+{!! \App\Support\SiteSchema::script([\App\Support\SiteSchema::breadcrumbs([['Cookie Notice', route('legal.cookie-notice')]])]) !!}
+@endpush
+@section('description', 'Which cookies the SureHelp Solutions website and client portal use, why we use them, and how you can control them in your browser.')
 
 @section('styles')
 <link href="{{ asset('assets/css/legal-pages.css') }}" rel="stylesheet">
@@ -46,10 +50,10 @@
 
         <!-- Legal Content -->
         <div class="legal-card" id="introduction" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-cookie-bite"></i>
                 Introduction
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>SureHelp Solution ("SHS," "we," "our," or "us") uses cookies and similar technologies on our website www.surehelpsolution.com (the "Site") to provide you with a secure, reliable, and personalized experience. This Cookie Notice explains what cookies are, the types we use, and how you can manage your preferences.</p>
                 
@@ -61,10 +65,10 @@
         </div>
 
         <div class="legal-card" id="what-are-cookies" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-question-circle"></i>
                 What Are Cookies?
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>Cookies are small text files stored on your device when you visit a website. They help websites recognize your device, remember your preferences, and improve your browsing experience.</p>
                 
@@ -82,10 +86,10 @@
         </div>
 
         <div class="legal-card" id="types-of-cookies" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-th-large"></i>
                 Types of Cookies We Use
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="cookie-type">
                     <h5><i class="fas fa-shield-alt"></i>Strictly Necessary Cookies</h5>
@@ -110,10 +114,10 @@
         </div>
 
         <div class="legal-card" id="how-we-use" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-cogs"></i>
                 How We Use Cookies
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>SHS uses cookies to:</p>
                 
@@ -133,10 +137,10 @@
         </div>
 
         <div class="legal-card" id="third-party" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-external-link-alt"></i>
                 Third-Party Cookies
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>We may allow trusted third-party service providers (e.g., analytics, advertising, CRM integrations) to place cookies on your device for performance measurement and personalization. These providers have their own privacy and cookie notices.</p>
                 
@@ -156,10 +160,10 @@
         </div>
 
         <div class="legal-card" id="managing-cookies" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-sliders-h"></i>
                 Managing Cookies
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>You can control or disable cookies through your browser settings. Please note that disabling certain cookies may limit your ability to use some features of our Site.</p>
                 
@@ -214,10 +218,10 @@
         </div>
 
         <div class="legal-card" id="updates" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-sync-alt"></i>
                 Updates to This Notice
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>We may update this Cookie Notice from time to time to reflect changes in technology, law, or our business practices. Any updates will be posted on this page with a new "Last Updated" date.</p>
                 
@@ -234,10 +238,10 @@
         </div>
 
         <div class="legal-card" id="contact" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-envelope"></i>
                 Contact Us
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>If you have any questions about this Cookie Notice or how SHS uses cookies, please contact us:</p>
                 

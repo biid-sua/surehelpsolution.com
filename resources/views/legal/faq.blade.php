@@ -1,7 +1,14 @@
 @extends('layouts.app')
 
-@section('title', 'Frequently Asked Questions - SureHelp Solution')
-@section('description', 'Common questions about our call management services')
+@section('title', config('site.meta.faq.title'))
+@section('description', config('site.meta.faq.description'))
+
+@push('schema')
+{!! \App\Support\SiteSchema::script([
+    \App\Support\SiteSchema::breadcrumbs([['Frequently Asked Questions', route('legal.faq')]]),
+    \App\Support\SiteSchema::faq(collect(config('site.faq_page'))->flatMap(fn ($group) => $group[2])->all()),
+]) !!}
+@endpush
 
 @section('styles')
 <link href="{{ asset('assets/css/legal-pages.css') }}" rel="stylesheet">
@@ -17,7 +24,7 @@
             <p class="page-subtitle">Common questions about our call management services</p>
             <div class="last-updated">
                 <i class="fas fa-calendar-alt"></i>
-                Last Updated: August 2025
+                Last Updated: October 2026
             </div>
         </div>
     </div>
@@ -26,145 +33,29 @@
 <!-- Content Section -->
 <section class="content-section">
     <div class="container">
-        <!-- FAQ Content -->
-        <div class="legal-card" data-aos="fade-up">
-            <h3 class="section-title">
-                <i class="fas fa-question-circle"></i>
-                General Questions
-            </h3>
-            <div class="section-content">
-                <div class="faq-item">
-                    <h5>What services does SureHelp Solution provide?</h5>
-                    <p>SureHelp Solution provides professional call answering services, appointment booking, customer management, and CRM integrations for businesses of all sizes. We offer 24/7 support to ensure you never miss important calls.</p>
-                </div>
-
-                <div class="faq-item">
-                    <h5>How quickly can I get started?</h5>
-                    <p>We can have your business up and running with our services within 48 hours of signup. Our onboarding process is streamlined to get you connected quickly.</p>
-                </div>
-
-                <div class="faq-item">
-                    <h5>What industries do you serve?</h5>
-                    <p>We serve a wide range of industries including healthcare, home services, legal services, real estate, small businesses, and more. Our services are tailored to meet industry-specific needs.</p>
+        <!-- FAQ Content (config/site.php, also in the page's structured data) -->
+        @foreach (config('site.faq_page') as [$icon, $heading, $questions])
+            <div class="legal-card" data-aos="fade-up">
+                <h2 class="section-title">
+                    <i class="fas {{ $icon }}"></i>
+                    {{ $heading }}
+                </h2>
+                <div class="section-content">
+                    @foreach ($questions as [$question, $answer])
+                        <div class="faq-item">
+                            <h3>{{ $question }}</h3>
+                            <p>{{ $answer }}</p>
+                        </div>
+                    @endforeach
                 </div>
             </div>
-        </div>
+        @endforeach
 
         <div class="legal-card" data-aos="fade-up">
-            <h3 class="section-title">
-                <i class="fas fa-phone"></i>
-                Call Answering Services
-            </h3>
-            <div class="section-content">
-                <div class="faq-item">
-                    <h5>How does the call answering service work?</h5>
-                    <p>Our professional agents answer your calls 24/7 using your business name. They take detailed messages, handle basic inquiries, and can transfer urgent calls to you when needed.</p>
-                </div>
-
-                <div class="faq-item">
-                    <h5>Can I customize how calls are handled?</h5>
-                    <p>Yes, we provide extensive customization options including call scripts, business hours, escalation procedures, and specific instructions for different types of calls.</p>
-                </div>
-
-                <div class="faq-item">
-                    <h5>How are messages delivered to me?</h5>
-                    <p>Messages can be delivered via email, SMS, phone calls, or through our secure client portal. You can choose your preferred delivery method and timing.</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="legal-card" data-aos="fade-up">
-            <h3 class="section-title">
-                <i class="fas fa-calendar-check"></i>
-                Appointment Booking
-            </h3>
-            <div class="section-content">
-                <div class="faq-item">
-                    <h5>Can you book appointments for my business?</h5>
-                    <p>Yes, our agents can schedule appointments directly into your calendar system. We integrate with popular calendar platforms and can sync with your existing scheduling software.</p>
-                </div>
-
-                <div class="faq-item">
-                    <h5>What calendar systems do you support?</h5>
-                    <p>We support Google Calendar, Outlook, Apple Calendar, and most popular CRM systems. We can also work with custom scheduling solutions.</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="legal-card" data-aos="fade-up">
-            <h3 class="section-title">
-                <i class="fas fa-dollar-sign"></i>
-                Pricing & Billing
-            </h3>
-            <div class="section-content">
-                <div class="faq-item">
-                    <h5>How is pricing structured?</h5>
-                    <p>Our pricing is based on the number of calls handled and services selected. We offer flexible plans starting from basic call answering to comprehensive business solutions.</p>
-                </div>
-
-                <div class="faq-item">
-                    <h5>Are there any setup fees?</h5>
-                    <p>No, there are no setup fees. You only pay for the services you use on a monthly basis.</p>
-                </div>
-
-                <div class="faq-item">
-                    <h5>Can I change my plan at any time?</h5>
-                    <p>Yes, you can upgrade or downgrade your plan at any time. Changes take effect on your next billing cycle.</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="legal-card" data-aos="fade-up">
-            <h3 class="section-title">
-                <i class="fas fa-shield-alt"></i>
-                Security & Privacy
-            </h3>
-            <div class="section-content">
-                <div class="faq-item">
-                    <h5>How do you protect my customer data?</h5>
-                    <p>We implement enterprise-grade security measures including encryption, secure data centers, access controls, and regular security audits to protect your customer information.</p>
-                </div>
-
-                <div class="faq-item">
-                    <h5>Are you HIPAA compliant?</h5>
-                    <p>Yes, we are HIPAA compliant and can sign Business Associate Agreements (BAA) with healthcare providers.</p>
-                </div>
-
-                <div class="faq-item">
-                    <h5>Where is my data stored?</h5>
-                    <p>Your data is stored in secure, SOC 2 compliant data centers with redundant backups and disaster recovery procedures.</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="legal-card" data-aos="fade-up">
-            <h3 class="section-title">
-                <i class="fas fa-headset"></i>
-                Support & Training
-            </h3>
-            <div class="section-content">
-                <div class="faq-item">
-                    <h5>What kind of support do you provide?</h5>
-                    <p>We provide 24/7 customer support via phone, email, and chat. Our dedicated account managers are available to help with any questions or concerns.</p>
-                </div>
-
-                <div class="faq-item">
-                    <h5>Do you provide training for my team?</h5>
-                    <p>Yes, we provide comprehensive training for your team on how to use our services effectively and get the most value from our platform.</p>
-                </div>
-
-                <div class="faq-item">
-                    <h5>How do I access my account and reports?</h5>
-                    <p>You can access your account, view reports, and manage settings through our secure client portal available 24/7.</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="legal-card" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-envelope"></i>
                 Contact Us
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>Still have questions? We're here to help!</p>
                 

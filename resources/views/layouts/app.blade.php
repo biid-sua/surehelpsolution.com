@@ -4,12 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>@yield('title', 'SureHelp Solutions - Professional Call Management Platform')</title>
-  <meta name="description" content="@yield('description', 'Never miss a customer call again with SureHelp Solutions. Professional call answering service platform for growing businesses.')">
+  @include('partials.site-head')
   
   <!-- Favicon -->
   <link rel="icon" href="{{ asset('assets/img/favicon.png') }}">
   
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="apple-touch-icon" href="{{ asset('assets/img/favicon.png') }}">
+
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   

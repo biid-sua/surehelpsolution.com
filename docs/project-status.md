@@ -168,6 +168,7 @@ Everything the 2026-10-23 audit found has been built (A-5 to A-12 above). What's
 | Delete branch `feature/p2-4b-tasks` | A superseded local draft; the cloud version is merged |
 | Pick a domain for hosted websites | e.g. `surehelp.site`, on Cloudflare (D35) |
 | **SEO service setup** | Create the add-on with slug `seo_service` (*Admin › Billing › Add-ons*); set `ANTHROPIC_API_KEY`; enable the Search Console API in Google Cloud, add the redirect URI `{APP_URL}/app/seo/search-console/callback`, and submit the `webmasters.readonly` scope for Google verification ([seo.md](seo.md)) |
+| **Website SEO (D58)** | Verify `surehelpsolution.com` in Google Search Console and Bing, and submit `/sitemap.xml`; redirect http/www to one HTTPS address; set up the Google Business Profile; make the phone and email consistent; confirm or remove the unverified claims ([website-seo.md](website-seo.md)) |
 
 ### C. Blocked on outside accounts or approvals
 | Item | Waiting for | Lead time |

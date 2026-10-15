@@ -3,7 +3,7 @@
     <div class="container">
       <a class="navbar-brand d-flex align-items-center" href="{{ route('home') }}">
         <div class="brand-icon">
-          <img src="{{ asset('assets/img/logo.png') }}" alt="SHS Logo" style="width: 100%; height: 100%; object-fit: contain;">
+          <img src="{{ asset('assets/img/logo.png') }}" alt="SureHelp Solutions" width="505" height="128" style="width: 100%; height: 100%; object-fit: contain;">
         </div>
         <!-- <div class="brand-text">
           <span class="brand-name">SureHelp</span>
@@ -79,17 +79,17 @@
                   </div>
                   <div class="col-lg-4">
                     <div class="dropdown-preview">
-                      <img src="https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=400" 
+                      <img src="https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=400" loading="lazy" decoding="async" 
                            class="img-fluid rounded-4 shadow-lg preview-image active" data-item="default" alt="Products Overview">
-                      <img src="https://images.pexels.com/photos/1181671/pexels-photo-1181671.jpeg?auto=compress&cs=tinysrgb&w=400" 
+                      <img src="https://images.pexels.com/photos/1181671/pexels-photo-1181671.jpeg?auto=compress&cs=tinysrgb&w=400" loading="lazy" decoding="async" 
                            class="img-fluid rounded-4 shadow-lg preview-image" data-item="call-answering" alt="Call Answering Service">
-                      <img src="https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=400" 
+                      <img src="https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=400" loading="lazy" decoding="async" 
                            class="img-fluid rounded-4 shadow-lg preview-image" data-item="appointment-booking" alt="Appointment Booking">
-                      <img src="https://images.pexels.com/photos/1560932/pexels-photo-1560932.jpeg?auto=compress&cs=tinysrgb&w=400" 
+                      <img src="https://images.pexels.com/photos/1560932/pexels-photo-1560932.jpeg?auto=compress&cs=tinysrgb&w=400" loading="lazy" decoding="async" 
                            class="img-fluid rounded-4 shadow-lg preview-image" data-item="customer-management" alt="Customer Management">
-                      <img src="https://images.pexels.com/photos/7681091/pexels-photo-7681091.jpeg?auto=compress&cs=tinysrgb&w=400" 
+                      <img src="https://images.pexels.com/photos/7681091/pexels-photo-7681091.jpeg?auto=compress&cs=tinysrgb&w=400" loading="lazy" decoding="async" 
                            class="img-fluid rounded-4 shadow-lg preview-image" data-item="analytics-dashboard" alt="Analytics Dashboard">
-                      <img src="https://images.pexels.com/photos/546819/pexels-photo-546819.jpeg?auto=compress&cs=tinysrgb&w=400" 
+                      <img src="https://images.pexels.com/photos/546819/pexels-photo-546819.jpeg?auto=compress&cs=tinysrgb&w=400" loading="lazy" decoding="async" 
                            class="img-fluid rounded-4 shadow-lg preview-image" data-item="integration-market" alt="Integration Market">
                     </div>
                   </div>
@@ -209,17 +209,17 @@
                   </div>
                   <div class="col-lg-4" style="display: none;">
                     <div class="dropdown-preview">
-                      <img src="https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=400" 
+                      <img src="https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=400" loading="lazy" decoding="async" 
                            class="img-fluid rounded-4 shadow-lg preview-image active" data-item="default" alt="Solutions Overview">
-                      <img src="https://images.pexels.com/photos/3182812/pexels-photo-3182812.jpeg?auto=compress&cs=tinysrgb&w=400" 
+                      <img src="https://images.pexels.com/photos/3182812/pexels-photo-3182812.jpeg?auto=compress&cs=tinysrgb&w=400" loading="lazy" decoding="async" 
                            class="img-fluid rounded-4 shadow-lg preview-image" data-item="small-business" alt="Small Business">
-                      <img src="https://images.pexels.com/photos/1181435/pexels-photo-1181435.jpeg?auto=compress&cs=tinysrgb&w=400" 
+                      <img src="https://images.pexels.com/photos/1181435/pexels-photo-1181435.jpeg?auto=compress&cs=tinysrgb&w=400" loading="lazy" decoding="async" 
                            class="img-fluid rounded-4 shadow-lg preview-image" data-item="growing-business" alt="Growing Business">
-                      <img src="https://images.pexels.com/photos/1181616/pexels-photo-1181616.jpeg?auto=compress&cs=tinysrgb&w=400" 
+                      <img src="https://images.pexels.com/photos/1181616/pexels-photo-1181616.jpeg?auto=compress&cs=tinysrgb&w=400" loading="lazy" decoding="async" 
                            class="img-fluid rounded-4 shadow-lg preview-image" data-item="enterprise" alt="Enterprise">
-                      <img src="https://images.pexels.com/photos/7088530/pexels-photo-7088530.jpeg?auto=compress&cs=tinysrgb&w=400" 
+                      <img src="https://images.pexels.com/photos/7088530/pexels-photo-7088530.jpeg?auto=compress&cs=tinysrgb&w=400" loading="lazy" decoding="async" 
                            class="img-fluid rounded-4 shadow-lg preview-image" data-item="healthcare" alt="Healthcare">
-                      <img src="https://images.pexels.com/photos/8486972/pexels-photo-8486972.jpeg?auto=compress&cs=tinysrgb&w=400" 
+                      <img src="https://images.pexels.com/photos/8486972/pexels-photo-8486972.jpeg?auto=compress&cs=tinysrgb&w=400" loading="lazy" decoding="async" 
                            class="img-fluid rounded-4 shadow-lg preview-image" data-item="home-services" alt="Home Services">
                     </div>
                   </div>
@@ -296,17 +296,17 @@
                   </div>
                   <div class="col-lg-4">
                     <div class="dropdown-preview">
-                      <img src="https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg?auto=compress&cs=tinysrgb&w=400" 
+                      <img src="https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg?auto=compress&cs=tinysrgb&w=400" loading="lazy" decoding="async" 
                            class="img-fluid rounded-4 shadow-lg preview-image active" data-item="default" alt="Resources Overview">
-                      <img src="https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=400" 
+                      <img src="https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=400" loading="lazy" decoding="async" 
                            class="img-fluid rounded-4 shadow-lg preview-image" data-item="success-stories" alt="Success Stories">
-                      <img src="https://images.pexels.com/photos/6963857/pexels-photo-6963857.jpeg?auto=compress&cs=tinysrgb&w=400" 
+                      <img src="https://images.pexels.com/photos/6963857/pexels-photo-6963857.jpeg?auto=compress&cs=tinysrgb&w=400" loading="lazy" decoding="async" 
                            class="img-fluid rounded-4 shadow-lg preview-image" data-item="roi-calculator" alt="ROI Calculator">
-                      <img src="https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=400" 
+                      <img src="https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=400" loading="lazy" decoding="async" 
                            class="img-fluid rounded-4 shadow-lg preview-image" data-item="implementation-guide" alt="Implementation Guide">
-                      <img src="https://images.pexels.com/photos/3182812/pexels-photo-3182812.jpeg?auto=compress&cs=tinysrgb&w=400" 
+                      <img src="https://images.pexels.com/photos/3182812/pexels-photo-3182812.jpeg?auto=compress&cs=tinysrgb&w=400" loading="lazy" decoding="async" 
                            class="img-fluid rounded-4 shadow-lg preview-image" data-item="support-center" alt="Support Center">
-                      <img src="https://images.pexels.com/photos/3183183/pexels-photo-3183183.jpeg?auto=compress&cs=tinysrgb&w=400" 
+                      <img src="https://images.pexels.com/photos/3183183/pexels-photo-3183183.jpeg?auto=compress&cs=tinysrgb&w=400" loading="lazy" decoding="async" 
                            class="img-fluid rounded-4 shadow-lg preview-image" data-item="api-documentation" alt="API Documentation">
                     </div>
                   </div>

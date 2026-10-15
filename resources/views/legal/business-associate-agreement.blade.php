@@ -1,7 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Business Associate Agreement (BAA) - SureHelp Solution')
-@section('description', 'HIPAA compliance for healthcare organizations')
+@section('title', config('site.meta.business-associate-agreement.title'))
+
+@push('schema')
+{!! \App\Support\SiteSchema::script([\App\Support\SiteSchema::breadcrumbs([['Business Associate Agreement', route('legal.business-associate-agreement')]])]) !!}
+@endpush
+@section('description', 'SureHelp Solutions\' Business Associate Agreement for healthcare providers: how we protect patient information when we answer your calls.')
 
 @section('styles')
 <link href="{{ asset('assets/css/legal-pages.css') }}" rel="stylesheet">
@@ -46,10 +50,10 @@
 
         <!-- Legal Content -->
         <div class="legal-card" id="introduction" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-file-contract"></i>
                 Introduction
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>This Business Associate Agreement (the "Agreement") is entered into by and between the Covered Entity ("Covered Entity") and SureHelp Solution, Inc. ("Business Associate" or "SHS"), a Delaware corporation. This Agreement is made pursuant to the Health Insurance Portability and Accountability Act of 1996 ("HIPAA"), the Health Information Technology for Economic and Clinical Health Act ("HITECH Act"), and their implementing regulations.</p>
                 
@@ -61,10 +65,10 @@
         </div>
 
         <div class="legal-card" id="definitions" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-book"></i>
                 Definitions
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>Terms used in this Agreement shall have the same meaning as those terms in HIPAA, the HITECH Act, and regulations promulgated thereunder, including but not limited to:</p>
                 
@@ -83,10 +87,10 @@
         </div>
 
         <div class="legal-card" id="business-associate-obligations" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-shield-alt"></i>
                 Obligations of Business Associate
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="highlight-box">
                     <h4>Business Associate agrees to:</h4>
@@ -106,10 +110,10 @@
         </div>
 
         <div class="legal-card" id="permitted-uses" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-check-circle"></i>
                 Permitted Uses and Disclosures by Business Associate
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>Except as otherwise limited in this Agreement, Business Associate may:</p>
                 
@@ -125,10 +129,10 @@
         </div>
 
         <div class="legal-card" id="covered-entity-obligations" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-user-shield"></i>
                 Obligations of Covered Entity
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>Covered Entity agrees to:</p>
                 
@@ -145,10 +149,10 @@
         </div>
 
         <div class="legal-card" id="term-termination" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-clock"></i>
                 Term and Termination
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="highlight-box">
                     <h4>Agreement Terms:</h4>
@@ -162,10 +166,10 @@
         </div>
 
         <div class="legal-card" id="miscellaneous" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-cogs"></i>
                 Miscellaneous
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="highlight-box">
                     <h4>Additional Provisions:</h4>
@@ -180,10 +184,10 @@
         </div>
 
         <div class="legal-card" id="signatures" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-signature"></i>
                 Signatures
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>IN WITNESS WHEREOF, the parties have executed this Business Associate Agreement as of the Effective Date.</p>
                 

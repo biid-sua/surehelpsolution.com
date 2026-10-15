@@ -10,6 +10,7 @@ use App\Http\Middleware\RedirectGuestsToHome;
 use App\Http\Middleware\RequireFeature;
 use App\Http\Middleware\ResolveOrganization;
 use App\Http\Middleware\RoleMiddleware;
+use App\Http\Middleware\SearchIndexing;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SubfolderLivewire;
 use Illuminate\Foundation\Application;
@@ -38,6 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->append(SecurityHeaders::class);
+        $middleware->append(SearchIndexing::class);   // only the public website is indexed (D58)
         $middleware->append(SubfolderLivewire::class); // local sub-folder installs only
 
         // Guests are sent to the sign-in page; the API never redirects, it answers 401.

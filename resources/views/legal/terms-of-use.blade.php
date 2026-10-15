@@ -1,7 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Terms of Use - SureHelp Solution')
-@section('description', 'Terms and conditions for using our call management services')
+@section('title', config('site.meta.terms-of-use.title'))
+
+@push('schema')
+{!! \App\Support\SiteSchema::script([\App\Support\SiteSchema::breadcrumbs([['Terms of Use', route('legal.terms-of-use')]])]) !!}
+@endpush
+@section('description', 'The terms and conditions for using SureHelp Solutions\' website, client portal, app and live call answering and booking services.')
 
 @section('styles')
 <link href="{{ asset('assets/css/legal-pages.css') }}" rel="stylesheet">
@@ -52,10 +56,10 @@
 
         <!-- Legal Content -->
         <div class="legal-card" id="introduction" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-file-contract"></i>
                 Introduction
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>Welcome to SureHelp Solution ("SHS," "we," "our," or "us"). These Terms of Use ("Terms") govern your use of our website, services, and platform. By accessing or using our services, you agree to be bound by these Terms.</p>
                 
@@ -67,10 +71,10 @@
         </div>
 
         <div class="legal-card" id="acceptance" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-check-circle"></i>
                 Acceptance of Terms
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="highlight-box">
                     <h4>By Using Our Services, You Agree To:</h4>
@@ -86,10 +90,10 @@
         </div>
 
         <div class="legal-card" id="services" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-cogs"></i>
                 Our Services
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="highlight-box">
                     <h4>Services We Provide:</h4>
@@ -105,10 +109,10 @@
         </div>
 
         <div class="legal-card" id="user-accounts" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-user"></i>
                 User Accounts
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="highlight-box">
                     <h4>Account Responsibilities:</h4>
@@ -124,10 +128,10 @@
         </div>
 
         <div class="legal-card" id="acceptable-use" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-shield-alt"></i>
                 Acceptable Use Policy
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="highlight-box">
                     <h4>Prohibited Activities:</h4>
@@ -144,10 +148,10 @@
         </div>
 
         <div class="legal-card" id="payment-terms" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-credit-card"></i>
                 Payment Terms
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="highlight-box">
                     <h4>Payment Information:</h4>
@@ -163,10 +167,10 @@
         </div>
 
         <div class="legal-card" id="intellectual-property" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-copyright"></i>
                 Intellectual Property
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="highlight-box">
                     <h4>Ownership Rights:</h4>
@@ -182,20 +186,20 @@
         </div>
 
         <div class="legal-card" id="privacy" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-lock"></i>
                 Privacy and Data Protection
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>Your privacy is important to us. Our collection and use of personal information is governed by our <a href="{{ route('legal.privacy-policy') }}" style="color: var(--accent-color);">Privacy Policy</a>. By using our services, you consent to the collection and use of information as described in our Privacy Policy.</p>
             </div>
         </div>
 
         <div class="legal-card" id="disclaimers" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-exclamation-triangle"></i>
                 Disclaimers
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="highlight-box">
                     <h4>Service Disclaimers:</h4>
@@ -211,20 +215,20 @@
         </div>
 
         <div class="legal-card" id="limitation-liability" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-balance-scale"></i>
                 Limitation of Liability
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>To the maximum extent permitted by law, SureHelp Solution shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to loss of profits, data, or business opportunities, arising from your use of our services.</p>
             </div>
         </div>
 
         <div class="legal-card" id="termination" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-times-circle"></i>
                 Termination
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="highlight-box">
                     <h4>Termination Rights:</h4>
@@ -240,30 +244,30 @@
         </div>
 
         <div class="legal-card" id="governing-law" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-gavel"></i>
                 Governing Law
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>These Terms are governed by and construed in accordance with the laws of the State of Delaware, without regard to conflict of law principles. Any disputes arising from these Terms shall be resolved in the state or federal courts located in Delaware.</p>
             </div>
         </div>
 
         <div class="legal-card" id="changes" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-sync-alt"></i>
                 Changes to Terms
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>We may update these Terms from time to time. We will notify you of any material changes by posting the new Terms on this page and updating the "Last Updated" date. Your continued use of our services after such changes constitutes acceptance of the new Terms.</p>
             </div>
         </div>
 
         <div class="legal-card" id="contact" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-envelope"></i>
                 Contact Us
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>If you have any questions about these Terms of Use, please contact us:</p>
                 

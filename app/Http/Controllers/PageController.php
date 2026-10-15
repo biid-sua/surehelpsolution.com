@@ -17,7 +17,10 @@ class PageController extends Controller
         abort_if($current === null, 404);
 
         return view('pages.show', [
+            'slug' => $page,
             'page' => $current,
+            'meta' => config('site.meta.'.$page, []),
+            'faqs' => config('site.faqs.'.$page, []),
             'related' => $pages->except($page)->filter(fn (array $p) => $p['group'] === $current['group'])->take(12),
         ]);
     }

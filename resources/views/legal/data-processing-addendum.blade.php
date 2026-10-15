@@ -1,7 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Data Processing Addendum (DPA) - SureHelp Solution')
-@section('description', 'GDPR and data protection compliance for our services')
+@section('title', config('site.meta.data-processing-addendum.title'))
+
+@push('schema')
+{!! \App\Support\SiteSchema::script([\App\Support\SiteSchema::breadcrumbs([['Data Processing Addendum', route('legal.data-processing-addendum')]])]) !!}
+@endpush
+@section('description', 'SureHelp Solutions\' Data Processing Addendum: how we process personal data for our customers under GDPR and other privacy laws.')
 
 @section('styles')
 <link href="{{ asset('assets/css/legal-pages.css') }}" rel="stylesheet">
@@ -56,10 +60,10 @@
 
         <!-- Legal Content -->
         <div class="legal-card" id="introduction" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-file-contract"></i>
                 Introduction
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>This Data Processing Addendum (the "DPA") is entered into by and between you ("Customer", "you," and "yours") (collectively, with its Affiliates, "Customer") and SureHelp Solution ("SHS," "us," "we," or "our"). This DPA supplements and is incorporated into the existing agreement between Customer and SHS (the "Agreement") pursuant to which SHS will provide services ("Services") to Customer and has the same Effective Date as the Agreement.</p>
                 
@@ -71,10 +75,10 @@
         </div>
 
         <div class="legal-card" id="definitions" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-book"></i>
                 Definitions
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="definition-list">
                     <div class="definition-item">
@@ -146,20 +150,20 @@
         </div>
 
         <div class="legal-card" id="term" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-clock"></i>
                 Term
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>The term of this DPA will commence on the Effective Date and continue as long as SHS Processes Customer Personal Data.</p>
             </div>
         </div>
 
         <div class="legal-card" id="processing" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-cogs"></i>
                 Processing of Customer Personal Data
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>Details on SHS's role as Processor, Customer authority, purposes of Processing, prohibitions on selling/sharing, compliance obligations, and Customer's responsibilities.</p>
                 
@@ -177,10 +181,10 @@
         </div>
 
         <div class="legal-card" id="personnel" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-users"></i>
                 Provider Personnel
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>SHS restricts employees from unauthorized Processing and requires confidentiality agreements.</p>
                 
@@ -198,10 +202,10 @@
         </div>
 
         <div class="legal-card" id="sub-processors" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-network-wired"></i>
                 Sub-processors
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>General authorization for SHS to engage Sub-processors with Customer's right to object, and contractual protections required.</p>
                 
@@ -219,10 +223,10 @@
         </div>
 
         <div class="legal-card" id="security" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-shield-alt"></i>
                 Security
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>SHS implements technical, organizational, and physical measures to protect Personal Data (see Exhibit B).</p>
                 
@@ -240,10 +244,10 @@
         </div>
 
         <div class="legal-card" id="cross-border" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-globe"></i>
                 Cross-Border Transfers
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>Restricted Transfers will be governed by Standard Contractual Clauses (SCCs) and the UK Transfer Addendum as applicable.</p>
                 
@@ -261,10 +265,10 @@
         </div>
 
         <div class="legal-card" id="data-subject-rights" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-user-check"></i>
                 Data Subject Rights
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>SHS will reasonably cooperate with Customer to fulfill Data Subject access, deletion, and correction requests.</p>
                 
@@ -283,10 +287,10 @@
         </div>
 
         <div class="legal-card" id="security-incident" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-exclamation-triangle"></i>
                 Security Incident Response
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>SHS shall notify Customer within 72 hours of becoming aware of a Security Incident and cooperate on investigation.</p>
                 
@@ -304,10 +308,10 @@
         </div>
 
         <div class="legal-card" id="impact-assessment" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-clipboard-check"></i>
                 Data Protection Impact Assessment
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>SHS shall reasonably cooperate with Customer in conducting required assessments.</p>
                 
@@ -325,10 +329,10 @@
         </div>
 
         <div class="legal-card" id="return-destruction" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-trash-alt"></i>
                 Return or Destruction of Personal Data
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>Upon termination, SHS will return or delete Customer Personal Data unless required by law to retain.</p>
                 
@@ -346,10 +350,10 @@
         </div>
 
         <div class="legal-card" id="audit" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-search"></i>
                 Audit
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>Customer may audit SHS compliance with this DPA, subject to confidentiality and reasonable notice.</p>
                 
@@ -367,40 +371,40 @@
         </div>
 
         <div class="legal-card" id="jurisdiction" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-balance-scale"></i>
                 Jurisdiction and Governing Law
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>This DPA is governed by the laws of the State of Delaware. Any disputes shall be resolved in the state or federal courts located in Delaware.</p>
             </div>
         </div>
 
         <div class="legal-card" id="indemnification" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-handshake"></i>
                 Indemnification; Limitations on Liability
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>SHS's aggregate liability under this DPA shall not exceed the lesser of Customer's pro-rated monthly service charge during the period of liability or $500.</p>
             </div>
         </div>
 
         <div class="legal-card" id="severance" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-cut"></i>
                 Severance
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>If any provision of this DPA is invalid or unenforceable, the remaining provisions shall remain in full force.</p>
             </div>
         </div>
 
         <div class="legal-card" id="exhibit-a" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-file-alt"></i>
                 Exhibit A: Details of Processing
-            </h3>
+            </h2>
             <div class="section-content">
                 <div class="highlight-box">
                     <h4>Processing Details:</h4>
@@ -415,10 +419,10 @@
         </div>
 
         <div class="legal-card" id="exhibit-b" data-aos="fade-up">
-            <h3 class="section-title">
+            <h2 class="section-title">
                 <i class="fas fa-shield-virus"></i>
                 Exhibit B: Security Measures
-            </h3>
+            </h2>
             <div class="section-content">
                 <p>Includes physical, electronic, and organizational measures such as access controls, encryption, backup procedures, incident response, and vendor management.</p>
                 

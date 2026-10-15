@@ -1,7 +1,17 @@
 @extends('layouts.app')
 
-@section('title', $page['title'].' - SureHelp Solution')
-@section('description', $page['subtitle'])
+@section('title', $meta['title'] ?? $page['title'].' | SureHelp Solutions')
+@section('description', $meta['description'] ?? $page['subtitle'])
+
+@push('schema')
+{!! \App\Support\SiteSchema::script(array_values(array_filter([
+    \App\Support\SiteSchema::breadcrumbs([[$page['title'], url()->current()]]),
+    in_array($page['group'], ['products', 'solutions'], true)
+        ? \App\Support\SiteSchema::service($page['title'], $meta['description'] ?? $page['subtitle'], url()->current(), $page['group'] === 'solutions' ? $page['title'] : null)
+        : null,
+    $faqs ? \App\Support\SiteSchema::faq($faqs) : null,
+]))) !!}
+@endpush
 
 @section('styles')
 <link href="{{ asset('assets/css/legal-pages.css') }}" rel="stylesheet">
@@ -34,7 +44,7 @@
     <div class="container">
         @if ($page['calculator'] ?? false)
             <div class="legal-card" data-aos="fade-up" id="roi-calculator">
-                <h3 class="section-title"><i class="fas fa-calculator"></i> Calculate your loss</h3>
+                <h2 class="section-title"><i class="fas fa-calculator"></i> Calculate your loss</h2>
                 <div class="section-content">
                     <div class="row g-4 align-items-center">
                         <div class="col-lg-7">
@@ -69,10 +79,10 @@
 
         @foreach ($page['sections'] as $section)
             <div class="legal-card" data-aos="fade-up">
-                <h3 class="section-title">
+                <h2 class="section-title">
                     <i class="fas {{ $section['icon'] }}"></i>
                     {{ $section['heading'] }}
-                </h3>
+                </h2>
                 <div class="section-content">
                     @foreach ($section['text'] ?? [] as $paragraph)
                         <p>{{ $paragraph }}</p>
@@ -121,7 +131,7 @@
 
         @if ($page['help_links'] ?? false)
             <div class="legal-card" data-aos="fade-up">
-                <h3 class="section-title"><i class="fas fa-book"></i> Helpful pages</h3>
+                <h2 class="section-title"><i class="fas fa-book"></i> Helpful pages</h2>
                 <div class="section-content related-links">
                     <a href="{{ route('legal.faq') }}" class="btn btn-outline-primary rounded-pill px-4">FAQ</a>
                     <a href="{{ route('pages.show', 'implementation-guide') }}" class="btn btn-outline-primary rounded-pill px-4">Implementation Guide</a>
@@ -132,9 +142,23 @@
             </div>
         @endif
 
+        @if ($faqs)
+            <div class="legal-card" data-aos="fade-up" id="faq">
+                <h2 class="section-title"><i class="fas fa-question-circle"></i> Frequently asked questions</h2>
+                <div class="section-content">
+                    @foreach ($faqs as [$question, $answer])
+                        <div class="faq-item">
+                            <h3>{{ $question }}</h3>
+                            <p>{{ $answer }}</p>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         <!-- Call to action -->
         <div class="legal-card" data-aos="fade-up">
-            <h3 class="section-title"><i class="fas fa-rocket"></i> Ready to get started?</h3>
+            <h2 class="section-title"><i class="fas fa-rocket"></i> Ready to get started?</h2>
             <div class="section-content">
                 <p>Tell us about your business and we'll have your calls answered within 48 hours. No setup fees, cancel anytime, and a 30-day money-back guarantee.</p>
                 <div class="page-cta">
@@ -147,7 +171,7 @@
 
         @if ($related->isNotEmpty())
             <div class="legal-card" data-aos="fade-up">
-                <h3 class="section-title"><i class="fas fa-compass"></i> Explore more</h3>
+                <h2 class="section-title"><i class="fas fa-compass"></i> Explore more</h2>
                 <div class="section-content related-links">
                     @foreach ($related as $slug => $other)
                         <a href="{{ route('pages.show', $slug) }}" class="btn btn-outline-primary rounded-pill px-4">{{ $other['title'] }}</a>
