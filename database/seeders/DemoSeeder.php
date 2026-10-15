@@ -2382,8 +2382,7 @@ class DemoSeeder extends Seeder
         }
         $this->travel($this->now);
 
-        $this->summary['phone lines'] = count($lines) + 1;
-        $this->summary['phone calls'] = VoiceCall::withoutGlobalScopes()->count();
+        $this->summary[] = 'Phone lines: '.(count($lines) + 1).', with '.VoiceCall::withoutGlobalScopes()->count().' calls';
     }
 
     private function calendar(): void
