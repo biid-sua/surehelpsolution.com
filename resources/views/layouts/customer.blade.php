@@ -3,7 +3,7 @@
     $title ??= null;
 @endphp
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en" class="h-full" {!! app(\App\Support\Ui\Themes::class)->htmlAttributes(null) !!}>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11,6 +11,7 @@
     <meta name="robots" content="noindex">
     <meta name="referrer" content="no-referrer">
     <title>{{ $title ?? 'Your appointment' }}</title>
+    @include('partials.theme-boot')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>

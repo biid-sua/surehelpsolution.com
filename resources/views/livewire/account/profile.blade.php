@@ -85,4 +85,10 @@
             </form>
         </x-ui.card>
     </div>
+
+    <x-ui.card id="appearance" class="mt-6 scroll-mt-24" title="Appearance" description="Choose the colours you see in SureHelp. Your choice is saved to your account and follows you to every device. Changing the SureHelp default never changes it.">
+        <div wire:ignore>
+            <x-ui.theme-picker variant="grid" />
+        </div>
+    </x-ui.card>
 </div>

@@ -15,7 +15,7 @@
     @endif
 
     <article class="mx-auto max-w-3xl rounded-2xl border-4 border-double border-brand-400/50 bg-surface p-10 text-center shadow-[var(--shadow-card)] print:border-black print:bg-white print:text-black print:shadow-none" aria-label="Certificate">
-        <img src="{{ asset('assets/img/logo.png') }}" alt="SureHelp Solutions" class="mx-auto h-10 w-auto">
+        <img src="{{ asset('assets/img/logo.png') }}" alt="SureHelp Solutions" class="sh-logo-on-dark mx-auto h-10 w-auto"><img src="{{ asset('assets/img/logo-on-light.png') }}" alt="SureHelp Solutions" class="sh-logo-on-light mx-auto h-10 w-auto">
         <p class="mt-8 text-xs font-semibold uppercase tracking-[0.3em] text-subtle print:text-black">Certificate of completion</p>
         <p class="mt-6 text-sm text-muted print:text-black">This certifies that</p>
         <p class="mt-2 text-3xl font-semibold text-ink print:text-black">{{ $certificate->agent->name }}</p>

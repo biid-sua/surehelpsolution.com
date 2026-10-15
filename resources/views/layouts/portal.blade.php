@@ -12,7 +12,7 @@
 @endphp
 
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en" class="h-full" {!! app(\App\Support\Ui\Themes::class)->htmlAttributes($user) !!}>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -20,6 +20,7 @@
     <meta name="robots" content="noindex">
     <title>{{ $title ? $title.' · ' : '' }}SureHelp</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}">
+    @include('partials.theme-boot')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
@@ -36,7 +37,7 @@
             :class="{ 'translate-x-0': sidebarOpen }" aria-label="Main navigation">
             <div class="flex h-16 items-center justify-between gap-2 border-b border-line px-5">
                 <a href="{{ $navigation[0]['url'] ?? url('/') }}" class="flex items-center gap-2">
-                    <img src="{{ asset('assets/img/logo.png') }}" alt="SureHelp Solutions" class="h-8 w-auto">
+                    <img src="{{ asset('assets/img/logo.png') }}" alt="SureHelp Solutions" class="sh-logo-on-dark h-8 w-auto"><img src="{{ asset('assets/img/logo-on-light.png') }}" alt="SureHelp Solutions" class="sh-logo-on-light h-8 w-auto">
                 </a>
                 <button type="button" class="rounded-lg p-1.5 text-muted hover:text-ink lg:hidden" x-on:click="sidebarOpen = false" aria-label="Close navigation">
                     <x-ui.icon name="x" />
@@ -121,6 +122,10 @@
                 </div>
 
                 <div class="flex items-center gap-3">
+                    {{-- Colour theme (D59); staff viewing as a client can't change the client's own choice. --}}
+                    @unless (session()->has(\App\Services\Account\Impersonation::KEY))
+                        <x-ui.theme-picker />
+                    @endunless
                     <livewire:notification-bell />
                     <a href="{{ route('account.profile') }}" class="flex items-center gap-3 rounded-xl px-1.5 py-1 hover:bg-surface-2" title="Your account and security">
                         <span class="hidden text-right sm:block">

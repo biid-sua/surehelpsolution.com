@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 // Highlight the target section
-                targetElement.style.background = 'rgba(79, 70, 229, 0.1)';
+                targetElement.style.background = 'rgba(var(--site-primary-rgb), 0.1)';
                 setTimeout(() => {
                     targetElement.style.background = '';
                 }, 2000);
@@ -353,7 +353,7 @@ document.addEventListener('DOMContentLoaded', function() {
         left: 0;
         width: 0%;
         height: 4px;
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        background: linear-gradient(135deg, var(--site-primary) 0%, var(--site-secondary) 100%);
         z-index: 10000;
         transition: width 0.3s ease;
     `;
@@ -393,7 +393,7 @@ document.addEventListener('DOMContentLoaded', function() {
             position: absolute;
             top: 1rem;
             right: 1rem;
-            background: rgba(79, 70, 229, 0.1);
+            background: rgba(var(--site-primary-rgb), 0.1);
             border: none;
             border-radius: 8px;
             padding: 0.5rem;
@@ -422,7 +422,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 copyBtn.style.color = '#10b981';
                 setTimeout(() => {
                     copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
-                    copyBtn.style.background = 'rgba(79, 70, 229, 0.1)';
+                    copyBtn.style.background = 'rgba(var(--site-primary-rgb), 0.1)';
                     copyBtn.style.color = 'var(--primary-color)';
                 }, 2000);
             });

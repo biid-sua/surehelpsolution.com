@@ -15,6 +15,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="apple-touch-icon" href="{{ asset('assets/img/favicon.png') }}">
 
+  <!-- Colour theme (D59): the visitor's choice, kept in this browser only; applied before the page paints. -->
+  <script>
+    (() => {
+      try {
+        const theme = localStorage.getItem('surehelp.site-theme');
+        if (@json(array_keys(config('themes.site'))).includes(theme) && theme !== 'indigo') document.documentElement.dataset.siteTheme = theme;
+      } catch (e) { /* storage blocked: default theme */ }
+    })();
+  </script>
+  <link href="{{ asset('assets/css/site-themes.css') }}" rel="stylesheet">
+
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   
@@ -45,7 +56,7 @@
       inset: 0;
       z-index: 0;
       pointer-events: none;
-      background: rgba(15, 15, 35, 0.48);
+      background: rgba(var(--site-bg-1-rgb), 0.48);
       backdrop-filter: blur(12px) saturate(1.1);
       -webkit-backdrop-filter: blur(12px) saturate(1.1);
       transform: translateZ(0);
@@ -57,7 +68,7 @@
     }
 
     .navbar.scrolled::before {
-      background: rgba(15, 15, 35, 0.58);
+      background: rgba(var(--site-bg-1-rgb), 0.58);
     }
 
     .navbar > .container {
@@ -114,7 +125,7 @@
 
     /* .navbar-brand:hover .brand-icon {
       transform: scale(1.1);
-      box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+      box-shadow: 0 10px 20px rgba(var(--site-primary-rgb), 0.3);
     }
 
     .navbar-brand:hover .brand-icon img {
@@ -157,7 +168,7 @@
       left: 50%;
       width: 0;
       height: 2px;
-      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      background: linear-gradient(135deg, var(--site-primary) 0%, var(--site-secondary) 100%);
       transition: all 0.3s ease;
       transform: translateX(-50%);
     }
@@ -218,7 +229,7 @@
        left: 50%;
        width: 0;
        height: 2px;
-       background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+       background: linear-gradient(135deg, var(--site-primary) 0%, var(--site-secondary) 100%);
        transition: all 0.3s ease;
        transform: translateX(-50%);
      }
@@ -290,7 +301,7 @@
       inset: 0;
       z-index: 0;
       border-radius: inherit;
-      background: rgba(15, 15, 35, 0.42);
+      background: rgba(var(--site-bg-1-rgb), 0.42);
       backdrop-filter: blur(20px) saturate(1.25);
       -webkit-backdrop-filter: blur(20px) saturate(1.25);
       transform: translateZ(0);
@@ -358,15 +369,15 @@
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      background: linear-gradient(135deg, var(--site-primary) 0%, var(--site-secondary) 100%);
       border: none;
       transition: all 0.3s ease;
     }
 
     .btn-primary:hover {
-      background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+      background: linear-gradient(135deg, var(--site-secondary) 0%, var(--site-primary) 100%);
       transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+      box-shadow: 0 10px 20px rgba(var(--site-primary-rgb), 0.3);
     }
 
     /* Dropdown Preview Styles */
@@ -433,7 +444,7 @@
 
     /* Footer Styles */
     .footer {
-      background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #2d1b69 100%);
+      background: linear-gradient(135deg, var(--site-bg-1) 0%, var(--site-bg-2) 50%, var(--site-bg-3) 100%);
       color: white;
       position: relative;
       overflow: hidden;
@@ -447,7 +458,7 @@
       right: 0;
       bottom: 0;
       background: 
-        radial-gradient(circle at 25% 25%, rgba(79, 70, 229, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 25% 25%, rgba(var(--site-primary-rgb), 0.1) 0%, transparent 50%),
         radial-gradient(circle at 75% 75%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
       pointer-events: none;
     }
@@ -536,7 +547,7 @@
     }
 
     .social-link:hover {
-      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      background: linear-gradient(135deg, var(--site-primary) 0%, var(--site-secondary) 100%);
       transform: translateY(-3px);
       color: white;
     }
@@ -556,7 +567,7 @@
     }
 
     .contact-item i {
-      color: #4f46e5;
+      color: var(--site-primary);
       font-size: 1.1rem;
       margin-top: 0.2rem;
     }
@@ -604,7 +615,7 @@
       left: 0;
       width: 30px;
       height: 2px;
-      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      background: linear-gradient(135deg, var(--site-primary) 0%, var(--site-secondary) 100%);
     }
 
     .footer-col ul {
@@ -670,7 +681,7 @@
       left: 0;
       width: 0;
       height: 2px;
-      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      background: linear-gradient(135deg, var(--site-primary) 0%, var(--site-secondary) 100%);
       transition: width 0.3s ease;
     }
 
@@ -738,7 +749,7 @@
       position: fixed;
       bottom: 2rem;
       right: 2rem;
-      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      background: linear-gradient(135deg, var(--site-primary) 0%, var(--site-secondary) 100%);
       color: white;
       width: 50px;
       height: 50px;
@@ -749,12 +760,12 @@
       text-decoration: none;
       transition: all 0.3s ease;
       z-index: 1000;
-      box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+      box-shadow: 0 4px 15px rgba(var(--site-primary-rgb), 0.3);
     }
 
     .back-to-top:hover {
       transform: translateY(-3px);
-      box-shadow: 0 10px 20px rgba(79, 70, 229, 0.4);
+      box-shadow: 0 10px 20px rgba(var(--site-primary-rgb), 0.4);
       color: white;
     }
 
@@ -770,7 +781,7 @@
     
     .login-modal-wrapper {
       position: relative;
-      background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #2d1b69 100%);
+      background: linear-gradient(135deg, var(--site-bg-1) 0%, var(--site-bg-2) 50%, var(--site-bg-3) 100%);
       border-radius: 20px;
       overflow: hidden;
       padding: 2.5rem;
@@ -784,8 +795,8 @@
       right: 0;
       bottom: 0;
       background: 
-        radial-gradient(circle at 20% 20%, rgba(79, 70, 229, 0.15) 0%, transparent 40%),
-        radial-gradient(circle at 80% 80%, rgba(124, 58, 237, 0.15) 0%, transparent 40%);
+        radial-gradient(circle at 20% 20%, rgba(var(--site-primary-rgb), 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(var(--site-secondary-rgb), 0.15) 0%, transparent 40%);
       pointer-events: none;
     }
 
@@ -819,7 +830,7 @@
     .login-logo {
       width: 60px;
       height: 60px;
-      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      background: linear-gradient(135deg, var(--site-primary) 0%, var(--site-secondary) 100%);
       border-radius: 15px;
       display: flex;
       align-items: center;
@@ -889,19 +900,19 @@
     }
 
     .forgot-password {
-      color: #4f46e5;
+      color: var(--site-primary);
       text-decoration: none;
       font-size: 0.9rem;
     }
 
     .forgot-password:hover {
-      color: #7c3aed;
+      color: var(--site-secondary);
     }
 
     .login-btn {
       width: 100%;
       height: 48px;
-      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      background: linear-gradient(135deg, var(--site-primary) 0%, var(--site-secondary) 100%);
       border: none;
       border-radius: 10px;
       color: white;
@@ -916,7 +927,7 @@
 
     .login-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+      box-shadow: 0 10px 20px rgba(var(--site-primary-rgb), 0.3);
     }
 
     @media (max-width: 576px) {
@@ -934,6 +945,8 @@
 @yield('content')
 
 @include('partials.footer')
+
+@include('partials.site-theme-picker')
 
 <!-- Additional Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

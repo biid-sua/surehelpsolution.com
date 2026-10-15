@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 // Highlight the target section
-                targetElement.style.background = 'rgba(79, 70, 229, 0.1)';
+                targetElement.style.background = 'rgba(var(--site-primary-rgb), 0.1)';
                 setTimeout(() => {
                     targetElement.style.background = '';
                 }, 2000);
@@ -284,7 +284,7 @@ document.addEventListener('DOMContentLoaded', function() {
         left: 0;
         width: 0%;
         height: 4px;
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        background: linear-gradient(135deg, var(--site-primary) 0%, var(--site-secondary) 100%);
         z-index: 10000;
         transition: width 0.3s ease;
     `;
@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.signature-section').forEach(section => {
         section.addEventListener('mouseenter', function() {
             this.style.transform = 'translateY(-8px) scale(1.02)';
-            this.style.boxShadow = '0 20px 60px rgba(79, 70, 229, 0.2)';
+            this.style.boxShadow = '0 20px 60px rgba(var(--site-primary-rgb), 0.2)';
         });
         
         section.addEventListener('mouseleave', function() {

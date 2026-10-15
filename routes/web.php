@@ -4,6 +4,7 @@ use App\Http\Controllers\Account\EmailVerificationController;
 use App\Http\Controllers\Account\InvitationController;
 use App\Http\Controllers\Account\PasswordResetController;
 use App\Http\Controllers\Account\TermsController;
+use App\Http\Controllers\Account\ThemeController;
 use App\Http\Controllers\Account\TwoFactorChallengeController;
 use App\Http\Controllers\Admin\ImpersonationController;
 use App\Http\Controllers\Agent\CalendarEventsController as AgentCalendarEventsController;
@@ -33,6 +34,7 @@ use App\Http\Controllers\SupportAttachmentController;
 use App\Livewire\Account\Notifications as AccountNotifications;
 use App\Livewire\Account\Profile as AccountProfile;
 use App\Livewire\Account\Security as AccountSecurity;
+use App\Livewire\Admin\Appearance as AdminAppearance;
 use App\Livewire\Admin\Appointments\Index as AdminAppointments;
 use App\Livewire\Admin\AuditLogs;
 use App\Livewire\Admin\Billing\Index as AdminBilling;
@@ -168,6 +170,7 @@ Route::prefix('account')->name('account.')->middleware(['auth.home', 'force.pass
     Route::get('/notifications', AccountNotifications::class)->name('notifications');
     Route::get('/terms', [TermsController::class, 'show'])->name('terms');
     Route::post('/terms', [TermsController::class, 'accept'])->name('terms.accept');
+    Route::put('/theme', [ThemeController::class, 'update'])->middleware('throttle:30,1')->name('theme');
     Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])->middleware('throttle:3,10')->name('verification.send');
 });
 
@@ -319,6 +322,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth.home', 'force.password
     Route::get('/appointments', AdminAppointments::class)->middleware('can:appointments.view')->name('appointments');
     Route::get('/customers', AdminCustomers::class)->middleware('can:customers.view')->name('customers');
     Route::get('/seo', AdminSeo::class)->middleware('can:seo.manage')->name('seo');
+    Route::get('/appearance', AdminAppearance::class)->middleware('can:settings.view')->name('appearance');
     Route::get('/usage', AdminUsage::class)->middleware('can:billing.view')->name('usage');
     Route::get('/escalations', AdminEscalations::class)->middleware('can:escalations.view')->name('escalations');
     Route::get('/billing', AdminBilling::class)->middleware('can:billing.view')->name('billing');

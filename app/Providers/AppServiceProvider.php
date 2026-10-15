@@ -18,6 +18,7 @@ use App\Services\Calls\CallOutcomes;
 use App\Services\Rules\BusinessRules;
 use App\Support\Authorization\RoleCatalog;
 use App\Support\Tenancy\CurrentOrganization;
+use App\Support\Ui\Themes;
 use Illuminate\Auth\Middleware\Authorize;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -42,6 +43,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(BusinessRules::class);
         $this->app->scoped(BillingSettings::class);
         $this->app->scoped(Entitlements::class);
+        $this->app->scoped(Themes::class);
         $this->app->scoped(FeatureAccess::class);
         // AI vendor behind one interface (spec §33, D38).
         $this->app->singleton(AiProvider::class, ClaudeProvider::class);

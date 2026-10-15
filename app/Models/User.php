@@ -25,6 +25,8 @@ use Spatie\Permission\Traits\HasRoles;
 /**
  * @property list<string>|null $two_factor_recovery_codes hashed one-time codes
  * @property Carbon|null $last_summary_on
+ * @property string|null $theme own colour theme (D59); null follows the default
+ * @property Carbon|null $theme_chosen_at
  */
 class User extends Authenticatable
 {
@@ -88,6 +90,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
             'must_change_password' => 'boolean',
+            'theme_chosen_at' => 'datetime',
             'two_factor_secret' => 'encrypted',
             'two_factor_recovery_codes' => 'encrypted:array',
             'two_factor_confirmed_at' => 'datetime',

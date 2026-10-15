@@ -16,11 +16,11 @@
 @section('styles')
 <link href="{{ asset('assets/css/legal-pages.css') }}" rel="stylesheet">
 <style>
-    .page-card-grid .page-card { height: 100%; padding: 1.25rem; border-radius: 14px; background: rgba(99, 102, 241, 0.06); border: 1px solid rgba(99, 102, 241, 0.15); }
+    .page-card-grid .page-card { height: 100%; padding: 1.25rem; border-radius: 14px; background: rgba(var(--site-primary-rgb), 0.06); border: 1px solid rgba(var(--site-primary-rgb), 0.15); }
     .page-card-grid .page-card h4 { font-size: 1rem; font-weight: 600; margin-bottom: .4rem; }
     .page-card-grid .page-card p { margin: 0; font-size: .95rem; }
     .page-cta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; }
-    .roi-result { padding: 1.25rem; border-radius: 14px; background: linear-gradient(135deg, #1E3A8A 0%, #625ED0 50%, #4D8BCC 100%); color: #fff; text-align: center; }
+    .roi-result { padding: 1.25rem; border-radius: 14px; background: linear-gradient(135deg, var(--site-hero-1) 0%, var(--site-hero-2) 50%, var(--site-hero-3) 100%); color: #fff; text-align: center; }
     .roi-result .amount { font-size: 2rem; font-weight: 700; }
     .roi-field label { font-weight: 600; display: flex; justify-content: space-between; }
     .related-links a { display: inline-block; margin: 0 .5rem .5rem 0; }

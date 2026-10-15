@@ -1,0 +1,106 @@
+/*
+ * Public website colour themes (D59). The site's brand colours are these variables; each theme
+ * redefines them on <html data-site-theme="…">. A visitor's choice lives only in their browser
+ * (localStorage). Labels and swatches: config/themes.php ('site').
+ */
+:root {
+  --site-primary: #4f46e5;       --site-primary-rgb: 79, 70, 229;
+  --site-secondary: #7c3aed;
+  --site-accent: #a855f7;        --site-accent-rgb: 168, 85, 247;
+  --site-secondary-rgb: 124, 58, 237;
+  --site-soft: #ccb1be;
+  --site-pale: #c4b5fd;
+  --site-bg-1: #0f0f23;          --site-bg-1-rgb: 15, 15, 35;
+  --site-bg-2: #1a1a3e;          --site-bg-2-rgb: 26, 26, 62;
+  --site-bg-3: #2d1b69;
+  --site-hero-1: #1E3A8A;
+  --site-hero-2: #625ED0;
+  --site-hero-3: #4D8BCC;
+}
+
+:root[data-site-theme='ocean'] {
+  --site-primary: #0891b2;       --site-primary-rgb: 8, 145, 178;
+  --site-secondary: #2563eb;     --site-secondary-rgb: 37, 99, 235;
+  --site-accent: #06b6d4;        --site-accent-rgb: 6, 182, 212;
+  --site-soft: #a5d8e6;
+  --site-pale: #a5f3fc;
+  --site-bg-1: #04162a;          --site-bg-1-rgb: 4, 22, 42;
+  --site-bg-2: #0a2540;          --site-bg-2-rgb: 10, 37, 64;
+  --site-bg-3: #0c3a5e;
+  --site-hero-1: #0c4a6e;
+  --site-hero-2: #0891b2;
+  --site-hero-3: #2563eb;
+}
+
+:root[data-site-theme='emerald'] {
+  --site-primary: #059669;       --site-primary-rgb: 5, 150, 105;
+  --site-secondary: #0d9488;     --site-secondary-rgb: 13, 148, 136;
+  --site-accent: #10b981;        --site-accent-rgb: 16, 185, 129;
+  --site-soft: #b7d9c8;
+  --site-pale: #a7f3d0;
+  --site-bg-1: #05150f;          --site-bg-1-rgb: 5, 21, 15;
+  --site-bg-2: #0b2a1e;          --site-bg-2-rgb: 11, 42, 30;
+  --site-bg-3: #134e3a;
+  --site-hero-1: #064e3b;
+  --site-hero-2: #059669;
+  --site-hero-3: #0d9488;
+}
+
+:root[data-site-theme='sunset'] {
+  --site-primary: #ea580c;       --site-primary-rgb: 234, 88, 12;
+  --site-secondary: #e11d48;     --site-secondary-rgb: 225, 29, 72;
+  --site-accent: #f97316;        --site-accent-rgb: 249, 115, 22;
+  --site-soft: #f5c6b8;
+  --site-pale: #fed7aa;
+  --site-bg-1: #1a0b12;          --site-bg-1-rgb: 26, 11, 18;
+  --site-bg-2: #2e1220;          --site-bg-2-rgb: 46, 18, 32;
+  --site-bg-3: #5b1a2e;
+  --site-hero-1: #7c2d12;
+  --site-hero-2: #ea580c;
+  --site-hero-3: #e11d48;
+}
+
+:root[data-site-theme='rose'] {
+  --site-primary: #db2777;       --site-primary-rgb: 219, 39, 119;
+  --site-secondary: #9333ea;     --site-secondary-rgb: 147, 51, 234;
+  --site-accent: #ec4899;        --site-accent-rgb: 236, 72, 153;
+  --site-soft: #f0c4d8;
+  --site-pale: #fbcfe8;
+  --site-bg-1: #1a0a16;          --site-bg-1-rgb: 26, 10, 22;
+  --site-bg-2: #2c1027;          --site-bg-2-rgb: 44, 16, 39;
+  --site-bg-3: #4a154b;
+  --site-hero-1: #831843;
+  --site-hero-2: #db2777;
+  --site-hero-3: #9333ea;
+}
+
+:root[data-site-theme='graphite'] {
+  --site-primary: #475569;       --site-primary-rgb: 71, 85, 105;
+  --site-secondary: #334155;     --site-secondary-rgb: 51, 65, 85;
+  --site-accent: #64748b;        --site-accent-rgb: 100, 116, 139;
+  --site-soft: #cbd5e1;
+  --site-pale: #e2e8f0;
+  --site-bg-1: #0d0e11;          --site-bg-1-rgb: 13, 14, 17;
+  --site-bg-2: #1a1c22;          --site-bg-2-rgb: 26, 28, 34;
+  --site-bg-3: #2a2f3a;
+  --site-hero-1: #1e293b;
+  --site-hero-2: #475569;
+  --site-hero-3: #334155;
+}
+
+/* The theme picker: a small round button in the bottom-left corner. */
+.site-theme-picker { position: fixed; left: calc(20px + env(safe-area-inset-left, 0px)); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 1050; font-family: inherit; }
+.site-theme-picker__toggle { width: 48px; height: 48px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(var(--site-bg-1-rgb), 0.85);
+  color: #fff; display: grid; place-items: center; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); cursor: pointer; backdrop-filter: blur(8px); }
+.site-theme-picker__toggle:focus-visible, .site-theme-picker__option:focus-visible { outline: 3px solid var(--site-pale); outline-offset: 2px; }
+.site-theme-picker__panel { position: absolute; left: 0; bottom: 60px; width: 230px; padding: 12px; border-radius: 16px; background: rgba(var(--site-bg-1-rgb), 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.14); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); color: #fff; backdrop-filter: blur(10px); }
+.site-theme-picker__panel[hidden] { display: none; }
+.site-theme-picker__title { margin: 0 4px 8px; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: rgba(255, 255, 255, 0.7); }
+.site-theme-picker__option { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px; border: 0; border-radius: 10px; background: transparent; color: #fff; font-size: 14px; text-align: left; cursor: pointer; }
+.site-theme-picker__option:hover { background: rgba(255, 255, 255, 0.08); }
+.site-theme-picker__option[aria-checked='true'] { background: rgba(255, 255, 255, 0.12); font-weight: 600; }
+.site-theme-picker__swatch { display: flex; overflow: hidden; border-radius: 6px; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2); flex-shrink: 0; }
+.site-theme-picker__swatch span { display: block; width: 12px; height: 22px; }
+.site-theme-picker__note { margin: 8px 4px 0; font-size: 12px; color: rgba(255, 255, 255, 0.6); line-height: 1.4; }
+@media (max-width: 576px) { .site-theme-picker__toggle { width: 44px; height: 44px; } }

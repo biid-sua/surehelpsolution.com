@@ -58,6 +58,7 @@ class PortalNavigation
                 $this->item('SEO service', 'trend-up', 'admin.seo', 'admin.seo', 'seo.manage'),
                 $this->item('Website enquiries', 'chat', 'admin.enquiries', 'admin.enquiries', 'marketing.view'),
                 $this->item('Audit log', 'shield', 'admin.audit', 'admin.audit', 'audit_logs.view'),
+                $this->item('Appearance', 'swatch', 'admin.appearance', 'admin.appearance', 'settings.view'),
                 $this->item('Agent assignments', 'users', 'agent.assignments', 'agent.assignments|agent.team*', 'agent_assignments.view'),
                 $this->item('Agent University', 'sparkles', 'agent.training.courses', 'agent.training.*', 'training.view_progress'),
                 $this->item('Agent workspace', 'phone', 'agent.home', 'agent.home|agent.companies|agent.businesses.*|agent.calls*|agent.schedule', 'calls.create'),

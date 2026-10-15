@@ -1,0 +1,127 @@
+/*
+ * Portal colour themes (D59). Midnight is the base palette in app.css; each theme here redefines
+ * the same tokens on <html data-theme="…">. Labels and swatches live in config/themes.php.
+ * Text tokens keep WCAG AA contrast on the surfaces they sit on (ink ≥ 12:1, muted ≥ 7:1, subtle ≥ 4.5:1).
+ */
+
+:root[data-theme='dark'] {
+    --color-canvas: #0e0f12;
+    --color-surface: #16181d;
+    --color-surface-2: #1d2027;
+    --color-surface-3: #262a33;
+    --color-line: rgb(255 255 255 / 0.08);
+    --color-line-strong: rgb(255 255 255 / 0.16);
+    --color-ink: #ecedf1;
+    --color-muted: #a8adba;
+    --color-subtle: #8b91a0;
+}
+
+:root[data-theme='ocean'] {
+    --color-canvas: #061420;
+    --color-surface: #0b1e2e;
+    --color-surface-2: #11283b;
+    --color-surface-3: #183349;
+    --color-line: rgb(186 230 253 / 0.09);
+    --color-line-strong: rgb(186 230 253 / 0.18);
+    --color-ink: #e8f4fb;
+    --color-muted: #a3c0d2;
+    --color-subtle: #84a5ba;
+    --color-brand-200: #a5f3fc;
+    --color-brand-300: #67e8f9;
+    --color-brand-400: #22d3ee;
+    --color-brand-500: #0891b2;
+    --color-brand-600: #0e7490;
+    --color-brand-700: #155e75;
+    --color-accent-400: #60a5fa;
+    --color-accent-500: #3b82f6;
+}
+
+:root[data-theme='forest'] {
+    --color-canvas: #07130e;
+    --color-surface: #0d1f17;
+    --color-surface-2: #13291f;
+    --color-surface-3: #1a3428;
+    --color-line: rgb(209 250 229 / 0.08);
+    --color-line-strong: rgb(209 250 229 / 0.17);
+    --color-ink: #e9f6ef;
+    --color-muted: #a6c6b5;
+    --color-subtle: #87a998;
+    --color-brand-200: #a7f3d0;
+    --color-brand-300: #6ee7b7;
+    --color-brand-400: #34d399;
+    --color-brand-500: #059669;
+    --color-brand-600: #047857;
+    --color-brand-700: #065f46;
+    --color-accent-400: #bef264;
+    --color-accent-500: #84cc16;
+}
+
+:root[data-theme='sunset'] {
+    --color-canvas: #170d14;
+    --color-surface: #22121c;
+    --color-surface-2: #2c1824;
+    --color-surface-3: #38202e;
+    --color-line: rgb(255 228 230 / 0.09);
+    --color-line-strong: rgb(255 228 230 / 0.18);
+    --color-ink: #fbeef3;
+    --color-muted: #d6b3c1;
+    --color-subtle: #b8929f;
+    --color-brand-200: #fed7aa;
+    --color-brand-300: #fdba74;
+    --color-brand-400: #fb923c;
+    --color-brand-500: #ea580c;
+    --color-brand-600: #c2410c;
+    --color-brand-700: #9a3412;
+    --color-accent-400: #fb7185;
+    --color-accent-500: #f43f5e;
+}
+
+/*
+ * Light: the only light theme, so it also darkens the colours that are written for dark
+ * backgrounds (light brand shades and the -200/-300 status colours used for text).
+ */
+:root[data-theme='light'] {
+    color-scheme: light;
+    --color-canvas: #f4f5fa;
+    --color-surface: #ffffff;
+    --color-surface-2: #f0f1f8;
+    --color-surface-3: #e3e5f1;
+    --color-line: rgb(15 23 42 / 0.1);
+    --color-line-strong: rgb(15 23 42 / 0.18);
+    --color-ink: #161a33;
+    --color-muted: #474c6e;
+    --color-subtle: #5e6386;
+    --color-brand-200: #3730a3;
+    --color-brand-300: #4338ca;
+    --color-brand-400: #4f46e5;
+    --color-brand-500: #6366f1;
+    --color-brand-600: #4f46e5;
+    --color-brand-700: #4338ca;
+    --color-accent-400: #9333ea;
+    --color-accent-500: #a855f7;
+    --color-success: #047857;
+    --color-warning: #b45309;
+    --color-danger: #b91c1c;
+    --color-info: #1d4ed8;
+    --color-emerald-100: #064e3b;
+    --color-emerald-200: #065f46;
+    --color-emerald-300: #047857;
+    --color-amber-50: #78350f;
+    --color-amber-200: #92400e;
+    --color-amber-300: #b45309;
+    --color-red-200: #991b1b;
+    --color-red-300: #b91c1c;
+    --color-sky-200: #075985;
+    --color-sky-300: #0369a1;
+    --shadow-card: 0 1px 2px rgb(15 23 42 / 0.06), 0 10px 28px -14px rgb(15 23 42 / 0.22);
+}
+
+/* The logo's white wordmark has a dark-text twin for light backgrounds. */
+.sh-logo-on-light { display: none; }
+:root[data-theme='light'] .sh-logo-on-dark { display: none; }
+:root[data-theme='light'] .sh-logo-on-light { display: block; } /* Tailwind shows images as blocks */
+
+/* White tints are invisible on white; use a dark tint instead. */
+:root[data-theme='light'] .bg-white\/5 { background-color: rgb(15 23 42 / 0.05); }
+:root[data-theme='light'] .bg-white\/20 { background-color: rgb(15 23 42 / 0.1); }
+:root[data-theme='light'] .hover\:bg-white\/10:hover { background-color: rgb(15 23 42 / 0.08); }

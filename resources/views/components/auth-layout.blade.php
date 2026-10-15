@@ -1,7 +1,7 @@
 @props(['title', 'heading' => null, 'description' => null, 'width' => 'max-w-md'])
 {{-- Standalone account pages (sign in, two-step code, password reset, terms, invitations). --}}
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en" class="h-full" {!! app(\App\Support\Ui\Themes::class)->htmlAttributes(auth()->user()) !!}>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,13 +9,14 @@
     <meta name="robots" content="noindex">
     <title>{{ $title }} · SureHelp</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}">
+    @include('partials.theme-boot')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
 <body class="h-full">
     <main class="flex min-h-full items-center justify-center px-4 py-12">
         <div class="w-full {{ $width }}">
-            <a href="{{ route('home') }}" class="block"><img src="{{ asset('assets/img/logo.png') }}" alt="SureHelp Solutions" class="mx-auto h-9 w-auto"></a>
+            <a href="{{ route('home') }}" class="block"><img src="{{ asset('assets/img/logo.png') }}" alt="SureHelp Solutions" class="sh-logo-on-dark mx-auto h-9 w-auto"><img src="{{ asset('assets/img/logo-on-light.png') }}" alt="SureHelp Solutions" class="sh-logo-on-light mx-auto h-9 w-auto"></a>
 
             <x-ui.card class="mt-8">
                 <h1 class="text-xl font-semibold text-ink">{!! e($heading ?? $title, false) !!}</h1>

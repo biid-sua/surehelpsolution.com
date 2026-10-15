@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 answer.style.maxHeight = answer.scrollHeight + 'px';
                 icon.className = 'fas fa-chevron-down me-2';
-                item.style.background = 'rgba(79, 70, 229, 0.05)';
+                item.style.background = 'rgba(var(--site-primary-rgb), 0.05)';
             }
         });
     });
@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 // Highlight the target section
-                targetElement.style.background = 'rgba(79, 70, 229, 0.1)';
+                targetElement.style.background = 'rgba(var(--site-primary-rgb), 0.1)';
                 setTimeout(() => {
                     targetElement.style.background = '';
                 }, 2000);

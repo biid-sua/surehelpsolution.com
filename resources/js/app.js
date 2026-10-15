@@ -16,7 +16,19 @@ const loadCalendar = async () => {
     return { Calendar: core.Calendar, plugins: [dayGrid.default, timeGrid.default, list.default] };
 };
 
+const charts = new WeakMap(); // canvas element => Chart
+
 const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+// A theme colour (hex or any CSS colour the browser resolves) at an opacity, for canvas drawing.
+const withAlpha = (color, alpha) => {
+    const probe = document.createElement('canvas').getContext('2d');
+    probe.fillStyle = color;
+    const hex = probe.fillStyle; // normalised to #rrggbb when opaque
+    if (!/^#[0-9a-f]{6}$/i.test(hex)) return color;
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+    return `rgb(${r} ${g} ${b} / ${alpha})`;
+};
 
 // Alpine ships with Livewire; register components before it starts.
 document.addEventListener('alpine:init', () => {
@@ -27,9 +39,21 @@ document.addEventListener('alpine:init', () => {
      * Re-renders when Livewire re-renders the element with new data.
      */
     Alpine.data('chart', (config) => ({
-        instance: null,
+        // Chart objects live outside Alpine's reactive state: proxied, they break on redraw.
+        // Declared here so each chart keeps its own (undeclared ones go to a shared parent scope).
+        build: 0,
+        onTheme: null,
         async init() {
+            // Redraw in the new colours when the person changes theme (D59).
+            if (!this.onTheme) {
+                this.onTheme = () => { charts.get(this.$refs.canvas)?.destroy(); charts.delete(this.$refs.canvas); this.init(); };
+                window.addEventListener('sh-theme', this.onTheme);
+            }
+            const build = ++this.build;
             const Chart = await loadChart();
+            // A newer redraw started while the library loaded, or the chart left the page.
+            if (build !== this.build || !this.$refs.canvas?.isConnected) return;
+            charts.get(this.$refs.canvas)?.destroy();
             const brand = css('--color-brand-400');
             const grid = css('--color-line');
             const text = css('--color-subtle');
@@ -70,7 +94,7 @@ document.addEventListener('alpine:init', () => {
                 },
             };
 
-            this.instance = new Chart(this.$refs.canvas, {
+            charts.set(this.$refs.canvas, new Chart(this.$refs.canvas, {
                 type: config.type ?? 'bar',
                 plugins: [markers],
                 data: {
@@ -78,7 +102,7 @@ document.addEventListener('alpine:init', () => {
                     datasets: config.series.map((series) => ({
                         label: series.label,
                         data: series.data,
-                        backgroundColor: config.type === 'line' ? 'rgb(129 140 248 / 0.15)' : brand,
+                        backgroundColor: config.type === 'line' ? withAlpha(brand, 0.15) : brand,
                         borderColor: brand,
                         borderWidth: config.type === 'line' ? 2 : 0,
                         borderRadius: 6,
@@ -100,10 +124,55 @@ document.addEventListener('alpine:init', () => {
                         y: { reverse: !!config.reverse, beginAtZero: !config.reverse, grid: { color: grid }, ticks: { color: text, precision: config.precision ?? 0 } },
                     },
                 },
-            });
+            }));
         },
         destroy() {
-            this.instance?.destroy();
+            window.removeEventListener('sh-theme', this.onTheme);
+            charts.get(this.$refs.canvas)?.destroy();
+            charts.delete(this.$refs.canvas);
+        },
+    }));
+
+    /**
+     * <div x-data="themePicker(config)"> — the colour theme menu and account-page grid (D59).
+     * Applies the theme at once, then saves it to the person's account.
+     */
+    Alpine.data('themePicker', (config) => ({
+        open: false,
+        choice: config.choice,
+        own: config.own,
+        apply(theme) {
+            const root = document.documentElement;
+            root.dataset.themeChoice = theme;
+            if (theme === 'system') {
+                window.shApplyTheme?.();
+            } else {
+                root.dataset.theme = theme;
+                root.style.colorScheme = config.modes[theme] === 'light' ? 'light' : 'dark';
+            }
+            window.dispatchEvent(new CustomEvent('sh-theme'));
+        },
+        async choose(key) {
+            const before = { choice: this.choice, own: this.own };
+            this.open = false;
+            if (key !== 'default') { this.choice = key; this.own = true; this.apply(key); }
+            try {
+                const response = await fetch(config.url, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '' },
+                    body: JSON.stringify({ theme: key }),
+                });
+                if (!response.ok) throw new Error(String(response.status));
+                const saved = await response.json();
+                this.choice = saved.theme;
+                this.own = saved.own;
+                this.apply(saved.theme);
+                window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'success', message: saved.own ? 'Theme saved. You will see it on every device.' : 'Back to the SureHelp default theme.' } }));
+            } catch (e) {
+                Object.assign(this, before);
+                this.apply(before.choice);
+                window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'error', message: 'Your theme could not be saved. Please try again.' } }));
+            }
         },
     }));
 

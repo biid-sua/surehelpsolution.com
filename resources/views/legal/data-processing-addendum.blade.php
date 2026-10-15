@@ -490,7 +490,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 // Highlight the target section
-                targetElement.style.background = 'rgba(79, 70, 229, 0.1)';
+                targetElement.style.background = 'rgba(var(--site-primary-rgb), 0.1)';
                 setTimeout(() => {
                     targetElement.style.background = '';
                 }, 2000);
@@ -506,7 +506,7 @@ document.addEventListener('DOMContentLoaded', function() {
         left: 0;
         width: 0%;
         height: 4px;
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        background: linear-gradient(135deg, var(--site-primary) 0%, var(--site-secondary) 100%);
         z-index: 10000;
         transition: width 0.3s ease;
     `;
@@ -545,7 +545,7 @@ document.addEventListener('DOMContentLoaded', function() {
     searchInput.style.cssText = `
         width: 100%;
         padding: 1rem 1.5rem;
-        border: 2px solid rgba(79, 70, 229, 0.2);
+        border: 2px solid rgba(var(--site-primary-rgb), 0.2);
         border-radius: 12px;
         font-size: 1rem;
         margin-bottom: 2rem;
@@ -567,7 +567,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (term.includes(searchTerm) || description.includes(searchTerm)) {
                     definition.style.display = 'block';
-                    definition.style.background = searchTerm ? 'rgba(79, 70, 229, 0.05)' : '';
+                    definition.style.background = searchTerm ? 'rgba(var(--site-primary-rgb), 0.05)' : '';
                 } else {
                     definition.style.display = 'none';
                 }

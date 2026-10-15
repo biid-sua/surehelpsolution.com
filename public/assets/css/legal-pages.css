@@ -3,10 +3,10 @@
 
 /* CSS Variables - Matching Home Page */
 :root {
-  --primary-color: #4f46e5;
-  --secondary-color: #7c3aed;
-  --accent-color: #a855f7;
-  --accent-secondary: #ccb1be;
+  --primary-color: var(--site-primary);
+  --secondary-color: var(--site-secondary);
+  --accent-color: var(--site-accent);
+  --accent-secondary: var(--site-soft);
   --text-primary: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.9);
   --text-muted: rgba(255, 255, 255, 0.7);
@@ -14,15 +14,15 @@
   --text-dark-secondary: #475569;
   --border-color: rgba(255, 255, 255, 0.1);
   --border-dark: rgba(0, 0, 0, 0.1);
-  --background-dark: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #2d1b69 100%);
+  --background-dark: linear-gradient(135deg, var(--site-bg-1) 0%, var(--site-bg-2) 50%, var(--site-bg-3) 100%);
   --background-light: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  --gradient-primary: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  --gradient-secondary: linear-gradient(135deg, #1E3A8A 0%, #625ED0 50%, #4D8BCC 100%);
-  --gradient-text: linear-gradient(135deg, #fff 0%, #a855f7 50%, #ccb1be 100%);
+  --gradient-primary: linear-gradient(135deg, var(--site-primary) 0%, var(--site-secondary) 100%);
+  --gradient-secondary: linear-gradient(135deg, var(--site-hero-1) 0%, var(--site-hero-2) 50%, var(--site-hero-3) 100%);
+  --gradient-text: linear-gradient(135deg, #fff 0%, var(--site-accent) 50%, var(--site-soft) 100%);
   --shadow-light: 0 10px 40px rgba(0, 0, 0, 0.08);
   --shadow-medium: 0 20px 60px rgba(0, 0, 0, 0.12);
   --shadow-strong: 0 25px 50px rgba(0, 0, 0, 0.15);
-  --shadow-glow: 0 0 30px rgba(79, 70, 229, 0.3);
+  --shadow-glow: 0 0 30px rgba(var(--site-primary-rgb), 0.3);
 }
 
 /* Prevent conflicts with navbar and footer */
@@ -67,9 +67,9 @@ html {
   right: 0;
   bottom: 0;
   background: 
-    radial-gradient(circle at 20% 20%, rgba(79, 70, 229, 0.15) 0%, transparent 40%),
-    radial-gradient(circle at 80% 80%, rgba(124, 58, 237, 0.15) 0%, transparent 40%),
-    radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.1) 0%, transparent 60%);
+    radial-gradient(circle at 20% 20%, rgba(var(--site-primary-rgb), 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(var(--site-secondary-rgb), 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(var(--site-primary-rgb), 0.1) 0%, transparent 60%);
   pointer-events: none;
 }
 
@@ -169,8 +169,8 @@ html {
   right: 0;
   bottom: 0;
   background: 
-    radial-gradient(circle at 25% 25%, rgba(79, 70, 229, 0.03) 0%, transparent 50%),
-    radial-gradient(circle at 75% 75%, rgba(124, 58, 237, 0.03) 0%, transparent 50%);
+    radial-gradient(circle at 25% 25%, rgba(var(--site-primary-rgb), 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(var(--site-secondary-rgb), 0.03) 0%, transparent 50%);
   pointer-events: none;
 }
 
@@ -189,7 +189,7 @@ html {
   padding: 3rem;
   margin-bottom: 4rem;
   box-shadow: var(--shadow-light);
-  border: 2px solid rgba(79, 70, 229, 0.1);
+  border: 2px solid rgba(var(--site-primary-rgb), 0.1);
   position: relative;
   overflow: hidden;
   transition: all 0.4s ease;
@@ -214,7 +214,7 @@ html {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(79, 70, 229, 0.02) 0%, rgba(124, 58, 237, 0.02) 100%);
+  background: linear-gradient(135deg, rgba(var(--site-primary-rgb), 0.02) 0%, rgba(var(--site-secondary-rgb), 0.02) 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -271,7 +271,7 @@ html {
   color: #1e293b;
   font-weight: 600;
   transition: all 0.4s ease;
-  border: 2px solid rgba(79, 70, 229, 0.3);
+  border: 2px solid rgba(var(--site-primary-rgb), 0.3);
   position: relative;
   overflow: hidden;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
@@ -284,7 +284,7 @@ html {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(79, 70, 229, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, rgba(var(--site-primary-rgb), 0.1), transparent);
   transition: left 0.6s ease;
 }
 
@@ -303,7 +303,7 @@ html {
 .toc-list a:hover {
   color: white;
   transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 15px 40px rgba(79, 70, 229, 0.4);
+  box-shadow: 0 15px 40px rgba(var(--site-primary-rgb), 0.4);
   border-color: var(--primary-color);
 }
 
@@ -352,7 +352,7 @@ html {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(79, 70, 229, 0.02) 0%, rgba(124, 58, 237, 0.02) 100%);
+  background: linear-gradient(135deg, rgba(var(--site-primary-rgb), 0.02) 0%, rgba(var(--site-secondary-rgb), 0.02) 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -402,7 +402,7 @@ html {
   font-size: 2.5rem;
   transition: all 0.3s ease;
   padding: 1rem;
-  background: rgba(79, 70, 229, 0.1);
+  background: rgba(var(--site-primary-rgb), 0.1);
   border-radius: 16px;
 }
 
@@ -479,7 +479,7 @@ html {
 
 /* Enhanced Highlight Boxes */
 .highlight-box {
-  background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(124, 58, 237, 0.08) 100%);
+  background: linear-gradient(135deg, rgba(var(--site-primary-rgb), 0.08) 0%, rgba(var(--site-secondary-rgb), 0.08) 100%);
   border-left: 6px solid var(--primary-color);
   padding: 2.5rem;
   border-radius: 20px;
@@ -496,14 +496,14 @@ html {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(124, 58, 237, 0.05) 100%);
+  background: linear-gradient(135deg, rgba(var(--site-primary-rgb), 0.05) 0%, rgba(var(--site-secondary-rgb), 0.05) 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
 
 .highlight-box:hover {
   transform: translateY(-6px);
-  box-shadow: 0 20px 50px rgba(79, 70, 229, 0.15);
+  box-shadow: 0 20px 50px rgba(var(--site-primary-rgb), 0.15);
   border-left-color: var(--secondary-color);
 }
 
@@ -655,7 +655,7 @@ html {
   font-size: 1.75rem;
   transition: all 0.3s ease;
   padding: 0.75rem;
-  background: rgba(79, 70, 229, 0.1);
+  background: rgba(var(--site-primary-rgb), 0.1);
   border-radius: 12px;
 }
 
@@ -686,7 +686,7 @@ html {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(79, 70, 229, 0.02) 0%, rgba(124, 58, 237, 0.02) 100%);
+  background: linear-gradient(135deg, rgba(var(--site-primary-rgb), 0.02) 0%, rgba(var(--site-secondary-rgb), 0.02) 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -716,7 +716,7 @@ html {
 .toggle-switch.active {
   background: var(--gradient-primary);
   border-color: var(--primary-color);
-  box-shadow: 0 0 20px rgba(79, 70, 229, 0.3);
+  box-shadow: 0 0 20px rgba(var(--site-primary-rgb), 0.3);
 }
 
 .toggle-switch::after {
@@ -854,16 +854,16 @@ html {
 .signature-section:hover .signature-line {
   background: var(--gradient-primary);
   width: 300px;
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+  box-shadow: 0 2px 8px rgba(var(--site-primary-rgb), 0.3);
 }
 
 /* Download Button Styles */
 .download-section {
   margin: 3rem 0;
   padding: 2.5rem;
-  background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(124, 58, 237, 0.08) 100%);
+  background: linear-gradient(135deg, rgba(var(--site-primary-rgb), 0.08) 0%, rgba(var(--site-secondary-rgb), 0.08) 100%);
   border-radius: 20px;
-  border: 2px solid rgba(79, 70, 229, 0.2);
+  border: 2px solid rgba(var(--site-primary-rgb), 0.2);
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -884,7 +884,7 @@ html {
 
 .download-section:hover {
   transform: translateY(-4px);
-  box-shadow: 0 15px 40px rgba(79, 70, 229, 0.2);
+  box-shadow: 0 15px 40px rgba(var(--site-primary-rgb), 0.2);
 }
 
 .download-section:hover::before {
@@ -935,7 +935,7 @@ html {
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+  box-shadow: 0 4px 15px rgba(var(--site-primary-rgb), 0.3);
 }
 
 .download-button::before {
@@ -951,7 +951,7 @@ html {
 
 .download-button:hover {
   transform: translateY(-3px) scale(1.05);
-  box-shadow: 0 8px 25px rgba(79, 70, 229, 0.4);
+  box-shadow: 0 8px 25px rgba(var(--site-primary-rgb), 0.4);
   text-decoration: none;
   color: white;
 }
@@ -984,7 +984,7 @@ html {
 .contact-address-entry i {
   flex-shrink: 0;
   margin-top: 0.2rem;
-  color: var(--primary, #4f46e5);
+  color: var(--primary, var(--site-primary));
 }
 
 .contact-address-entry span {

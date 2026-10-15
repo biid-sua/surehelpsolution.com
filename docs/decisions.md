@@ -742,3 +742,24 @@ Start these early. The code can be built and tested with your own accounts befor
 - **Accuracy fixes found on the way:** the FAQ said Apple Calendar and SMS/phone message delivery. The product syncs with Google and Microsoft calendars and delivers to the portal, the app and email, so those answers now say that. The commented-out "trusted by" logos of companies we don't serve were taken out of the HTML.
 
 **Why:** the site had no sitemap, canonical tags, structured data or share cards; its titles were generic ("Small Business - SureHelp Solution"); and the portals were open to crawlers. Ranking also depends on things outside the code (Search Console, Google Business Profile, links, reviews, regular content), which are listed in [website-seo.md](website-seo.md).
+
+## D59 — Colour themes: personal choice in the portals, browser choice on the website (2026-10-28)
+**Decision:** people choose the colours they see.
+- **Portal themes:**
+  - Six palettes: Midnight (the original), Dark, Light, Ocean, Forest and Sunset.
+  - A seventh option, "Match my device", shows Light or Midnight depending on the device's setting.
+  - Each palette redefines the same design tokens (`resources/css/themes.css`), so every screen, chart and calendar follows. Light also darkens the status colours written for dark backgrounds, and swaps in a dark-text logo.
+- **Where people choose:** the swatch menu in the top bar, or *Your account › Appearance*.
+- **How it's stored:** on the account (`users.theme`, `theme_chosen_at`), so the choice follows the person to every device. "Use the default" clears it.
+- **Applied before the page draws:** the `<html>` element carries the theme. A small inline script resolves "Match my device" and follows the device when it changes. Charts redraw in the new colours.
+- **Staff viewing as a client** don't see the menu. The client's choice is theirs.
+- **Admin default:**
+  - *Admin › Appearance* (`settings.view` to see it, `settings.manage` to change it) sets the theme for everyone who hasn't chosen one, including the sign-in pages (platform setting `ui.default_theme`, falling back to `config('themes.default')`).
+  - Changing the default never changes a personal choice. The page shows how many people chose each theme.
+- **Resetting a personal choice:** a separate, deliberate action, for one person (by email) or everyone. It needs a reason and the typed word RESET. It is recorded in the audit log (`ui.themes_reset`), and each person affected gets an in-app notice with the reason.
+- **Website themes:**
+  - The public site has six palettes: Indigo (the original), Ocean, Emerald, Sunset, Rose and Graphite.
+  - Its brand colours became CSS variables (`public/assets/css/site-themes.css`).
+  - Visitors pick a palette from a round button in the bottom-left corner. The choice is kept only in their browser (`localStorage` key `surehelp.site-theme`) and applied before the page draws. Nothing is sent to the server.
+
+**Why:** the request was themes anyone can choose and keep, a default administrators control without overriding people's own choices except through a deliberate step, and more palettes for the landing page remembered in the browser.
