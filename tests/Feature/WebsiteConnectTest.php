@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
@@ -198,6 +199,9 @@ class WebsiteConnectTest extends TestCase
         $this->assertArrayNotHasKey('nap_address', $byKey->all(), 'Austin is on the page');
         $this->assertSame(['https://rivera.test/', 'https://rivera.test/about'], $site->health['checked_pages']);
         $this->assertLessThan(50, $site->health_score);
+        // Each page's title and description are kept for the SEO service (D57), and every check is kept as history.
+        $this->assertSame('https://rivera.test/', $site->health['pages'][0]['url']);
+        $this->assertDatabaseHas('website_checks', ['website_id' => $site->id, 'health_score' => $site->health_score]);
         Http::assertNotSent(fn ($request) => str_contains($request->url(), 'elsewhere.test'));
 
         // An unreachable site keeps the last results and says why.
@@ -207,6 +211,7 @@ class WebsiteConnectTest extends TestCase
         app(WebsiteHealthCheck::class)->run($site);
         $this->assertNotNull($site->fresh()->health);
         $this->assertStringContainsString('503', (string) $site->fresh()->last_error);
+        $this->assertSame(2, DB::table('website_checks')->where('website_id', $site->id)->count());
     }
 
     public function test_verified_sites_are_checked_again_every_month(): void

@@ -30,6 +30,14 @@ final class HtmlPage
         return $title === '' ? null : $title;
     }
 
+    /** The page's main heading (first h1), or null. */
+    public function heading(): ?string
+    {
+        $h1 = $this->text('//h1');
+
+        return $h1 === '' ? null : mb_substr($h1, 0, 300);
+    }
+
     public function meta(string $name): ?string
     {
         foreach ($this->xpath->query('//meta[@name or @property]') ?: [] as $node) {

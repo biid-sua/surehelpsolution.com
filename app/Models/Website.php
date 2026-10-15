@@ -12,7 +12,7 @@ use Illuminate\Support\Str;
  *
  * @property Carbon|null $verified_at
  * @property Carbon|null $last_checked_at
- * @property array{checked_pages?: list<string>, findings?: list<array{key: string, status: string, title: string, detail: string, pages?: list<string>}>}|null $health
+ * @property array{checked_pages?: list<string>, pages?: list<array{url: string, title: ?string, description: ?string, h1: ?string}>, findings?: list<array{key: string, status: string, title: string, detail: string, pages?: list<string>}>}|null $health
  */
 class Website extends Model
 {

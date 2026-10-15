@@ -32,7 +32,7 @@ class FeatureAccess
     public function __construct(private readonly Entitlements $entitlements) {}
 
     /**
-     * @return array<string, array{label: string, description: string}>
+     * @return array<string, array{label: string, description: string, default_mode?: string}>
      */
     public function catalog(): array
     {
@@ -72,7 +72,8 @@ class FeatureAccess
             $saved = is_string($saved) ? (json_decode($saved, true) ?: []) : (array) $saved;
             $this->modes = [];
             foreach (array_keys($this->catalog()) as $key) {
-                $this->modes[$key] = ($saved[$key] ?? self::EVERYONE) === self::PLAN ? self::PLAN : self::EVERYONE;
+                $default = ($this->catalog()[$key]['default_mode'] ?? self::EVERYONE) === self::PLAN ? self::PLAN : self::EVERYONE;
+                $this->modes[$key] = ($saved[$key] ?? $default) === self::PLAN ? self::PLAN : self::EVERYONE;
             }
         }
 

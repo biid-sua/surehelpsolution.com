@@ -21,6 +21,7 @@ use App\Http\Controllers\Client\DataExportController as ClientDataExportControll
 use App\Http\Controllers\Client\InvoiceController as ClientInvoiceController;
 use App\Http\Controllers\Client\ResultsCsvController;
 use App\Http\Controllers\Client\ResultsPdfController;
+use App\Http\Controllers\Client\SearchConsoleController;
 use App\Http\Controllers\Client\SocialOAuthController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
@@ -44,6 +45,7 @@ use App\Livewire\Admin\Organizations\Index as OrganizationIndex;
 use App\Livewire\Admin\Organizations\Show as OrganizationShow;
 use App\Livewire\Admin\Schedules\Index as AdminSchedules;
 use App\Livewire\Admin\Search as AdminSearch;
+use App\Livewire\Admin\Seo\Index as AdminSeo;
 use App\Livewire\Admin\Support\Index as AdminSupport;
 use App\Livewire\Admin\Usage\Index as AdminUsage;
 use App\Livewire\Admin\Users\Index as AdminUsers;
@@ -97,6 +99,7 @@ use App\Livewire\Client\Inbox\Channels as InboxChannels;
 use App\Livewire\Client\Inbox\Index as InboxIndex;
 use App\Livewire\Client\Results as ClientResults;
 use App\Livewire\Client\Search as ClientSearch;
+use App\Livewire\Client\Seo as ClientSeo;
 use App\Livewire\Client\Settings\Notifications as NotificationSettings;
 use App\Livewire\Client\Settings\Privacy as PrivacySettings;
 use App\Livewire\Client\Settings\Team as TeamSettings;
@@ -188,6 +191,13 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/settings/privacy/exports/{export}', ClientDataExportController::class)->name('settings.privacy.export');
     });
     Route::get('/tasks', TasksIndex::class)->middleware('can:tasks.view')->name('tasks.index');
+    // SEO service (D57): the page offers the service when it's off; the work needs the feature.
+    Route::get('/seo', ClientSeo::class)->middleware('can:seo.view')->name('seo');
+    Route::middleware(['can:seo.manage', 'feature:seo_service'])->prefix('seo/search-console')->name('seo.search-console.')->group(function () {
+        Route::get('/connect', [SearchConsoleController::class, 'redirect'])->name('connect');
+        Route::get('/callback', [SearchConsoleController::class, 'callback'])->name('callback');
+        Route::post('/disconnect', [SearchConsoleController::class, 'disconnect'])->name('disconnect');
+    });
     Route::middleware('can:support.view')->group(function () {
         Route::get('/support', ClientSupport::class)->name('support');
         Route::get('/support/attachments/{message}', SupportAttachmentController::class)->whereNumber('message')->name('support.attachment');
@@ -304,6 +314,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth.home', 'force.password
     Route::get('/calls/review', CallReview::class)->name('calls.review');
     Route::get('/appointments', AdminAppointments::class)->middleware('can:appointments.view')->name('appointments');
     Route::get('/customers', AdminCustomers::class)->middleware('can:customers.view')->name('customers');
+    Route::get('/seo', AdminSeo::class)->middleware('can:seo.manage')->name('seo');
     Route::get('/usage', AdminUsage::class)->middleware('can:billing.view')->name('usage');
     Route::get('/escalations', AdminEscalations::class)->middleware('can:escalations.view')->name('escalations');
     Route::get('/billing', AdminBilling::class)->middleware('can:billing.view')->name('billing');

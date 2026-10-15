@@ -6,6 +6,7 @@ use App\Models\BusinessLocation;
 use App\Models\BusinessProfile;
 use App\Models\ChatWidget;
 use App\Models\Website;
+use App\Models\WebsiteCheck;
 
 /**
  * The website health and SEO check (spec §41B): what a search engine and a visitor on a phone run
@@ -37,6 +38,7 @@ class WebsiteHealthCheck
                 'last_checked_at' => now(),
                 'last_error' => $home->error ?? "Your home page answered with an error ({$home->status}).",
             ])->save();
+            $this->remember($website, null, [], 0);
 
             return $website;
         }
@@ -76,10 +78,40 @@ class WebsiteHealthCheck
             'last_checked_at' => now(),
             'last_error' => null,
             'health_score' => max(0, $score),
-            'health' => ['checked_pages' => array_map(fn (HtmlPage $p) => $p->url, $pages), 'findings' => $findings],
+            'health' => [
+                'checked_pages' => array_map(fn (HtmlPage $p) => $p->url, $pages),
+                'findings' => $findings,
+                // What each page says now, for SEO suggestions (D57).
+                'pages' => array_map(fn (HtmlPage $p) => [
+                    'url' => $p->url,
+                    'title' => $p->title(),
+                    'description' => $p->meta('description'),
+                    'h1' => $p->heading(),
+                ], $pages),
+            ],
         ])->save();
+        $this->remember($website, max(0, $score), $findings, count($pages));
 
         return $website;
+    }
+
+    /**
+     * Keeps every run, so the SEO page can show how the site changed over time (D57).
+     *
+     * @param  list<array<string, mixed>>  $findings
+     */
+    private function remember(Website $website, ?int $score, array $findings, int $pages): void
+    {
+        WebsiteCheck::create([
+            'website_id' => $website->id,
+            'organization_id' => $website->organization_id,
+            'checked_at' => now(),
+            'health_score' => $score,
+            'problems' => count(array_filter($findings, fn (array $f) => $f['status'] === 'problem')),
+            'warnings' => count(array_filter($findings, fn (array $f) => $f['status'] === 'warning')),
+            'pages_checked' => $pages,
+            'error' => $score === null ? mb_substr((string) $website->last_error, 0, 500) : null,
+        ]);
     }
 
     /** @return list<array<string, mixed>> */

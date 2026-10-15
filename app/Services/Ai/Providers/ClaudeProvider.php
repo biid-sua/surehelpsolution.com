@@ -56,7 +56,11 @@ class ClaudeProvider implements AiProvider
                 messages: array_map(fn (array $m) => $this->message($m), $request->messages),
                 model: $this->model(),
                 fallbacks: $fallbacks ? 'default' : null,
-                outputConfig: ['effort' => (string) config('ai.anthropic.effort', 'medium')],
+                outputConfig: array_filter([
+                    'effort' => $request->effort ?? (string) config('ai.anthropic.effort', 'medium'),
+                    // Structured output: the reply's text is JSON that matches the schema.
+                    'format' => $request->outputSchema === null ? null : ['type' => 'json_schema', 'schema' => $request->outputSchema],
+                ]),
                 system: $system,
                 toolChoice: $request->tools === [] ? null : ['type' => 'auto'],
                 tools: $request->tools === [] ? null : array_map(fn (array $t) => [

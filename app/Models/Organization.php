@@ -25,6 +25,8 @@ use Illuminate\Support\Str;
  * @property int|null $average_job_value_cents for estimated revenue in Results
  * @property string|null $last_report_month "Y-m" of the last monthly report sent
  * @property bool $approve_agent_bookings agent bookings wait for the owner's approval (CAL-08)
+ * @property int|null $seo_token_allowance AI tokens a month for SEO work, overriding the plan's (D57)
+ * @property array<string, mixed>|null $seo_settings target services, areas and keywords; autopilot on/off (D57)
  * @property int|null $customer_change_hours customers may change or cancel online until this many hours before (CAL-09); null = not offered
  * @property int|null $retention_months months of history kept (null = all)
  * @property Carbon|null $closure_requested_at
@@ -54,6 +56,8 @@ class Organization extends Model
             'average_job_value_cents' => 'integer',
             'approve_agent_bookings' => 'boolean',
             'customer_change_hours' => 'integer',
+            'seo_token_allowance' => 'integer',
+            'seo_settings' => 'array',
             'retention_months' => 'integer',
             'closure_requested_at' => 'datetime',
             'closes_at' => 'datetime',

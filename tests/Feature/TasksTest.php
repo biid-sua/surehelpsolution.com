@@ -238,6 +238,7 @@ class TasksTest extends TestCase
         $this->actingAs($owner);
         Livewire::test(Index::class)->call('edit', $task->ulid)
             ->set('form.due_date', now()->subDay()->toDateString())
+            ->set('form.due_time', '09:00')   // the form keeps the old time of day, which could still be ahead
             ->set('form.assigned_to_user_id', (string) $staff->id)
             ->call('save')->assertHasNoErrors();
         $this->assertNull($task->fresh()->overdue_notified_at);

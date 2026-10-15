@@ -676,3 +676,41 @@ Start these early. The code can be built and tested with your own accounts befor
 - **The address stays optional for the business:** with nothing typed, the booking has no address, as before. Once any part is typed, the full address is required.
 - **The separate "Location" dropdown is gone:** the business's locations are listed under *Use saved location*. A service tied to a location selects it, and the free times follow the chosen location.
 - **Customers:** choosing a customer offers their saved places, most recent first. A new customer typed into the form gets the address on their record. *Save this location* needs an existing customer or a new customer's phone number.
+
+## D57 — SEO service: AI does the SEO work, statistics show the difference (2026-10-27)
+**Decision:** businesses can take an **SEO service** from us under **SEO** in the business portal. AI does the SEO work within a monthly token allowance, and the page shows the results before and after.
+- **A paid add-on, off by default:** the feature key `seo_service` has `default_mode: plan` (a new per-feature setting in `config/features.php`), so it's closed until a plan or add-on includes it. The business sees an offer card and turns it on itself when an active add-on with the slug `seo_service` exists. Turning it on bills the add-on with the subscription and starts the first keyword plan. Staff can also switch it on for one business (D46 overrides) or put `seo_service` in a plan's features.
+- **The SEO tasks** (`SeoTaskCatalog`):
+  - a keyword plan;
+  - page titles, descriptions and main headings for the pages the website check read;
+  - a local service page for one service in one town;
+  - an FAQ with schema.org `FAQPage` markup (built in code, not by the AI);
+  - four Google Business Profile posts.
+- **How the AI is used:**
+  - Each task is one Claude request with **structured output**: a JSON schema per task, so the answer is always parseable.
+  - The `effort` is set from `config/seo.php`.
+  - Lengths and counts are enforced in code afterwards.
+  - The AI only gets the business's public facts: profile, location, service area, active services, public knowledge items, and the focus areas the business typed. It never gets internal knowledge or agent instructions.
+  - It is told never to invent awards, prices, licences or reviews.
+- **AI tokens:**
+  - Every task records its input (including cached) and output tokens.
+  - The allowance is per calendar month in the business's timezone. Staff can set one for a single business; otherwise the plan's `seo_ai_tokens` limit applies, otherwise `SEO_MONTHLY_TOKENS` (250,000).
+  - A task can't start with less than 5,000 tokens left, and at most three run at once.
+  - Failed answers still count the tokens they used. An unreachable AI uses none.
+- **Review, then live:**
+  - The business approves or sets aside each result. Each result has copy buttons, and a local page can be copied as HTML.
+  - Staff see approved work under *Admin › SEO service*, put it on the site, and mark it live. The business can also mark it live itself.
+  - The date it went live becomes a dashed marker on the charts.
+- **Autopilot (on by default, `seo:daily`, 08:10):**
+  - Statistics are refreshed every day.
+  - On the 1st of each month: a keyword plan every three months; new titles and descriptions when the website check finds title, description or heading problems; and Google Business Profile posts.
+- **Statistics, before and after:**
+  - The tiles compare the 28 days before the first SEO task with the latest 28 days: clicks, times shown and average position (from Google Search Console), website health, and website leads.
+  - Average position is weighted by impressions, as Google does, and lower is better.
+  - Weekly charts use seven-day blocks ending on the latest day with data, so the last point is never a part-week.
+  - A table shows the searches people used to find the business.
+  - Website health history comes from a new `website_checks` row on every check. The website check now also keeps each page's title, description and main heading.
+- **Google Search Console:** read-only (`webmasters.readonly`), through the same Google app as calendar sync. On first connect it fetches up to 480 days of history, then the last 14 days daily. Lost access marks the connection for reconnecting.
+- **Privacy:** closing an account deletes SEO tasks, website check history, Search Console numbers and the Search Console connection.
+
+**Why:** the request was that clients can take SEO from us, that the SEO work is done with AI tokens, and that the section shows statistics to see the difference. Real Search Console numbers with a "went live" marker make the effect visible, instead of claiming one. Review before publishing keeps a person responsible for what goes on the business's site.

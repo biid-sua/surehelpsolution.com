@@ -57,4 +57,6 @@ Schedule::command('training:sweep')->hourly()->withoutOverlapping(30);
 // Agents' own calendars: nightly catch-up of copied shifts (D54). Changes are copied as they happen.
 Schedule::command('agent-calendars:sync')->dailyAt('03:40')->withoutOverlapping(60);
 // Monthly website health and SEO checks (spec §41B, D44).
+// SEO service (D57): Search Console statistics daily; monthly autopilot on the 1st.
+Schedule::command('seo:daily')->dailyAt('08:10')->withoutOverlapping(60);
 Schedule::command('websites:check')->dailyAt('07:20')->withoutOverlapping(60);

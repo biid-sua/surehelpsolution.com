@@ -34,6 +34,7 @@ _As of 2026-10-06. Detailed tracker: [implementation-plan.md](implementation-pla
   - Feedback on AI replies becomes guidelines the owner approves ([inbox.md](inbox.md)).
 
 - **Connect a website (G-3, D44):** owners prove they own their site, get a health and SEO check with plain-language fixes (re-checked monthly), and the one snippet now offers chat, online booking, click-to-call and a contact form, all landing in the CRM ([websites.md](websites.md)).
+- **SEO service (D57):** businesses take SEO as a paid add-on. AI does the SEO work within a monthly token allowance: keyword plans, page titles and descriptions, local pages, FAQs and Google Business Profile posts. The work is reviewed and then marked live. Before-and-after statistics come from Google Search Console, website health history and website leads. Setup steps: [seo.md](seo.md).
 
 380 automated tests pass.
 
@@ -166,6 +167,7 @@ Everything the 2026-10-23 audit found has been built (A-5 to A-12 above). What's
 | Staging environment | Not set up yet; recommended before larger releases |
 | Delete branch `feature/p2-4b-tasks` | A superseded local draft; the cloud version is merged |
 | Pick a domain for hosted websites | e.g. `surehelp.site`, on Cloudflare (D35) |
+| **SEO service setup** | Create the add-on with slug `seo_service` (*Admin › Billing › Add-ons*); set `ANTHROPIC_API_KEY`; enable the Search Console API in Google Cloud, add the redirect URI `{APP_URL}/app/seo/search-console/callback`, and submit the `webmasters.readonly` scope for Google verification ([seo.md](seo.md)) |
 
 ### C. Blocked on outside accounts or approvals
 | Item | Waiting for | Lead time |

@@ -34,8 +34,45 @@ document.addEventListener('alpine:init', () => {
             const grid = css('--color-line');
             const text = css('--color-subtle');
 
+            // Optional vertical markers, e.g. "SEO change applied": [{ index, label }] (neutral ink, dashed).
+            const markerInk = css('--color-muted');
+            const markerBg = css('--color-surface');
+            const markers = {
+                id: 'markers',
+                afterDatasetsDraw(chart) {
+                    const { ctx, chartArea, scales } = chart;
+                    const taken = []; // label boxes already drawn, so close markers stack instead of overlapping
+                    (config.markers ?? []).forEach((m) => {
+                        const x = scales.x.getPixelForValue(m.index);
+                        if (x < chartArea.left || x > chartArea.right) return;
+                        ctx.save();
+                        ctx.strokeStyle = markerInk;
+                        ctx.lineWidth = 1;
+                        ctx.setLineDash([4, 4]);
+                        ctx.beginPath();
+                        ctx.moveTo(x, chartArea.top);
+                        ctx.lineTo(x, chartArea.bottom);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                        ctx.font = '11px Inter, system-ui, sans-serif';
+                        const width = ctx.measureText(m.label).width;
+                        // Right of the line when it fits, otherwise left of it.
+                        const left = x + 4 + width <= chartArea.right ? x + 4 : Math.max(chartArea.left, x - 4 - width);
+                        let row = 0;
+                        while (taken.some((t) => t.row === row && left < t.right + 6 && left + width > t.left - 6)) row++;
+                        taken.push({ left, right: left + width, row });
+                        ctx.fillStyle = markerBg;
+                        ctx.fillRect(left - 2, chartArea.top + row * 14, width + 4, 14);
+                        ctx.fillStyle = markerInk;
+                        ctx.fillText(m.label, left, chartArea.top + 11 + row * 14);
+                        ctx.restore();
+                    });
+                },
+            };
+
             this.instance = new Chart(this.$refs.canvas, {
                 type: config.type ?? 'bar',
+                plugins: [markers],
                 data: {
                     labels: config.labels,
                     datasets: config.series.map((series) => ({
@@ -48,6 +85,7 @@ document.addEventListener('alpine:init', () => {
                         fill: config.type === 'line',
                         tension: 0.35,
                         pointRadius: 0,
+                        pointHoverRadius: 4,
                         maxBarThickness: 28,
                     })),
                 },
@@ -58,7 +96,8 @@ document.addEventListener('alpine:init', () => {
                     plugins: { legend: { display: false }, tooltip: { intersect: false, mode: 'index' } },
                     scales: {
                         x: { grid: { display: false }, ticks: { color: text, maxRotation: 0, autoSkip: true } },
-                        y: { beginAtZero: true, grid: { color: grid }, ticks: { color: text, precision: 0 } },
+                        // reverse: for measures where lower is better (search position 1 is the top).
+                        y: { reverse: !!config.reverse, beginAtZero: !config.reverse, grid: { color: grid }, ticks: { color: text, precision: config.precision ?? 0 } },
                     },
                 },
             });

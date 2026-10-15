@@ -8,7 +8,8 @@
 | Features a plan or an add-on can include. Each one is either open to every business, or only to
 | plans and add-ons that list its key (Admin › Billing › Feature access). Staff can also switch a
 | feature on or off for one business. Everything starts open to everyone, so turning this on never
-| takes anything away by surprise.
+| takes anything away by surprise, except a feature with 'default_mode' => 'plan': a new paid service
+| that costs us money to run (D57) starts closed until a plan or add-on includes it.
 |
 */
 
@@ -33,6 +34,12 @@ return [
     'customer_emails' => [
         'label' => 'Appointment emails to customers',
         'description' => 'Confirmations, reminders, changes and cancellations sent in the business\'s name.',
+    ],
+
+    'seo_service' => [
+        'label' => 'SEO service',
+        'description' => 'AI-assisted SEO work every month (keyword plan, page titles and descriptions, local pages, FAQ), with Search Console statistics.',
+        'default_mode' => 'plan',
     ],
 
 ];
