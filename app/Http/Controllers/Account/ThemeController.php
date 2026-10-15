@@ -16,11 +16,10 @@ class ThemeController extends Controller
 {
     public function update(Request $request, Themes $themes): JsonResponse
     {
-        $data = $request->validate(['theme' => ['required', 'string', Rule::in([...array_keys($themes->portal()), 'default'])]]);
-        $own = $data['theme'] === 'default' ? null : $data['theme'];
+        $data = $request->validate(['theme' => ['required', 'string', Rule::in($themes->keys())]]);
+        $themes->choose($request->user(), $data['theme']);
+        $saved = $themes->payload($request->user());
 
-        $request->user()->forceFill(['theme' => $own, 'theme_chosen_at' => $own ? now() : null])->save();
-
-        return response()->json(['theme' => $themes->choiceFor($request->user()), 'own' => $own !== null]);
+        return response()->json(['theme' => $saved['key'], 'own' => $saved['own']]);
     }
 }

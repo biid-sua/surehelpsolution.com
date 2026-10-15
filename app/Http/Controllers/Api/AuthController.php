@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\Account\TwoFactor;
 use App\Support\Audit\Audit;
+use App\Support\Ui\Themes;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -95,6 +96,8 @@ class AuthController extends Controller
                     'token_type' => 'Bearer',
                     'expires_at' => $newToken->accessToken->expires_at?->toIso8601String(),
                     'must_change_password' => $user->requiresPasswordChange(),
+                    // Additive (D59): the colour theme to show; GET /themes has the colours.
+                    'theme' => app(Themes::class)->payload($user),
                 ],
             ], 200);
 
@@ -174,6 +177,8 @@ class AuthController extends Controller
                         'timezone' => $organization->timezone,
                         'currency' => $organization->currency,
                     ] : null,
+                    // Additive (D59): the colour theme to show; GET /themes has the colours.
+                    'theme' => app(Themes::class)->payload($user),
                 ],
             ], 200);
 

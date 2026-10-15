@@ -10,6 +10,7 @@ use App\Notifications\ThemeReset;
 use App\Support\Ui\Themes;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Laravel\Sanctum\Sanctum;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -159,5 +160,67 @@ class ThemesTest extends TestCase
         }
         // Nothing about the visitor's site theme is stored on the server.
         $this->assertStringNotContainsString(route('account.theme'), $html);
+    }
+
+    public function test_the_mobile_app_reads_and_saves_the_same_theme_as_the_web(): void
+    {
+        $owner = User::factory()->create(['role' => 'client', 'is_active' => true, 'must_change_password' => false, 'password' => 'Secret123!']);
+        app(ProvisionUserTenancy::class)->handle($owner);
+        $owner->forceFill(['theme' => 'ocean'])->save();
+
+        // Login and GET /user carry the theme to show.
+        $this->postJson('/api/v1/login', ['email' => $owner->email, 'password' => 'Secret123!'])->assertOk()
+            ->assertJsonPath('data.theme', ['key' => 'ocean', 'own' => true, 'default' => 'midnight']);
+
+        Sanctum::actingAs($owner->fresh());
+        $this->getJson('/api/v1/user')->assertOk()->assertJsonPath('data.theme.key', 'ocean');
+
+        // GET /themes: every theme with its colours; "system" says what it resolves to.
+        $themes = collect($this->getJson('/api/v1/themes')->assertOk()->assertJsonPath('data.current.key', 'ocean')->json('data.themes'))->keyBy('key');
+        $this->assertSame(array_keys(config('themes.portal')), $themes->keys()->all());
+        $this->assertSame('#ffffff', $themes['light']['colors']['surface']);
+        $this->assertSame('light', $themes['light']['mode']);
+        $this->assertSame(['light' => 'light', 'dark' => 'midnight'], $themes['system']['resolves_to']);
+        $this->assertArrayNotHasKey('colors', $themes['system']);
+
+        // PUT /user/theme saves to the account: the web shows it too.
+        $this->putJson('/api/v1/user/theme', ['theme' => 'sunset'])->assertOk()->assertJsonPath('success', true)
+            ->assertJsonPath('data.theme', ['key' => 'sunset', 'own' => true, 'default' => 'midnight']);
+        $this->assertSame('sunset', $owner->fresh()->theme);
+        $this->putJson('/api/v1/user/theme', ['theme' => 'neon'])->assertUnprocessable()->assertJsonPath('success', false)->assertJsonStructure(['errors' => ['theme']]);
+        $this->putJson('/api/v1/user/theme', ['theme' => 'default'])->assertOk()->assertJsonPath('data.theme.own', false);
+        $this->assertNull($owner->fresh()->theme);
+
+        $this->app['auth']->forgetGuards();
+        $this->getJson('/api/v1/themes')->assertUnauthorized();
+    }
+
+    public function test_the_app_colours_match_the_website_css(): void
+    {
+        $tokens = ['canvas' => 'canvas', 'surface' => 'surface', 'surface_2' => 'surface-2', 'surface_3' => 'surface-3', 'ink' => 'ink',
+            'muted' => 'muted', 'subtle' => 'subtle', 'brand' => 'brand-400', 'brand_strong' => 'brand-600', 'accent' => 'accent-500',
+            'success' => 'success', 'warning' => 'warning', 'danger' => 'danger', 'info' => 'info'];
+        $read = function (string $css): array {
+            preg_match_all('/--color-([a-z0-9-]+):\s*([^;]+);/', $css, $m);
+
+            return array_combine($m[1], array_map(fn ($v) => strtolower(trim($v)), $m[2]));
+        };
+        preg_match('/@theme\s*\{(.*?)\n\}/s', file_get_contents(resource_path('css/app.css')), $base);
+        $midnight = $read($base[1]);
+        $css = file_get_contents(resource_path('css/themes.css'));
+
+        foreach (config('themes.portal') as $key => $theme) {
+            if ($key === 'system') {
+                continue;
+            }
+            $values = $midnight;
+            if ($key !== 'midnight') {
+                preg_match("/:root\[data-theme='{$key}'\]\s*\{(.*?)\}/s", $css, $block);
+                $values = array_merge($midnight, $read($block[1]));
+            }
+            foreach ($tokens as $app => $token) {
+                $this->assertSame($values[$token], strtolower($theme['colors'][$app]), "{$key}.{$app} must match --color-{$token}");
+            }
+        }
     }
 }

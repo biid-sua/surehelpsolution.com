@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\KnowledgeController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\SocialPostController;
 use App\Http\Controllers\Api\TaskController;
+use App\Http\Controllers\Api\ThemeController as ApiThemeController;
 use App\Http\Controllers\Api\TrainingController;
 use App\Http\Controllers\Chat\SiteToolsController;
 use App\Http\Controllers\Chat\WidgetController;
@@ -59,6 +60,9 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
 Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])->group(function () {
     // User profile and authentication
     Route::get('/user', [AuthController::class, 'me']);
+    // Colour themes, shared with the web (D59)
+    Route::get('/themes', [ApiThemeController::class, 'index']);
+    Route::put('/user/theme', [ApiThemeController::class, 'update'])->middleware('throttle:30,1');
     Route::post('/refresh-token', [AuthController::class, 'refresh']);
 
     // Signed-in devices (docs/api.md)

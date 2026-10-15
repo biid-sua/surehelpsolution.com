@@ -16,7 +16,7 @@ class Themes
 
     private ?string $default = null;
 
-    /** @return array<string, array{label: string, description: string, mode: string, swatch: list<string>}> */
+    /** @return array<string, array{label: string, description: string, mode: string, swatch: list<string>, colors?: array<string, string>}> */
     public function portal(): array
     {
         return config('themes.portal');
@@ -48,6 +48,50 @@ class Themes
     public function choiceFor(?User $user): string
     {
         return $this->exists($user?->theme) ? (string) $user->theme : $this->default();
+    }
+
+    /**
+     * Save a person's own choice; `default` clears it so they follow the default again.
+     * Callers validate the key against {@see keys()}.
+     */
+    public function choose(User $user, string $key): void
+    {
+        $own = $key === 'default' ? null : $key;
+        $user->forceFill(['theme' => $own, 'theme_chosen_at' => $own ? now() : null])->save();
+    }
+
+    /** @return list<string> every key a person may send, including `default`. */
+    public function keys(): array
+    {
+        return [...array_keys($this->portal()), 'default'];
+    }
+
+    /**
+     * What a person sees, for the mobile app (login, GET /user, PUT /user/theme).
+     *
+     * @return array{key: string, own: bool, default: string}
+     */
+    public function payload(User $user): array
+    {
+        return ['key' => $this->choiceFor($user), 'own' => $this->exists($user->theme), 'default' => $this->default()];
+    }
+
+    /**
+     * Every theme with its colours, for the mobile app (GET /themes). `system` has no colours of
+     * its own: the app shows `resolves_to.light` or `resolves_to.dark` by the device setting.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function catalog(): array
+    {
+        return collect($this->portal())->map(fn (array $t, string $key) => array_filter([
+            'key' => $key,
+            'label' => $t['label'],
+            'description' => $t['description'],
+            'mode' => $t['mode'],
+            'colors' => $t['colors'] ?? null,
+            'resolves_to' => $key === 'system' ? ['light' => 'light', 'dark' => 'midnight'] : null,
+        ], fn ($v) => $v !== null))->values()->all();
     }
 
     /**

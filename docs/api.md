@@ -62,14 +62,31 @@ A client user only ever sees their own business. The business is resolved on the
 
 ---
 
+### Colour themes (D59)
+The `theme` object (on `/login`, `/user` and `PUT /user/theme`): `{ "key": "ocean", "own": true, "default": "midnight" }`.
+- `key`: the theme to show. It can be `system`: then use `resolves_to.light` or `resolves_to.dark` from `/themes`, following the device's light or dark setting.
+- `own`: `true` when the person chose it, `false` when they follow the default an administrator sets.
+- `default`: that default.
+
+`colors` (hex; `#RRGGBBAA` where transparent):
+- **backgrounds:** `canvas` (page), `surface` (cards), `surface_2`, `surface_3`;
+- **lines:** `line`, `line_strong`;
+- **text:** `ink`, `muted`, `subtle`;
+- **brand:** `brand` (links and highlights), `brand_strong` (filled buttons, with white text), `accent`;
+- **status:** `success`, `warning`, `danger`, `info`.
+
+They are the same values the website uses. Fetch `/themes` once per session; the list rarely changes.
+
 ## 2. Endpoints
 
 ### Account and devices — any signed-in user
 | Method | Path | Notes |
 |---|---|---|
-| POST | `/login` | `email`, `password`, `device_name?`, `two_factor_code?` → `data.user`, `data.token`, `data.token_type`, `data.expires_at`, `data.must_change_password` |
+| POST | `/login` | `email`, `password`, `device_name?`, `two_factor_code?` → `data.user`, `data.token`, `data.token_type`, `data.expires_at`, `data.must_change_password`, `data.theme` |
 | POST | `/logout` | Revokes the current token |
-| GET | `/user` | `data.user`, plus `data.organization` (`id` = public ULID, `name`, `status`, `timezone`, `currency`) for client users, `null` otherwise |
+| GET | `/user` | `data.user`, plus `data.organization` (`id` = public ULID, `name`, `status`, `timezone`, `currency`) for client users, `null` otherwise, and `data.theme` |
+| GET | `/themes` | Colour themes (D59) → `data.themes[]`: `key`, `label`, `description`, `mode` (`dark`, `light` or `auto`), `colors` (see below; absent for `system`), `resolves_to` (`system` only: `{light, dark}` theme keys to use by the device setting); `data.current` = this person's `theme` object |
+| PUT | `/user/theme` | `theme` = a key from `/themes`, or `default` to follow the SureHelp default again → `data.theme`. Saved on the account: the web shows the same theme |
 | POST | `/refresh-token` | New token for the same device → `data.token`, `data.expires_at` |
 | GET | `/devices` | `data.devices[]`: `id`, `name`, `current`, `last_used_at`, `created_at`, `expires_at`. Token values are never returned |
 | DELETE | `/devices/{id}` | Sign out one of **your** devices (others' → 404) |
@@ -162,6 +179,7 @@ A staff member without the permission gets `403`. Dashboard: `dashboard.view`. A
 
 | Date | Change |
 |---|---|
+| 2026-10-28 | Colour themes (D59): `data.theme` on `/login` and `/user` (additive); `GET /themes`; `PUT /user/theme`. |
 | 2026-10-23 | Optional `Idempotency-Key` header on create endpoints (D52). |
 | 2026-10-06 (A-4) | `/agent/training/…` (Agent University). Required training can now refuse company endpoints (`403 training_required`) and call logging (`422`) (D43). |
 | 2026-10-06 (A-1/A-2) | `/agent/companies` and its customers, appointments, calls and conversations. Unassigned businesses now answer `404` (was `403`) on `PUT /agent/call-logs/{id}`; `/agent/call-logs` lists only calls for businesses the agent serves now (D40). |

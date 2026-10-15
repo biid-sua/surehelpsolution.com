@@ -763,3 +763,10 @@ Start these early. The code can be built and tested with your own accounts befor
   - Visitors pick a palette from a round button in the bottom-left corner. The choice is kept only in their browser (`localStorage` key `surehelp.site-theme`) and applied before the page draws. Nothing is sent to the server.
 
 **Why:** the request was themes anyone can choose and keep, a default administrators control without overriding people's own choices except through a deliberate step, and more palettes for the landing page remembered in the browser.
+
+**Amendment (2026-10-28): the mobile app.**
+- **`data.theme` on login and `GET /api/v1/user`:** the key to show, whether it is the person's own choice, and the default.
+- **`GET /api/v1/themes`:** every theme with plain colour values for the app.
+- **`PUT /api/v1/user/theme`:** saves the choice with the same rules as the web (`default` clears it). A theme picked in the app shows on the web, and the other way round.
+- **Where the colours live:** `config/themes.php`. A test checks they match the CSS tokens, so the app and the web can't drift apart.
+
