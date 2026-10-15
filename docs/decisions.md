@@ -770,3 +770,49 @@ Start these early. The code can be built and tested with your own accounts befor
 - **`PUT /api/v1/user/theme`:** saves the choice with the same rules as the web (`default` clears it). A theme picked in the app shows on the web, and the other way round.
 - **Where the colours live:** `config/themes.php`. A test checks they match the CSS tokens, so the app and the web can't drift apart.
 
+
+## D60 — Live calls through Twilio, first part of Phase 3b (2026-10-29)
+**Decision:** calls to a business's SureHelp number ring the browsers of the agents who serve it. The call record, transcript, recording and statistics are filled in by the system, not typed. Setup steps: `docs/telephony.md`.
+- **Vendor behind one interface (D10):**
+  - `TelephonyProvider` has two drivers. `twilio` is for production. `fake` covers local work, demos and tests: lines get 555 numbers and agents start pretend calls from the softphone.
+  - `TELEPHONY_DRIVER` picks the driver.
+  - **No Twilio SDK on the server.** The three things needed (REST calls, the browser access token, the webhook signature) are small and tested against Twilio's published example. The browser uses Twilio's Voice JS SDK, loaded only when an agent goes ready.
+- **Data:**
+  - `phone_numbers`: a business's lines, each with an optional owner number and a "record calls" switch.
+  - `voice_calls`: one row per call, holding who answered, wait time, talk time, the transfer, the recording, the transcript and the AI summary.
+  - Agent readiness lives on `users`: `phone_status`, `phone_status_at` and `phone_seen_at`.
+  - The agent's call log stays in `call_logs` and is linked from the voice call (`call_log_id`). `call_logs` keeps its required form fields, and a call exists before anyone has filled in a form.
+- **Routing:**
+  - A call rings every *available* agent at once, up to 5, longest-waiting first. An available agent is one who:
+    - is currently assigned to the business;
+    - is allowed to log its calls, with no training restriction;
+    - has a softphone that checked in within 75 seconds;
+    - is "Ready for calls", or has been finishing the last call for more than 2 minutes;
+    - is not already on a call.
+  - The first agent to answer gets the call.
+  - When nobody is available or nobody answers within 20 seconds, the call goes to the owner's number (if the line has one), then to voicemail.
+  - Missed calls and voicemails become a high-priority call-back task, and the business's people are notified through their `call.missed` preferences.
+- **Recording and consent:**
+  - Lines record by default. Callers hear a short notice first ("This call may be recorded…").
+  - Recorded calls are transcribed live (both sides, final sentences only).
+  - When the transcription stops, the AI writes a 2–4 sentence summary. If the agent's call log has no notes, the summary fills them ("AI summary: …"). The call screen also offers "Add to the notes".
+  - Recordings stay at Twilio and are played through `/recordings/{call}`. Only people with `calls.recording.view` in that business can play them (owners, managers and supervisors; not front-line agents), and every play is audited.
+- **The softphone (agent portal):**
+  - A status pill in the top bar: Ready / Away / Offline, plus On a call and Finishing up.
+  - A ringing card shows the business and the caller, matched by phone to the business's customers.
+  - "Answer" opens that business's call screen in its own tab with the number filled in and the customer confirmed. The phone stays in the first tab, so moving around the portal never drops the call. The browser asks before closing a tab with a live call.
+  - Only one tab per agent rings (Web Locks). Other tabs show the state.
+  - Polling (4 s while ready in demo mode, 20 s otherwise) keeps the agent online. Real calls are pushed by Twilio's SDK, so no WebSocket server is needed on cPanel.
+- **Transfer:** a cold transfer to the owner's number. The live call is redirected and the agent leaves the call. A warm (three-way) transfer needs Twilio conferences and is left for later.
+- **Admin › Phone lines** (`settings.view` to see, `settings.manage` to change):
+  - Buy a number by area code, or connect one already in the Twilio account. Either way, its webhooks are set automatically.
+  - Edit the owner number and recording. Release a number (with confirmation).
+  - Answer rate, missed calls and voicemails, average wait and average talk time, for 24 hours, 7 days or 30 days, overall and per line. The latest calls are listed.
+  - Every change is audited.
+- **Security:**
+  - Every Twilio webhook must carry a valid `X-Twilio-Signature`, computed over the exact public URL (`TWILIO_WEBHOOK_URL` covers proxies).
+  - The demo driver accepts webhooks only outside production.
+  - Agents can only answer, transfer or open calls that were offered to them, in businesses they currently serve.
+- **Not in this part:** outbound calls from the browser, warm transfer, SMS (needs A2P 10DLC approval), business-hours routing rules, and the business portal's own line page.
+
+**Why:** live call handling is the core of a receptionist product (D10). Until now every call was typed in by hand, and nothing showed whether calls were actually answered.

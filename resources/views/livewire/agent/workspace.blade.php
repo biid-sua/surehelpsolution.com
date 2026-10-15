@@ -18,6 +18,29 @@
         @endif
     </div>
 
+    {{-- The live phone call this entry is for (D60) --}}
+    @if ($voiceCall)
+        <div @if ($voiceCall->summary_status === 'queued' || ($voiceCall->isLive() && $voiceCall->recording_sid === null)) wire:poll.10s @endif
+            class="mb-6 rounded-2xl border border-brand-400/40 bg-brand-500/10 p-4" role="status">
+            <div class="flex flex-wrap items-center gap-3">
+                <x-ui.icon name="phone" class="size-5 text-brand-300" />
+                <p class="text-sm text-ink"><span class="font-semibold">Phone call</span> from {{ $voiceCall->fromDisplay() }} · answered {{ $voiceCall->answered_at?->diffForHumans() ?? 'just now' }}</p>
+                <x-ui.badge :tone="$voiceCall->statusTone()">{{ $voiceCall->statusLabel() }}</x-ui.badge>
+                @if ($voiceCall->duration_seconds !== null)<span class="text-xs text-muted tabular-nums">{{ \App\Models\VoiceCall::clock($voiceCall->duration_seconds) }}</span>@endif
+            </div>
+            <p class="mt-1 text-xs text-muted">Saving this entry links it to the call, its recording and its transcript.</p>
+            @if ($voiceCall->summary)
+                <div class="mt-3 rounded-xl bg-surface p-3 ring-1 ring-line">
+                    <p class="flex items-center gap-1.5 text-xs font-semibold text-brand-300"><x-ui.icon name="sparkles" class="size-4" /> AI summary of the call</p>
+                    <p class="mt-1 text-sm text-ink">{{ $voiceCall->summary }}</p>
+                    <button type="button" wire:click="useCallSummary" class="mt-2 text-xs font-medium text-brand-300 hover:text-brand-200">Add to the notes</button>
+                </div>
+            @elseif ($voiceCall->summary_status === 'queued')
+                <p class="mt-2 text-xs text-muted">Writing a summary of the call…</p>
+            @endif
+        </div>
+    @endif
+
     @if ($calendarBroken)
         <x-ui.alert tone="warning" class="mb-6" title="Calendar not synced">This business's calendar connection is broken: their latest busy times may be missing. Confirm the time with the owner before booking.</x-ui.alert>
     @endif

@@ -29,6 +29,7 @@ use App\Enums\SocialNetwork;
 use App\Enums\SupportTicketStatus;
 use App\Enums\TaskStatus;
 use App\Exceptions\SlotUnavailable;
+use App\Jobs\FinishVoiceCall;
 use App\Models\Addon;
 use App\Models\AgentDutySchedule;
 use App\Models\AiAssistant;
@@ -58,6 +59,7 @@ use App\Models\MediaAsset;
 use App\Models\Message;
 use App\Models\MessageTemplate;
 use App\Models\Organization;
+use App\Models\PhoneNumber;
 use App\Models\Plan;
 use App\Models\QaReview;
 use App\Models\SearchConsoleConnection;
@@ -75,6 +77,7 @@ use App\Models\TrainingModule;
 use App\Models\TrainingPath;
 use App\Models\TrainingQuestion;
 use App\Models\User;
+use App\Models\VoiceCall;
 use App\Models\Website;
 use App\Models\WebsiteCheck;
 use App\Services\Account\LegalDocuments;
@@ -86,6 +89,7 @@ use App\Services\Support\SupportDesk;
 use App\Services\Training\CoursePublisher;
 use App\Services\Training\LearningProgress;
 use App\Services\Training\TrainingAssigner;
+use App\Support\Phone;
 use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Database\Seeder;
@@ -218,6 +222,7 @@ class DemoSeeder extends Seeder
             $this->website();
             $this->seo();
             $this->calendar();
+            $this->phoneLines();
             $this->schedules();
             $this->enquiries();
             $this->accountGates();
@@ -2331,6 +2336,54 @@ class DemoSeeder extends Seeder
             ],
         ]);
         $this->rivera->forceFill(['seo_token_allowance' => 300000])->save();
+    }
+
+    /**
+     * Live calls (D60): SureHelp lines for three businesses, and a week of Rivera's phone calls
+     * behind the calls agents logged, plus a few nobody could answer (call-back tasks).
+     */
+    private function phoneLines(): void
+    {
+        $this->travel($this->now->subDays(10));
+        $lines = [];
+        foreach (array_values(array_filter($this->orgs, fn (Organization $o) => $o->id !== $this->rivera->id)) as $i => $org) {
+            if ($i < 2) {
+                $lines[] = PhoneNumber::create(['organization_id' => $org->id, 'provider' => 'fake', 'provider_sid' => 'PNdemo'.($i + 1), 'number' => '+1512555020'.($i + 1), 'label' => 'Main line']);
+            }
+        }
+        $line = PhoneNumber::create(['organization_id' => $this->rivera->id, 'provider' => 'fake', 'provider_sid' => 'PNdemo0', 'number' => '+15125550200',
+            'label' => 'Main line', 'transfer_number' => '+15125550102']);
+        $this->travel($this->now);
+
+        $logs = CallLog::withoutGlobalScopes()->where('organization_id', $this->rivera->id)->where('created_at', '>=', $this->now->subDays(7))
+            ->whereIn('user_id', [$this->john->id, $this->mike->id])->get();
+        foreach ($logs as $log) {
+            $wait = random_int(3, 18);
+            $talk = random_int(70, 420);
+            $started = CarbonImmutable::parse($log->created_at)->subSeconds($wait + $talk + random_int(20, 90));
+            VoiceCall::create([
+                'organization_id' => $this->rivera->id, 'phone_number_id' => $line->id, 'provider' => 'fake', 'provider_call_sid' => 'CAdemo'.Str::lower(Str::random(26)),
+                'from_number' => Phone::normalize((string) $log->caller_phone), 'to_number' => $line->number, 'status' => VoiceCall::COMPLETED,
+                'offered_to' => [$this->john->id, $this->mike->id], 'answered_by_user_id' => $log->user_id, 'customer_id' => $log->customer_id, 'call_log_id' => $log->id,
+                'started_at' => $started, 'answered_at' => $started->addSeconds($wait), 'ended_at' => $started->addSeconds($wait + $talk),
+                'wait_seconds' => $wait, 'duration_seconds' => $talk, // no recordings: the demo phone has no audio
+            ]);
+        }
+
+        foreach ([[2, 7, 52, VoiceCall::MISSED, '+15125550188'], [1, 18, 41, VoiceCall::VOICEMAIL, '+15125550176'], [0, 7, 58, VoiceCall::MISSED, '+15125550163']] as [$daysAgo, $hour, $minute, $status, $from]) {
+            $started = $this->localAt($daysAgo, $hour, $minute);
+            $this->travel($started->addMinutes(1));
+            $call = VoiceCall::create([
+                'organization_id' => $this->rivera->id, 'phone_number_id' => $line->id, 'provider' => 'fake', 'provider_call_sid' => 'CAdemo'.Str::lower(Str::random(26)),
+                'from_number' => $from, 'to_number' => $line->number, 'status' => $status, 'offered_to' => [], 'started_at' => $started, 'ended_at' => $started->addSeconds(48),
+                'transferred_to' => '+15125550102',
+            ]);
+            FinishVoiceCall::dispatchSync($call->id);
+        }
+        $this->travel($this->now);
+
+        $this->summary['phone lines'] = count($lines) + 1;
+        $this->summary['phone calls'] = VoiceCall::withoutGlobalScopes()->count();
     }
 
     private function calendar(): void

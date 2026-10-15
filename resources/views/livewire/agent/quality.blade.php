@@ -183,6 +183,7 @@
                             <div class="sm:col-span-2"><dt class="text-xs text-subtle">Agent notes</dt><dd class="whitespace-pre-line text-ink">{{ $call->notes }}</dd></div>
                         @endif
                     </dl>
+                    <x-calls.recording :call="$call" class="mt-4" />
                 @endif
 
                 @if ($canEdit)

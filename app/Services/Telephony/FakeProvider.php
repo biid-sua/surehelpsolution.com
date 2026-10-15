@@ -1,0 +1,77 @@
+<?php
+
+namespace App\Services\Telephony;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+
+/**
+ * Calls without a vendor (D60): for local work, demos and tests. Lines are "bought" instantly
+ * with 555 numbers and calls are simulated from the agent softphone. Webhooks are only accepted
+ * outside production, and everything the app asked for is remembered so tests can check it.
+ */
+class FakeProvider implements TelephonyProvider
+{
+    /** @var list<array{call: string, url: string}> */
+    public array $redirects = [];
+
+    /** @var list<string> */
+    public array $released = [];
+
+    public function name(): string
+    {
+        return 'fake';
+    }
+
+    public function isConfigured(): bool
+    {
+        return true;
+    }
+
+    public function usesBrowserSdk(): bool
+    {
+        return false;
+    }
+
+    public function accessToken(string $identity, int $ttlSeconds = 3600): string
+    {
+        return 'fake.'.base64_encode($identity);
+    }
+
+    public function isGenuine(Request $request): bool
+    {
+        return ! app()->isProduction();
+    }
+
+    public function availableNumbers(string $areaCode): array
+    {
+        $area = preg_match('/^\d{3}$/', $areaCode) ? $areaCode : '555';
+
+        return array_map(fn (int $i) => ['number' => '+1'.$area.'555'.str_pad((string) (100 + $i * 7), 4, '0', STR_PAD_LEFT), 'locality' => 'Demo', 'region' => null], range(1, 6));
+    }
+
+    public function buyNumber(string $number, array $urls): array
+    {
+        return ['sid' => 'PNfake'.Str::lower(Str::random(26)), 'number' => $number];
+    }
+
+    public function connectNumber(string $sid, array $urls): string
+    {
+        return '+1555555'.str_pad((string) (crc32($sid) % 10000), 4, '0', STR_PAD_LEFT);
+    }
+
+    public function releaseNumber(string $sid): void
+    {
+        $this->released[] = $sid;
+    }
+
+    public function redirectCall(string $callSid, string $url): void
+    {
+        $this->redirects[] = ['call' => $callSid, 'url' => $url];
+    }
+
+    public function recordingAudio(string $recordingSid): ?string
+    {
+        return null;
+    }
+}

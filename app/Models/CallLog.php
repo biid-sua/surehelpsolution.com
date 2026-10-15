@@ -164,6 +164,16 @@ class CallLog extends Model
     }
 
     /**
+     * The phone call this entry was logged for, with its recording and transcript (D60).
+     *
+     * @return HasOne<VoiceCall, $this>
+     */
+    public function voiceCall(): HasOne
+    {
+        return $this->hasOne(VoiceCall::class, 'call_log_id')->withoutGlobalScopes();
+    }
+
+    /**
      * Get the user that owns the call log.
      */
     public function user(): BelongsTo

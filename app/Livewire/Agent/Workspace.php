@@ -22,11 +22,14 @@ use App\Models\Customer;
 use App\Models\Escalation;
 use App\Models\KnowledgeItem;
 use App\Models\Organization;
+use App\Models\VoiceCall;
 use App\Services\Business\BusinessHours;
 use App\Services\Calls\CallOutcomes;
 use App\Services\Rules\BusinessRules;
 use App\Services\Scheduling\Availability;
+use App\Services\Telephony\AgentPresence;
 use App\Services\Training\TrainingReadiness;
+use App\Support\Phone;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
@@ -35,6 +38,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 /**
@@ -72,6 +76,10 @@ class Workspace extends Component
 
     public ?string $lastSaved = null;
 
+    /** The live phone call this entry is for (D60), when the agent answered it in the softphone. */
+    #[Locked]
+    public ?int $voiceCallId = null;
+
     public function mount(Organization $organization, TrainingReadiness $readiness): void
     {
         $this->authorizeFor($organization);
@@ -84,6 +92,39 @@ class Workspace extends Component
         }
         $this->organizationId = $organization->id;
         $this->resetCall();
+        if (is_string($call = request()->query('call'))) {
+            $this->phoneCallAnswered($call);
+        }
+    }
+
+    /**
+     * The softphone answered a call for this business: fill in the caller and link the entry to the call.
+     */
+    #[On('phone-call-answered')]
+    public function phoneCallAnswered(string $call): void
+    {
+        $organization = $this->organization();
+        $voiceCall = VoiceCall::query()->forOrganization($organization)->where('ulid', $call)
+            ->where('answered_by_user_id', auth()->id())->first();
+        if (! $voiceCall || $voiceCall->call_log_id !== null) {
+            return;
+        }
+
+        $this->resetCall();
+        $this->voiceCallId = $voiceCall->id;
+        $this->entry['phone'] = (string) (Phone::display($voiceCall->from_number) ?? $voiceCall->from_number);
+        if ($voiceCall->customer_id) {
+            $this->confirmCustomer($voiceCall->customer_id);
+        }
+    }
+
+    /** Put the AI's summary of the recorded call into the notes. */
+    public function useCallSummary(): void
+    {
+        $summary = $this->voiceCallId ? VoiceCall::query()->forOrganization($this->organization())->whereKey($this->voiceCallId)->value('summary') : null;
+        if ($summary) {
+            $this->entry['notes'] = trim($this->entry['notes']."\n\n".$summary);
+        }
     }
 
     private function organization(): Organization
@@ -137,6 +178,7 @@ class Workspace extends Component
         $this->newCustomer = false;
         $this->customerSearch = '';
         $this->suggestions = [];
+        $this->voiceCallId = null;
         $this->resetValidation();
     }
 
@@ -287,6 +329,10 @@ class Workspace extends Component
                     ], $agent, 'call');
                 }
 
+                if ($this->voiceCallId) {
+                    VoiceCall::query()->forOrganization($organization)->whereKey($this->voiceCallId)->whereNull('call_log_id')->update(['call_log_id' => $call->id]);
+                }
+
                 return $call;
             });
         } catch (SlotUnavailable $e) {
@@ -310,6 +356,10 @@ class Workspace extends Component
 
         $this->lastSaved = $call->call_id;
         $this->resetCall();
+        // Call log done: the agent is ready for the next call.
+        if ($agent->phone_status === AgentPresence::WRAP_UP) {
+            app(AgentPresence::class)->set($agent, AgentPresence::AVAILABLE);
+        }
         $this->dispatch('toast', type: 'success', message: "Call {$call->call_id} saved. The business has been notified."
             .($booked?->status === AppointmentStatus::Pending ? ' The booking waits for the business to approve it.' : ''));
     }
@@ -378,6 +428,7 @@ class Workspace extends Component
             'calendarBroken' => CalendarConnection::query()->forOrganization($organization)->where('status', CalendarConnection::STATUS_NEEDS_REAUTH)->exists(),
             'priceLabel' => fn (BusinessService $s) => $s->price_type->display($s->price_cents, $s->currency),
             'timezone' => $timezone,
+            'voiceCall' => $this->voiceCallId ? VoiceCall::query()->forOrganization($organization)->find($this->voiceCallId) : null,
         ])->title($organization->name.' · Agent workspace');
     }
 }

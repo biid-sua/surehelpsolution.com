@@ -245,6 +245,13 @@ Requirements: [requirements/agent-university-and-assignments.md](requirements/ag
 | A-3 | 5–9 | Agent University: categories, learning paths, versioned courses, modules, lessons of every type, private files, assessments and attempts, assignment rules and per-agent assignments, progress, certificates with expiry, learner pages, training management for supervisors, supervisor dashboard | done ([agent-university.md](agent-university.md)); also company readiness calculation and automatic company training on assignment, brought forward from A-4 |
 | A-4 | 10–12 | Training notifications and sweeps (assigned, due soon, overdue, expiring, expired, recertification reopening), enforcing the restricted and blocking readiness levels in the workspace and call logging, recommendations with reasons, training API for the mobile app, full security test suite | done; also agent notification settings (*Account › Notifications*) |
 
+## 4j. Phase 3b — Live calls (D10, D60)
+
+| ID | Item | Status |
+|---|---|---|
+| TEL-1 | `TelephonyProvider` (Twilio + demo driver), phone lines per business, inbound routing to available assigned agents (simultaneous ring), owner fallback and voicemail, missed-call tasks and notifications, browser softphone with readiness, screen-pop into the call screen, cold transfer to the owner, recordings (permission-checked, audited), live transcription and AI summary into the call log, answer/missed/wait/talk statistics, *Admin › Phone lines* | **done** 2026-10-29 (waits for Twilio keys to go live) |
+| TEL-2 | Outbound calls from the browser, warm transfer (conference), business-hours routing, client portal line page and forwarding guide, SMS (after A2P 10DLC) | next |
+
 ## 5. Later phases (outline, in spec order)
 
 | Phase | Scope (spec §) | First steps | Main external dependency |

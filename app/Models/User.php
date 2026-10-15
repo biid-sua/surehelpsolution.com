@@ -27,6 +27,9 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $last_summary_on
  * @property string|null $theme own colour theme (D59); null follows the default
  * @property Carbon|null $theme_chosen_at
+ * @property string $phone_status softphone readiness (D60): offline, available, away, busy, wrap_up
+ * @property Carbon|null $phone_status_at
+ * @property Carbon|null $phone_seen_at last softphone check-in
  */
 class User extends Authenticatable
 {
@@ -91,6 +94,8 @@ class User extends Authenticatable
             'is_active' => 'boolean',
             'must_change_password' => 'boolean',
             'theme_chosen_at' => 'datetime',
+            'phone_status_at' => 'datetime',
+            'phone_seen_at' => 'datetime',
             'two_factor_secret' => 'encrypted',
             'two_factor_recovery_codes' => 'encrypted:array',
             'two_factor_confirmed_at' => 'datetime',

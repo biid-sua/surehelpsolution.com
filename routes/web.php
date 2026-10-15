@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\ImpersonationController;
 use App\Http\Controllers\Agent\CalendarEventsController as AgentCalendarEventsController;
 use App\Http\Controllers\Agent\CalendarOAuthController as AgentCalendarOAuthController;
 use App\Http\Controllers\Agent\CallExportController as AgentCallExportController;
+use App\Http\Controllers\Agent\PhoneController as AgentPhoneController;
 use App\Http\Controllers\Agent\TrainingFileController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BusinessLogoController;
@@ -29,6 +30,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PasswordChangeController;
+use App\Http\Controllers\RecordingController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\SupportAttachmentController;
 use App\Livewire\Account\Notifications as AccountNotifications;
@@ -46,6 +48,7 @@ use App\Livewire\Admin\Escalations\Index as AdminEscalations;
 use App\Livewire\Admin\Home as AdminHome;
 use App\Livewire\Admin\Organizations\Index as OrganizationIndex;
 use App\Livewire\Admin\Organizations\Show as OrganizationShow;
+use App\Livewire\Admin\PhoneLines as AdminPhoneLines;
 use App\Livewire\Admin\Schedules\Index as AdminSchedules;
 use App\Livewire\Admin\Search as AdminSearch;
 use App\Livewire\Admin\Seo\Index as AdminSeo;
@@ -164,6 +167,9 @@ Route::prefix('account')->middleware('auth.home')->group(function () {
 });
 
 // Everyone's own account: profile, security (two-step sign-in, devices), terms
+// Call recordings (D60): permission checked per call's business.
+Route::get('/recordings/{voiceCall}', RecordingController::class)->middleware(['auth.home', 'force.password.change', 'account.gate', 'throttle:60,1'])->name('calls.recording');
+
 Route::prefix('account')->name('account.')->middleware(['auth.home', 'force.password.change', 'tenant', 'account.gate'])->group(function () {
     Route::get('/', AccountProfile::class)->name('profile');
     Route::get('/security', AccountSecurity::class)->name('security');
@@ -309,6 +315,16 @@ Route::prefix('agent')->name('agent.')->middleware(['auth.home', 'force.password
     Route::get('/calendar/connect/{provider}', [AgentCalendarOAuthController::class, 'redirect'])->whereIn('provider', ['google', 'microsoft'])->name('calendar.connect');
     Route::get('/calendar/connect/{provider}/callback', [AgentCalendarOAuthController::class, 'callback'])->whereIn('provider', ['google', 'microsoft'])->name('calendar.callback');
     Route::get('/quality', AgentQuality::class)->name('quality');
+    // The browser phone (D60)
+    Route::prefix('phone')->name('phone.')->middleware('throttle:240,1')->group(function () {
+        Route::get('/token', [AgentPhoneController::class, 'token'])->name('token');
+        Route::post('/presence', [AgentPhoneController::class, 'presence'])->name('presence');
+        Route::post('/check-in', [AgentPhoneController::class, 'checkIn'])->name('check-in');
+        Route::post('/simulate', [AgentPhoneController::class, 'simulate'])->middleware('throttle:20,1')->name('simulate');
+        Route::post('/calls/{voiceCall}/answer', [AgentPhoneController::class, 'answer'])->name('answer');
+        Route::post('/calls/{voiceCall}/hang-up', [AgentPhoneController::class, 'hangUp'])->name('hang-up');
+        Route::post('/calls/{voiceCall}/transfer', [AgentPhoneController::class, 'transfer'])->name('transfer');
+    });
 });
 
 // Admin console
@@ -322,6 +338,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth.home', 'force.password
     Route::get('/appointments', AdminAppointments::class)->middleware('can:appointments.view')->name('appointments');
     Route::get('/customers', AdminCustomers::class)->middleware('can:customers.view')->name('customers');
     Route::get('/seo', AdminSeo::class)->middleware('can:seo.manage')->name('seo');
+    Route::get('/phone-lines', AdminPhoneLines::class)->middleware('can:settings.view')->name('phone-lines');
     Route::get('/appearance', AdminAppearance::class)->middleware('can:settings.view')->name('appearance');
     Route::get('/usage', AdminUsage::class)->middleware('can:billing.view')->name('usage');
     Route::get('/escalations', AdminEscalations::class)->middleware('can:escalations.view')->name('escalations');

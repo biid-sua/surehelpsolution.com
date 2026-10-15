@@ -16,6 +16,9 @@ use App\Services\Billing\Gateways\PaymentGateway;
 use App\Services\Billing\Gateways\PayoneerGateway;
 use App\Services\Calls\CallOutcomes;
 use App\Services\Rules\BusinessRules;
+use App\Services\Telephony\FakeProvider;
+use App\Services\Telephony\TelephonyProvider;
+use App\Services\Telephony\TwilioProvider;
 use App\Support\Authorization\RoleCatalog;
 use App\Support\Tenancy\CurrentOrganization;
 use App\Support\Ui\Themes;
@@ -47,6 +50,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(FeatureAccess::class);
         // AI vendor behind one interface (spec §33, D38).
         $this->app->singleton(AiProvider::class, ClaudeProvider::class);
+        // Telephony vendor behind one interface (D10, D60).
+        $this->app->singleton(TelephonyProvider::class, fn () => match (config('telephony.driver')) {
+            'twilio' => $this->app->make(TwilioProvider::class),
+            default => $this->app->make(FakeProvider::class),
+        });
         $this->app->bind(PaymentGateway::class, fn () => match (config('billing.gateway')) {
             default => $this->app->make(PayoneerGateway::class),
         });

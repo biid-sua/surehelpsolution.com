@@ -23,6 +23,8 @@ use App\Http\Controllers\Chat\SiteToolsController;
 use App\Http\Controllers\Chat\WidgetController;
 use App\Http\Controllers\Webhooks\CalendarWebhookController;
 use App\Http\Controllers\Webhooks\MetaWebhookController;
+use App\Http\Controllers\Webhooks\VoiceWebhookController;
+use App\Http\Middleware\VerifyTelephonyWebhook;
 use Illuminate\Support\Facades\Route;
 
 // Public API routes (no authentication required)
@@ -48,6 +50,19 @@ Route::post('/webhooks/meta', [MetaWebhookController::class, 'receive'])->middle
 Route::prefix('webhooks/calendar')->name('webhooks.calendar.')->middleware('throttle:240,1')->group(function () {
     Route::post('/google', [CalendarWebhookController::class, 'google'])->name('google');
     Route::post('/microsoft', [CalendarWebhookController::class, 'microsoft'])->name('microsoft');
+});
+
+// Live calls: Twilio drives each call through these (signed with the auth token, D60).
+Route::prefix('webhooks/voice')->name('webhooks.voice.')->middleware([VerifyTelephonyWebhook::class, 'throttle:1200,1'])->group(function () {
+    Route::post('/incoming', [VoiceWebhookController::class, 'incoming'])->name('incoming');
+    Route::post('/status', [VoiceWebhookController::class, 'status'])->name('status');
+    Route::post('/calls/{voiceCall}/agent', [VoiceWebhookController::class, 'agentLeg'])->name('agent-leg');
+    Route::post('/calls/{voiceCall}/dial-finished', [VoiceWebhookController::class, 'dialFinished'])->name('dial-finished');
+    Route::post('/calls/{voiceCall}/transfer', [VoiceWebhookController::class, 'transfer'])->name('transfer');
+    Route::post('/calls/{voiceCall}/owner-finished', [VoiceWebhookController::class, 'ownerFinished'])->name('owner-finished');
+    Route::post('/calls/{voiceCall}/voicemail-saved', [VoiceWebhookController::class, 'voicemailSaved'])->name('voicemail-saved');
+    Route::post('/calls/{voiceCall}/recording', [VoiceWebhookController::class, 'recording'])->name('recording');
+    Route::post('/calls/{voiceCall}/transcription', [VoiceWebhookController::class, 'transcription'])->name('transcription');
 });
 
 Route::prefix('v1')->middleware('throttle:api')->group(function () {

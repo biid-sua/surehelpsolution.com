@@ -122,6 +122,10 @@
                 </div>
 
                 <div class="flex items-center gap-3">
+                    {{-- The browser phone for agents taking live calls (D60) --}}
+                    @if ($portal === 'agent' && Route::has('agent.phone.check-in'))
+                        <x-agent.softphone />
+                    @endif
                     {{-- Colour theme (D59); staff viewing as a client can't change the client's own choice. --}}
                     @unless (session()->has(\App\Services\Account\Impersonation::KEY))
                         <x-ui.theme-picker />

@@ -47,6 +47,7 @@ class PortalNavigation
                 $this->item('Users', 'user', 'admin.users', 'admin.users', 'users.view'),
                 $this->item('Duty schedule', 'calendar', 'admin.schedule', 'admin.schedule', 'users.view'),
                 $this->item('Calls', 'phone', 'admin.calls', 'admin.calls', 'calls.view'),
+                $this->item('Phone lines', 'phone', 'admin.phone-lines', 'admin.phone-lines', 'settings.view'),
                 $this->item('Appointments', 'calendar', 'admin.appointments', 'admin.appointments', 'appointments.view'),
                 $this->item('Customers', 'users', 'admin.customers', 'admin.customers', 'customers.view'),
                 $this->item('Call review', 'inbox', 'admin.calls.review', 'admin.calls.review', 'calls.update'),

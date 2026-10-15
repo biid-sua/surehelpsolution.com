@@ -38,6 +38,8 @@
                     <p class="text-sm text-muted">The agent didn't add notes to this call.</p>
                 @endif
             </x-ui.card>
+
+            <x-calls.recording :call="$call" />
         </div>
 
         <div class="space-y-6">

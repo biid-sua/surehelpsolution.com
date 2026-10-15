@@ -1,4 +1,5 @@
 import './bootstrap';
+import softphone from './softphone';
 // Heavy libraries are code-split and only downloaded on pages that use them.
 const loadChart = async () => {
     const m = await import('chart.js');
@@ -298,6 +299,9 @@ document.addEventListener('alpine:init', () => {
             this.instance?.destroy();
         },
     }));
+
+    /** The agent's browser phone (D60): resources/js/softphone.js */
+    Alpine.data('softphone', softphone);
 
     /** Toasts: window event `toast` with { type: 'success'|'error'|'info', message }. */
     Alpine.data('toasts', () => ({
