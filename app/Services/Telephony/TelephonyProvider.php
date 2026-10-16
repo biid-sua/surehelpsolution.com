@@ -39,7 +39,7 @@ interface TelephonyProvider
     /**
      * Buy a number and point its calls at us.
      *
-     * @param  array{voice: string, status: string}  $urls
+     * @param  array{voice: string, status: string, sms?: string}  $urls
      * @return array{sid: string, number: string}
      *
      * @throws TelephonyUnavailable
@@ -49,7 +49,7 @@ interface TelephonyProvider
     /**
      * Point a number already in the account at us; returns its E.164 number.
      *
-     * @param  array{voice: string, status: string}  $urls
+     * @param  array{voice: string, status: string, sms?: string}  $urls
      *
      * @throws TelephonyUnavailable
      */
@@ -64,6 +64,13 @@ interface TelephonyProvider
      * @throws TelephonyUnavailable
      */
     public function redirectCall(string $callSid, string $url): void;
+
+    /**
+     * Send a text from one of our numbers (D61); returns the vendor's message id.
+     *
+     * @throws TelephonyUnavailable
+     */
+    public function sendSms(string $from, string $to, string $body, string $statusUrl): string;
 
     /** The recording as MP3, or null when it no longer exists. */
     public function recordingAudio(string $recordingSid): ?string;

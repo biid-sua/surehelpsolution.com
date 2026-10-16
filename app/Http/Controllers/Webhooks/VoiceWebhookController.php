@@ -28,6 +28,22 @@ class VoiceWebhookController extends Controller
         return $this->twiml($this->router->incoming($request->all()));
     }
 
+    /** An agent's browser places a call (the TwiML App's voice URL, D61). */
+    public function outgoing(Request $request): Response
+    {
+        return $this->twiml($this->router->outgoing($request->all()));
+    }
+
+    /** The person an agent called answered or hung up. */
+    public function callee(Request $request, VoiceCall $voiceCall): Response
+    {
+        if ($voiceCall->isOutbound() && $request->input('CallStatus') === 'in-progress') {
+            $this->calls->calleeAnswered($voiceCall);
+        }
+
+        return response()->noContent();
+    }
+
     /** Status of the whole call (set on each number): we only need to know when it's over. */
     public function status(Request $request): Response
     {

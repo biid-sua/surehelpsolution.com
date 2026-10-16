@@ -7,6 +7,7 @@
         'app.business.knowledge' => 'Knowledge',
         'app.business.rules' => 'Rules',
         'app.business.outcomes' => 'Call outcomes',
+        'app.business.phone' => 'Phone line',
         'app.business.emails' => 'Customer emails',
         'app.business.automations' => 'Automations',
         'app.business.calendars' => 'Calendar sync',

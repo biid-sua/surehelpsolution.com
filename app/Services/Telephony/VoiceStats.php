@@ -7,7 +7,7 @@ use Carbon\CarbonInterface;
 
 /**
  * Real phone numbers for a period (D60): how many calls came in, how many we answered, how
- * long callers waited and how long calls lasted. Calls still ringing or on the line aren't counted.
+ * long callers waited and how long calls lasted. Calls in only: agents' calls out aren't "answered" by us. Calls still ringing or on the line aren't counted.
  */
 class VoiceStats
 {
@@ -18,6 +18,7 @@ class VoiceStats
     {
         $calls = VoiceCall::withoutGlobalScopes()
             ->when($organizationId, fn ($q) => $q->where('organization_id', $organizationId))
+            ->where('direction', 'inbound')
             ->whereBetween('started_at', [$from, $to])
             ->whereNotIn('status', [VoiceCall::RINGING, VoiceCall::IN_PROGRESS])
             ->get(['status', 'answered_at', 'wait_seconds', 'duration_seconds']);

@@ -24,7 +24,7 @@
             class="mb-6 rounded-2xl border border-brand-400/40 bg-brand-500/10 p-4" role="status">
             <div class="flex flex-wrap items-center gap-3">
                 <x-ui.icon name="phone" class="size-5 text-brand-300" />
-                <p class="text-sm text-ink"><span class="font-semibold">Phone call</span> from {{ $voiceCall->fromDisplay() }} · answered {{ $voiceCall->answered_at?->diffForHumans() ?? 'just now' }}</p>
+                <p class="text-sm text-ink"><span class="font-semibold">Phone call</span> {{ $voiceCall->isOutbound() ? 'to' : 'from' }} {{ $voiceCall->otherParty() }} · {{ $voiceCall->answered_at ? 'answered '.$voiceCall->answered_at->diffForHumans() : ($voiceCall->isOutbound() ? 'ringing' : 'just now') }}</p>
                 <x-ui.badge :tone="$voiceCall->statusTone()">{{ $voiceCall->statusLabel() }}</x-ui.badge>
                 @if ($voiceCall->duration_seconds !== null)<span class="text-xs text-muted tabular-nums">{{ \App\Models\VoiceCall::clock($voiceCall->duration_seconds) }}</span>@endif
             </div>
@@ -63,7 +63,15 @@
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
                         <label for="c-phone" class="sh-label">Phone</label>
-                        <input id="c-phone" type="tel" wire:model.live.debounce.400ms="entry.phone" class="sh-input" placeholder="(512) 555-0100" autocomplete="off" autofocus>
+                        <div class="flex gap-2">
+                            <input id="c-phone" type="tel" wire:model.live.debounce.400ms="entry.phone" class="sh-input" placeholder="(512) 555-0100" autocomplete="off" autofocus>
+                            @if ($hasLine && ! $voiceCall)
+                                <button type="button" class="shrink-0 rounded-lg border border-line-strong px-3 text-sm font-medium text-ink hover:bg-surface-2 disabled:opacity-40" title="Call this number from your browser, showing the business's number"
+                                    x-on:click="$dispatch('softphone-dial', { number: $wire.entry.phone, business: @js($organization->ulid) })" :disabled="!$wire.entry.phone">
+                                    <x-ui.icon name="phone" class="inline size-4" /> Call
+                                </button>
+                            @endif
+                        </div>
                         @error('entry.phone') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror
                     </div>
                     <div>

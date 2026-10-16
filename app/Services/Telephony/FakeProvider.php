@@ -7,7 +7,7 @@ use Illuminate\Support\Str;
 
 /**
  * Calls without a vendor (D60): for local work, demos and tests. Lines are "bought" instantly
- * with 555 numbers and calls are simulated from the agent softphone. Webhooks are only accepted
+ * with 555 numbers and calls are simulated from the agent softphone and texts are only recorded. Webhooks are only accepted
  * outside production, and everything the app asked for is remembered so tests can check it.
  */
 class FakeProvider implements TelephonyProvider
@@ -17,6 +17,9 @@ class FakeProvider implements TelephonyProvider
 
     /** @var list<string> */
     public array $released = [];
+
+    /** @var list<array{from: string, to: string, body: string, sid: string}> */
+    public array $texts = [];
 
     public function name(): string
     {
@@ -68,6 +71,14 @@ class FakeProvider implements TelephonyProvider
     public function redirectCall(string $callSid, string $url): void
     {
         $this->redirects[] = ['call' => $callSid, 'url' => $url];
+    }
+
+    public function sendSms(string $from, string $to, string $body, string $statusUrl): string
+    {
+        $sid = 'SMfake'.Str::lower(Str::random(26));
+        $this->texts[] = ['from' => $from, 'to' => $to, 'body' => $body, 'sid' => $sid];
+
+        return $sid;
     }
 
     public function recordingAudio(string $recordingSid): ?string

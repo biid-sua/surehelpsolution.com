@@ -126,6 +126,15 @@ class TwilioProvider implements TelephonyProvider
         $this->send(fn (PendingRequest $http) => $http->asForm()->post("Calls/{$callSid}.json", ['Url' => $url, 'Method' => 'POST']));
     }
 
+    public function sendSms(string $from, string $to, string $body, string $statusUrl): string
+    {
+        $response = $this->send(fn (PendingRequest $http) => $http->asForm()->post('Messages.json', [
+            'From' => $from, 'To' => $to, 'Body' => $body, 'StatusCallback' => $statusUrl,
+        ]));
+
+        return (string) $response->json('sid');
+    }
+
     public function recordingAudio(string $recordingSid): ?string
     {
         try {
@@ -138,12 +147,13 @@ class TwilioProvider implements TelephonyProvider
     }
 
     /**
-     * @param  array{voice: string, status: string}  $urls
+     * @param  array{voice: string, status: string, sms?: string}  $urls
      * @return array<string, string>
      */
     private function routing(array $urls): array
     {
-        return ['VoiceUrl' => $urls['voice'], 'VoiceMethod' => 'POST', 'StatusCallback' => $urls['status'], 'StatusCallbackMethod' => 'POST'];
+        return ['VoiceUrl' => $urls['voice'], 'VoiceMethod' => 'POST', 'StatusCallback' => $urls['status'], 'StatusCallbackMethod' => 'POST']
+            + (isset($urls['sms']) ? ['SmsUrl' => $urls['sms'], 'SmsMethod' => 'POST'] : []);
     }
 
     /**

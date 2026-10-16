@@ -12,6 +12,7 @@ use App\Models\Organization;
 use App\Notifications\CustomerEmail;
 use App\Services\Appointments\CustomerSelfService;
 use App\Services\Billing\FeatureAccess;
+use App\Services\Telephony\Texting;
 use App\Support\Phone;
 use Illuminate\Support\Facades\Notification;
 
@@ -91,7 +92,10 @@ class CustomerMessages
             && ! in_array($customer->status, [CustomerStatus::Archived], true);
     }
 
-    /** Send one of the templates about an appointment. True when an email went out. */
+    /**
+     * Send one of the templates about an appointment: by email, and by text to customers who agreed
+     * to texts (D61). True when either went out.
+     */
     public function send(Appointment $appointment, string $key): bool
     {
         $appointment->loadMissing(['organization', 'customer', 'service']);
@@ -99,11 +103,26 @@ class CustomerMessages
             return false;   // not in the business's plan (D46)
         }
         $template = $this->template($appointment->organization, $key);
-        if (! $template['is_active'] || ! $this->reachable($appointment)) {
+        if (! $template['is_active']) {
             return false;
         }
-
         $values = $this->values($appointment);
+
+        $emailed = $this->email($appointment, $key, $template, $values);
+        $texted = $this->text($appointment, $key, $values);
+
+        return $emailed || $texted;
+    }
+
+    /**
+     * @param  array{subject: string, body: string}  $template
+     * @param  array<string, string>  $values
+     */
+    private function email(Appointment $appointment, string $key, array $template, array $values): bool
+    {
+        if (! $this->reachable($appointment)) {
+            return false;
+        }
         $subject = $this->render($template['subject'], $values);
         $body = $this->render($template['body'], $values);
         $replyTo = BusinessProfile::query()->forOrganization($appointment->organization)->value('email') ?: $appointment->organization->owner?->email;
@@ -114,6 +133,32 @@ class CustomerMessages
 
         $this->timeline->handle($appointment->customer, TimelineEventType::EmailSent, 'Email sent: '.config("customer_messages.templates.$key.label"),
             $subject, $appointment, ['template' => $key, 'to' => $appointment->customer->email]);
+
+        return true;
+    }
+
+    /**
+     * The short text version, from the business's SureHelp number, only to customers who agreed to
+     * texts and never to numbers that texted STOP. Replies land in the Inbox.
+     *
+     * @param  array<string, string>  $values
+     */
+    private function text(Appointment $appointment, string $key, array $values): bool
+    {
+        $customer = $appointment->customer;
+        $text = (string) config("customer_messages.templates.$key.sms", '');
+        if ($text === '' || ! $customer || ! $customer->sms_consent || ! $customer->phone_e164 || $customer->status === CustomerStatus::Archived) {
+            return false;
+        }
+        if (! $values['phone']) {
+            $text = str_replace(' or call {phone}', '', $text);
+        }
+        $message = app(Texting::class)->sendAutomatic($appointment->organization, $customer->phone_e164, $this->render($text, $values), $key);
+        if (! $message || $message->status !== 'sent') {
+            return false;
+        }
+        $this->timeline->handle($customer, TimelineEventType::SmsSent, 'Text sent: '.config("customer_messages.templates.$key.label"),
+            $message->body, $appointment, ['template' => $key, 'to' => $customer->phone_e164]);
 
         return true;
     }

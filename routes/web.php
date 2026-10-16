@@ -88,6 +88,7 @@ use App\Livewire\Client\Business\CustomerEmails as BusinessCustomerEmails;
 use App\Livewire\Client\Business\Hours as BusinessHoursPage;
 use App\Livewire\Client\Business\Knowledge as BusinessKnowledgePage;
 use App\Livewire\Client\Business\Outcomes as BusinessOutcomesPage;
+use App\Livewire\Client\Business\PhoneLine as BusinessPhoneLinePage;
 use App\Livewire\Client\Business\Profile as BusinessProfilePage;
 use App\Livewire\Client\Business\Rules as BusinessRulesPage;
 use App\Livewire\Client\Business\Services as BusinessServicesPage;
@@ -261,6 +262,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/business/hours', BusinessHoursPage::class)->name('business.hours');
         Route::get('/business/services', BusinessServicesPage::class)->name('business.services');
         Route::get('/business/outcomes', BusinessOutcomesPage::class)->name('business.outcomes');
+        Route::get('/business/phone', BusinessPhoneLinePage::class)->name('business.phone');
         Route::get('/business/knowledge', BusinessKnowledgePage::class)->middleware('can:knowledge_base.view')->name('business.knowledge');
         Route::get('/business/rules', BusinessRulesPage::class)->name('business.rules');
         Route::get('/business/automations', BusinessAutomations::class)->name('business.automations');
@@ -320,6 +322,7 @@ Route::prefix('agent')->name('agent.')->middleware(['auth.home', 'force.password
         Route::get('/token', [AgentPhoneController::class, 'token'])->name('token');
         Route::post('/presence', [AgentPhoneController::class, 'presence'])->name('presence');
         Route::post('/check-in', [AgentPhoneController::class, 'checkIn'])->name('check-in');
+        Route::post('/dial', [AgentPhoneController::class, 'dial'])->middleware('throttle:30,1')->name('dial');
         Route::post('/simulate', [AgentPhoneController::class, 'simulate'])->middleware('throttle:20,1')->name('simulate');
         Route::post('/calls/{voiceCall}/answer', [AgentPhoneController::class, 'answer'])->name('answer');
         Route::post('/calls/{voiceCall}/hang-up', [AgentPhoneController::class, 'hangUp'])->name('hang-up');

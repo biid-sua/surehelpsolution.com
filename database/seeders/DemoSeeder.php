@@ -86,6 +86,7 @@ use App\Services\Billing\BillingRun;
 use App\Services\Billing\FeatureAccess;
 use App\Services\Quality\QualityReviews;
 use App\Services\Support\SupportDesk;
+use App\Services\Telephony\Texting;
 use App\Services\Training\CoursePublisher;
 use App\Services\Training\LearningProgress;
 use App\Services\Training\TrainingAssigner;
@@ -2352,7 +2353,7 @@ class DemoSeeder extends Seeder
             }
         }
         $line = PhoneNumber::create(['organization_id' => $this->rivera->id, 'provider' => 'fake', 'provider_sid' => 'PNdemo0', 'number' => '+15125550200',
-            'label' => 'Main line', 'transfer_number' => '+15125550102']);
+            'label' => 'Main line', 'transfer_number' => '+15125550102', 'text_back' => true]);
         $this->travel($this->now);
 
         $logs = CallLog::withoutGlobalScopes()->where('organization_id', $this->rivera->id)->where('created_at', '>=', $this->now->subDays(7))
@@ -2381,6 +2382,21 @@ class DemoSeeder extends Seeder
             FinishVoiceCall::dispatchSync($call->id);
         }
         $this->travel($this->now);
+
+        // This morning's missed caller was texted back and answered by text (D61).
+        $missed = VoiceCall::withoutGlobalScopes()->where('from_number', '+15125550163')->first();
+        if ($missed) {
+            $this->travel(CarbonImmutable::parse($missed->started_at)->addMinutes(1));
+            $texting = app(Texting::class);
+            $texting->sendAutomatic($this->rivera, '+15125550163', str_replace('{business}', 'Rivera Plumbing & Heating', PhoneNumber::DEFAULT_TEXT_BACK), 'missed_call');
+            $missed->forceFill(['texted_back_at' => now()])->save();
+            $this->travel(CarbonImmutable::parse($missed->started_at)->addMinutes(6));
+            app(ReceiveMessage::class)->handle($this->rivera, InboxChannel::Sms, [
+                'channel_key' => $line->number, 'thread' => '+15125550163', 'phone' => '+15125550163', 'handle' => '(512) 555-0163',
+                'external_id' => 'SMdemo1', 'body' => 'Hi, our kitchen sink is backing up. Can someone come out tomorrow morning?',
+            ]);
+            $this->travel($this->now);
+        }
 
         $this->summary[] = 'Phone lines: '.(count($lines) + 1).', with '.VoiceCall::withoutGlobalScopes()->count().' calls';
     }

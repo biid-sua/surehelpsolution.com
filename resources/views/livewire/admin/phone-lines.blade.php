@@ -46,7 +46,9 @@
                                         @if ($line->record_calls)<x-ui.badge tone="info">Recorded</x-ui.badge>@endif
                                     </span>
                                 </td>
-                                <td class="text-sm text-muted">{{ $line->transfer_number ? 'Owner '.\App\Models\PhoneNumber::pretty($line->transfer_number).', then voicemail' : 'Voicemail' }}</td>
+                                <td class="text-sm text-muted">{{ $line->transfer_number ? 'Owner '.\App\Models\PhoneNumber::pretty($line->transfer_number).', then voicemail' : 'Voicemail' }}
+                                    @if ($line->after_hours !== 'agents')<span class="block text-xs text-subtle">After hours: {{ $line->after_hours === 'owner' ? 'owner first' : 'voicemail' }}</span>@endif
+                                    @if ($line->text_back)<span class="block text-xs text-subtle">Texts missed callers</span>@endif</td>
                                 <td class="text-right text-sm tabular-nums text-ink">{{ $s['answer_rate'] === null ? '—' : $s['answer_rate'].'%' }}<span class="block text-xs text-subtle">{{ $s['total'] }} {{ str('call')->plural($s['total']) }}</span></td>
                                 <td class="whitespace-nowrap text-right">
                                     @if ($canManage && $line->status === 'active')
@@ -68,7 +70,20 @@
                                                 <input id="e-transfer" type="tel" wire:model="editTransfer" class="sh-input" placeholder="(512) 555-0100">
                                                 @error('editTransfer')<p class="mt-1 text-xs text-danger">{{ $message }}</p>@enderror
                                             </div>
-                                            <label class="flex items-center gap-2 text-sm text-ink sm:col-span-2"><input type="checkbox" wire:model="editRecord" class="rounded text-brand-500"> Record and transcribe calls (callers hear a short notice first)</label>
+                                            <div>
+                                                <label for="e-after" class="sh-label">When the business is closed</label>
+                                                <select id="e-after" wire:model="editAfterHours" class="sh-input">
+                                                    @foreach (\App\Models\PhoneNumber::AFTER_HOURS as $key => $label)<option value="{{ $key }}">{{ $label }}</option>@endforeach
+                                                </select>
+                                            </div>
+                                            <label class="flex items-center gap-2 self-end text-sm text-ink"><input type="checkbox" wire:model="editRecord" class="rounded text-brand-500"> Record and transcribe calls (callers hear a short notice first)</label>
+                                            <div class="sm:col-span-2">
+                                                <label class="flex items-center gap-2 text-sm text-ink"><input type="checkbox" wire:model.live="editTextBack" class="rounded text-brand-500"> Text missed callers back</label>
+                                                @if ($editTextBack)
+                                                    <textarea wire:model="editTextBackMessage" rows="2" maxlength="320" class="sh-input mt-2" placeholder="{{ \App\Models\PhoneNumber::DEFAULT_TEXT_BACK }}" aria-label="Text-back message"></textarea>
+                                                    <p class="mt-1 text-xs text-subtle">{business} becomes the business's name. Replies land in the business's Inbox.</p>
+                                                @endif
+                                            </div>
                                             <div class="flex gap-2 sm:col-span-2"><x-ui.button type="submit">Save line</x-ui.button><x-ui.button variant="ghost" wire:click="$set('editing', null)">Cancel</x-ui.button></div>
                                         </form>
                                     </td>
@@ -142,6 +157,9 @@
                 <dl class="space-y-2 text-sm">
                     <div><dt class="text-xs text-subtle">Calls come in to</dt><dd class="break-all font-mono text-xs text-ink">{{ $urls['voice'] }}</dd></div>
                     <div><dt class="text-xs text-subtle">Call status updates</dt><dd class="break-all font-mono text-xs text-ink">{{ $urls['status'] }}</dd></div>
+                    <div><dt class="text-xs text-subtle">Texts come in to (also the Messaging Service's incoming URL)</dt><dd class="break-all font-mono text-xs text-ink">{{ $urls['sms'] }}</dd></div>
+                    <div><dt class="text-xs text-subtle">TwiML App voice URL (agents calling out)</dt><dd class="break-all font-mono text-xs text-ink">{{ route('webhooks.voice.outgoing') }}</dd></div>
+                    <div><dt class="text-xs text-subtle">Texting</dt><dd class="text-xs text-ink">{{ app(\App\Services\Telephony\Texting::class)->enabled() ? 'On' : 'Off until the A2P 10DLC registration is approved (TELEPHONY_SMS=true)' }}</dd></div>
                 </dl>
             </x-ui.card>
         </div>
@@ -152,15 +170,15 @@
             <x-ui.empty-state title="No calls yet" description="Calls to the lines above show here as they happen." icon="phone" />
         @else
             <x-ui.table>
-                <thead><tr><th>When</th><th>Business</th><th>Caller</th><th>Result</th><th>Agent</th><th class="text-right">Wait</th><th class="text-right">Length</th></tr></thead>
+                <thead><tr><th>When</th><th>Business</th><th>Number</th><th>Result</th><th>Agent</th><th class="text-right">Wait</th><th class="text-right">Length</th></tr></thead>
                 <tbody>
                     @foreach ($recent as $call)
                         <tr wire:key="call-{{ $call->ulid }}">
                             <td class="whitespace-nowrap text-sm text-muted">{{ $call->started_at->diffForHumans() }}</td>
                             <td class="text-sm text-ink">{{ $call->organization->name ?? '—' }}</td>
-                            <td class="whitespace-nowrap font-mono text-sm text-ink">{{ $call->fromDisplay() }}</td>
+                            <td class="whitespace-nowrap font-mono text-sm text-ink">{{ $call->isOutbound() ? '↗ ' : '' }}{{ $call->otherParty() }}@if ($call->after_hours)<span class="ml-1 font-sans text-xs text-subtle">after hours</span>@endif</td>
                             <td><x-ui.badge :tone="$call->statusTone()">{{ $call->statusLabel() }}</x-ui.badge></td>
-                            <td class="text-sm text-muted">{{ $call->answeredBy->name ?? '—' }}</td>
+                            <td class="text-sm text-muted">{{ $call->answeredBy->name ?? $call->placedBy->name ?? '—' }}</td>
                             <td class="text-right text-sm tabular-nums text-muted">{{ $call->wait_seconds !== null ? $call->wait_seconds.'s' : '—' }}</td>
                             <td class="text-right text-sm tabular-nums text-muted">{{ \App\Models\VoiceCall::clock($call->duration_seconds) }}</td>
                         </tr>

@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Enums\InboxChannel;
 use App\Enums\NotificationEvent;
 use App\Models\Conversation;
 use App\Models\Message;
@@ -56,7 +57,11 @@ class InboxMessageReceived extends Notification implements ShouldQueue
             ->greeting('Hi '.Str::before(trim($notifiable->name).' ', ' ').',')
             ->line('"'.Str::limit((string) ($this->message->body ?? 'Sent an attachment'), 400).'"')
             ->action('Reply', route('app.inbox.show', $this->conversation))
-            ->line($this->conversation->channel->isMeta() ? 'Meta allows replies within 24 hours of the customer\'s last message.' : 'They are waiting in your website chat.');
+            ->line(match (true) {
+                $this->conversation->channel->isMeta() => 'Meta allows replies within 24 hours of the customer\'s last message.',
+                $this->conversation->channel === InboxChannel::Sms => 'Your reply goes to their phone as a text from your SureHelp number.',
+                default => 'They are waiting in your website chat.',
+            });
     }
 
     private function title(): string

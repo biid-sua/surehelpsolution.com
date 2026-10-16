@@ -3,13 +3,15 @@
 namespace App\Services\Telephony;
 
 use App\Actions\Customers\MatchOrCreateCustomer;
+use App\Models\BusinessHour;
 use App\Models\Organization;
 use App\Models\PhoneNumber;
 use App\Models\VoiceCall;
+use App\Services\Business\BusinessHours;
 use DOMElement;
 
 /**
- * Where a call goes (D60), as TwiML. A call to a business's line rings every available agent who
+ * Where a call goes (D60, D61), as TwiML. A call to a business's line rings every available agent who
  * serves it at once; whoever answers first gets it. Nobody available or nobody answers: the
  * owner's transfer number if the line has one, then voicemail. Missed calls become call-back tasks.
  */
@@ -35,6 +37,7 @@ class CallRouter
         }
 
         $from = PhoneNumber::normalize((string) ($params['From'] ?? '')) ?? ((string) ($params['From'] ?? '') ?: null);
+        $closed = $this->isClosed($organization);
         $call = VoiceCall::withoutGlobalScopes()->firstOrCreate(['provider_call_sid' => $sid], [
             'organization_id' => $organization->id,
             'phone_number_id' => $line->id,
@@ -43,11 +46,13 @@ class CallRouter
             'from_number' => $from,
             'to_number' => $line->number,
             'status' => VoiceCall::RINGING,
+            'after_hours' => $closed,
             'started_at' => now(),
             'customer_id' => $from ? (app(MatchOrCreateCustomer::class)->lookup($organization, $from, null)['customer'] ?? null)?->id : null,
         ]);
 
-        $agents = $this->presence->availableFor($organization);
+        // After hours the line may skip the agents (D61); "agents" answers as during the day.
+        $agents = $closed && $line->after_hours !== 'agents' ? collect() : $this->presence->availableFor($organization);
         $twiml = TwiML::make();
         if ($line->record_calls) {
             $twiml->say((string) config('telephony.disclosure'));
@@ -64,6 +69,9 @@ class CallRouter
 
         if ($agents->isEmpty()) {
             $call->forceFill(['offered_to' => []])->save();
+            if ($closed && $line->after_hours === 'voicemail') {
+                return $this->voicemail($call, $twiml)->xml();
+            }
 
             return $this->fallback($call, $line, $twiml);
         }
@@ -90,6 +98,39 @@ class CallRouter
                     $t->into($client, 'Parameter', null, ['name' => $name, 'value' => mb_substr($value, 0, 100)]);
                 }
             }
+        })->xml();
+    }
+
+    /**
+     * An agent's browser places a call it asked for first (POST agent/phone/dial). Only that call, to
+     * that number, from that agent, and only once: the browser can't choose who to call (D61).
+     *
+     * @param  array<string, mixed>  $params
+     */
+    public function outgoing(array $params): string
+    {
+        $call = VoiceCall::withoutGlobalScopes()->where('ulid', (string) ($params['callId'] ?? ''))->first();
+        $agentId = AgentPresence::userIdFrom((string) ($params['From'] ?? $params['Caller'] ?? ''));
+        $line = $call?->phoneNumber;
+        if (! $call || $call->direction !== 'outbound' || $agentId === null || $call->placed_by_user_id !== $agentId
+            || ! str_starts_with($call->provider_call_sid, 'pending-') || $call->started_at->lt(now()->subMinutes(2)) || ! $line || $line->status !== PhoneNumber::STATUS_ACTIVE) {
+            return TwiML::make()->say('This call could not be placed.')->hangup()->xml();
+        }
+        $call->forceFill(['provider_call_sid' => (string) ($params['CallSid'] ?? $call->provider_call_sid)])->save();
+
+        return TwiML::make()->dial([
+            'callerId' => $line->number,
+            'timeout' => 30,
+            'answerOnBridge' => true,
+            'record' => $line->record_calls ? 'record-from-answer-dual' : null,
+            'recordingStatusCallback' => $line->record_calls ? route('webhooks.voice.recording', $call) : null,
+            'recordingStatusCallbackEvent' => $line->record_calls ? 'completed' : null,
+        ], function (DOMElement $dial, TwiML $t) use ($call): void {
+            $t->into($dial, 'Number', (string) $call->to_number, [
+                'statusCallback' => route('webhooks.voice.callee', $call),
+                'statusCallbackEvent' => 'answered completed',
+                'statusCallbackMethod' => 'POST',
+            ]);
         })->xml();
     }
 
@@ -137,6 +178,16 @@ class CallRouter
     public function voicemailSaved(): string
     {
         return TwiML::make()->say('Thank you. We will get back to you as soon as we can. Goodbye.')->hangup()->xml();
+    }
+
+    /** Closed now by the business's own hours, holidays and closures. A business with no hours set is never "closed". */
+    private function isClosed(Organization $organization): bool
+    {
+        if (! BusinessHour::query()->forOrganization($organization)->exists()) {
+            return false;
+        }
+
+        return ! app(BusinessHours::class)->status($organization)['open'];
     }
 
     private function fallback(VoiceCall $call, ?PhoneNumber $line, TwiML $twiml): string

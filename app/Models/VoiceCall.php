@@ -19,6 +19,7 @@ use Illuminate\Support\Str;
  * @property Carbon|null $answered_at
  * @property Carbon|null $ended_at
  * @property Carbon|null $transferred_at
+ * @property Carbon|null $texted_back_at
  * @property int|null $wait_seconds
  * @property int|null $duration_seconds
  * @property int|null $recording_seconds
@@ -41,6 +42,9 @@ class VoiceCall extends Model
 
     public const FAILED = 'failed';
 
+    /** An agent's call out that nobody picked up. */
+    public const NO_ANSWER = 'no_answer';
+
     public const STATUS_LABELS = [
         self::RINGING => 'Ringing',
         self::IN_PROGRESS => 'On the call',
@@ -49,10 +53,11 @@ class VoiceCall extends Model
         self::VOICEMAIL => 'Voicemail',
         self::TRANSFERRED => 'Sent to owner',
         self::FAILED => 'Failed',
+        self::NO_ANSWER => 'Not answered',
     ];
 
     protected $fillable = [
-        'organization_id', 'phone_number_id', 'provider', 'provider_call_sid', 'direction', 'from_number', 'to_number',
+        'organization_id', 'phone_number_id', 'provider', 'provider_call_sid', 'direction', 'after_hours', 'placed_by_user_id', 'texted_back_at', 'from_number', 'to_number',
         'status', 'offered_to', 'answered_by_user_id', 'customer_id', 'call_log_id', 'task_id',
         'started_at', 'answered_at', 'ended_at', 'wait_seconds', 'duration_seconds', 'transferred_to', 'transferred_at',
         'recording_sid', 'recording_seconds', 'transcript', 'summary', 'summary_status',
@@ -67,6 +72,8 @@ class VoiceCall extends Model
             'answered_at' => 'datetime',
             'ended_at' => 'datetime',
             'transferred_at' => 'datetime',
+            'texted_back_at' => 'datetime',
+            'after_hours' => 'boolean',
             'wait_seconds' => 'integer',
             'duration_seconds' => 'integer',
             'recording_seconds' => 'integer',
@@ -95,6 +102,12 @@ class VoiceCall extends Model
     public function answeredBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'answered_by_user_id');
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function placedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'placed_by_user_id');
     }
 
     /** @return BelongsTo<Customer, $this> */
@@ -141,6 +154,7 @@ class VoiceCall extends Model
         return match ($this->status) {
             self::COMPLETED, self::TRANSFERRED => 'success',
             self::MISSED, self::FAILED => 'danger',
+            self::NO_ANSWER => 'neutral',
             self::VOICEMAIL => 'warning',
             default => 'info',
         };
@@ -149,6 +163,19 @@ class VoiceCall extends Model
     public function hasRecording(): bool
     {
         return $this->recording_sid !== null;
+    }
+
+    public function isOutbound(): bool
+    {
+        return $this->direction === 'outbound';
+    }
+
+    /** The other party: the caller for calls in, the number called for calls out. */
+    public function otherParty(): string
+    {
+        $number = $this->isOutbound() ? $this->to_number : $this->from_number;
+
+        return $number ? PhoneNumber::pretty($number) : 'Unknown number';
     }
 
     public function fromDisplay(): string

@@ -207,7 +207,7 @@ class Index extends Component
         $base = Conversation::query()->forOrganization($organization);
 
         $list = (clone $base)
-            ->with(['customer:id,first_name,last_name,company', 'assignee:id,name'])
+            ->with(['customer:id,first_name,last_name,company,phone,phone_e164', 'assignee:id,name'])
             ->when(InboxChannel::tryFrom($this->channel), fn (Builder $q, InboxChannel $c) => $q->where('channel', $c))
             ->when(trim($this->search) !== '', fn (Builder $q) => $q->where(fn (Builder $s) => $s
                 ->where('contact_name', 'like', '%'.addcslashes(trim($this->search), '%_\\').'%')

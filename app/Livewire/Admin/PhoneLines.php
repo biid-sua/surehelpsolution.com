@@ -53,6 +53,12 @@ class PhoneLines extends Component
 
     public bool $editRecord = true;
 
+    public string $editAfterHours = 'agents';
+
+    public bool $editTextBack = false;
+
+    public string $editTextBackMessage = '';
+
     public int $days = 7;
 
     public function mount(): void
@@ -133,6 +139,9 @@ class PhoneLines extends Component
         $this->editLabel = (string) $line->label;
         $this->editTransfer = (string) ($line->transfer_number ? PhoneNumber::pretty($line->transfer_number) : '');
         $this->editRecord = $line->record_calls;
+        $this->editAfterHours = $line->after_hours;
+        $this->editTextBack = $line->text_back;
+        $this->editTextBackMessage = (string) $line->text_back_message;
         $this->resetValidation();
     }
 
@@ -140,14 +149,19 @@ class PhoneLines extends Component
     {
         $this->authorize('settings.manage');
         $line = $this->line((string) $this->editing);
-        $this->validate(['editLabel' => ['nullable', 'string', 'max:80'], 'editTransfer' => ['nullable', 'string', 'max:30']]);
+        $this->validate([
+            'editLabel' => ['nullable', 'string', 'max:80'], 'editTransfer' => ['nullable', 'string', 'max:30'],
+            'editAfterHours' => ['required', Rule::in(array_keys(PhoneNumber::AFTER_HOURS))], 'editTextBackMessage' => ['nullable', 'string', 'max:320'],
+        ]);
         $transfer = $this->transferOrFail($this->editTransfer, 'editTransfer');
         if ($transfer === false) {
             return;
         }
-        $old = $line->only(['label', 'transfer_number', 'record_calls']);
-        $line->forceFill(['label' => $this->editLabel ?: null, 'transfer_number' => $transfer, 'record_calls' => $this->editRecord])->save();
-        $audit->record('phone_line.updated', $line, $old, $line->only(['label', 'transfer_number', 'record_calls']), organization: $line->organization, label: $line->display());
+        $fields = ['label', 'transfer_number', 'record_calls', 'after_hours', 'text_back', 'text_back_message'];
+        $old = $line->only($fields);
+        $line->forceFill(['label' => $this->editLabel ?: null, 'transfer_number' => $transfer, 'record_calls' => $this->editRecord,
+            'after_hours' => $this->editAfterHours, 'text_back' => $this->editTextBack, 'text_back_message' => trim($this->editTextBackMessage) ?: null])->save();
+        $audit->record('phone_line.updated', $line, $old, $line->only($fields), organization: $line->organization, label: $line->display());
         $this->editing = null;
         $this->dispatch('toast', type: 'success', message: 'Line saved.');
     }
@@ -170,10 +184,10 @@ class PhoneLines extends Component
         $this->dispatch('toast', type: 'success', message: $line->display().' was released. Calls to it no longer reach SureHelp.');
     }
 
-    /** @return array{voice: string, status: string} */
+    /** @return array{voice: string, status: string, sms: string} */
     private function urls(): array
     {
-        return ['voice' => route('webhooks.voice.incoming'), 'status' => route('webhooks.voice.status')];
+        return ['voice' => route('webhooks.voice.incoming'), 'status' => route('webhooks.voice.status'), 'sms' => route('webhooks.sms.incoming')];
     }
 
     /** E.164, null for blank, false (with an error) when it can't be read. */
@@ -210,7 +224,7 @@ class PhoneLines extends Component
             'lineStats' => $lines->mapWithKeys(fn (PhoneNumber $l) => [$l->id => $stats->summary($l->organization_id, $from, now())]),
             'overall' => $stats->summary(null, $from, now()),
             'businesses' => Organization::query()->orderBy('name')->get(['ulid', 'name']),
-            'recent' => VoiceCall::withoutGlobalScopes()->with(['answeredBy:id,name', 'organization:id,name'])->latest('started_at')->limit(15)->get(),
+            'recent' => VoiceCall::withoutGlobalScopes()->with(['answeredBy:id,name', 'placedBy:id,name', 'organization:id,name'])->latest('started_at')->limit(15)->get(),
         ]);
     }
 }

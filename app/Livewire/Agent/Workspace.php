@@ -22,6 +22,7 @@ use App\Models\Customer;
 use App\Models\Escalation;
 use App\Models\KnowledgeItem;
 use App\Models\Organization;
+use App\Models\PhoneNumber;
 use App\Models\VoiceCall;
 use App\Services\Business\BusinessHours;
 use App\Services\Calls\CallOutcomes;
@@ -105,14 +106,15 @@ class Workspace extends Component
     {
         $organization = $this->organization();
         $voiceCall = VoiceCall::query()->forOrganization($organization)->where('ulid', $call)
-            ->where('answered_by_user_id', auth()->id())->first();
+            ->where(fn ($q) => $q->where('answered_by_user_id', auth()->id())->orWhere('placed_by_user_id', auth()->id()))->first();
         if (! $voiceCall || $voiceCall->call_log_id !== null) {
             return;
         }
 
         $this->resetCall();
         $this->voiceCallId = $voiceCall->id;
-        $this->entry['phone'] = (string) (Phone::display($voiceCall->from_number) ?? $voiceCall->from_number);
+        $other = $voiceCall->isOutbound() ? $voiceCall->to_number : $voiceCall->from_number;
+        $this->entry['phone'] = (string) (Phone::display($other) ?? $other);
         if ($voiceCall->customer_id) {
             $this->confirmCustomer($voiceCall->customer_id);
         }
@@ -428,6 +430,7 @@ class Workspace extends Component
             'calendarBroken' => CalendarConnection::query()->forOrganization($organization)->where('status', CalendarConnection::STATUS_NEEDS_REAUTH)->exists(),
             'priceLabel' => fn (BusinessService $s) => $s->price_type->display($s->price_cents, $s->currency),
             'timezone' => $timezone,
+            'hasLine' => PhoneNumber::query()->forOrganization($organization)->active()->exists(),
             'voiceCall' => $this->voiceCallId ? VoiceCall::query()->forOrganization($organization)->find($this->voiceCallId) : null,
         ])->title($organization->name.' · Agent workspace');
     }

@@ -1,5 +1,5 @@
 <div wire:poll.10s>
-    <x-ui.page-header title="Inbox" description="Every message from your website chat, Messenger and Instagram, in one place." />
+    <x-ui.page-header title="Inbox" description="Every message from your website chat, Messenger, Instagram and texts, in one place." />
     @include('livewire.client.inbox._tabs')
 
     <div class="grid gap-4 lg:grid-cols-[22rem_minmax(0,1fr)]">
@@ -117,6 +117,7 @@
                                     @if ($m->is_note) Team note · {{ $m->author->name ?? 'Team' }}
                                     @elseif ($m->status === 'draft') Suggested by the AI: not sent
                                     @elseif ($m->isFromAi()) AI assistant
+                                    @elseif ($m->author_type === 'system') Automatic text
                                     @elseif ($m->direction === 'out') {{ $m->author->name ?? 'Sent from '.$current->channel->label() }}
                                     @else {{ $current->displayName() }} @endif
                                     · {{ ($m->sent_at ?? $m->created_at)?->setTimezone($timezone)->format('D g:i A') }}

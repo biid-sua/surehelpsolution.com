@@ -9,7 +9,7 @@
     <x-ui.card title="Phone call" {{ $attributes }}>
         <dl class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4">
             <div><dt class="text-xs text-subtle">Result</dt><dd><x-ui.badge :tone="$voice->statusTone()">{{ $voice->statusLabel() }}</x-ui.badge></dd></div>
-            <div><dt class="text-xs text-subtle">From</dt><dd class="text-ink">{{ $voice->fromDisplay() }}</dd></div>
+            <div><dt class="text-xs text-subtle">{{ $voice->isOutbound() ? 'Called' : 'From' }}</dt><dd class="text-ink">{{ $voice->otherParty() }}</dd></div>
             <div><dt class="text-xs text-subtle">Waited</dt><dd class="text-ink tabular-nums">{{ $voice->wait_seconds !== null ? $voice->wait_seconds.'s' : '—' }}</dd></div>
             <div><dt class="text-xs text-subtle">Talk time</dt><dd class="text-ink tabular-nums">{{ \App\Models\VoiceCall::clock($voice->duration_seconds) }}</dd></div>
         </dl>

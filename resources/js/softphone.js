@@ -11,6 +11,8 @@ export default (config) => {
     let connection = null;
     const incoming = new Map();
     const dismissed = new Set();
+    // "Call" pressed in a tab that doesn't hold the phone goes to the tab that does.
+    const channel = typeof BroadcastChannel === 'function' ? new BroadcastChannel('surehelp-softphone') : null;
 
     return {
         driver: config.driver,
@@ -27,6 +29,8 @@ export default (config) => {
         clockTimer: null,
         titleTimer: null,
         originalTitle: '',
+        dialNumber: '',
+        dialBusiness: config.businesses[0]?.id ?? '',
 
         init() {
             const start = () => this.start();
@@ -46,6 +50,10 @@ export default (config) => {
             } else {
                 start();
             }
+            channel?.addEventListener('message', (event) => {
+                if (event.data?.type === 'dial' && !this.passive) this.dial(event.data.number, event.data.business);
+                if (event.data?.type === 'dialed') this.linkToCallScreen(event.data.call);
+            });
             this.clockTimer = setInterval(() => this.tick(), 1000);
             window.addEventListener('beforeunload', (event) => {
                 if (this.active && !this.passive) { event.preventDefault(); event.returnValue = ''; }
@@ -56,6 +64,7 @@ export default (config) => {
             clearTimeout(this.pollTimer);
             clearInterval(this.clockTimer);
             clearInterval(this.titleTimer);
+            channel?.close();
             device?.destroy();
         },
 
@@ -171,6 +180,45 @@ export default (config) => {
             }
             this.alertTitle();
             this.schedule();
+        },
+
+        /** Call a customer as one of the agent's businesses (D61). */
+        async dial(number, business) {
+            number = String(number ?? '').trim();
+            business = business || this.dialBusiness;
+            if (!number || !business) { this.error = 'Enter a number to call.'; this.open = true; return; }
+            if (this.passive) { channel?.postMessage({ type: 'dial', number, business }); return; }
+            if (this.active) { this.error = 'Finish your current call first.'; this.open = true; return; }
+            this.error = '';
+            try {
+                const result = await this.request(config.urls.dial, { organization: business, number });
+                this.active = result.call;
+                this.open = false;
+                this.dialNumber = '';
+                this.linkToCallScreen(result.call);
+                channel?.postMessage({ type: 'dialed', call: result.call });
+                if (this.driver === 'browser') {
+                    await this.connectDevice();
+                    if (!device) throw new Error(this.error || 'The phone could not start.');
+                    const call = await device.connect({ params: { callId: result.call.id } });
+                    connection = call;
+                    this.muted = false;
+                    call.on('accept', () => this.poll());
+                    call.on('disconnect', () => { connection = null; this.active = null; this.poll(); });
+                    call.on('error', (e) => { this.error = e.message || 'The call failed.'; });
+                }
+            } catch (e) {
+                this.error = e.message;
+                this.open = true;
+            }
+            this.poll(); // status pill: "On a call"
+        },
+
+        // A call screen open for this business takes the call (number, customer, call log link).
+        linkToCallScreen(call) {
+            if (call?.business_id && window.location.pathname.includes('/agent/businesses/' + call.business_id)) {
+                window.Livewire?.dispatch('phone-call-answered', { call: call.id });
+            }
         },
 
         decline(item) {

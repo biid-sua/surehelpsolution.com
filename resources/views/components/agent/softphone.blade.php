@@ -4,9 +4,11 @@
     $provider = app(\App\Services\Telephony\TelephonyProvider::class);
     $presence = app(\App\Services\Telephony\AgentPresence::class);
     $lines = \App\Models\PhoneNumber::withoutGlobalScopes()->active()->select('organization_id');
-    $demoBusinesses = $provider->usesBrowserSdk() ? collect() : ($agent->isAdmin()
+    // The agent's businesses that have a line: for calling out, and for demo calls.
+    $lineBusinesses = $agent->isAdmin()
         ? \App\Models\Organization::query()->whereIn('id', $lines)->orderBy('name')->limit(25)->get(['ulid', 'name'])
-        : $agent->assignedOrganizations()->whereIn('organizations.id', $lines)->orderBy('name')->get(['organizations.ulid', 'organizations.name']));
+        : $agent->assignedOrganizations()->whereIn('organizations.id', $lines)->orderBy('name')->get(['organizations.ulid', 'organizations.name']);
+    $canCallOut = ! $provider->usesBrowserSdk() || (string) config('telephony.twilio.twiml_app_sid') !== '';
     $config = [
         'driver' => $provider->usesBrowserSdk() ? 'browser' : 'demo',
         'ready' => $provider->isConfigured(),
@@ -16,12 +18,14 @@
             'presence' => route('agent.phone.presence'),
             'checkIn' => route('agent.phone.check-in'),
             'simulate' => route('agent.phone.simulate'),
+            'dial' => route('agent.phone.dial'),
             'call' => url('agent/phone/calls/__ID__'),
         ],
-        'businesses' => $demoBusinesses->map(fn ($o) => ['id' => $o->ulid, 'name' => $o->name])->values(),
+        'businesses' => $lineBusinesses->map(fn ($o) => ['id' => $o->ulid, 'name' => $o->name])->values(),
     ];
 @endphp
-<div x-data="softphone(@js($config))" class="relative" x-on:keydown.escape="open = false" x-on:click.outside="open = false">
+<div x-data="softphone(@js($config))" class="relative" x-on:keydown.escape="open = false" x-on:click.outside="open = false"
+    x-on:softphone-dial.window="dial($event.detail.number, $event.detail.business)">
     <button type="button" x-on:click="open = !open" class="flex items-center gap-2 rounded-full border border-line-strong px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface-2"
         :aria-expanded="open.toString()" aria-haspopup="true" title="Your phone">
         <span class="size-2 rounded-full" :class="{ 'bg-success': status === 'available', 'bg-warning': status === 'away' || status === 'wrap_up', 'bg-danger': status === 'busy', 'bg-subtle': status === 'offline' }" aria-hidden="true"></span>
@@ -45,6 +49,22 @@
         <p class="mt-2 px-1 text-xs text-danger" x-show="error" x-text="error"></p>
         @if (! $config['ready'])
             <p class="mt-2 px-1 text-xs text-warning">The phone service isn't set up yet, so calls can't ring here.</p>
+        @endif
+
+        @if ($canCallOut && $config['businesses']->isNotEmpty())
+            <form class="mt-3 space-y-2 border-t border-line pt-3" x-on:submit.prevent="dial(dialNumber, dialBusiness)">
+                <p class="px-1 text-xs font-semibold uppercase tracking-wide text-subtle">Call a customer</p>
+                <label class="sr-only" for="sp-business">Call as</label>
+                <select id="sp-business" x-model="dialBusiness" class="sh-input py-1.5 text-sm">
+                    @foreach ($config['businesses'] as $business)<option value="{{ $business['id'] }}">{{ $business['name'] }}</option>@endforeach
+                </select>
+                <div class="flex gap-2">
+                    <label class="sr-only" for="sp-number">Number</label>
+                    <input id="sp-number" type="tel" x-model="dialNumber" class="sh-input py-1.5 text-sm" placeholder="(512) 555-0100" autocomplete="off">
+                    <button type="submit" class="rounded-lg bg-emerald-600 px-3 text-sm font-semibold text-white hover:bg-emerald-500" :disabled="!!active">Call</button>
+                </div>
+                <p class="px-1 text-xs text-subtle">The customer sees the business's number.</p>
+            </form>
         @endif
 
         @if ($config['driver'] === 'demo')
@@ -79,7 +99,7 @@
 
             <template x-if="active">
                 <div class="rounded-2xl border border-line-strong bg-surface p-4 shadow-card" role="region" aria-label="Current call">
-                    <p class="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-success"><span>On a call</span><span class="tabular-nums text-ink" x-text="elapsed"></span></p>
+                    <p class="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-success"><span x-text="active.outbound ? (active.answered_at ? 'Calling out' : 'Calling…') : 'On a call'"></span><span class="tabular-nums text-ink" x-text="elapsed"></span></p>
                     <p class="mt-2 text-sm text-muted" x-text="active.business"></p>
                     <p class="text-lg font-semibold text-ink" x-text="active.caller"></p>
                     <p class="text-xs text-subtle" x-show="active.known" x-text="active.number"></p>

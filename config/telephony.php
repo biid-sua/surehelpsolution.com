@@ -42,6 +42,10 @@ return [
     'voicemail_prompt' => 'Sorry, nobody can take your call right now. Please leave your name, number and a short message after the tone.',
     'voicemail_seconds' => 120,
 
+    // Texting (D61). US texts need an approved A2P 10DLC registration first, so this stays off until
+    // then (the demo phone always texts: nothing is sent).
+    'sms' => (bool) env('TELEPHONY_SMS', false),
+
     // Live transcription of recorded calls (both sides), summarised by the AI after the call.
     'transcribe' => (bool) env('TELEPHONY_TRANSCRIBE', true),
 

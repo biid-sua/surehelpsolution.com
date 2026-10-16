@@ -11,6 +11,7 @@ use App\Models\Message;
 use App\Models\User;
 use App\Services\Inbox\Channels\ChannelSender;
 use App\Services\Inbox\Channels\MetaMessagingSender;
+use App\Services\Inbox\Channels\SmsSender;
 use App\Services\Inbox\Channels\WebChatSender;
 use App\Services\Inbox\MessageSplitter;
 use App\Services\Social\SocialManager;
@@ -116,6 +117,10 @@ class SendReply
 
     private function sender(InboxChannel $channel): ChannelSender
     {
-        return $channel === InboxChannel::WebChat ? app(WebChatSender::class) : app(MetaMessagingSender::class);
+        return match ($channel) {
+            InboxChannel::WebChat => app(WebChatSender::class),
+            InboxChannel::Sms => app(SmsSender::class),
+            default => app(MetaMessagingSender::class),
+        };
     }
 }

@@ -816,3 +816,31 @@ Start these early. The code can be built and tested with your own accounts befor
 - **Not in this part:** outbound calls from the browser, warm transfer, SMS (needs A2P 10DLC approval), business-hours routing rules, and the business portal's own line page.
 
 **Why:** live call handling is the core of a receptionist product (D10). Until now every call was typed in by hand, and nothing showed whether calls were actually answered.
+
+## D61 — Calling out, after-hours routing, the business's line page, and texting (2026-10-30)
+**Decision:** the second part of Phase 3b (TEL-2) and the texting part of Phase 4. Setup steps: `docs/telephony.md`.
+- **After hours:** each line chooses what happens while the business is closed: agents answer anyway (the default), the owner's phone then voicemail, or straight to voicemail.
+  - "Closed" comes from the business's own hours, holidays and closures (`BusinessHours`). A business with no hours set is never treated as closed.
+  - Each call records whether it came in after hours.
+- **Calling out:**
+  - Agents call customers from the softphone ("Call a customer") or with the **Call** button on the call screen, showing the business's number.
+  - **How a call is placed:** the server first creates the outbound call record (`POST agent/phone/dial`: the agent's own business, US/Canadian numbers only, no 900/976, one call at a time). The TwiML App webhook then places only that call, from that agent, once, within 2 minutes. The browser therefore can't call arbitrary numbers, which guards against toll fraud.
+  - Calls out are recorded per the line's setting and link to the call log the same way calls in do.
+  - They are excluded from the answer rate.
+  - Transfer stays inbound-only. Warm (three-way) transfer is still deferred.
+- **Business › Phone line** (business portal):
+  - **What it shows:** the number, carrier forwarding codes (with a caveat that they vary), 30-day statistics, and recent calls linked to their call logs.
+  - **What owners and managers can change** (`settings.manage`, audited): their phone, after-hours handling, recording and missed-call texts.
+  - Staff can't open the Business section, as before.
+- **Texting:**
+  - Texts are a new Inbox channel (`sms`, up to 1,600 characters). Inbound texts arrive by a signed webhook, are matched to customers by phone, and go to the AI assistant or the team like any other message.
+  - Replies, by a person or the AI, go out from the line the conversation used.
+  - **Delivery reports:** failed and undelivered texts are marked failed, with a plain-language reason.
+  - **STOP and START:** the CTIA stop words add the number to `sms_opt_outs` and withdraw the customer's texting consent. Nothing is texted to an opted-out number, and START removes it from the list.
+  - **Gated off with Twilio** until `TELEPHONY_SMS=true`, because US texts need an approved A2P 10DLC registration. The demo driver always "texts", but nothing is sent.
+- **Automatic texts** (`Texting::sendAutomatic`, author "system", always inside an Inbox conversation):
+  - **Missed-call text-back:** per line, off by default, editable message, at most one per caller in 12 hours.
+  - **Appointment texts:** short versions of the confirmation, reminder, change and cancellation. They go only to customers with texting consent and a US/Canadian number, and are noted on the customer's timeline. Email works as before. A message counts as sent if either the email or the text went out.
+- **Not in this part:** starting a new text conversation from the Inbox, pictures (MMS), a business's own wording for appointment texts, warm transfer, outbound calls outside US/Canada.
+
+**Why:** these were the next items in the plan (TEL-2 and Phase 4). Missed-call texts and appointment texts are what customers of a receptionist service expect, and keeping everything in the Inbox means one place to answer.

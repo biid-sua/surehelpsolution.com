@@ -21,12 +21,24 @@ class PhoneNumber extends Model
 
     public const STATUS_RELEASED = 'released';
 
+    /** Where calls go while the business is closed (its opening hours, holidays and closures). */
+    public const AFTER_HOURS = [
+        'agents' => 'Our agents answer, as during the day',
+        'owner' => 'Ring the owner\'s phone, then voicemail',
+        'voicemail' => 'Straight to voicemail',
+    ];
+
+    public const DEFAULT_TEXT_BACK = 'Sorry we missed your call to {business}. We\'ll call you back as soon as we can, or reply here with what you need.';
+
     protected $fillable = [
-        'organization_id', 'provider', 'provider_sid', 'number', 'label', 'transfer_number', 'record_calls', 'status', 'released_at',
+        'organization_id', 'provider', 'provider_sid', 'number', 'label', 'transfer_number', 'record_calls', 'after_hours', 'text_back',
+        'text_back_message', 'status', 'released_at',
     ];
 
     protected $attributes = [
         'record_calls' => true,
+        'after_hours' => 'agents',
+        'text_back' => false,
         'status' => self::STATUS_ACTIVE,
     ];
 
@@ -34,6 +46,7 @@ class PhoneNumber extends Model
     {
         return [
             'record_calls' => 'boolean',
+            'text_back' => 'boolean',
             'released_at' => 'datetime',
         ];
     }

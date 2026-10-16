@@ -23,6 +23,7 @@ use App\Http\Controllers\Chat\SiteToolsController;
 use App\Http\Controllers\Chat\WidgetController;
 use App\Http\Controllers\Webhooks\CalendarWebhookController;
 use App\Http\Controllers\Webhooks\MetaWebhookController;
+use App\Http\Controllers\Webhooks\SmsWebhookController;
 use App\Http\Controllers\Webhooks\VoiceWebhookController;
 use App\Http\Middleware\VerifyTelephonyWebhook;
 use Illuminate\Support\Facades\Route;
@@ -56,6 +57,8 @@ Route::prefix('webhooks/calendar')->name('webhooks.calendar.')->middleware('thro
 Route::prefix('webhooks/voice')->name('webhooks.voice.')->middleware([VerifyTelephonyWebhook::class, 'throttle:1200,1'])->group(function () {
     Route::post('/incoming', [VoiceWebhookController::class, 'incoming'])->name('incoming');
     Route::post('/status', [VoiceWebhookController::class, 'status'])->name('status');
+    Route::post('/outgoing', [VoiceWebhookController::class, 'outgoing'])->name('outgoing');
+    Route::post('/calls/{voiceCall}/callee', [VoiceWebhookController::class, 'callee'])->name('callee');
     Route::post('/calls/{voiceCall}/agent', [VoiceWebhookController::class, 'agentLeg'])->name('agent-leg');
     Route::post('/calls/{voiceCall}/dial-finished', [VoiceWebhookController::class, 'dialFinished'])->name('dial-finished');
     Route::post('/calls/{voiceCall}/transfer', [VoiceWebhookController::class, 'transfer'])->name('transfer');
@@ -63,6 +66,12 @@ Route::prefix('webhooks/voice')->name('webhooks.voice.')->middleware([VerifyTele
     Route::post('/calls/{voiceCall}/voicemail-saved', [VoiceWebhookController::class, 'voicemailSaved'])->name('voicemail-saved');
     Route::post('/calls/{voiceCall}/recording', [VoiceWebhookController::class, 'recording'])->name('recording');
     Route::post('/calls/{voiceCall}/transcription', [VoiceWebhookController::class, 'transcription'])->name('transcription');
+});
+
+// Texts to SureHelp numbers and delivery reports (signed by Twilio, D61).
+Route::prefix('webhooks/sms')->name('webhooks.sms.')->middleware([VerifyTelephonyWebhook::class, 'throttle:1200,1'])->group(function () {
+    Route::post('/incoming', [SmsWebhookController::class, 'incoming'])->name('incoming');
+    Route::post('/status', [SmsWebhookController::class, 'status'])->name('status');
 });
 
 Route::prefix('v1')->middleware('throttle:api')->group(function () {

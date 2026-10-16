@@ -102,6 +102,29 @@ class PhoneController extends Controller
         return response()->json(['message' => 'Transferred to '.PhoneNumber::pretty($voiceCall->transferred_to).'.']);
     }
 
+    /** Call a customer from the browser with a business's number (D61). */
+    public function dial(Request $request): JsonResponse
+    {
+        $agent = $request->user();
+        $data = $request->validate(['organization' => ['required', 'string'], 'number' => ['required', 'string', 'max:30']]);
+        $organization = Organization::query()->where('ulid', $data['organization'])->first();
+        abort_unless($organization && $agent->hasPermissionIn('calls.create', $organization), 404);
+        if ($this->provider->usesBrowserSdk() && (string) config('telephony.twilio.twiml_app_sid') === '') {
+            return response()->json(['message' => 'Calling out isn\'t set up yet (Twilio TwiML App missing).'], 422);
+        }
+
+        try {
+            $call = $this->calls->dial($organization, $agent, $data['number']);
+        } catch (TelephonyUnavailable $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+        if (! $this->provider->usesBrowserSdk()) {
+            $this->calls->calleeAnswered($call); // the demo customer picks up at once
+        }
+
+        return response()->json(['call' => $this->describe($call->refresh())]);
+    }
+
     /** Demo phone only: ring this agent (and anyone else available) with a call to a business's line. */
     public function simulate(Request $request, CallRouter $router): JsonResponse
     {
@@ -146,7 +169,9 @@ class PhoneController extends Controller
 
     private function activeCall(User $agent): ?VoiceCall
     {
-        return VoiceCall::withoutGlobalScopes()->where('answered_by_user_id', $agent->id)->where('status', VoiceCall::IN_PROGRESS)->latest('answered_at')->first();
+        return VoiceCall::withoutGlobalScopes()->where(fn ($q) => $q->where(fn ($w) => $w->where('answered_by_user_id', $agent->id)->where('status', VoiceCall::IN_PROGRESS))
+            ->orWhere(fn ($w) => $w->where('placed_by_user_id', $agent->id)->whereIn('status', [VoiceCall::RINGING, VoiceCall::IN_PROGRESS])->where('started_at', '>=', now()->subHours(4))))
+            ->latest('started_at')->first();
     }
 
     /** @return array<string, mixed> */
@@ -159,12 +184,13 @@ class PhoneController extends Controller
             'id' => $call->ulid,
             'status' => $call->status,
             'business' => $organization?->name,
-            'caller' => $customer?->fullName() ?: $call->fromDisplay(),
-            'number' => $call->fromDisplay(),
+            'caller' => $customer?->fullName() ?: $call->otherParty(),
+            'number' => $call->otherParty(),
+            'outbound' => $call->isOutbound(),
             'known' => $customer !== null,
             'started_at' => $call->started_at->toIso8601String(),
             'answered_at' => $call->answered_at?->toIso8601String(),
-            'can_transfer' => (bool) $call->phoneNumber?->transfer_number,
+            'can_transfer' => ! $call->isOutbound() && (bool) $call->phoneNumber?->transfer_number,
             'workspace_url' => $organization ? route('agent.businesses.show', [$organization->ulid, 'call' => $call->ulid]) : null,
             'business_id' => $organization?->ulid,
         ];
@@ -173,7 +199,7 @@ class PhoneController extends Controller
     private function authorizeCall(VoiceCall $call, User $agent): void
     {
         $organization = Organization::query()->find($call->organization_id);
-        abort_unless($organization && ($call->wasOfferedTo($agent) || $call->answered_by_user_id === $agent->id)
+        abort_unless($organization && ($call->wasOfferedTo($agent) || $call->answered_by_user_id === $agent->id || $call->placed_by_user_id === $agent->id)
             && $agent->hasPermissionIn('calls.create', $organization), 404);
     }
 }

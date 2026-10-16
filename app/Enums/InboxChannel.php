@@ -12,6 +12,7 @@ enum InboxChannel: string
     case WebChat = 'web_chat';
     case Facebook = 'facebook';
     case Instagram = 'instagram';
+    case Sms = 'sms';
 
     public function label(): string
     {
@@ -19,6 +20,7 @@ enum InboxChannel: string
             self::WebChat => 'Website chat',
             self::Facebook => 'Messenger',
             self::Instagram => 'Instagram',
+            self::Sms => 'Text message',
         };
     }
 
@@ -28,6 +30,7 @@ enum InboxChannel: string
             self::WebChat => '#7C3AED',
             self::Facebook => '#0866FF',
             self::Instagram => '#E1306C',
+            self::Sms => '#059669',
         };
     }
 
@@ -38,16 +41,17 @@ enum InboxChannel: string
             self::WebChat => 4000,
             self::Facebook => 2000,
             self::Instagram => 1000,
+            self::Sms => 1600, // carriers join longer texts from up to 10 parts
         };
     }
 
     public function isMeta(): bool
     {
-        return $this !== self::WebChat;
+        return $this === self::Facebook || $this === self::Instagram;
     }
 
     /**
-     * Whether a reply can go out now. Meta: 24 hours after the customer's last message for anyone,
+     * Whether a reply can go out now. Texts: always (opt-outs are checked when sending, D61). Meta: 24 hours after the customer's last message for anyone,
      * up to 7 days for a person using the human-agent tag; never later (D37).
      *
      * @return array{allowed: bool, human_agent_tag: bool, reason: ?string}
