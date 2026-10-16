@@ -81,6 +81,14 @@ class FakeProvider implements TelephonyProvider
         return $sid;
     }
 
+    /** @var array<string, array{body: string, type: string}> media the demo phone "received", by URL */
+    public array $media = [];
+
+    public function downloadMedia(string $url): ?array
+    {
+        return $this->media[$url] ?? null;
+    }
+
     public function recordingAudio(string $recordingSid): ?string
     {
         return null;

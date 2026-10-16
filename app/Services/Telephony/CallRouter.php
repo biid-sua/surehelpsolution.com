@@ -111,6 +111,16 @@ class CallRouter
     {
         $call = VoiceCall::withoutGlobalScopes()->where('ulid', (string) ($params['callId'] ?? ''))->first();
         $agentId = AgentPresence::userIdFrom((string) ($params['From'] ?? $params['Caller'] ?? ''));
+
+        // Back to a caller waiting on hold (warm transfer cancelled, D62): only the agent who held them, once.
+        if (($params['rejoin'] ?? '') === '1') {
+            if (! $call || $agentId === null || $call->answered_by_user_id !== $agentId || $call->held_at === null || $call->status !== VoiceCall::IN_PROGRESS) {
+                return TwiML::make()->say('The caller is no longer waiting.')->hangup()->xml();
+            }
+            $call->forceFill(['held_at' => null])->save();
+
+            return $this->conference($call, TwiML::make(), start: true)->xml();
+        }
         $line = $call?->phoneNumber;
         if (! $call || $call->direction !== 'outbound' || $agentId === null || $call->placed_by_user_id !== $agentId
             || ! str_starts_with($call->provider_call_sid, 'pending-') || $call->started_at->lt(now()->subMinutes(2)) || ! $line || $line->status !== PhoneNumber::STATUS_ACTIVE) {
@@ -142,6 +152,9 @@ class CallRouter
     public function dialFinished(VoiceCall $call, array $params): string
     {
         $call->refresh();
+        if ($call->held_at !== null && $call->status === VoiceCall::IN_PROGRESS) {
+            return $this->hold($call); // on hold for a warm transfer: stay in the waiting room
+        }
         if ($call->status === VoiceCall::TRANSFERRED) {
             return TwiML::make()->xml(); // the transfer instructions already took over
         }
@@ -161,6 +174,29 @@ class CallRouter
         }
 
         return $this->dialOwner($call, $line, TwiML::make()->say('Please hold while I transfer your call.'))->xml();
+    }
+
+    /** Warm transfer (D62): the caller waits in a conference room with music until someone joins. */
+    public function hold(VoiceCall $call): string
+    {
+        return $this->conference($call, TwiML::make()->say('Please hold for a moment while I connect you.'), start: false)->xml();
+    }
+
+    /** Warm transfer (D62): the owner (moved here from the agent's call) joins the waiting caller. */
+    public function join(VoiceCall $call): string
+    {
+        return $this->conference($call, TwiML::make(), start: true)->xml();
+    }
+
+    private function conference(VoiceCall $call, TwiML $twiml, bool $start): TwiML
+    {
+        return $twiml->dial([], function (DOMElement $dial, TwiML $t) use ($call, $start): void {
+            $t->into($dial, 'Conference', $call->conferenceName(), [
+                'startConferenceOnEnter' => $start,
+                'endConferenceOnExit' => true,
+                'beep' => false,
+            ]);
+        });
     }
 
     /** @param array<string, mixed> $params */

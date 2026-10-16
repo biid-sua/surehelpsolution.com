@@ -99,13 +99,19 @@
 
             <template x-if="active">
                 <div class="rounded-2xl border border-line-strong bg-surface p-4 shadow-card" role="region" aria-label="Current call">
-                    <p class="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-success"><span x-text="active.outbound ? (active.answered_at ? 'Calling out' : 'Calling…') : 'On a call'"></span><span class="tabular-nums text-ink" x-text="elapsed"></span></p>
+                    <p class="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-success"><span x-text="active.consult_for ? 'Talking to the owner' : (active.held ? 'Caller on hold' : (active.outbound ? (active.answered_at ? 'Calling out' : 'Calling…') : 'On a call'))"></span><span class="tabular-nums text-ink" x-text="elapsed"></span></p>
                     <p class="mt-2 text-sm text-muted" x-text="active.business"></p>
                     <p class="text-lg font-semibold text-ink" x-text="active.caller"></p>
                     <p class="text-xs text-subtle" x-show="active.known" x-text="active.number"></p>
-                    <div class="mt-3 grid grid-cols-2 gap-2" x-show="!passive">
+                    <p class="mt-1 text-xs text-warning" x-show="active.consult_for" x-text="'Waiting on hold: ' + (active.consult_for?.caller ?? 'the caller')"></p>
+                <div class="mt-3 grid grid-cols-2 gap-2" x-show="!passive && (active.consult_for || active.held)">
+                    <button type="button" x-on:click="connectCaller()" x-show="active.consult_for" :disabled="!active.answered_at" class="rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50">Connect caller</button>
+                    <button type="button" x-on:click="backToCaller()" class="rounded-xl border border-line-strong px-3 py-2 text-sm text-ink hover:bg-surface-2">Back to caller</button>
+                </div>
+                <div class="mt-3 grid grid-cols-2 gap-2" x-show="!passive && !active.consult_for && !active.held">
                         <button type="button" x-on:click="toggleMute()" x-show="driver === 'browser'" class="rounded-xl border border-line-strong px-3 py-2 text-sm text-ink hover:bg-surface-2" x-text="muted ? 'Unmute' : 'Mute'"></button>
-                        <button type="button" x-on:click="transfer()" x-show="active.can_transfer" class="rounded-xl border border-line-strong px-3 py-2 text-sm text-ink hover:bg-surface-2">Transfer to owner</button>
+                        <button type="button" x-on:click="warmTransfer()" x-show="active.can_transfer" class="rounded-xl border border-line-strong px-3 py-2 text-sm text-ink hover:bg-surface-2" title="Put the caller on hold and talk to the owner first">Talk to owner first</button>
+                        <button type="button" x-on:click="transfer()" x-show="active.can_transfer" class="rounded-xl border border-line-strong px-3 py-2 text-sm text-ink hover:bg-surface-2" title="Send the caller straight to the owner">Transfer to owner</button>
                         <a :href="active.workspace_url" target="surehelp-call-screen" class="rounded-xl border border-line-strong px-3 py-2 text-center text-sm text-ink hover:bg-surface-2">Call screen</a>
                         <button type="button" x-on:click="hangUp()" class="rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-500">Hang up</button>
                     </div>

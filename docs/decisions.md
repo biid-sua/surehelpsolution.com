@@ -844,3 +844,40 @@ Start these early. The code can be built and tested with your own accounts befor
 - **Not in this part:** starting a new text conversation from the Inbox, pictures (MMS), a business's own wording for appointment texts, warm transfer, outbound calls outside US/Canada.
 
 **Why:** these were the next items in the plan (TEL-2 and Phase 4). Missed-call texts and appointment texts are what customers of a receptionist service expect, and keeping everything in the Inbox means one place to answer.
+
+## D62 — Warm transfer, starting texts, texted pictures, own wording for texts (2026-10-31)
+**Decision:** TEL-3, the remaining items from D61's "not in this part" list.
+- **Warm transfer (conference):**
+  1. "Talk to owner first" redirects the caller into a private conference room (`call-{ulid}`). The room hasn't started, so the caller hears hold music.
+  2. A consult call to the owner is created (`consult_for_id`), and the agent's browser places it through the TwiML App.
+  3. **Connect caller** redirects the owner's leg (the SID from the callee webhook) into the room, which starts it. The agent drops off, and the call is marked transferred (audited, `warm: true`).
+  4. **Back to caller** ends the consult. The agent rejoins the room through the TwiML App (`rejoin=1`): only the agent who held the caller, only while they're held, and only once.
+
+  While the caller is held:
+  - the Dial action keeps them in the room;
+  - the agent stays "On a call".
+
+  The demo phone does the same steps at once. Recording covers the agent's part only.
+- **Starting a text conversation** (Inbox "New text", customer page "Text", `Texting::start`):
+  - only to a customer with texting consent, or a number that texted the business before;
+  - never to an opted-out number;
+  - US/Canada only;
+  - audited.
+- **Texted pictures (MMS):**
+  - downloaded from Twilio's own media URLs only, with the account credentials;
+  - up to 5 images per text, 5 MB each;
+  - stored privately under `inbox-media/{business}/` and served through `/inbox-media/{business}/{file}` to people with `messages.view` in that business (no-sniff, no-script headers);
+  - Twilio retries are ignored before anything is downloaded;
+  - other file types are noted in the message;
+  - sending pictures stays out.
+- **Own wording for appointment texts:**
+  - `message_templates.sms_body`, edited beside the email (320 characters, placeholders checked, live preview);
+  - empty uses the default.
+- **Account closure** now also:
+  - deletes calls, opt-outs and phone lines;
+  - releases the numbers at Twilio;
+  - removes texted pictures.
+
+  This closes a gap left by D60.
+
+**Why:** these finish the receptionist workflow. Owners can be briefed before taking a call, businesses can follow up by text with people who expect it, and customers can send a photo of the problem.

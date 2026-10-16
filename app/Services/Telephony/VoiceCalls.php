@@ -48,6 +48,10 @@ class VoiceCalls
     /** The agent's side of the call ended (hung up, or the call moved on). */
     public function agentLeft(VoiceCall $call, User $agent): void
     {
+        // Putting the caller on hold for a warm transfer drops the agent's side; they're still busy with it.
+        if ($call->held_at !== null && $call->status === VoiceCall::IN_PROGRESS) {
+            return;
+        }
         if ($call->answered_by_user_id === $agent->id && $agent->phone_status === AgentPresence::BUSY) {
             $this->presence->set($agent, AgentPresence::WRAP_UP);
         }
@@ -71,7 +75,7 @@ class VoiceCalls
             'duration_seconds' => $call->answered_at ? max(0, (int) $call->answered_at->diffInSeconds(now())) : null,
         ])->save();
 
-        if ($agent = $call->answeredBy ?? $call->placedBy) {
+        if (($agent = $call->answeredBy ?? $call->placedBy) && ! $this->agentStillOnACall($agent)) {
             if ($agent->phone_status === AgentPresence::BUSY) {
                 $this->presence->set($agent, AgentPresence::WRAP_UP);
             }
@@ -111,15 +115,99 @@ class VoiceCalls
         return $call;
     }
 
-    /** The person an agent called picked up. */
-    public function calleeAnswered(VoiceCall $call): void
+    /** The person an agent called picked up (their leg's SID lets a warm transfer move them later). */
+    public function calleeAnswered(VoiceCall $call, ?string $calleeSid = null): void
     {
         $now = now();
         VoiceCall::withoutGlobalScopes()->whereKey($call->id)->where('status', VoiceCall::RINGING)->update([
             'status' => VoiceCall::IN_PROGRESS, 'answered_by_user_id' => $call->placed_by_user_id, 'answered_at' => $now,
-            'wait_seconds' => max(0, (int) $call->started_at->diffInSeconds($now)), 'updated_at' => $now,
+            'wait_seconds' => max(0, (int) $call->started_at->diffInSeconds($now)), 'callee_call_sid' => $calleeSid, 'updated_at' => $now,
         ]);
         $call->refresh();
+    }
+
+    /**
+     * Warm transfer, step 1 (D62): the caller waits on hold (a conference room with music) and a call
+     * to the owner is created for the agent's browser to place.
+     *
+     * @throws TelephonyUnavailable
+     */
+    public function hold(VoiceCall $call, User $agent): VoiceCall
+    {
+        $line = $call->phoneNumber;
+        if ($call->isOutbound() || $call->status !== VoiceCall::IN_PROGRESS || $call->answered_by_user_id !== $agent->id || $call->held_at !== null) {
+            throw new TelephonyUnavailable('This call can\'t be put on hold now.');
+        }
+        if (! $line?->transfer_number) {
+            throw new TelephonyUnavailable('This business has no number to transfer calls to.');
+        }
+
+        $this->provider->redirectCall($call->provider_call_sid, route('webhooks.voice.hold', $call));
+        $call->forceFill(['held_at' => now()])->save();
+        $consult = VoiceCall::create([
+            'organization_id' => $call->organization_id, 'phone_number_id' => $line->id, 'provider' => $this->provider->name(),
+            'provider_call_sid' => 'pending-'.Str::ulid(), 'direction' => 'outbound', 'from_number' => $line->number, 'to_number' => $line->transfer_number,
+            'status' => VoiceCall::RINGING, 'placed_by_user_id' => $agent->id, 'consult_for_id' => $call->id, 'started_at' => now(),
+        ]);
+        $this->presence->set($agent, AgentPresence::BUSY);
+        $this->audit->record('call.held_for_transfer', $call, new: ['owner' => $line->transfer_number], organization: $call->organization, actor: $agent, label: $call->fromDisplay());
+
+        return $consult;
+    }
+
+    /**
+     * Warm transfer, step 2 (D62): the owner agreed; they join the waiting caller and the agent drops off.
+     *
+     * @throws TelephonyUnavailable
+     */
+    public function connectHeld(VoiceCall $consult, User $agent): VoiceCall
+    {
+        $held = $consult->consultFor;
+        if (! $held || $consult->placed_by_user_id !== $agent->id || $consult->status !== VoiceCall::IN_PROGRESS
+            || $held->held_at === null || $held->status !== VoiceCall::IN_PROGRESS) {
+            throw new TelephonyUnavailable('The caller is no longer waiting.');
+        }
+        if ($this->provider->usesBrowserSdk()) {
+            if (! $consult->callee_call_sid) {
+                throw new TelephonyUnavailable('The owner\'s phone isn\'t connected yet.');
+            }
+            $this->provider->redirectCall($consult->callee_call_sid, route('webhooks.voice.join', $held));
+        } else {
+            $this->ended($consult); // demo: the owner and caller are connected at once
+        }
+        $held->forceFill(['status' => VoiceCall::TRANSFERRED, 'transferred_to' => $consult->to_number, 'transferred_at' => now(), 'held_at' => null])->save();
+        if (! $this->provider->usesBrowserSdk()) {
+            $this->ended($held);
+        }
+        $this->presence->set($agent, AgentPresence::WRAP_UP);
+        $this->audit->record('call.transferred', $held, new: ['to' => $consult->to_number, 'warm' => true], organization: $held->organization, actor: $agent, label: $held->fromDisplay());
+
+        return $held;
+    }
+
+    /**
+     * Warm transfer, cancelled (D62): back to the waiting caller. With the browser phone the agent
+     * rejoins through the TwiML App ("rejoin"), which clears the hold; the demo phone does it here.
+     *
+     * @throws TelephonyUnavailable
+     */
+    public function resume(VoiceCall $held, User $agent): VoiceCall
+    {
+        if ($held->held_at === null || $held->status !== VoiceCall::IN_PROGRESS || $held->answered_by_user_id !== $agent->id) {
+            throw new TelephonyUnavailable('The caller is no longer waiting.');
+        }
+        VoiceCall::withoutGlobalScopes()->where('consult_for_id', $held->id)->live()->get()->each(fn (VoiceCall $c) => $this->ended($c));
+        if (! $this->provider->usesBrowserSdk()) {
+            $held->forceFill(['held_at' => null])->save();
+        }
+        $this->presence->set($agent, AgentPresence::BUSY);
+
+        return $held->refresh();
+    }
+
+    private function agentStillOnACall(User $agent): bool
+    {
+        return VoiceCall::withoutGlobalScopes()->live()->where(fn ($q) => $q->where('answered_by_user_id', $agent->id)->orWhere('placed_by_user_id', $agent->id))->exists();
     }
 
     /** Nobody at SureHelp answered, but the owner's phone did. */

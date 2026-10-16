@@ -6,8 +6,10 @@ use App\Enums\OrganizationStatus;
 use App\Models\DataExport;
 use App\Models\MediaAsset;
 use App\Models\Organization;
+use App\Models\PhoneNumber;
 use App\Models\User;
 use App\Notifications\AccountClosureScheduled;
+use App\Services\Telephony\TelephonyProvider;
 use App\Support\Audit\Audit;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -40,6 +42,8 @@ class AccountClosure
         'support_ticket_messages', 'support_tickets',
         // Automations and their history (D50).
         'automation_runs', 'automations',
+        // Phone calls with their recordings references and transcripts, texting opt-outs and the lines (D60–D62).
+        'voice_calls', 'sms_opt_outs', 'phone_numbers',
         'call_logs', 'appointments', 'tasks', 'escalations', 'customer_timeline_events', 'customers', 'tags',
         'knowledge_items', 'business_rules', 'business_services', 'business_hours', 'business_holidays',
         'business_locations', 'business_profiles', 'message_templates', 'calendar_busy_blocks', 'calendar_connections',
@@ -81,6 +85,18 @@ class AccountClosure
     {
         $exports = DataExport::query()->where('organization_id', $organization->id)->get();
 
+        // The business's numbers go back to the phone company before their rows are deleted.
+        $provider = app(TelephonyProvider::class);
+        foreach (PhoneNumber::withoutGlobalScopes()->where('organization_id', $organization->id)->active()->whereNotNull('provider_sid')->get() as $line) {
+            try {
+                if ($line->provider === $provider->name()) {
+                    $provider->releaseNumber((string) $line->provider_sid);
+                }
+            } catch (\Throwable $e) {
+                report($e); // the closure still goes ahead; the number can be released by hand in Twilio
+            }
+        }
+
         DB::transaction(function () use ($organization) {
             foreach (self::TABLES as $table) {
                 DB::table($table)->where('organization_id', $organization->id)->delete();
@@ -109,6 +125,7 @@ class AccountClosure
         MediaAsset::withoutGlobalScopes()->where('organization_id', $organization->id)->each(fn (MediaAsset $asset) => $asset->delete());
         Storage::disk('local')->deleteDirectory('support/'.$organization->id);
         Storage::disk('local')->deleteDirectory('logos/'.$organization->id);
+        Storage::disk('local')->deleteDirectory('inbox-media/'.$organization->ulid); // texted pictures (D62)
 
         foreach ($exports as $export) {
             if ($export->path) {

@@ -252,7 +252,8 @@ Requirements: [requirements/agent-university-and-assignments.md](requirements/ag
 | TEL-1 | `TelephonyProvider` (Twilio + demo driver), phone lines per business, inbound routing to available assigned agents (simultaneous ring), owner fallback and voicemail, missed-call tasks and notifications, browser softphone with readiness, screen-pop into the call screen, cold transfer to the owner, recordings (permission-checked, audited), live transcription and AI summary into the call log, answer/missed/wait/talk statistics, *Admin › Phone lines* | **done** 2026-10-29 (waits for Twilio keys to go live) |
 | TEL-2 | Outbound calls from the browser (server-approved, US/Canada only), after-hours routing per line, *Business › Phone line* page with forwarding guide and settings | **done** 2026-10-30 (D61) |
 | COM-1 | Texting (Phase 4): Inbox channel with signed inbound/status webhooks, STOP/START opt-outs, missed-call text-back, appointment texts for consenting customers; off with Twilio until A2P 10DLC is approved | **done** 2026-10-30 (D61) |
-| TEL-3 | Warm transfer (conference), new text conversations from the Inbox, MMS pictures, the business's own wording for texts | next |
+| TEL-3 | Warm transfer (conference, consult then connect or return), new text conversations (consent-gated), texted pictures in the Inbox, the business's own wording for appointment texts, phone data in account closure | **done** 2026-10-31 (D62) |
+| TEL-4 | Sending pictures by text, recording the conference part of a warm transfer, calls out beyond US/Canada | later |
 
 ## 5. Later phases (outline, in spec order)
 

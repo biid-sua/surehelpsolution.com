@@ -35,6 +35,9 @@
                 </dl>
                 @if ($customer->phone_e164)
                     <x-ui.button class="mt-4 w-full" variant="secondary" icon="phone" href="tel:{{ $customer->phone_e164 }}">Call {{ $customer->displayPhone() }}</x-ui.button>
+                    @if ($customer->sms_consent && \App\Models\PhoneNumber::query()->forOrganization($customer->organization_id)->active()->exists() && auth()->user()->can('messages.send'))
+                        <x-ui.button class="mt-2 w-full" variant="ghost" icon="chat" href="{{ route('app.inbox.index', ['text' => $customer->phone_e164]) }}">Text {{ $customer->displayPhone() }}</x-ui.button>
+                    @endif
                 @endif
             </x-ui.card>
 

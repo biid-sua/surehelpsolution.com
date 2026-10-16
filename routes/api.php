@@ -62,6 +62,8 @@ Route::prefix('webhooks/voice')->name('webhooks.voice.')->middleware([VerifyTele
     Route::post('/calls/{voiceCall}/agent', [VoiceWebhookController::class, 'agentLeg'])->name('agent-leg');
     Route::post('/calls/{voiceCall}/dial-finished', [VoiceWebhookController::class, 'dialFinished'])->name('dial-finished');
     Route::post('/calls/{voiceCall}/transfer', [VoiceWebhookController::class, 'transfer'])->name('transfer');
+    Route::post('/calls/{voiceCall}/hold', [VoiceWebhookController::class, 'hold'])->name('hold');
+    Route::post('/calls/{voiceCall}/join', [VoiceWebhookController::class, 'join'])->name('join');
     Route::post('/calls/{voiceCall}/owner-finished', [VoiceWebhookController::class, 'ownerFinished'])->name('owner-finished');
     Route::post('/calls/{voiceCall}/voicemail-saved', [VoiceWebhookController::class, 'voicemailSaved'])->name('voicemail-saved');
     Route::post('/calls/{voiceCall}/recording', [VoiceWebhookController::class, 'recording'])->name('recording');

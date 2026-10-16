@@ -31,7 +31,7 @@ class CustomerMessages
         private readonly CustomerSelfService $selfService,
     ) {}
 
-    /** @return array{subject: string, body: string, is_active: bool, lead_hours: int|null, custom: bool} */
+    /** @return array{subject: string, body: string, sms: string, is_active: bool, lead_hours: int|null, custom: bool} */
     public function template(Organization $organization, string $key): array
     {
         $default = config("customer_messages.templates.$key") ?? throw new \InvalidArgumentException("Unknown message [$key].");
@@ -40,6 +40,7 @@ class CustomerMessages
         return [
             'subject' => $saved->subject ?? $default['subject'],
             'body' => $saved->body ?? $default['body'],
+            'sms' => $saved?->sms_body ?: (string) ($default['sms'] ?? ''),
             'is_active' => $saved->is_active ?? true,
             'lead_hours' => $saved->lead_hours ?? ($default['lead_hours'] ?? null),
             'custom' => $saved !== null,
@@ -109,7 +110,7 @@ class CustomerMessages
         $values = $this->values($appointment);
 
         $emailed = $this->email($appointment, $key, $template, $values);
-        $texted = $this->text($appointment, $key, $values);
+        $texted = $this->text($appointment, $key, $template['sms'], $values);
 
         return $emailed || $texted;
     }
@@ -143,10 +144,9 @@ class CustomerMessages
      *
      * @param  array<string, string>  $values
      */
-    private function text(Appointment $appointment, string $key, array $values): bool
+    private function text(Appointment $appointment, string $key, string $text, array $values): bool
     {
         $customer = $appointment->customer;
-        $text = (string) config("customer_messages.templates.$key.sms", '');
         if ($text === '' || ! $customer || ! $customer->sms_consent || ! $customer->phone_e164 || $customer->status === CustomerStatus::Archived) {
             return false;
         }

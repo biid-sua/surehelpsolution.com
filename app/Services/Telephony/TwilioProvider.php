@@ -135,6 +135,21 @@ class TwilioProvider implements TelephonyProvider
         return (string) $response->json('sid');
     }
 
+    public function downloadMedia(string $url): ?array
+    {
+        // Only Twilio's own media links, fetched with our credentials (they redirect to storage).
+        if (! preg_match('#^https://api\.twilio\.com/2010-04-01/Accounts/[^/]+/Messages/[^/]+/Media/[A-Za-z0-9]+$#', $url)) {
+            return null;
+        }
+        try {
+            $response = Http::withBasicAuth($this->config('account_sid'), $this->config('auth_token'))->timeout(10)->get($url);
+        } catch (ConnectionException) {
+            return null;
+        }
+
+        return $response->successful() ? ['body' => $response->body(), 'type' => strtolower(strtok((string) $response->header('Content-Type'), ';') ?: '')] : null;
+    }
+
     public function recordingAudio(string $recordingSid): ?string
     {
         try {

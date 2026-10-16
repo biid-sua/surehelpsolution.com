@@ -102,6 +102,51 @@ class PhoneController extends Controller
         return response()->json(['message' => 'Transferred to '.PhoneNumber::pretty($voiceCall->transferred_to).'.']);
     }
 
+    /** Warm transfer, step 1 (D62): the caller waits on hold; returns the call to place to the owner. */
+    public function hold(Request $request, VoiceCall $voiceCall): JsonResponse
+    {
+        $agent = $request->user();
+        $this->authorizeCall($voiceCall, $agent);
+        try {
+            $consult = $this->calls->hold($voiceCall, $agent);
+        } catch (TelephonyUnavailable $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+        if (! $this->provider->usesBrowserSdk()) {
+            $this->calls->calleeAnswered($consult); // the demo owner picks up at once
+        }
+
+        return response()->json(['consult' => $this->describe($consult->refresh())]);
+    }
+
+    /** Warm transfer, step 2: connect the waiting caller to the owner (on the consult call). */
+    public function connectHeld(Request $request, VoiceCall $voiceCall): JsonResponse
+    {
+        $agent = $request->user();
+        $this->authorizeCall($voiceCall, $agent);
+        try {
+            $held = $this->calls->connectHeld($voiceCall, $agent);
+        } catch (TelephonyUnavailable $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json(['message' => 'Connected to '.PhoneNumber::pretty($held->transferred_to).'. You can leave the call.']);
+    }
+
+    /** Warm transfer cancelled: back to the waiting caller (on the held call). */
+    public function resume(Request $request, VoiceCall $voiceCall): JsonResponse
+    {
+        $agent = $request->user();
+        $this->authorizeCall($voiceCall, $agent);
+        try {
+            $held = $this->calls->resume($voiceCall, $agent);
+        } catch (TelephonyUnavailable $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json(['call' => $this->describe($held)]);
+    }
+
     /** Call a customer from the browser with a business's number (D61). */
     public function dial(Request $request): JsonResponse
     {
@@ -171,7 +216,7 @@ class PhoneController extends Controller
     {
         return VoiceCall::withoutGlobalScopes()->where(fn ($q) => $q->where(fn ($w) => $w->where('answered_by_user_id', $agent->id)->where('status', VoiceCall::IN_PROGRESS))
             ->orWhere(fn ($w) => $w->where('placed_by_user_id', $agent->id)->whereIn('status', [VoiceCall::RINGING, VoiceCall::IN_PROGRESS])->where('started_at', '>=', now()->subHours(4))))
-            ->latest('started_at')->first();
+            ->orderByDesc('started_at')->orderByDesc('id')->first(); // the newest: a consult call over the held caller
     }
 
     /** @return array<string, mixed> */
@@ -191,6 +236,8 @@ class PhoneController extends Controller
             'started_at' => $call->started_at->toIso8601String(),
             'answered_at' => $call->answered_at?->toIso8601String(),
             'can_transfer' => ! $call->isOutbound() && (bool) $call->phoneNumber?->transfer_number,
+            'held' => $call->held_at !== null,
+            'consult_for' => $call->consult_for_id ? ['id' => $call->consultFor?->ulid, 'caller' => $call->consultFor?->customer?->fullName() ?: $call->consultFor?->fromDisplay()] : null,
             'workspace_url' => $organization ? route('agent.businesses.show', [$organization->ulid, 'call' => $call->ulid]) : null,
             'business_id' => $organization?->ulid,
         ];

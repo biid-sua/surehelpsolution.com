@@ -83,6 +83,19 @@ Use it for training, demos and testing.
 9. **Ask each business to forward its phone**, either always or when busy/unanswered, depending on how they want to work.
 10. **Live transcription and summaries** need Twilio's Real-Time Transcription, which is on by default for Voice, and the Anthropic key already used by the AI assistant. Turn transcription off with `TELEPHONY_TRANSCRIBE=false`.
 
+## Transferring a caller to the owner
+
+There are two ways, both from the call card while on a call:
+- **Talk to owner first** (warm transfer):
+  1. The caller hears "Please hold for a moment" and waits with hold music.
+  2. Your phone calls the owner.
+  3. Then either:
+     - **Connect caller:** the owner and caller are connected, and you leave the call; or
+     - **Back to caller:** if the owner can't take it, you return to the caller.
+- **Transfer to owner** (cold transfer): the caller is sent straight to the owner's phone, and you leave the call. If the owner doesn't answer, the caller can leave a voicemail.
+
+The recording covers your part of the call. The conversation between the owner and the caller after a warm transfer isn't recorded.
+
 ## When the business is closed
 
 Each line chooses what happens outside the business's opening hours, holidays and closures (*Business › Hours*):
@@ -135,7 +148,14 @@ Staff without settings access can't open the Business section.
   - Their reply continues the same Inbox conversation, next to the call-back task.
 - **Appointment texts:** customers who agreed to texts (the customer's "texting consent") also get a short text of the booking confirmation, reminder, change or cancellation, next to the email. Customers without consent get email only.
 - **Delivery failures** show on the message, with the reason in plain words.
-- **Pictures:** the text says how many were sent, but they aren't shown in the app yet.
+- **Pictures** (MMS): shown in the conversation, up to 5 per text and 5 MB each (JPEG, PNG, GIF, WebP, HEIC).
+  - They are copied into the app's private storage and shown only to people who can read that business's Inbox.
+  - Other files get a note saying they couldn't be shown.
+  - Sending pictures isn't possible yet.
+- **Starting a conversation:** **New text** in the Inbox, or **Text** on a customer's page.
+  - **Who can be texted:** only people who agreed to texts (their customer record says so) or who texted the business before.
+  - Never someone who texted STOP.
+- **The business's own wording:** each appointment message under *Business › Customer emails* has a "Text message" box next to the email. Leave it empty to use the default.
 
 ### Turning texting on (US): A2P 10DLC
 

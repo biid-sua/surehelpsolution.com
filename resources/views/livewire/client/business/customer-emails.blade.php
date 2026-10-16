@@ -56,6 +56,12 @@
                             <textarea id="t-body" wire:model.live.debounce.400ms="draft.body" rows="10" class="sh-input font-mono text-sm"></textarea>
                             @error('draft.body') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror
                         </div>
+                        <div>
+                            <label for="t-sms" class="sh-label">Text message <span class="font-normal text-subtle">(customers who agreed to texts)</span></label>
+                            <textarea id="t-sms" wire:model.live.debounce.400ms="draft.sms" rows="3" maxlength="320" class="sh-input text-sm"></textarea>
+                            <p class="mt-1 text-xs text-subtle"><span class="tabular-nums">{{ mb_strlen($preview['sms'] ?? '') }}</span> characters with your details filled in. Under 160 is one text. Empty uses our wording.</p>
+                            @error('draft.sms') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror
+                        </div>
                         @if ($editing === 'appointment_reminder')
                             <div>
                                 <label for="t-lead" class="sh-label">Send it</label>
@@ -72,6 +78,10 @@
                             <p class="text-xs uppercase tracking-wide text-gray-500">Preview</p>
                             <p class="mt-1 font-semibold">{{ $preview['subject'] }}</p>
                             <p class="mt-2 whitespace-pre-line">{{ $preview['body'] }}</p>
+                            @if ($preview['sms'] !== '')
+                                <p class="mt-4 text-xs uppercase tracking-wide text-gray-500">Text message</p>
+                                <p class="mt-1 inline-block max-w-sm rounded-2xl rounded-bl-sm bg-gray-200 px-3 py-2">{{ $preview['sms'] }}</p>
+                            @endif
                         </div>
                         <div class="flex flex-wrap justify-between gap-2">
                             <div class="flex gap-1">

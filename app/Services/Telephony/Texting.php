@@ -3,6 +3,7 @@
 namespace App\Services\Telephony;
 
 use App\Actions\Customers\MatchOrCreateCustomer;
+use App\Actions\Inbox\SendReply;
 use App\Enums\InboxChannel;
 use App\Exceptions\TelephonyUnavailable;
 use App\Models\Conversation;
@@ -11,6 +12,7 @@ use App\Models\Message;
 use App\Models\Organization;
 use App\Models\PhoneNumber;
 use App\Models\SmsOptOut;
+use App\Models\User;
 use App\Support\Audit\Audit;
 
 /**
@@ -109,6 +111,42 @@ class Texting
         $this->audit->record('sms.sent_automatically', $conversation, new: ['reason' => $reason, 'status' => $message->status], organization: $organization, actor: null, label: PhoneNumber::pretty($to));
 
         return $message;
+    }
+
+    /**
+     * Start (or continue) a text conversation the business begins (D62). Only with people who
+     * agreed to texts, or who texted this business before; never with a number that texted STOP.
+     *
+     * @throws TelephonyUnavailable with a message safe to show
+     */
+    public function start(Organization $organization, string $phone, User $author, string $body): Conversation
+    {
+        $to = PhoneNumber::normalize($phone);
+        $line = $this->lineFor($organization);
+        if (! $this->enabled()) {
+            throw new TelephonyUnavailable('Texting isn\'t switched on yet: your number\'s carrier registration is still being approved.');
+        }
+        if (! $line) {
+            throw new TelephonyUnavailable('You need a SureHelp phone line to send texts.');
+        }
+        if ($to === null || ! str_starts_with($to, '+1') || $to === $line->number) {
+            throw new TelephonyUnavailable('Enter a US or Canadian mobile number.');
+        }
+        if ($this->optedOut($organization->id, $to)) {
+            throw new TelephonyUnavailable('This person texted STOP, so they can\'t be texted. They can text START to your number to allow texts again.');
+        }
+        $customer = app(MatchOrCreateCustomer::class)->lookup($organization, $to, null)['customer'] ?? null;
+        $textedBefore = Conversation::query()->forOrganization($organization)->where('channel', InboxChannel::Sms->value)
+            ->where('external_thread_id', $to)->whereNotNull('last_inbound_at')->exists();
+        if (! $textedBefore && ! $customer?->sms_consent) {
+            throw new TelephonyUnavailable('Only text people who agreed to texts from you (tick "Agreed to texts" on their customer record) or who texted you first.');
+        }
+
+        $conversation = $this->conversation($organization, $line, $to);
+        app(SendReply::class)->handle($conversation, $body, $author);
+        $this->audit->record('sms.conversation_started', $conversation, organization: $organization, actor: $author, label: PhoneNumber::pretty($to));
+
+        return $conversation->refresh();
     }
 
     /** The texting conversation between a line and a number, created (and linked to its customer) when new. */

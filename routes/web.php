@@ -27,6 +27,7 @@ use App\Http\Controllers\Client\SearchConsoleController;
 use App\Http\Controllers\Client\SocialOAuthController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\InboxMediaController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PasswordChangeController;
@@ -168,6 +169,9 @@ Route::prefix('account')->middleware('auth.home')->group(function () {
 });
 
 // Everyone's own account: profile, security (two-step sign-in, devices), terms
+// Pictures texted to a business (D62): permission checked per business.
+Route::get('/inbox-media/{organization}/{file}', InboxMediaController::class)->middleware(['auth.home', 'force.password.change', 'account.gate', 'throttle:240,1'])->name('inbox.media');
+
 // Call recordings (D60): permission checked per call's business.
 Route::get('/recordings/{voiceCall}', RecordingController::class)->middleware(['auth.home', 'force.password.change', 'account.gate', 'throttle:60,1'])->name('calls.recording');
 
@@ -327,6 +331,9 @@ Route::prefix('agent')->name('agent.')->middleware(['auth.home', 'force.password
         Route::post('/calls/{voiceCall}/answer', [AgentPhoneController::class, 'answer'])->name('answer');
         Route::post('/calls/{voiceCall}/hang-up', [AgentPhoneController::class, 'hangUp'])->name('hang-up');
         Route::post('/calls/{voiceCall}/transfer', [AgentPhoneController::class, 'transfer'])->name('transfer');
+        Route::post('/calls/{voiceCall}/hold', [AgentPhoneController::class, 'hold'])->name('hold');
+        Route::post('/calls/{voiceCall}/connect', [AgentPhoneController::class, 'connectHeld'])->name('connect');
+        Route::post('/calls/{voiceCall}/resume', [AgentPhoneController::class, 'resume'])->name('resume');
     });
 });
 

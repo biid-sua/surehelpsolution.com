@@ -72,6 +72,13 @@ interface TelephonyProvider
      */
     public function sendSms(string $from, string $to, string $body, string $statusUrl): string;
 
+    /**
+     * A picture someone texted (MMS), from the vendor's media URL.
+     *
+     * @return array{body: string, type: string}|null
+     */
+    public function downloadMedia(string $url): ?array;
+
     /** The recording as MP3, or null when it no longer exists. */
     public function recordingAudio(string $recordingSid): ?string;
 }

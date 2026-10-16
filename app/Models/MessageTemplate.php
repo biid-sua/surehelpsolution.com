@@ -12,7 +12,7 @@ class MessageTemplate extends Model
 {
     use BelongsToOrganization;
 
-    protected $fillable = ['organization_id', 'key', 'subject', 'body', 'is_active', 'lead_hours'];
+    protected $fillable = ['organization_id', 'key', 'subject', 'body', 'sms_body', 'is_active', 'lead_hours'];
 
     protected function casts(): array
     {

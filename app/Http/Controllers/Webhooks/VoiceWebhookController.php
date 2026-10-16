@@ -38,7 +38,7 @@ class VoiceWebhookController extends Controller
     public function callee(Request $request, VoiceCall $voiceCall): Response
     {
         if ($voiceCall->isOutbound() && $request->input('CallStatus') === 'in-progress') {
-            $this->calls->calleeAnswered($voiceCall);
+            $this->calls->calleeAnswered($voiceCall, $request->filled('CallSid') ? (string) $request->input('CallSid') : null);
         }
 
         return response()->noContent();
@@ -81,6 +81,16 @@ class VoiceWebhookController extends Controller
     public function transfer(VoiceCall $voiceCall): Response
     {
         return $this->twiml($this->router->transfer($voiceCall));
+    }
+
+    public function hold(VoiceCall $voiceCall): Response
+    {
+        return $this->twiml($this->router->hold($voiceCall));
+    }
+
+    public function join(VoiceCall $voiceCall): Response
+    {
+        return $this->twiml($this->router->join($voiceCall));
     }
 
     public function ownerFinished(Request $request, VoiceCall $voiceCall): Response

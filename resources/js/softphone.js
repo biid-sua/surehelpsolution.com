@@ -163,7 +163,7 @@ export default (config) => {
                     call.accept();
                     connection = call;
                     this.muted = false;
-                    call.on('disconnect', () => { connection = null; this.active = null; this.poll(); });
+                    call.on('disconnect', () => { if (connection === call) { connection = null; this.active = null; } this.poll(); });
                 }
                 const result = await this.request(this.callUrl(item.id, 'answer'));
                 this.ringing = this.ringing.filter((c) => c.id !== item.id);
@@ -200,18 +200,74 @@ export default (config) => {
                 if (this.driver === 'browser') {
                     await this.connectDevice();
                     if (!device) throw new Error(this.error || 'The phone could not start.');
-                    const call = await device.connect({ params: { callId: result.call.id } });
-                    connection = call;
-                    this.muted = false;
-                    call.on('accept', () => this.poll());
-                    call.on('disconnect', () => { connection = null; this.active = null; this.poll(); });
-                    call.on('error', (e) => { this.error = e.message || 'The call failed.'; });
+                    await this.connectTo({ callId: result.call.id });
                 }
             } catch (e) {
                 this.error = e.message;
                 this.open = true;
             }
             this.poll(); // status pill: "On a call"
+        },
+
+        /** Place a call through the TwiML App (calling out, consulting the owner, rejoining a caller). */
+        async connectTo(params) {
+            const call = await device.connect({ params });
+            connection = call;
+            this.muted = false;
+            call.on('accept', () => this.poll());
+            call.on('disconnect', () => { if (connection === call) { connection = null; this.active = null; } this.poll(); });
+            call.on('error', (e) => { this.error = e.message || 'The call failed.'; });
+        },
+
+        // The current leg ends when Twilio moves the call (hold, transfer); wait for it before the next one.
+        waitForDisconnect() {
+            return new Promise((resolve) => {
+                if (!connection) { resolve(); return; }
+                connection.on('disconnect', () => resolve());
+                setTimeout(resolve, 4000);
+            });
+        },
+
+        /** Warm transfer (D62): the caller waits on hold while the agent calls the owner. */
+        async warmTransfer() {
+            if (!this.active) return;
+            try {
+                const result = await this.request(this.callUrl(this.active.id, 'hold'));
+                if (this.driver === 'browser') {
+                    await this.waitForDisconnect();
+                    await this.connectTo({ callId: result.consult.id });
+                }
+                this.active = result.consult;
+            } catch (e) {
+                this.error = e.message;
+            }
+            this.poll();
+        },
+
+        async connectCaller() {
+            if (!this.active) return;
+            try {
+                const result = await this.request(this.callUrl(this.active.id, 'connect'));
+                window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'success', message: result.message } }));
+                if (this.driver === 'demo') this.active = null;
+            } catch (e) {
+                this.error = e.message;
+            }
+            setTimeout(() => this.poll(), 1500);
+        },
+
+        async backToCaller() {
+            const heldId = this.active?.consult_for?.id ?? (this.active?.held ? this.active.id : null);
+            if (!heldId) return;
+            try {
+                if (this.driver === 'browser' && connection) { connection.disconnect(); await this.waitForDisconnect(); }
+                const result = await this.request(this.callUrl(heldId, 'resume'));
+                if (this.driver === 'browser') await this.connectTo({ callId: heldId, rejoin: '1' });
+                this.active = result.call;
+            } catch (e) {
+                this.error = e.message;
+            }
+            this.poll();
         },
 
         // A call screen open for this business takes the call (number, customer, call log link).

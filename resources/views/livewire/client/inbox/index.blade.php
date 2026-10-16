@@ -2,6 +2,32 @@
     <x-ui.page-header title="Inbox" description="Every message from your website chat, Messenger, Instagram and texts, in one place." />
     @include('livewire.client.inbox._tabs')
 
+    @if ($canSend && $canText)
+        <div class="mb-4 flex justify-end">
+            <x-ui.button size="sm" variant="secondary" icon="chat" wire:click="compose">New text</x-ui.button>
+        </div>
+    @endif
+    @if ($composing)
+        <x-ui.card title="New text message" description="From your SureHelp number. Only to people who agreed to texts from you or who texted you before." class="mb-4">
+            <form wire:submit="startText" class="grid gap-3 sm:grid-cols-[14rem_minmax(0,1fr)_auto] sm:items-start">
+                <div>
+                    <label for="nt-to" class="sh-label">To</label>
+                    <input id="nt-to" type="tel" wire:model="newTo" class="sh-input" placeholder="(512) 555-0100" autocomplete="off">
+                </div>
+                <div>
+                    <label for="nt-body" class="sh-label">Message</label>
+                    <textarea id="nt-body" wire:model="newBody" rows="2" maxlength="1600" class="sh-input"></textarea>
+                </div>
+                <div class="flex gap-2 sm:pt-6">
+                    <x-ui.button type="submit">Send</x-ui.button>
+                    <x-ui.button variant="ghost" wire:click="$set('composing', false)">Cancel</x-ui.button>
+                </div>
+                @error('newTo')<p class="text-sm text-danger sm:col-span-3">{{ $message }}</p>@enderror
+                @error('newBody')<p class="text-sm text-danger sm:col-span-3">{{ $message }}</p>@enderror
+            </form>
+        </x-ui.card>
+    @endif
+
     <div class="grid gap-4 lg:grid-cols-[22rem_minmax(0,1fr)]">
         {{-- Conversation list --}}
         <x-ui.card :padding="false" :class="$current ? 'hidden lg:block' : ''">
@@ -124,7 +150,11 @@
                                 </p>
                                 @if ($m->body)<p class="whitespace-pre-line break-words">{{ $m->body }}</p>@endif
                                 @foreach ((array) $m->attachments as $a)
-                                    <a href="{{ $a['url'] }}" target="_blank" rel="noopener noreferrer" class="mt-1 block text-xs underline">{{ ucfirst($a['type'] ?? 'file') }} attachment</a>
+                                    @if (($a['type'] ?? '') === 'image' && str_starts_with($a['url'], url('/inbox-media/')))
+                                        <a href="{{ $a['url'] }}" target="_blank" rel="noopener" class="mt-2 block"><img src="{{ $a['url'] }}" alt="Picture sent by text" loading="lazy" class="max-h-56 rounded-lg object-cover ring-1 ring-black/10"></a>
+                                    @else
+                                        <a href="{{ $a['url'] }}" target="_blank" rel="noopener noreferrer" class="mt-1 block text-xs underline">{{ ucfirst($a['type'] ?? 'file') }} attachment</a>
+                                    @endif
                                 @endforeach
                                 @if ($m->status === 'failed')<p class="mt-1 text-xs text-red-200">Not sent: {{ $m->error }}</p>@endif
 

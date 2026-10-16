@@ -5,6 +5,7 @@ namespace App\Livewire\Client\Inbox;
 use App\Actions\Inbox\RateAiReply;
 use App\Actions\Inbox\SendReply;
 use App\Enums\InboxChannel;
+use App\Exceptions\TelephonyUnavailable;
 use App\Livewire\Concerns\ScopedToOrganization;
 use App\Models\AiAssistant;
 use App\Models\Appointment;
@@ -13,6 +14,7 @@ use App\Models\Customer;
 use App\Models\Message;
 use App\Models\Task;
 use App\Services\Ai\Contracts\AiProvider;
+use App\Services\Telephony\Texting;
 use App\Support\Audit\Audit;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -47,6 +49,13 @@ class Index extends Component
 
     public bool $asNote = false;
 
+    /** Starting a text conversation (D62). */
+    public bool $composing = false;
+
+    public string $newTo = '';
+
+    public string $newBody = '';
+
     /** @var array<string, string> message ulid => correction text */
     public array $correction = [];
 
@@ -57,6 +66,8 @@ class Index extends Component
         $this->authorize('messages.view', $this->organization());
         if ($conversation) {
             $this->open($conversation);
+        } elseif (is_string($to = request()->query('text')) && auth()->user()->can('messages.send', $this->organization())) {
+            $this->compose($to); // "Text" from a customer's page
         }
     }
 
@@ -70,6 +81,37 @@ class Index extends Component
         if ($conversation->unread_count > 0) {
             $conversation->forceFill(['unread_count' => 0])->save();
         }
+    }
+
+    public function compose(?string $phone = null): void
+    {
+        $this->authorize('messages.send', $this->organization());
+        $this->composing = true;
+        $this->newTo = (string) $phone;
+        $this->newBody = '';
+        $this->resetValidation();
+    }
+
+    public function startText(Texting $texting): void
+    {
+        $organization = $this->organization();
+        $this->authorize('messages.send', $organization);
+        $this->validate(['newTo' => ['required', 'string', 'max:30'], 'newBody' => ['required', 'string', 'max:1600']], [], ['newTo' => 'number', 'newBody' => 'message']);
+        try {
+            $conversation = $texting->start($organization, $this->newTo, auth()->user(), $this->newBody);
+        } catch (TelephonyUnavailable $e) {
+            $this->addError('newTo', $e->getMessage());
+
+            return;
+        } catch (ValidationException $e) {
+            $this->addError('newBody', collect($e->errors())->flatten()->first());
+
+            return;
+        }
+        $this->composing = false;
+        $this->open($conversation->ulid);
+        $last = $conversation->messages()->latest('id')->first();
+        $this->dispatch('toast', type: $last?->status === 'failed' ? 'error' : 'success', message: $last?->status === 'failed' ? 'Not sent: '.$last->error : 'Text sent.');
     }
 
     public function send(SendReply $send): void
@@ -242,6 +284,7 @@ class Index extends Component
             'window' => $current?->channel->replyWindow($current->last_inbound_at, true),
             'aiMode' => $current ? ($ai->isConfigured() ? $assistant->modeFor($current->channel) : 'off') : 'off',
             'canSend' => auth()->user()->can('messages.send', $organization),
+            'canText' => app(Texting::class)->lineFor($organization) !== null,
             'timezone' => $timezone,
             'context' => $current?->customer ? $this->customerContext($current->customer) : null,
         ]);

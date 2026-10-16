@@ -20,6 +20,7 @@ use Illuminate\Support\Str;
  * @property Carbon|null $ended_at
  * @property Carbon|null $transferred_at
  * @property Carbon|null $texted_back_at
+ * @property Carbon|null $held_at caller waiting while the agent talks to the owner (D62)
  * @property int|null $wait_seconds
  * @property int|null $duration_seconds
  * @property int|null $recording_seconds
@@ -57,7 +58,7 @@ class VoiceCall extends Model
     ];
 
     protected $fillable = [
-        'organization_id', 'phone_number_id', 'provider', 'provider_call_sid', 'direction', 'after_hours', 'placed_by_user_id', 'texted_back_at', 'from_number', 'to_number',
+        'organization_id', 'phone_number_id', 'provider', 'provider_call_sid', 'direction', 'after_hours', 'placed_by_user_id', 'texted_back_at', 'held_at', 'consult_for_id', 'callee_call_sid', 'from_number', 'to_number',
         'status', 'offered_to', 'answered_by_user_id', 'customer_id', 'call_log_id', 'task_id',
         'started_at', 'answered_at', 'ended_at', 'wait_seconds', 'duration_seconds', 'transferred_to', 'transferred_at',
         'recording_sid', 'recording_seconds', 'transcript', 'summary', 'summary_status',
@@ -73,6 +74,7 @@ class VoiceCall extends Model
             'ended_at' => 'datetime',
             'transferred_at' => 'datetime',
             'texted_back_at' => 'datetime',
+            'held_at' => 'datetime',
             'after_hours' => 'boolean',
             'wait_seconds' => 'integer',
             'duration_seconds' => 'integer',
@@ -108,6 +110,22 @@ class VoiceCall extends Model
     public function placedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'placed_by_user_id');
+    }
+
+    /**
+     * The call this one consults about (a warm transfer's call to the owner).
+     *
+     * @return BelongsTo<VoiceCall, $this>
+     */
+    public function consultFor(): BelongsTo
+    {
+        return $this->belongsTo(VoiceCall::class, 'consult_for_id');
+    }
+
+    /** The conference room a held caller waits in. */
+    public function conferenceName(): string
+    {
+        return 'call-'.$this->ulid;
     }
 
     /** @return BelongsTo<Customer, $this> */
