@@ -5,7 +5,7 @@ namespace App\Notifications\Concerns;
 use App\Models\User;
 
 /**
- * During someone's quiet hours, their email waits until quiet hours end (NTF-07).
+ * During someone's quiet hours, their email, texts and push wait until quiet hours end (NTF-07, D63).
  * In-app notifications still arrive straight away, silently. Urgent notifications don't use this.
  */
 trait RespectsQuietHours
@@ -15,6 +15,6 @@ trait RespectsQuietHours
     {
         $until = $notifiable instanceof User ? $notifiable->quietUntil() : null;
 
-        return $until ? ['mail' => $until] : [];
+        return $until ? ['mail' => $until, 'sms' => $until, 'push' => $until] : [];
     }
 }

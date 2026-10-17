@@ -7,6 +7,8 @@ use App\Http\Middleware\ResolveOrganization;
 use App\Http\Middleware\RoleMiddleware;
 use App\Models\Organization;
 use App\Models\User;
+use App\Notifications\Channels\PushChannel;
+use App\Notifications\Channels\SmsChannel;
 use App\Services\Ai\Contracts\AiProvider;
 use App\Services\Ai\Providers\ClaudeProvider;
 use App\Services\Billing\BillingSettings;
@@ -26,6 +28,7 @@ use Illuminate\Auth\Middleware\Authorize;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -78,6 +81,10 @@ class AppServiceProvider extends ServiceProvider
             'livewire.temporary_file_upload.rules' => ['required', 'file', 'max:'.(max(12, (int) config('training.max_upload_mb')) * 1024)],
             'livewire.temporary_file_upload.max_upload_time' => 15,
         ]);
+
+        // Notification texts and phone push (D63): the "sms" and "push" channels named in via().
+        Notification::extend('sms', fn ($app) => $app->make(SmsChannel::class));
+        Notification::extend('push', fn ($app) => $app->make(PushChannel::class));
 
         // Every permission from config/authorization.php is answered by one
         // organization-aware check (docs/permissions.md). Pass an Organization as

@@ -254,6 +254,7 @@ Requirements: [requirements/agent-university-and-assignments.md](requirements/ag
 | COM-1 | Texting (Phase 4): Inbox channel with signed inbound/status webhooks, STOP/START opt-outs, missed-call text-back, appointment texts for consenting customers; off with Twilio until A2P 10DLC is approved | **done** 2026-10-30 (D61) |
 | TEL-3 | Warm transfer (conference, consult then connect or return), new text conversations (consent-gated), texted pictures in the Inbox, the business's own wording for appointment texts, phone data in account closure | **done** 2026-10-31 (D62) |
 | TEL-4 | Sending pictures by text, recording the conference part of a warm transfer, calls out beyond US/Canada | later |
+| NTF-SMS/PUSH | Notification texts (verified mobile number, SureHelp's own sending number, STOP) and phone push on FCM HTTP v1 (service account, dead-device cleanup); quiet hours cover both; urgent escalations forced to push | **done** 2026-11-01 (D63) |
 
 ## 5. Later phases (outline, in spec order)
 

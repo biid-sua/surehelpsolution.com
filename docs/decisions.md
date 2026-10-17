@@ -881,3 +881,31 @@ Start these early. The code can be built and tested with your own accounts befor
   This closes a gap left by D60.
 
 **Why:** these finish the receptionist workflow. Owners can be briefed before taking a call, businesses can follow up by text with people who expect it, and customers can send a photo of the problem.
+
+## D63 — Notification texts and phone push (2026-11-01)
+**Decision:** the text and push notification channels, "coming soon" since D13, now work. Setup steps: `docs/notifications.md`.
+- **Channels:** `sms` and `push` are Laravel notification channels registered by name. Their short form (title, one line, link) comes from each notification's existing in-app payload, so every notification that respects people's choices gains them without changes.
+- **Availability decided at run time** (`NotificationChannels`):
+  - texts need SureHelp's own sending number (`TELEPHONY_NOTIFY_FROM`) and texting switched on, with the same A2P gate as D61;
+  - push needs a Firebase service account.
+
+  Until then, settings say "Not available yet" and nothing is sent.
+- **Texts go only to a verified mobile number** (`users.sms_phone` / `sms_phone_verified_at`):
+  - **The code:** 6 digits, stored hashed, valid for 10 minutes, with 5 tries and 3 codes per 10 minutes. US/Canada only.
+  - **Audit:** verifying and removing a number are recorded.
+  - **STOP** to the notification number un-verifies it.
+  - Texts are never sent from a business's line.
+- **Push uses FCM HTTP v1:**
+  - **Why:** the legacy server-key API used before was shut down by Google in 2024.
+  - **How it signs in:** a service account JWT exchanged for a cached OAuth token.
+  - **Delivery:** one request per device. Unregistered devices are removed.
+  - Logs hold counts only.
+- **Defaults:**
+  - push is on by default wherever in-app is, so people with the app get it without setting anything up;
+  - texts are always opt-in;
+  - urgent escalations are forced to push as well as in-app and email.
+- **Quiet hours** now hold texts and push as well as email.
+- **Removed:** the API used to push a "New call" message directly, ignoring people's choices. Calls now notify through the normal channels (call.logged → in-app and push by default).
+- **Mobile API:** `DELETE /api/v1/notifications/device-token` removes the app's device on sign-out.
+
+**Why:** owners and agents asked to hear about missed calls and urgent problems on their phones. Push had silently stopped working when Google retired the old API.

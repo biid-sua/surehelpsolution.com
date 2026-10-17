@@ -3,15 +3,15 @@
 return [
 
     /*
-    | Delivery channels. "enabled" channels can be chosen by users today; the
-    | others are shown as coming soon until their provider is connected
-    | (SMS: Twilio + A2P 10DLC, push: FCM HTTP v1 — docs/decisions.md D10).
+    | Delivery channels, in the order shown. Whether one works here is worked out at run time
+    | (App\Support\NotificationChannels, D63): texts need TELEPHONY_NOTIFY_FROM and texting on;
+    | push needs the Firebase service account (FCM_CREDENTIALS, FCM_PROJECT_ID).
     */
     'channels' => [
-        'database' => ['label' => 'In-app', 'enabled' => true],
-        'mail' => ['label' => 'Email', 'enabled' => true],
-        'sms' => ['label' => 'Text message', 'enabled' => false],
-        'push' => ['label' => 'Mobile push', 'enabled' => false],
+        'database' => ['label' => 'In-app'],
+        'mail' => ['label' => 'Email'],
+        'sms' => ['label' => 'Text message'],
+        'push' => ['label' => 'Mobile push'],
     ],
 
 ];

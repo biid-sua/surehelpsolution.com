@@ -9,11 +9,9 @@ use App\Enums\OutcomeCategory;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCallLogRequest;
 use App\Models\CallLog;
-use App\Models\FcmToken;
 use App\Models\User;
 use App\Services\Calls\CallOutcomes;
 use App\Services\CallStatsService;
-use App\Services\FcmService;
 use App\Support\Audit\Audit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,7 +21,6 @@ use Illuminate\Validation\ValidationException;
 class AgentDashboardController extends Controller
 {
     public function __construct(
-        private readonly FcmService $fcmService,
         private readonly CallStatsService $stats,
     ) {}
 
@@ -175,9 +172,8 @@ class AgentDashboardController extends Controller
     public function createCallLog(StoreCallLogRequest $request, LogCall $logCall)
     {
         try {
+            // LogCall notifies the business (in-app, email and phone push per each person's choices, D63).
             $callLog = $logCall->handle($request->user(), $request->validated());
-
-            $this->notifyClientOfNewCall($callLog);
 
             return response()->json([
                 'success' => true,
@@ -354,43 +350,6 @@ class AgentDashboardController extends Controller
                 'success' => false,
                 'message' => 'Failed to fetch clients list',
             ], 500);
-        }
-    }
-
-    /**
-     * Send push notification when a new call log is created
-     */
-    private function notifyClientOfNewCall(CallLog $callLog): void
-    {
-        try {
-            // Notify only the client the call was logged for. Matching by caller
-            // email could notify an unrelated account, so it is not used.
-            if (empty($callLog->client_id)) {
-                return;
-            }
-
-            $tokens = FcmToken::where('user_id', $callLog->client_id)
-                ->pluck('token')
-                ->all();
-
-            $this->fcmService->sendNotification(
-                $tokens,
-                [
-                    'title' => sprintf('New Call #%s', $callLog->call_id),
-                    'body' => $callLog->reason_for_call ?? 'A new call request was logged.',
-                ],
-                [
-                    'call_id' => $callLog->call_id,
-                    'status' => $callLog->status,
-                    'agent_name' => $callLog->agent_name,
-                    'service_request' => $callLog->service_request,
-                ]
-            );
-        } catch (\Throwable $th) {
-            Log::error('Failed to dispatch FCM notification', [
-                'error' => $th->getMessage(),
-                'call_id' => $callLog->call_id,
-            ]);
         }
     }
 }

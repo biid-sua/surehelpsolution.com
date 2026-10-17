@@ -127,9 +127,10 @@ enum NotificationEvent: string
      */
     public function defaultChannels(): array
     {
+        // Push reaches only people with the mobile app signed in; texts are always opt-in (D63).
         return match ($this) {
-            self::CallLogged => ['database'],
-            default => ['database', 'mail'],
+            self::CallLogged => ['database', 'push'],
+            default => ['database', 'mail', 'push'],
         };
     }
 

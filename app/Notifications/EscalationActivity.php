@@ -6,6 +6,7 @@ use App\Enums\EscalationPriority;
 use App\Enums\NotificationEvent;
 use App\Models\Escalation;
 use App\Models\User;
+use App\Support\NotificationChannels;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -29,7 +30,7 @@ class EscalationActivity extends Notification implements ShouldQueue
     public const ASSIGNED = 'assigned';
 
     /** Channels urgent escalations always use. */
-    public const FORCED_CHANNELS = ['database', 'mail'];
+    public const FORCED_CHANNELS = ['database', 'mail', 'push'];
 
     public int $tries = 3;
 
@@ -48,7 +49,7 @@ class EscalationActivity extends Notification implements ShouldQueue
         }
         $until = $notifiable instanceof User ? $notifiable->quietUntil() : null;
 
-        return $until ? ['mail' => $until] : [];
+        return $until ? ['mail' => $until, 'sms' => $until, 'push' => $until] : [];
     }
 
     /**
@@ -59,7 +60,7 @@ class EscalationActivity extends Notification implements ShouldQueue
         $channels = $notifiable->notificationChannelsFor(NotificationEvent::EscalationCreated);
 
         if ($this->escalation->priority === EscalationPriority::Urgent) {
-            $forced = array_filter(self::FORCED_CHANNELS, fn (string $c) => (bool) config("notifications.channels.{$c}.enabled"));
+            $forced = array_filter(self::FORCED_CHANNELS, fn (string $c) => NotificationChannels::enabled($c));
             $channels = array_values(array_unique([...$channels, ...$forced]));
         }
 

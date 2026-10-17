@@ -2,10 +2,12 @@
     <x-ui.page-header title="Your account" description="Your own details, password, security and notifications. Only you can see this page." />
     @include('livewire.account._tabs')
 
+    <livewire:account.notification-devices />
+
     <form wire:submit="save">
-        <x-ui.card title="Quiet hours" description="Emails wait until morning. In-app notifications still arrive quietly." class="mb-6 max-w-xl">
+        <x-ui.card title="Quiet hours" description="Emails, texts and push notifications wait until morning. In-app notifications still arrive quietly." class="mb-6 max-w-xl">
             <label class="flex items-center gap-2 text-sm font-medium text-ink">
-                <input type="checkbox" wire:model.live="quietOn" class="size-4 rounded border-line-strong bg-surface-2 text-brand-500"> Hold emails overnight
+                <input type="checkbox" wire:model.live="quietOn" class="size-4 rounded border-line-strong bg-surface-2 text-brand-500"> Hold emails, texts and push overnight
             </label>
             @if ($quietOn)
                 <div class="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted">
@@ -24,7 +26,7 @@
                     <tr>
                         <th scope="col">Event</th>
                         @foreach ($channels as $key => $channel)
-                            <th scope="col" class="text-center">{{ $channel['label'] }}@unless ($channel['enabled'])<span class="block text-[10px] font-medium normal-case tracking-normal text-subtle">Coming soon</span>@endunless</th>
+                            <th scope="col" class="text-center">{{ $channel['label'] }}@unless ($channel['enabled'])<span class="block text-[10px] font-medium normal-case tracking-normal text-subtle">Not available yet</span>@endunless</th>
                         @endforeach
                     </tr>
                 </thead>
@@ -37,7 +39,7 @@
                                     @if ($channel['enabled'])
                                         <input type="checkbox" wire:model="preferences.{{ $event->name }}.{{ $key }}" class="size-5 rounded border-line-strong bg-surface-2 text-brand-500 focus:ring-brand-400" aria-label="{{ $channel['label'] }} for {{ $event->label() }}">
                                     @else
-                                        <input type="checkbox" disabled class="size-5 rounded border-line bg-surface-3 opacity-40" aria-label="{{ $channel['label'] }} for {{ $event->label() }} (coming soon)">
+                                        <input type="checkbox" disabled class="size-5 rounded border-line bg-surface-3 opacity-40" aria-label="{{ $channel['label'] }} for {{ $event->label() }} (not available yet)">
                                     @endif
                                 </td>
                             @endforeach

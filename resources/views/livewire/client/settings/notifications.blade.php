@@ -1,6 +1,8 @@
 <div>
     <x-ui.page-header title="Notification settings" description="Choose how you hear about what's happening. These settings are just for you, {{ \Illuminate\Support\Str::before(trim(auth()->user()->name).' ', ' ') }}." />
 
+    <livewire:account.notification-devices />
+
     <form wire:submit="save">
         <div class="mb-6 grid gap-6 lg:grid-cols-2">
             <x-ui.card title="Daily summary" description="One email each morning: yesterday's calls and bookings, today's appointments and what's waiting for you.">
@@ -14,9 +16,9 @@
                 <p class="mt-1 text-xs text-subtle">Your time ({{ str_replace('_', ' ', $timezone) }}). Days with nothing to report send nothing.</p>
                 @error('summaryAt') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror
             </x-ui.card>
-            <x-ui.card title="Quiet hours" description="Emails wait until morning. In-app notifications still arrive quietly, and urgent escalations always come through.">
+            <x-ui.card title="Quiet hours" description="Emails, texts and push notifications wait until morning. In-app notifications still arrive quietly, and urgent escalations always come through.">
                 <label class="flex items-center gap-2 text-sm font-medium text-ink">
-                    <input type="checkbox" wire:model.live="quietOn" class="size-4 rounded border-line-strong bg-surface-2 text-brand-500"> Hold emails overnight
+                    <input type="checkbox" wire:model.live="quietOn" class="size-4 rounded border-line-strong bg-surface-2 text-brand-500"> Hold emails, texts and push overnight
                 </label>
                 @if ($quietOn)
                     <div class="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted">
@@ -39,7 +41,7 @@
                             <th scope="col" class="text-center">
                                 {{ $channel['label'] }}
                                 @unless ($channel['enabled'])
-                                    <span class="block text-[10px] font-medium normal-case tracking-normal text-subtle">Coming soon</span>
+                                    <span class="block text-[10px] font-medium normal-case tracking-normal text-subtle">Not available yet</span>
                                 @endunless
                             </th>
                         @endforeach
@@ -61,7 +63,7 @@
                                             aria-label="{{ $channel['label'] }} for {{ $event->label() }}">
                                     @else
                                         <input type="checkbox" disabled class="size-5 rounded border-line bg-surface-3 opacity-40"
-                                            aria-label="{{ $channel['label'] }} for {{ $event->label() }} (coming soon)">
+                                            aria-label="{{ $channel['label'] }} for {{ $event->label() }} (not available yet)">
                                     @endif
                                 </td>
                             @endforeach

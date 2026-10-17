@@ -46,6 +46,9 @@ return [
     // then (the demo phone always texts: nothing is sent).
     'sms' => (bool) env('TELEPHONY_SMS', false),
 
+    // SureHelp's own number that sends notification texts to people who chose them (D63).
+    'notify_from' => env('TELEPHONY_NOTIFY_FROM', ''),
+
     // Live transcription of recorded calls (both sides), summarised by the AI after the call.
     'transcribe' => (bool) env('TELEPHONY_TRANSCRIBE', true),
 

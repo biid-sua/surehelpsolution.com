@@ -5,6 +5,7 @@ namespace App\Livewire\Client\Settings;
 use App\Enums\NotificationEvent;
 use App\Livewire\Concerns\ScopedToOrganization;
 use App\Models\NotificationPreference;
+use App\Support\NotificationChannels;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\Rule;
@@ -98,7 +99,7 @@ class Notifications extends Component
      */
     private function enabledChannels(): array
     {
-        return array_keys(array_filter(config('notifications.channels'), fn (array $c) => $c['enabled']));
+        return NotificationChannels::enabledKeys();
     }
 
     /** @return array<string, string> half-hourly from 5:00 to 11:00 */
@@ -119,7 +120,7 @@ class Notifications extends Component
             'summaryTimes' => self::summaryTimes(),
             'timezone' => auth()->user()->timezoneOrDefault(),
             'events' => $this->events(),
-            'channels' => config('notifications.channels'),
+            'channels' => NotificationChannels::all(),
         ]);
     }
 }

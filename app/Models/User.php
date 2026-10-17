@@ -8,6 +8,7 @@ use App\Notifications\Account\ResetPassword;
 use App\Notifications\Account\VerifyEmail;
 use App\Support\Audit\Audit;
 use App\Support\Authorization\RoleCatalog;
+use App\Support\NotificationChannels;
 use App\Support\Tenancy\CurrentOrganization;
 use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
@@ -30,6 +31,9 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $phone_status softphone readiness (D60): offline, available, away, busy, wrap_up
  * @property Carbon|null $phone_status_at
  * @property Carbon|null $phone_seen_at last softphone check-in
+ * @property string|null $sms_phone mobile number for notification texts (D63), E.164
+ * @property Carbon|null $sms_phone_verified_at
+ * @property Carbon|null $sms_code_expires_at
  */
 class User extends Authenticatable
 {
@@ -96,6 +100,8 @@ class User extends Authenticatable
             'theme_chosen_at' => 'datetime',
             'phone_status_at' => 'datetime',
             'phone_seen_at' => 'datetime',
+            'sms_phone_verified_at' => 'datetime',
+            'sms_code_expires_at' => 'datetime',
             'two_factor_secret' => 'encrypted',
             'two_factor_recovery_codes' => 'encrypted:array',
             'two_factor_confirmed_at' => 'datetime',
@@ -410,10 +416,13 @@ class User extends Authenticatable
         $saved = $this->notificationPreferences->firstWhere('event', $event->value);
         $channels = $saved ? (array) $saved->channels : $event->defaultChannels();
 
-        return array_values(array_filter(
-            $channels,
-            fn (string $channel) => (bool) config("notifications.channels.{$channel}.enabled"),
-        ));
+        return array_values(array_filter($channels, fn (string $channel) => NotificationChannels::enabled($channel)));
+    }
+
+    /** Notification texts go here (D63): only a number the person verified with a code. */
+    public function routeNotificationForSms(): ?string
+    {
+        return $this->sms_phone_verified_at ? $this->sms_phone : null;
     }
 
     /**

@@ -37,6 +37,15 @@ class NotificationController extends Controller
         ]);
     }
 
+    /** The app signs out or turns notifications off: stop pushing to this device (D63). */
+    public function destroyDeviceToken(Request $request)
+    {
+        $request->validate(['token' => 'required|string']);
+        FcmToken::where('user_id', Auth::id())->where('token', $request->token)->delete();
+
+        return response()->json(['success' => true, 'message' => 'Device token removed.']);
+    }
+
     public function sendTestNotification(Request $request)
     {
         $request->validate([

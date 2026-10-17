@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Message;
 use App\Models\Organization;
 use App\Models\PhoneNumber;
+use App\Models\User;
 use App\Services\Inbox\TextedPictures;
 use App\Services\Telephony\Texting;
 use App\Services\Telephony\TwiML;
@@ -23,7 +24,20 @@ class SmsWebhookController extends Controller
 {
     public function incoming(Request $request, ReceiveMessage $receive, Texting $texting, TextedPictures $pictures): Response
     {
-        $line = PhoneNumber::withoutGlobalScopes()->active()->where('number', PhoneNumber::normalize((string) $request->input('To')))->first();
+        $to = PhoneNumber::normalize((string) $request->input('To'));
+
+        // STOP to SureHelp's notification number: no more notification texts to that number (D63).
+        if ($to !== null && $to === PhoneNumber::normalize((string) config('telephony.notify_from'))) {
+            $keyword = Str::upper(preg_replace('/[^a-z]/i', '', (string) $request->input('Body')) ?? '');
+            if (in_array($keyword, Texting::STOP_WORDS, true)) {
+                User::query()->where('sms_phone', PhoneNumber::normalize((string) $request->input('From')))
+                    ->update(['sms_phone_verified_at' => null]);
+            }
+
+            return $this->empty();
+        }
+
+        $line = PhoneNumber::withoutGlobalScopes()->active()->where('number', $to)->first();
         $organization = $line ? Organization::query()->find($line->organization_id) : null;
         $from = PhoneNumber::normalize((string) $request->input('From'));
         if (! $organization || $from === null) {

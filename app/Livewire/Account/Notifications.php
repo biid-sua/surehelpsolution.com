@@ -4,6 +4,7 @@ namespace App\Livewire\Account;
 
 use App\Enums\NotificationEvent;
 use App\Models\NotificationPreference;
+use App\Support\NotificationChannels;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -80,14 +81,14 @@ class Notifications extends Component
     /** @return list<string> */
     private function enabledChannels(): array
     {
-        return array_keys(array_filter(config('notifications.channels'), fn (array $c) => $c['enabled']));
+        return NotificationChannels::enabledKeys();
     }
 
     public function render(): View
     {
         return view('livewire.account.notifications', [
             'events' => $this->events(),
-            'channels' => config('notifications.channels'),
+            'channels' => NotificationChannels::all(),
         ]);
     }
 }

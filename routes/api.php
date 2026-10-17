@@ -205,6 +205,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
 
     Route::prefix('notifications')->group(function () {
         Route::post('/device-token', [NotificationController::class, 'storeDeviceToken']);
+        Route::delete('/device-token', [NotificationController::class, 'destroyDeviceToken']);
         Route::post('/test', [NotificationController::class, 'sendTestNotification'])->middleware('role:admin');
     });
 });
