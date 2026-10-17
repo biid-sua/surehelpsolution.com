@@ -1056,3 +1056,18 @@ Start these early. The code can be built and tested with your own accounts befor
 **Not in this part (rest of G-6):** Google Business Profile sync, turning reviews into posts, job photos from agents, seasonal campaign packs, and several locations.
 
 **Why:** "link in bio" and "we have a slot tomorrow" are the two posts small service businesses make most. Both now take a click and lead straight to a booking.
+
+## D70 — API for the new mobile app: capabilities, notification centre, account closure (2026-11-08)
+**Decision:** the first server tasks from `docs/mobile-app-plan.md` (API-1, API-2, API-4). Details: `docs/api.md`.
+- **`GET /me/capabilities`:** the permissions a person actually has, plus for business users their role, features, plan limits and plan, and the account's state (email confirmed, two-step sign-in on or required, may close the account). The app hides what someone can't use; the server still checks every call.
+- **Notification centre:**
+  - the same items as the web bell, paginated, with read state, mark one or all read, and remove;
+  - each item gets a `target`: the web route name and its parameters, worked out from the stored link by matching the router. Links to other sites get no URL or target.
+  - Pushes now carry `notification_id`, `route` and `route_params`, so a tap opens the right screen and marks the item read.
+  - The two staff notifications that lacked an `event` got one.
+- **Account closure in the app:** the same rules as the web (owner only, business name and password, 5 tries per 10 minutes, a 30-day grace period, keep the account until then).
+  - Everyone else gets `can_request: false`, with whom to ask and the contact email.
+  - This meets Apple's rule 5.1.1(v) and Google Play's account-deletion requirement for apps with sign-in: businesses own their data, so closing the business is the deletion.
+- **Not in this part:** the other API tasks (API-3 and API-5 to API-19) in the plan's order.
+
+**Why:** the mobile app can't be submitted to the stores without in-app account deletion. A notification centre and screens that open from a push are the base of the app's experience. Telling the app what a person may use stops it showing screens that would only answer 403.

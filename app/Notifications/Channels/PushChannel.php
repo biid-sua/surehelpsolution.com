@@ -5,6 +5,7 @@ namespace App\Notifications\Channels;
 use App\Models\FcmToken;
 use App\Models\User;
 use App\Services\FcmService;
+use App\Support\Mobile\AppLink;
 use App\Support\NotificationChannels;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Str;
@@ -28,8 +29,15 @@ class PushChannel
         }
 
         $message = self::message($notifiable, $notification);
-        $this->fcm->sendNotification($tokens, ['title' => $message['title'], 'body' => $message['body']],
-            array_filter(['url' => $message['url'], 'event' => $message['event']]));
+        // The app opens the record from `route` and `route_params` (API-2), and marks it read by `notification_id`.
+        $target = AppLink::resolve($message['url']);
+        $this->fcm->sendNotification($tokens, ['title' => $message['title'], 'body' => $message['body']], array_filter([
+            'url' => $message['url'],
+            'event' => $message['event'],
+            'notification_id' => (string) $notification->id,
+            'route' => $target['route'] ?? null,
+            'route_params' => $target ? (string) json_encode($target['params']) : null,
+        ]));
     }
 
     /**

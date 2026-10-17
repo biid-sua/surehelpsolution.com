@@ -160,10 +160,10 @@ The web-repo session builds these. Each follows the existing conventions: envelo
 
 | ID | Endpoint(s) | For | Priority |
 |---|---|---|---|
-| API-1 | `POST /login`: no change needed; confirm `device_name`, `expires_at` and the 2FA/verification flags in the docs. Add `GET /me/capabilities` (roles, permissions, enabled features and plan limits for the current business), so the app shows only what the person may use. | M-10, M-2 | **1** |
-| API-2 | Notifications: `GET /notifications` (paginated, with read state), `POST /notifications/{id}/read`, `POST /notifications/read-all`, `GET /notifications/unread-count`. Also: every notification's `toArray` has `url` and `event`, documented as a table of event → app route. | M-16, M-17 | **1** |
+| API-1 ✅ | `POST /login`: no change needed; confirm `device_name`, `expires_at` and the 2FA/verification flags in the docs. Add `GET /me/capabilities` (roles, permissions, enabled features and plan limits for the current business), so the app shows only what the person may use. | M-10, M-2 | **1** |
+| API-2 ✅ | Notifications: `GET /notifications` (paginated, with read state), `POST /notifications/{id}/read`, `POST /notifications/read-all`, `GET /notifications/unread-count`. Also: every notification's `toArray` has `url` and `event`, documented as a table of event → app route. | M-16, M-17 | **1** |
 | API-3 | Notification settings: `GET/PUT /notifications/settings` (per event and channel, quiet hours); verified mobile number: `POST /account/sms-phone` (send a code), `POST /account/sms-phone/verify`, `DELETE /account/sms-phone`. | M-18 | 2 |
-| API-4 | Account closure: `POST /client/account/closure`, `DELETE /client/account/closure` (cancel during the grace period), `GET` status (D29). | M-19 | **1** (store requirement) |
+| API-4 ✅ | Account closure: `POST /client/account/closure`, `DELETE /client/account/closure` (cancel during the grace period), `GET` status (D29). | M-19 | **1** (store requirement) |
 | API-5 | Version check: `GET /app/version?platform=ios\|android` returning `minimum`, `latest` and `store_url`, set in config or admin. | M-46 | 2 |
 | API-6 | Call details: `GET /client/calls/{ulid}` with the transcript, AI summary and a short-lived signed recording URL (permission-checked and audited, D60). | M-21 | 2 |
 | API-7 | Inbox actions: assign, close and reopen; start a text conversation (consent rules, D62); attachments (send and receive pictures); mark read. | M-22 | 2 |
@@ -179,6 +179,13 @@ The web-repo session builds these. Each follows the existing conventions: envelo
 | API-17 | Search: `GET /client/search?q=` (customers, calls, appointments), the same as the web search. | M-44 | 3 |
 | API-18 | (Only if M-45 is approved) a Twilio Voice access token for mobile and VoIP push credentials. | M-45 | later |
 | API-19 | Generated OpenAPI spec (`/api/v1/openapi.json`), so the app can generate or check its models. | M-4 | 2 |
+
+✅ = built (D70). Paths as built:
+- API-1: `GET /me/capabilities`.
+- API-2: `GET /notifications`, `GET /notifications/unread-count`, `POST /notifications/{id}/read`, `POST /notifications/read-all`, `DELETE /notifications/{id}`. Push data gains `notification_id`, `route` and `route_params`.
+- API-4: `GET/POST/DELETE /account/closure`, for any signed-in person; only the owner may close.
+
+The web repo's `docs/api.md` has the details and the event and route list.
 
 **Suggested order:**
 1. **Week 1:** Phase 1 (M-1 to M-9) on the app, and API-1, API-2 and API-4 on the server.

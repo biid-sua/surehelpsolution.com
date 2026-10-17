@@ -92,6 +92,47 @@ They are the same values the website uses. Fetch `/themes` once per session; the
 | DELETE | `/devices/{id}` | Sign out one of **your** devices (others' → 404) |
 | DELETE | `/devices` | Sign out every device except this one → `data.revoked` |
 | POST | `/notifications/device-token` | Register a push token: `token`, `platform?`, `device_name?` |
+| DELETE | `/notifications/device-token` | Stop pushes to this device (`token`); call it on sign-out |
+| GET | `/me/capabilities` | What this person may use (API-1) → `data.role`, `data.permissions[]` (granted permission keys, in their business for business users), `data.business` (`null` for staff and agents): `id`, `name`, `status`, `serving`, `role` (`owner`, `manager` or `staff`), `is_owner`, `features{key: bool}`, `limits{calls, team_members, calendars, social_accounts, social_ai_tokens, seo_ai_tokens}` (`null` = no limit), `plan{name, status, trial_ends_on, current_period_end}`, `closes_at`; and `data.account`: `email_verified`, `two_factor_enabled`, `two_factor_required`, `can_close_account`. Show only what's granted; the server checks again on every call |
+| GET | `/notifications` | The notification centre (API-2), newest first, 20 per page (`per_page` up to 50, `page`, `unread=1`) → `data.notifications[]`: `id`, `type` (e.g. `task_activity`), `event` (see below), `title`, `body`, `url` (web address, `null` if not one of our pages), `target` (`{route, params}`: the web route name and its parameters, for opening the matching app screen; `null` when there's none), `read_at`, `created_at`; `meta.unread`, `meta.pagination` |
+| GET | `/notifications/unread-count` | `data.unread`, for the app-icon badge |
+| POST | `/notifications/{id}/read` | Mark one read → `data.notification`, `data.unread` |
+| POST | `/notifications/read-all` | Mark all read → `data.unread` = 0 |
+| DELETE | `/notifications/{id}` | Remove one from the list |
+| GET | `/account/closure` | Closing the account (API-4, D29) → `data.can_request` (only the business owner), `business_name`, `grace_days` (30), `scheduled`, `requested_at`, `closes_at`; for everyone else `message` and `contact_email` say whom to ask |
+| POST | `/account/closure` | Owner only: `business_name` (typed exactly, case doesn't matter) and `password`. The account closes after the grace period and an email confirms it. `422` wrong name or password, `409` already scheduled, `429` after 5 tries in 10 minutes, `403` not the owner |
+| DELETE | `/account/closure` | Owner only: keep the account (cancels a scheduled closure) |
+
+#### Push notifications and opening the right screen (API-2)
+Every push carries `notification.title` and `notification.body`, plus `data` (all strings):
+- `url`: the web address;
+- `event`: the event, below;
+- `notification_id`: mark it read with `POST /notifications/{id}/read`;
+- `route` and `route_params` (JSON): the same `target` as the list.
+
+Map `route` to app screens and fall back to the notification list for routes the app doesn't have. Events in use:
+- **Calls:** `call.logged`, `call.missed`.
+- **Follow-ups:** `followup.created`, `followup.overdue`, `task.assigned`.
+- **Appointments:** `appointment.created`, `appointment.updated`, `appointment.cancelled`.
+- **Messages and escalations:** `message.received`, `escalation.created`, `ai.escalation`.
+- **Social:** `social.approval_requested`, `social.post_failed`, `social.account_disconnected`.
+- **Billing:** `invoice.issued`, `payment.received`, `payment.failed`, `payment.reported`, `billing.usage`, `subscription.updated`, `plan.change_requested`.
+- **Reports and data:** `report.monthly`, `data_export.ready`.
+- **Agents:**
+  - `assignment.started`, `assignment.changed`;
+  - training: `training.assigned`, `training.due`, `training.completed`, `training.certification`;
+  - `qa.reviewed`;
+  - shift requests: `shift_request.*`;
+  - calendar: `agent_calendar.disconnected`.
+- **Account and service:** `integration.disconnected`, `service.status`, `support.update`, `automation.notice`, `ui.theme_reset`.
+- **Staff:** `organization.signed_up`, `setup.completed`.
+
+Common routes:
+- **Business:**
+  - `app.calls.show` {callId}, `app.inbox.show` {conversation}, `app.customers.show`, `app.social.posts.edit`;
+  - `app.appointments.index`, `app.tasks.index`, `app.escalations.index`;
+  - `app.billing`, `app.billing.invoice`, `app.results`, `app.dashboard`.
+- **Agents:** `agent.home`, `agent.companies`, `agent.university.course`, `agent.quality`, `agent.schedule`.
 
 ### Business portal — role `client`, permission `calls.view`
 | Method | Path | Notes |
@@ -179,6 +220,7 @@ A staff member without the permission gets `403`. Dashboard: `dashboard.view`. A
 
 | Date | Change |
 |---|---|
+| 2026-11-08 | For the new mobile app (D70): `GET /me/capabilities`; the notification centre (`GET /notifications`, `/unread-count`, `POST /{id}/read`, `/read-all`, `DELETE /{id}`); `GET/POST/DELETE /account/closure`. Push `data` gains `notification_id`, `route` and `route_params` (additive). |
 | 2026-10-28 | Colour themes (D59): `data.theme` on `/login` and `/user` (additive); `GET /themes`; `PUT /user/theme`. |
 | 2026-10-23 | Optional `Idempotency-Key` header on create endpoints (D52). |
 | 2026-10-06 (A-4) | `/agent/training/…` (Agent University). Required training can now refuse company endpoints (`403 training_required`) and call logging (`422`) (D43). |

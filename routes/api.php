@@ -1,11 +1,14 @@
 <?php
 
 use App\Http\Controllers\Agent\TrainingFileController;
+use App\Http\Controllers\Api\AccountClosureController;
 use App\Http\Controllers\Api\AdminDashboardController;
 use App\Http\Controllers\Api\AgentCompanyController;
 use App\Http\Controllers\Api\AgentDashboardController;
+use App\Http\Controllers\Api\AppNotificationController;
 use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CapabilitiesController;
 use App\Http\Controllers\Api\ClientBusinessController;
 use App\Http\Controllers\Api\ClientDashboardController;
 use App\Http\Controllers\Api\CustomerController;
@@ -98,6 +101,12 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
     Route::get('/themes', [ApiThemeController::class, 'index']);
     Route::put('/user/theme', [ApiThemeController::class, 'update'])->middleware('throttle:30,1');
     Route::post('/refresh-token', [AuthController::class, 'refresh']);
+
+    // What this person may use (API-1), and closing the account from the app (API-4)
+    Route::get('/me/capabilities', CapabilitiesController::class);
+    Route::get('/account/closure', [AccountClosureController::class, 'show']);
+    Route::post('/account/closure', [AccountClosureController::class, 'store'])->middleware('throttle:10,1');
+    Route::delete('/account/closure', [AccountClosureController::class, 'destroy']);
 
     // Signed-in devices (docs/api.md)
     Route::get('/devices', [DeviceController::class, 'index']);
@@ -212,6 +221,12 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
     });
 
     Route::prefix('notifications')->group(function () {
+        // The in-app notification centre (API-2)
+        Route::get('/', [AppNotificationController::class, 'index']);
+        Route::get('/unread-count', [AppNotificationController::class, 'unreadCount']);
+        Route::post('/read-all', [AppNotificationController::class, 'readAll']);
+        Route::post('/{id}/read', [AppNotificationController::class, 'read'])->whereUuid('id');
+        Route::delete('/{id}', [AppNotificationController::class, 'destroy'])->whereUuid('id');
         Route::post('/device-token', [NotificationController::class, 'storeDeviceToken']);
         Route::delete('/device-token', [NotificationController::class, 'destroyDeviceToken']);
         Route::post('/test', [NotificationController::class, 'sendTestNotification'])->middleware('role:admin');

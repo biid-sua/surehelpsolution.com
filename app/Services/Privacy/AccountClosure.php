@@ -52,6 +52,13 @@ class AccountClosure
 
     public function __construct(private readonly Audit $audit) {}
 
+    /** Only a business's owner can close it (in the app too, API-4); agents and staff ask SureHelp. */
+    public static function canRequest(User $user, ?Organization $organization): bool
+    {
+        return $organization !== null && $user->isClient() && $organization->owner_user_id === $user->id
+            && $user->hasPermissionIn('organization.update', $organization);
+    }
+
     public function request(Organization $organization, User $owner, string $typedName, string $password): void
     {
         $errors = [];
