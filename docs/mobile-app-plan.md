@@ -107,9 +107,9 @@ The web portal's sections map to these screens. A bottom navigation bar holds **
 | M-26 | **Social posts:**<br>• the calendar and list with *AI draft*, *Written by AI* and *AI-assisted* labels (`ai_label`);<br>• approve or request changes on posts waiting for the owner;<br>• *creating and editing posts, Write with AI and last-minute openings need API-9*. | `/client/social/posts`, `/{ulid}/approve`, `/{ulid}/request-changes` | Approving from the push takes two taps |
 | M-27 | **Results:** this month vs last; calls answered, jobs booked, estimated revenue; where customers came from (D68); share the PDF. *Needs API-10.* | API-10 ✅ | |
 | M-28 | **Business info (read-only first):** profile, hours, services, knowledge, rules; link to edit on the web. | `/client/business`, `/client/services`, `/client/knowledge`, `/client/rules`, `/client/profile` (PUT for profile fields) | |
-| M-29 | **Billing:** invoices, the balance, and pay by card (opens Stripe Checkout in an in-app browser and returns to the app); turn automatic payments on or off. *Needs API-11.* | API-11 | |
-| M-30 | **Team:** members and roles, invite by email, remove. *Needs API-12.* | API-12 | |
-| M-31 | **Link in bio and sharing:** show and copy the link-in-bio address (D69), and share it to Instagram or Facebook. *Needs API-9.* | API-9 | |
+| M-29 | **Billing:** invoices, the balance, and pay by card (opens Stripe Checkout in an in-app browser and returns to the app); turn automatic payments on or off. *Needs API-11.* | API-11 ✅ | |
+| M-30 | **Team:** members and roles, invite by email, remove. *Needs API-12.* | API-12 ✅ | |
+| M-31 | **Link in bio and sharing:** show and copy the link-in-bio address (D69), and share it to Instagram or Facebook. *Needs API-9.* | API-9 ✅ | |
 
 ## Phase 4: Agents
 
@@ -193,6 +193,10 @@ The web-repo session builds these. Each follows the existing conventions: envelo
 - API-7: `POST /client/inbox/conversations`, `/{id}/assign`, `/close`, `/reopen`, `/ai`, `/read`, `/drafts/{m}/send` and `/discard`, `/messages/{m}/rate`, `GET /client/inbox/assignees`; texted pictures as signed links. Sending pictures waits for TEL-4.
 - API-8: `GET /client/customers/lookup`, `POST /client/customers` (`409` with `existing` for a duplicate), `PATCH /client/customers/{id}`, `/notes`, `/tags`.
 - API-16: `/.well-known/assetlinks.json` and `/.well-known/apple-app-site-association`; set `MOBILE_ANDROID_SHA256` and `MOBILE_IOS_APP_IDS`.
+
+- API-9: `/client/social/accounts`, `posts` (create, update, check, cancel, retry, delete), `media`, `ai/write`, `ai/rewrite`, `openings`, `link-page`.
+- API-11: `/client/billing`, `billing/invoices` (list, detail, PDF, `pay` → Stripe Checkout URL, `report-payment`), `DELETE billing/autopay`.
+- API-12: `/client/team`, `team/invitations` (create, resend, cancel), `team/members/{id}` (role, remove).
 
 The web repo's `docs/api.md` has the details and the event and route list.
 

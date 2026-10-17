@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\AppNotificationController;
 use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\AppVersionController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BillingController;
 use App\Http\Controllers\Api\CallDetailController;
 use App\Http\Controllers\Api\CapabilitiesController;
 use App\Http\Controllers\Api\ClientBusinessController;
@@ -23,8 +24,10 @@ use App\Http\Controllers\Api\KnowledgeController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\NotificationSettingsController;
 use App\Http\Controllers\Api\ResultsController;
+use App\Http\Controllers\Api\SocialManageController;
 use App\Http\Controllers\Api\SocialPostController;
 use App\Http\Controllers\Api\TaskController;
+use App\Http\Controllers\Api\TeamController;
 use App\Http\Controllers\Api\ThemeController as ApiThemeController;
 use App\Http\Controllers\Api\TrainingController;
 use App\Http\Controllers\Chat\SiteToolsController;
@@ -178,6 +181,50 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
             Route::post('/inbox/conversations/{ulid}/drafts/{message}/discard', [InboxActionsController::class, 'discardDraft']);
         });
         Route::get('/social/posts', [SocialPostController::class, 'index'])->middleware('can:social.view');
+        // Writing and scheduling posts (API-9)
+        Route::middleware('feature:social_publishing')->group(function () {
+            Route::middleware('can:social.view')->group(function () {
+                Route::get('/social/accounts', [SocialManageController::class, 'accounts']);
+                Route::get('/social/posts/{ulid}', [SocialManageController::class, 'show']);
+                Route::get('/social/openings', [SocialManageController::class, 'openings']);
+                Route::get('/social/link-page', [SocialManageController::class, 'linkPage']);
+            });
+            Route::middleware('can:social.manage')->group(function () {
+                Route::post('/social/posts/check', [SocialManageController::class, 'check']);
+                Route::post('/social/posts', [SocialManageController::class, 'store'])->middleware('idempotent');
+                Route::put('/social/posts/{ulid}', [SocialManageController::class, 'update']);
+                Route::post('/social/posts/{ulid}/cancel', [SocialManageController::class, 'cancel']);
+                Route::post('/social/posts/{ulid}/retry', [SocialManageController::class, 'retry']);
+                Route::delete('/social/posts/{ulid}', [SocialManageController::class, 'destroy']);
+                Route::post('/social/media', [SocialManageController::class, 'upload'])->middleware('throttle:30,1');
+                Route::post('/social/ai/write', [SocialManageController::class, 'write'])->middleware('throttle:20,1');
+                Route::post('/social/ai/rewrite', [SocialManageController::class, 'rewrite'])->middleware('throttle:30,1');
+                Route::put('/social/link-page', [SocialManageController::class, 'updateLinkPage']);
+            });
+        });
+        // Billing (API-11): everyone with billing.view sees it, owners pay
+        Route::middleware('can:billing.view')->group(function () {
+            Route::get('/billing', [BillingController::class, 'summary']);
+            Route::get('/billing/invoices', [BillingController::class, 'index']);
+            Route::get('/billing/invoices/{ulid}', [BillingController::class, 'show']);
+            Route::get('/billing/invoices/{ulid}/pdf', [BillingController::class, 'pdf'])->name('api.client.billing.invoice.pdf');
+        });
+        Route::middleware('can:billing.manage')->group(function () {
+            Route::post('/billing/invoices/{ulid}/pay', [BillingController::class, 'pay'])->middleware('throttle:10,1');
+            Route::post('/billing/invoices/{ulid}/report-payment', [BillingController::class, 'reportPayment']);
+            Route::delete('/billing/autopay', [BillingController::class, 'stopAutopay']);
+        });
+        // Team (API-12)
+        Route::get('/team', [TeamController::class, 'index'])->middleware('can:users.view');
+        Route::middleware('can:users.create')->group(function () {
+            Route::post('/team/invitations', [TeamController::class, 'invite'])->middleware('throttle:20,10');
+            Route::post('/team/invitations/{id}/resend', [TeamController::class, 'resend'])->whereNumber('id')->middleware('throttle:20,10');
+            Route::delete('/team/invitations/{id}', [TeamController::class, 'revoke'])->whereNumber('id');
+        });
+        Route::middleware('can:users.delete')->group(function () {
+            Route::patch('/team/members/{id}', [TeamController::class, 'changeRole'])->whereNumber('id');
+            Route::delete('/team/members/{id}', [TeamController::class, 'remove'])->whereNumber('id');
+        });
         Route::post('/social/posts/{ulid}/approve', [SocialPostController::class, 'approve'])->middleware('can:social.manage');
         Route::post('/social/posts/{ulid}/request-changes', [SocialPostController::class, 'requestChanges'])->middleware('can:social.manage');
         Route::get('/tasks', [TaskController::class, 'index'])->middleware('can:tasks.view');

@@ -1108,3 +1108,20 @@ Start these early. The code can be built and tested with your own accounts befor
 - **Bug found while testing:** the first version of the signed picture link had a double slash in it, because `url()` drops a trailing slash. A test now opens the link.
 
 **Why:** answering customers and keeping their details right are the things owners do most between jobs. App links make every email and notification link open straight in the app.
+
+## D73 — API for the mobile app: social posts, billing, team (2026-11-11)
+**Decision:** API-9, API-11 and API-12 from `docs/mobile-app-plan.md`, each through the same actions as the web, so the rules can't drift. Details: `docs/api.md`.
+- **Social posts:** the web composer's rules through `SavePost`:
+  - per-network checks;
+  - owner approval for managers' posts and AI drafts;
+  - the scheduling window.
+
+  Also: a "check without saving" endpoint for live hints, photo upload, Write with AI and rewrites (D66), last-minute openings, the link page (D69), cancel, retry and delete. They're behind the `social_publishing` feature like the web pages.
+- **Billing:**
+  - the plan, balance, invoices with lines and payments, and the PDF;
+  - paying by card returns a Stripe Checkout address for an in-app browser. Stripe sends people back to `/app/billing?paid=…`, which app links open in the app. The payment is booked from Stripe's webhook as before.
+  - Also: reporting a payment made another way, and turning automatic payments off.
+  - Managers see billing; only owners pay or change it.
+- **Team:** members and pending invitations, inviting (managers invite staff; owners invite managers too; seat limits apply), resending and cancelling invitations, changing roles and removing people (owners). Nobody changes the owner's access or their own.
+
+**Why:** with these, a business owner can run their day from the phone: posts, money and people. Each endpoint uses the web's action, so a rule changed for the web changes for the app too.

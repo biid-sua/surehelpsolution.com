@@ -177,6 +177,35 @@ Common routes:
 | POST | `/client/social/posts/{id}/request-changes` | Same rules. `note` required: the post returns to draft with the note |
 
 
+#### Social posts, billing and team in the app (D73)
+Social endpoints need the `social_publishing` feature (`403` with `feature` otherwise). Viewing needs `social.view`; everything that changes something needs `social.manage`.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/client/social/accounts` | Connected accounts → `data.accounts[]`: `id`, `network`, `network_label`, `name`, `avatar_url`, `enabled`, `needs_reconnect`, `limits` (`max_chars`, `requires_media`, `max_images`, `links`, `clickable_links`, `max_hashtags`) |
+| GET | `/client/social/posts/{id}` | One post: the list fields plus `ai_note`, `custom{account_id: text}`, `account_ids[]`, `media_ids[]`, `editable` |
+| POST | `/client/social/posts/check` | Check without saving: `body`, `link_url?`, `accounts[]`, `custom?`, `media[]?` → `data.checks[]`: `account`, `errors[]`, `warnings[]` (the web's per-network rules) |
+| POST | `/client/social/posts` | `Idempotency-Key`. `intent` (`draft`, `schedule` or `now`), `body`, `link_url?`, `accounts[]` (account ids), `custom?{account_id: text}`, `media[]?` (ids from `/social/media`), `scheduled_at?` (ISO 8601, required to schedule), `options?{account_id: {…}}` (Google button and offer fields), `ai_assisted?` → `201` with `data.post`. A manager's or an AI draft's post goes to `in_review` for the owner, as on the web. `422` lists each network's problems |
+| PUT | `/client/social/posts/{id}` | The same fields, for a post that's still a draft, in review or scheduled |
+| POST | `/client/social/posts/{id}/cancel` · `/retry` · DELETE `/{id}` | Cancel a planned post, try a failed one again, delete |
+| POST | `/client/social/media` | Multipart `photo` (JPG, PNG or WebP) and `alt?` → `201` with `data.media{id, url, alt}` |
+| POST | `/client/social/ai/write` | `brief`, `tone?` (`friendly`, `professional`, `playful`, `urgent`), `accounts[]?` → `data.versions{network: text}`, `data.flags[]` ("check before posting"). `422` when AI isn't on or the month's allowance is used (D66) |
+| POST | `/client/social/ai/rewrite` | `text`, `how` (`shorter`, `friendlier`, `professional`, `cta`), `accounts[]?` → `data.text`, `data.flags[]` |
+| GET | `/client/social/openings` | Last-minute openings (D69) → `data.days[]` (`date`, `times[]`), `data.text` (a ready post, or `null` with no openings) |
+| GET / PUT | `/client/social/link-page` | Link in bio: `enabled`, `links[]` (`label`, `url`, up to 6) → `data.enabled`, `live`, `url`, `links`, `max_links` |
+| GET | `/client/billing` | `billing.view` → `data.plan` (`name`, `status`, `price_cents`, `currency`, `interval`, `trial_ends_on`, `renews_on`, `cancel_at_period_end`), `balance_cents`, `overdue`, `card_payments` (Stripe on), `autopay` (`card`, `since`, or `null`), `can_pay` |
+| GET | `/client/billing/invoices` | `status?` (`open`, `paid`, `all`), paginated → `data.invoices[]`: `id`, `number`, `status`, `currency`, `total_cents`, `paid_cents`, `balance_cents`, `period`, `issued_at`, `due_at`, `paid_at`, `overdue`, `autopay_error`, `pdf_url` |
+| GET | `/client/billing/invoices/{id}` | Plus `items[]` (`description`, `quantity`, `unit_cents`, `amount_cents`), `payments[]` (`amount_cents`, `method`, `received_at`, `reference`), `notes`, `reported_paid_at` |
+| GET | `/client/billing/invoices/{id}/pdf` | The invoice PDF |
+| POST | `/client/billing/invoices/{id}/pay` | `billing.manage` (owners). `save?` (also save the card for automatic payments) → `data.checkout_url`: open it in an in-app browser. Stripe returns to `/app/billing?paid={id}` (an app link); the payment shows when Stripe confirms it, usually within seconds. `404` when card payments are off, `409` already paid |
+| POST | `/client/billing/invoices/{id}/report-payment` | `note` ("Bank transfer on Nov 3"): the team confirms it |
+| DELETE | `/client/billing/autopay` | Turn automatic payments off and remove the card |
+| GET | `/client/team` | `users.view` → `data.members[]` (`id`, `name`, `email`, `role`, `last_login_at`, `is_you`), `data.invitations[]` (pending: `id`, `email`, `role`, `invited_by`, `expires_at`), `roles`, `can_invite[]` (roles this person may invite), `can_manage` |
+| POST | `/client/team/invitations` | `users.create`: `email`, `role` (managers may invite `staff` only) → `201`. Plan seat limits apply (`422`) |
+| POST | `/client/team/invitations/{id}/resend` · DELETE `/{id}` | Send it again, or cancel it |
+| PATCH | `/client/team/members/{id}` | Owners: `role` (`manager` or `staff`) |
+| DELETE | `/client/team/members/{id}` | Owners: remove the person. Without another business they're switched off and signed out everywhere. The owner and yourself can't be changed (`403`) |
+
 #### Inbox and customers in the app (D72)
 | Method | Path | Notes |
 |---|---|---|
@@ -261,6 +290,7 @@ A staff member without the permission gets `403`. Dashboard: `dashboard.view`. A
 
 | Date | Change |
 |---|---|
+| 2026-11-11 | For the mobile app (D73): writing, checking and scheduling social posts, photos, AI writing, openings, link page; billing summary, invoices, PDF, card payment, payment reports, automatic payments off; the team (members, invitations, roles). |
 | 2026-11-10 | For the mobile app (D72): inbox actions (start a text, assign, close and reopen, AI on or off, read, AI suggestions, rating); signed links for texted pictures; adding and editing customers, with a duplicate lookup, notes and tags; the app-link files under `/.well-known/`. Conversations gain `assigned_to` and `ai_paused` (additive). |
 | 2026-11-09 | For the mobile app (D71): `GET/PUT /notifications/settings`; `POST/DELETE /account/sms-phone`, `POST /account/sms-phone/verify`; `GET /app/version` (no sign-in); `GET /client/calls/{call_id}` with a signed recording link (`GET /recordings/{id}`); `GET /client/results`, `GET /client/results/pdf`. |
 | 2026-11-08 | For the new mobile app (D70): `GET /me/capabilities`; the notification centre (`GET /notifications`, `/unread-count`, `POST /{id}/read`, `/read-all`, `DELETE /{id}`); `GET/POST/DELETE /account/closure`. Push `data` gains `notification_id`, `route` and `route_params` (additive). |
