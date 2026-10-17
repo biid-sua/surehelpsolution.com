@@ -177,6 +177,20 @@ Common routes:
 | POST | `/client/social/posts/{id}/request-changes` | Same rules. `note` required: the post returns to draft with the note |
 
 
+#### Agents, search and the API description (D74)
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/agent/shift-requests` | My requests from the last 30 days and all waiting ones → `data.requests[]` (`id`, `type` `swap`/`leave`, `status` `pending`/`approved`/`declined`/`cancelled`, `status_label`, `shift{id, starts_at, ends_at}`, `swap_with{id, name}`, `leave_from`, `leave_until`, `reason`, `decision_note`, `decided_at`, `created_at`), `data.colleagues[]` (`id`, `name`) |
+| POST | `/agent/shift-requests` | `Idempotency-Key`. `type`: `swap` with `shift_id` and `swap_with_id?`; or `leave` with `leave_from` and `leave_until` (dates from today), plus `reason?` → `201`. Schedulers decide on the web; the agent hears back by notification (`shift_request.*`) |
+| POST | `/agent/shift-requests/{id}/withdraw` | Withdraw a waiting request |
+| GET | `/agent/quality/reviews` | My scored calls (D27) → `data.summary` (`count`, `average`, `pass_rate` over 30 days), `data.pass_score`, `data.reviews[]` (`id`, `score`, `passed`, `business`, `call{id, caller, at}`, `reviewer`, `reviewed_at`, `acknowledged_at`) |
+| GET | `/agent/quality/reviews/{id}` | Plus `scores[]` (`key`, `label`, `weight`, `critical`, `mark`, `mark_label`), `strengths`, `improvements` |
+| POST | `/agent/quality/reviews/{id}/acknowledge` | "I've read it" |
+| GET | `/agent/presence` | → `data.status` (`offline`, `available`, `away`, `busy`, `wrap_up`), `label`, `softphone_online`, `since` |
+| PUT | `/agent/presence` | `status`: `away` (calls stop ringing) or `available`. Calls ring the softphone on a computer, so this works only while that softphone is online (`409` otherwise, or while on a call). The app never counts as the softphone checking in |
+| GET | `/client/search` | `q` (2+ characters), `limit?` (up to 20 per group) → `data.results`: `customers[]`, `calls[]`, `appointments[]`, `tasks[]`; a group is `null` when the person may not see that kind of record (the same as the web search) |
+| GET | `/openapi.json` | **No sign-in.** OpenAPI 3.1 description of every `/api/v1` path, built from the routes: methods, path parameters, sign-in, permissions, idempotency keys, rate limits and a summary each. Field detail stays in this document |
+
 #### Social posts, billing and team in the app (D73)
 Social endpoints need the `social_publishing` feature (`403` with `feature` otherwise). Viewing needs `social.view`; everything that changes something needs `social.manage`.
 
@@ -290,6 +304,7 @@ A staff member without the permission gets `403`. Dashboard: `dashboard.view`. A
 
 | Date | Change |
 |---|---|
+| 2026-11-12 | For the mobile app (D74): agents' shift requests, quality reviews and availability; `GET /client/search`; `GET /openapi.json`. |
 | 2026-11-11 | For the mobile app (D73): writing, checking and scheduling social posts, photos, AI writing, openings, link page; billing summary, invoices, PDF, card payment, payment reports, automatic payments off; the team (members, invitations, roles). |
 | 2026-11-10 | For the mobile app (D72): inbox actions (start a text, assign, close and reopen, AI on or off, read, AI suggestions, rating); signed links for texted pictures; adding and editing customers, with a duplicate lookup, notes and tags; the app-link files under `/.well-known/`. Conversations gain `assigned_to` and `ai_paused` (additive). |
 | 2026-11-09 | For the mobile app (D71): `GET/PUT /notifications/settings`; `POST/DELETE /account/sms-phone`, `POST /account/sms-phone/verify`; `GET /app/version` (no sign-in); `GET /client/calls/{call_id}` with a signed recording link (`GET /recordings/{id}`); `GET /client/results`, `GET /client/results/pdf`. |

@@ -122,8 +122,8 @@ Agents use the app on the go. Live call handling stays on the web softphone for 
 | M-34 | **Log a call:** a fast form (business, caller, reason, outcome, notes, follow-up), with offline queue and `Idempotency-Key`; edit my own recent logs. | `POST/PUT /agent/call-logs` | A log made in a tunnel is sent once when back online |
 | M-35 | **My schedule:** shifts calendar; request a swap or time off, and see the decision. *Requests need API-13.* | `/duty-schedules`, `/duty-schedules/calendar` (+ API-13) | |
 | M-36 | **Agent University:** courses, lessons (video, PDF, text), quizzes with attempts, completion, certificates, and offline download of lesson files. | `/agent/training*` | Progress matches the web |
-| M-37 | **Quality feedback:** my QA reviews, with read and confirm. *Needs API-14.* | API-14 | |
-| M-38 | **Availability status** (available, on break, offline), the same as the web softphone readiness. *Needs API-15.* | API-15 | |
+| M-37 | **Quality feedback:** my QA reviews, with read and confirm. *Needs API-14.* | API-14 ✅ | |
+| M-38 | **Availability status** (available, on break, offline), the same as the web softphone readiness. *Needs API-15.* | API-15 ✅ | |
 
 ## Phase 5: Admin (light)
 
@@ -172,13 +172,13 @@ The web-repo session builds these. Each follows the existing conventions: envelo
 | API-10 | Results: `GET /client/results?month=` (the same numbers as the web, including sources D68), `GET /client/results/pdf`. | M-27 | 2 |
 | API-11 | Billing: invoices list and detail, the PDF, `POST /client/invoices/{ulid}/pay` returning a Stripe Checkout URL (D64), and automatic payments on or off. | M-29 | 3 |
 | API-12 | Team: list members, invite (`OrganizationInvitation`), change role, remove. | M-30 | 3 |
-| API-13 | Shift requests: list mine, create a swap or time-off request, cancel (D28). | M-35 | 3 |
+| API-13 ✅ | Shift requests: list mine, create a swap or time-off request, cancel (D28). | M-35 | 3 |
 | API-14 | QA reviews for agents: list mine, read, confirm (D27). | M-37 | 3 |
 | API-15 | Agent availability: `GET/PUT /agent/presence` (the same states as the softphone, D60). | M-38 | 3 |
 | API-16 ✅ | Serve `/.well-known/assetlinks.json` and `/.well-known/apple-app-site-association` (app ids and paths from config). | M-43 | 2 |
-| API-17 | Search: `GET /client/search?q=` (customers, calls, appointments), the same as the web search. | M-44 | 3 |
+| API-17 ✅ | Search: `GET /client/search?q=` (customers, calls, appointments), the same as the web search. | M-44 | 3 |
 | API-18 | (Only if M-45 is approved) a Twilio Voice access token for mobile and VoIP push credentials. | M-45 | later |
-| API-19 | Generated OpenAPI spec (`/api/v1/openapi.json`), so the app can generate or check its models. | M-4 | 2 |
+| API-19 ✅ | Generated OpenAPI spec (`/api/v1/openapi.json`), so the app can generate or check its models. | M-4 | 2 |
 
 ✅ = built (D70). Paths as built:
 - API-1: `GET /me/capabilities`.
@@ -197,6 +197,14 @@ The web-repo session builds these. Each follows the existing conventions: envelo
 - API-9: `/client/social/accounts`, `posts` (create, update, check, cancel, retry, delete), `media`, `ai/write`, `ai/rewrite`, `openings`, `link-page`.
 - API-11: `/client/billing`, `billing/invoices` (list, detail, PDF, `pay` → Stripe Checkout URL, `report-payment`), `DELETE billing/autopay`.
 - API-12: `/client/team`, `team/invitations` (create, resend, cancel), `team/members/{id}` (role, remove).
+
+- API-13: `GET/POST /agent/shift-requests`, `POST /agent/shift-requests/{id}/withdraw`.
+- API-14: `GET /agent/quality/reviews`, `/{id}`, `POST /{id}/acknowledge`.
+- API-15: `GET/PUT /agent/presence`. Away or available only while the computer softphone is online, because calls still ring there.
+- API-17: `GET /client/search?q=`.
+- API-19: `GET /openapi.json`, generated from the routes, with no sign-in. Use it to generate or check the app's API client.
+
+Every API task except API-18 (calls in the app, only if M-45 is approved) is now built.
 
 The web repo's `docs/api.md` has the details and the event and route list.
 

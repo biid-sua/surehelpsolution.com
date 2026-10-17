@@ -1125,3 +1125,18 @@ Start these early. The code can be built and tested with your own accounts befor
 - **Team:** members and pending invitations, inviting (managers invite staff; owners invite managers too; seat limits apply), resending and cancelling invitations, changing roles and removing people (owners). Nobody changes the owner's access or their own.
 
 **Why:** with these, a business owner can run their day from the phone: posts, money and people. Each endpoint uses the web's action, so a rule changed for the web changes for the app too.
+
+## D74 — API for the mobile app: agents, search, OpenAPI (2026-11-12)
+**Decision:** the last planned server tasks from `docs/mobile-app-plan.md` (API-13, 14, 15, 17, 19). Only API-18 is left, and it waits for a decision on calls in the app. Details: `docs/api.md`.
+- **Shift requests:** swap or time off through the web's `ShiftRequests` service. Agents see their requests and withdraw waiting ones; schedulers still decide on the web.
+- **Quality reviews:** agents read only their own scored calls, with the scorecard, strengths and improvements, and confirm they've read them.
+- **Availability:** calls still ring the softphone on a computer, so the app can only step away or come back while that softphone is online. It changes the status without counting as a softphone check-in, so the router never offers calls to a device that can't answer.
+- **Search:** the web search's queries moved into a shared `BusinessSearch` service used by the web page and the app, with the same per-permission groups.
+- **OpenAPI:** `GET /openapi.json` is built from the routes, so it can't drift:
+  - paths, methods and parameters;
+  - sign-in, permission, role and feature checks, idempotency keys and rate limits;
+  - a summary from each controller's doc comment.
+
+  Field detail stays in `docs/api.md`.
+
+**Why:** with these, the app covers agents' day too: schedule, feedback, and stepping away. The generated description gives the mobile team a checkable contract.

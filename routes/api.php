@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AccountClosureController;
 use App\Http\Controllers\Api\AdminDashboardController;
 use App\Http\Controllers\Api\AgentCompanyController;
 use App\Http\Controllers\Api\AgentDashboardController;
+use App\Http\Controllers\Api\AgentWorkController;
 use App\Http\Controllers\Api\AppNotificationController;
 use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\AppVersionController;
@@ -23,7 +24,9 @@ use App\Http\Controllers\Api\InboxController;
 use App\Http\Controllers\Api\KnowledgeController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\NotificationSettingsController;
+use App\Http\Controllers\Api\OpenApiController;
 use App\Http\Controllers\Api\ResultsController;
+use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\SocialManageController;
 use App\Http\Controllers\Api\SocialPostController;
 use App\Http\Controllers\Api\TaskController;
@@ -99,6 +102,8 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
     // Authentication routes
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
     Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+    // The API description, generated from these routes (API-19)
+    Route::get('/openapi.json', OpenApiController::class)->middleware('throttle:30,1');
     // The app's update check (API-5): no sign-in, so too-old builds can still be told to update.
     Route::get('/app/version', AppVersionController::class)->middleware('throttle:60,1');
     // A call recording from a short-lived signed link (API-6): audio players can't send a token.
@@ -142,6 +147,8 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
             Route::get('/calendar', [ClientDashboardController::class, 'getCalendarData']);
             Route::get('/calls/{callId}', [CallDetailController::class, 'show']);   // API-6
         });
+        // Search across the business, as on the web (API-17)
+        Route::get('/search', SearchController::class)->middleware(['can:dashboard.view', 'throttle:60,1']);
         // Results, as on the web and in the monthly PDF (API-10)
         Route::middleware('can:reports.view')->group(function () {
             Route::get('/results', [ResultsController::class, 'show']);
@@ -251,6 +258,15 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
 
     // Agent Dashboard Routes
     Route::prefix('agent')->middleware('role:agent,admin')->group(function () {
+        // Shift requests (API-13), my quality reviews (API-14) and phone availability (API-15)
+        Route::get('/shift-requests', [AgentWorkController::class, 'shiftRequests']);
+        Route::post('/shift-requests', [AgentWorkController::class, 'requestShiftChange'])->middleware(['idempotent', 'throttle:20,10']);
+        Route::post('/shift-requests/{ulid}/withdraw', [AgentWorkController::class, 'withdrawShiftRequest']);
+        Route::get('/quality/reviews', [AgentWorkController::class, 'reviews']);
+        Route::get('/quality/reviews/{ulid}', [AgentWorkController::class, 'review']);
+        Route::post('/quality/reviews/{ulid}/acknowledge', [AgentWorkController::class, 'acknowledgeReview']);
+        Route::get('/presence', [AgentWorkController::class, 'presence']);
+        Route::put('/presence', [AgentWorkController::class, 'setPresence'])->middleware('throttle:30,1');
         Route::get('/dashboard/kpi', [AgentDashboardController::class, 'getKpiData']);
         Route::get('/dashboard/performance', [AgentDashboardController::class, 'getPerformanceData']);
         Route::get('/call-logs', [AgentDashboardController::class, 'getCallLogs']);
