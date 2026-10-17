@@ -148,7 +148,7 @@ class WidgetController extends Controller
     private function allowed(Request $request, string $key): ChatWidget
     {
         $widget = $this->widget($key);
-        abort_unless($widget->allowsOrigin($request->headers->get('Origin')), 403, 'This website may not use this chat.');
+        abort_unless($widget->allowsOrigin(ChatWidget::pageOrigin($request)), 403, 'This website may not use this chat.');
 
         return $widget;
     }

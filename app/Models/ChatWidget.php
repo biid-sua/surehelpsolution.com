@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToOrganization;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 /**
@@ -52,11 +53,33 @@ class ChatWidget extends Model
         return array_map(fn (string $f) => $this->offers($f), array_combine(array_keys(self::FEATURES), array_keys(self::FEATURES)));
     }
 
-    /** An empty list allows any site; otherwise the page's origin must be one of them (or a subdomain). */
+    /**
+     * The site a request came from: its Origin, or for a same-site GET (browsers send no Origin then,
+     * e.g. the link-in-bio page, D69) the origin of its Referer.
+     */
+    public static function pageOrigin(Request $request): ?string
+    {
+        if ($origin = $request->headers->get('Origin')) {
+            return $origin;
+        }
+        $referer = parse_url((string) $request->headers->get('Referer'));
+
+        return isset($referer['scheme'], $referer['host'])
+            ? $referer['scheme'].'://'.$referer['host'].(isset($referer['port']) ? ':'.$referer['port'] : '')
+            : null;
+    }
+
+    /** An empty list allows any site; otherwise the page's origin must be one of them (or a subdomain), or SureHelp itself. */
     public function allowsOrigin(?string $origin): bool
     {
         $allowed = array_filter((array) $this->allowed_origins);
         if ($allowed === []) {
+            return true;
+        }
+        // SureHelp's own pages for the business (the link-in-bio page, D69).
+        $originHost = strtolower((string) parse_url((string) $origin, PHP_URL_HOST));
+        $ownHosts = array_filter([strtolower((string) parse_url((string) config('app.url'), PHP_URL_HOST)), app()->bound('request') ? strtolower(request()->getHost()) : null]);
+        if ($originHost !== '' && in_array($originHost, $ownHosts, true)) {
             return true;
         }
         if (! $origin) {

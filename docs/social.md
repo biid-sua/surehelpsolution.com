@@ -124,6 +124,12 @@ Needs `ANTHROPIC_API_KEY`. Without it the panels say "Writing with AI isn't swit
   - counted in the business's timezone, shown as a percentage in the composer;
   - a failed request uses none.
 
+## Link in bio and last-minute openings (D69)
+
+- **Link in bio:** *Accounts & settings* › Link in bio switches on a page at `/b/{business-slug}`. It has Book online, Call, Send us a message, the website and up to six links of the business's own. Booking and messages open the website snippet on the page.
+- **Opening the snippet from any page:** `#surehelp-book` (or `-chat`, `-call`, `-lead`) as a link or in the page address, or `SureHelp.open('book')` from a script.
+- **Last-minute openings:** the Posts page shows free times in the next three open days. "Post about these openings" starts a post with the times and the booking link.
+
 ## Later
 
 - Post analytics in Results (G-5)

@@ -222,7 +222,7 @@ Added to the requirements on 2026-10-06 at the product owner's request. Order an
 | G-3 | Connect a website (§41B): ownership verification (meta tag / DNS TXT), embed snippet (chat placeholder, booking, click-to-call, lead form → CRM), site health and SEO check with plain-language fixes, monthly re-check | none | **done** 2026-10-23 (D44, [websites.md](websites.md)); Search Console / Analytics later |
 | G-4 | SureHelp Sites (§41B): industry templates rendered from the Business Brain, instant preview, simple editor with versions, subdomain hosting, custom domains with automatic HTTPS, structured data / sitemap / Open Graph, WCAG 2.2 AA, forms and bookings into the CRM | sites domain; Cloudflare for SaaS; hosting move (D6) for custom domains | planned |
 | G-5 | Social and website analytics in Results (§41): reach, engagement, clicks, site visits, leads and bookings by source | G-1, G-3/G-4, provider approvals | **part done** 2026-11-06 (D68): leads and bookings by source, website pages viewed, posts published and social conversations in Results, PDF and CSV. Reach, engagement and clicks wait for network approvals |
-| G-6 | Growth ideas backlog (§41C): Google Business Profile sync, review-to-post, job photos to post, campaign packs, link-in-bio, last-minute openings, multi-location | G-1, G-2 | planned |
+| G-6 | Growth ideas backlog (§41C): Google Business Profile sync, review-to-post, job photos to post, campaign packs, link-in-bio, last-minute openings, multi-location | G-1, G-2 | **part done** 2026-11-07 (D69): link-in-bio page and last-minute openings; the rest planned |
 
 ## 4h. Inbox and AI assistant (spec §26, §26A, §33–34, §38; D37–D39)
 

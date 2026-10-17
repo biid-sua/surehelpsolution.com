@@ -57,6 +57,25 @@
         @endif
     @endif
 
+    {{-- Last-minute openings (D69) --}}
+    @if ($openings !== [])
+        <x-ui.card class="mb-6">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-base font-semibold text-ink">Last-minute openings</h2>
+                    <p class="mt-1 text-sm text-muted">Free times in the next few days. A quick post can fill them.</p>
+                    <ul class="mt-3 space-y-1 text-sm">
+                        @foreach ($openings as $day)
+                            <li><span class="font-medium text-ink">{{ $day['date']->isToday() ? 'Today' : ($day['date']->isTomorrow() ? 'Tomorrow' : $day['date']->format('l')) }}</span>
+                                <span class="text-muted">{{ implode(', ', array_map(fn ($t) => $t->format('g:i A'), $day['times'])) }}</span></li>
+                        @endforeach
+                    </ul>
+                </div>
+                <x-ui.button icon="megaphone" :href="route('app.social.posts.create', ['openings' => 1])">Post about these openings</x-ui.button>
+            </div>
+        </x-ui.card>
+    @endif
+
     @unless ($hasAccounts)
         <x-ui.alert tone="info" class="mb-6" title="Connect your accounts to start posting">
             You can plan drafts now. <a href="{{ route('app.social.accounts') }}" class="font-semibold underline underline-offset-2">Connect Facebook, Instagram, LinkedIn or Google</a> to publish them.

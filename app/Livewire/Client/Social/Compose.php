@@ -8,9 +8,12 @@ use App\Actions\Social\StoreMedia;
 use App\Enums\SocialNetwork;
 use App\Enums\SocialPostStatus;
 use App\Livewire\Concerns\ScopedToOrganization;
+use App\Models\BusinessProfile;
 use App\Models\MediaAsset;
 use App\Models\SocialAccount;
 use App\Models\SocialPost;
+use App\Services\Growth\LinkPage;
+use App\Services\Growth\Openings;
 use App\Services\Social\Ai\ContentStudio;
 use App\Services\Social\Ai\ContentTokens;
 use App\Services\Social\PostValidator;
@@ -116,6 +119,17 @@ class Compose extends Component
             $day = request()->query('date');
             $this->date = is_string($day) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $day) && $day >= $start->format('Y-m-d') ? $day : $start->format('Y-m-d');
             $this->time = $start->format('H:i');
+
+            // From "Post about these openings" (D69): the free times and where to book.
+            if (request()->query('openings') && ($days = app(Openings::class)->upcoming($organization)) !== []) {
+                $links = app(LinkPage::class);
+                $website = BusinessProfile::query()->forOrganization($organization)->value('website');
+                $this->body = app(Openings::class)->postText($organization, $days,
+                    $links->isLive($organization) ? $links->url($organization).'#surehelp-book' : ($website ?: null));
+                $this->aiBrief = 'Last-minute openings: '.implode('; ', array_map(fn ($d) => $d['date']->format('l').' '.implode(', ', array_map(fn ($t) => $t->format('g:i A'), $d['times'])), $days)).'. Invite people to book.';
+                $this->date = $start->format('Y-m-d');
+                $this->time = $start->format('H:i');
+            }
         }
     }
 

@@ -281,6 +281,22 @@
     tab = names[0];
     show(tab);
     document.body.appendChild(root);
+
+    // Open a part from the page (D69): links to #surehelp-chat, -book, -call or -lead, or SureHelp.open('book').
+    var ids = { chat: 'chat', book: 'book', call: 'call', lead: 'lead' };
+    function openPart(name) {
+      if (!views[name]) return false;
+      if (!open) toggle();
+      show(name);
+      return true;
+    }
+    window.SureHelp = { open: function (name) { return openPart(ids[name] || name); } };
+    document.addEventListener('click', function (e) {
+      var a = e.target && e.target.closest ? e.target.closest('a[href^="#surehelp-"]') : null;
+      if (a && openPart(ids[a.getAttribute('href').slice(10)])) e.preventDefault();
+    });
+    var hash = (location.hash || '').slice(10);
+    if (location.hash.indexOf('#surehelp-') === 0 && ids[hash]) openPart(ids[hash]);
   }).catch(function () { /* not allowed on this site, or switched off */ });
 })();
 @endverbatim

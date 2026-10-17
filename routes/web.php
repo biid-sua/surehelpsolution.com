@@ -30,6 +30,7 @@ use App\Http\Controllers\Client\SocialOAuthController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InboxMediaController;
+use App\Http\Controllers\LinkPageController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PasswordChangeController;
@@ -285,6 +286,9 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
 });
 
 // Agent workspace (spec §20–21)
+// A business's link-in-bio page (D69): public when the business switches it on.
+Route::get('/b/{slug}', LinkPageController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:120,1')->name('link-page');
+
 // Business logos (public; shown on customer pages).
 Route::get('/logo/{business}', BusinessLogoController::class)->whereUlid('business')->middleware('throttle:120,1')->name('business.logo');
 

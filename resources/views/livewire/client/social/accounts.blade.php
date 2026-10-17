@@ -95,6 +95,46 @@
         </form>
     </x-ui.card>
 
+    <x-ui.card class="mt-6" id="link-page">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+                <h2 class="text-base font-semibold text-ink">Link in bio</h2>
+                <p class="mt-1 text-sm text-muted">One page for your Instagram, Facebook or TikTok bio: book online, call, send a message, your website and your own links.</p>
+            </div>
+            @if ($linkPageEnabled)<x-ui.badge tone="success">Live</x-ui.badge>@else<x-ui.badge>Off</x-ui.badge>@endif
+        </div>
+        <form wire:submit="saveLinkPage" class="mt-4 space-y-4">
+            <label class="flex items-center gap-2 text-sm text-ink">
+                <input type="checkbox" wire:model="linkPageEnabled" class="size-4 rounded border-line-strong bg-surface-2 text-brand-500" @disabled(! $canManage)>
+                Show my link page
+            </label>
+            <div class="flex flex-wrap items-center gap-2" x-data="{ copied: false, url: @js($linkPageUrl) }">
+                <input type="text" readonly value="{{ $linkPageUrl }}" class="sh-input max-w-md font-mono text-xs" aria-label="Link page address" x-on:click="$el.select()">
+                <x-ui.button type="button" size="sm" variant="secondary" x-on:click="navigator.clipboard.writeText(url); copied = true; setTimeout(() => copied = false, 2000)"><span x-text="copied ? 'Copied' : 'Copy'">Copy</span></x-ui.button>
+                @if ($linkPageEnabled)<a href="{{ $linkPageUrl }}" target="_blank" rel="noopener" class="text-sm text-brand-300 hover:underline">Open</a>@endif
+            </div>
+            <div>
+                <p class="sh-label">Your own links <span class="font-normal text-subtle">(optional, up to {{ \App\Services\Growth\LinkPage::MAX_LINKS }})</span></p>
+                <div class="space-y-2">
+                    @foreach ($links as $i => $link)
+                        <div wire:key="link-{{ $i }}" class="flex flex-wrap gap-2">
+                            <input type="text" wire:model="links.{{ $i }}.label" maxlength="60" class="sh-input w-48" placeholder="Button text, e.g. Reviews" aria-label="Button text" @disabled(! $canManage)>
+                            <input type="url" wire:model="links.{{ $i }}.url" maxlength="500" class="sh-input min-w-56 flex-1" placeholder="https://" aria-label="Link" @disabled(! $canManage)>
+                            @if ($canManage)<x-ui.button type="button" size="sm" variant="ghost" wire:click="removeLink({{ $i }})">Remove</x-ui.button>@endif
+                        </div>
+                        @error("links.$i.label") <p class="text-sm text-danger">{{ $message }}</p> @enderror
+                        @error("links.$i.url") <p class="text-sm text-danger">{{ $message }}</p> @enderror
+                    @endforeach
+                </div>
+                @if ($canManage && count($links) < \App\Services\Growth\LinkPage::MAX_LINKS)
+                    <x-ui.button type="button" size="sm" variant="ghost" wire:click="addLink" class="mt-2">Add a link</x-ui.button>
+                @endif
+            </div>
+            <p class="text-xs text-subtle">"Book online" and "Send us a message" appear when they're switched on in your website tools (Website page). Your phone and website come from your business profile.</p>
+            @if ($canManage)<x-ui.button type="submit" size="sm">Save</x-ui.button>@endif
+        </form>
+    </x-ui.card>
+
     <x-ui.card class="mt-6" id="brand-voice">
         <h2 class="text-base font-semibold text-ink">Brand voice</h2>
         <p class="mt-1 text-sm text-muted">How your posts should sound when you write them with AI: your tone, words you like or avoid, emojis or not, how you sign off.</p>

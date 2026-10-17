@@ -1030,3 +1030,29 @@ Start these early. The code can be built and tested with your own accounts befor
   - tracking links in posts.
 
 **Why:** owners asked which of the things they pay for actually bring customers. The data was already in SureHelp, just never added up.
+
+## D69 — Link-in-bio page and last-minute openings (2026-11-07)
+**Decision:** the first two growth tools from G-6, built only on what SureHelp already has.
+
+**Link in bio** (Social › Accounts & settings): a public page at `/b/{business-slug}` for Instagram, Facebook and TikTok bios.
+- **What it shows:** the logo or initial, name, town and description.
+- **Buttons:**
+  - **Book online** and **Send us a message**, when those website tools are on: they open the SureHelp snippet on the page;
+  - **Call**, from the profile phone;
+  - **Visit our website**;
+  - up to six links of the business's own.
+- **When it's public:** it's off until the business switches it on, and it disappears while the business is paused, cancelled or closed. Changes are audited.
+- **The snippet can now be opened from any page:**
+  - links to `#surehelp-book`, `#surehelp-chat`, `#surehelp-call` or `#surehelp-lead`, the same in the page address, or `SureHelp.open('book')`;
+  - so a business's own website can have a "Book now" button too.
+- **Snippet fixes:**
+  - SureHelp's own pages are always allowed, even when a business limits the snippet to its own site.
+  - When a browser sends no `Origin` (a same-site page load), the `Referer` tells where the page is. Before, such requests were refused.
+
+**Last-minute openings** (Social › Posts):
+- **The card:** shows free one-hour times in the next three open days, at most four per day, spread across the day. It uses the same rules as online booking: hours, notice, existing appointments and busy time from connected calendars.
+- **"Post about these openings":** opens a new post with the times and the booking link, the link page's `#surehelp-book` when it's live, otherwise the website. A matching brief is filled in for Write with AI.
+
+**Not in this part (rest of G-6):** Google Business Profile sync, turning reviews into posts, job photos from agents, seasonal campaign packs, and several locations.
+
+**Why:** "link in bio" and "we have a slot tomorrow" are the two posts small service businesses make most. Both now take a click and lead straight to a booking.

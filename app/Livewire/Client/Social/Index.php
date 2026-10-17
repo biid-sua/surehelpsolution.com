@@ -8,6 +8,7 @@ use App\Livewire\Concerns\ScopedToOrganization;
 use App\Models\SocialAccount;
 use App\Models\SocialAiRun;
 use App\Models\SocialPost;
+use App\Services\Growth\Openings;
 use App\Services\Social\Ai\ContentStudio;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
@@ -140,6 +141,7 @@ class Index extends Component
             'canManage' => auth()->user()->can('social.manage', $organization),
             'lastPlan' => SocialAiRun::query()->forOrganization($organization)->where('kind', 'plan')->where('created_at', '>=', now()->subDay())->latest('id')->first(),
             'aiBlocker' => app(ContentStudio::class)->blocker($organization),
+            'openings' => $this->view === 'calendar' && auth()->user()->can('social.manage', $organization) ? app(Openings::class)->upcoming($organization) : [],
             'planMonths' => collect(range(0, 3))->map(fn (int $i) => CarbonImmutable::now($timezone)->startOfMonth()->addMonthsNoOverflow($i)),
         ];
 
