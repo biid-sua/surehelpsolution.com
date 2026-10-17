@@ -1071,3 +1071,19 @@ Start these early. The code can be built and tested with your own accounts befor
 - **Not in this part:** the other API tasks (API-3 and API-5 to API-19) in the plan's order.
 
 **Why:** the mobile app can't be submitted to the stores without in-app account deletion. A notification centre and screens that open from a push are the base of the app's experience. Telling the app what a person may use stops it showing screens that would only answer 403.
+
+## D71 — API for the mobile app: settings, update check, call details, Results (2026-11-09)
+**Decision:** the next server tasks from `docs/mobile-app-plan.md` (API-3, API-5, API-6, API-10). Details: `docs/api.md`.
+- **Notification settings:**
+  - the same choices as the web pages, per person: events and channels (only those the person can receive), quiet hours, and the daily summary for business users;
+  - the texting number is verified with a code, using the web's `NotificationPhone` rules (10 minutes, 5 tries, 3 codes per 10 minutes).
+- **Update check:**
+  - `GET /app/version` needs no sign-in, so a build too old to sign in can still be told to update;
+  - `minimum` blocks the app with "Please update" and `latest` shows a gentle prompt, both per platform in `.env`.
+- **Call details:**
+  - what the agent logged, plus the phone call itself;
+  - the recording, AI summary and transcript need `calls.recording.view`, as on the web;
+  - the recording is a signed link valid for 15 minutes that an audio player opens without the token, still checked against the person's permission and audited with `channel: app`.
+- **Results:** the same numbers as the web page and PDF, including where customers came from (D68), plus the PDF itself.
+
+**Why:** these are the screens owners use most on the phone: who called and what was said, how the month went, and controlling what buzzes them. The update check lets old builds be retired safely once the new app ships.

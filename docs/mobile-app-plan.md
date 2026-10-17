@@ -105,7 +105,7 @@ The web portal's sections map to these screens. A bottom navigation bar holds **
 | M-24 | **Customers:** search, details with a timeline (calls, appointments, messages, tasks), and tap to call, text or email. *Create and edit need API-8.* | `/client/customers`, `/{ulid}` | |
 | M-25 | **Tasks and escalations:**<br>• tasks: list, create (idempotent), complete, edit due date;<br>• escalations: acknowledge, assign and resolve, with an urgent-banner style. | `/client/tasks*`, `/client/escalations*` | An urgent escalation push opens straight on it |
 | M-26 | **Social posts:**<br>• the calendar and list with *AI draft*, *Written by AI* and *AI-assisted* labels (`ai_label`);<br>• approve or request changes on posts waiting for the owner;<br>• *creating and editing posts, Write with AI and last-minute openings need API-9*. | `/client/social/posts`, `/{ulid}/approve`, `/{ulid}/request-changes` | Approving from the push takes two taps |
-| M-27 | **Results:** this month vs last; calls answered, jobs booked, estimated revenue; where customers came from (D68); share the PDF. *Needs API-10.* | API-10 | |
+| M-27 | **Results:** this month vs last; calls answered, jobs booked, estimated revenue; where customers came from (D68); share the PDF. *Needs API-10.* | API-10 ✅ | |
 | M-28 | **Business info (read-only first):** profile, hours, services, knowledge, rules; link to edit on the web. | `/client/business`, `/client/services`, `/client/knowledge`, `/client/rules`, `/client/profile` (PUT for profile fields) | |
 | M-29 | **Billing:** invoices, the balance, and pay by card (opens Stripe Checkout in an in-app browser and returns to the app); turn automatic payments on or off. *Needs API-11.* | API-11 | |
 | M-30 | **Team:** members and roles, invite by email, remove. *Needs API-12.* | API-12 | |
@@ -162,10 +162,10 @@ The web-repo session builds these. Each follows the existing conventions: envelo
 |---|---|---|---|
 | API-1 ✅ | `POST /login`: no change needed; confirm `device_name`, `expires_at` and the 2FA/verification flags in the docs. Add `GET /me/capabilities` (roles, permissions, enabled features and plan limits for the current business), so the app shows only what the person may use. | M-10, M-2 | **1** |
 | API-2 ✅ | Notifications: `GET /notifications` (paginated, with read state), `POST /notifications/{id}/read`, `POST /notifications/read-all`, `GET /notifications/unread-count`. Also: every notification's `toArray` has `url` and `event`, documented as a table of event → app route. | M-16, M-17 | **1** |
-| API-3 | Notification settings: `GET/PUT /notifications/settings` (per event and channel, quiet hours); verified mobile number: `POST /account/sms-phone` (send a code), `POST /account/sms-phone/verify`, `DELETE /account/sms-phone`. | M-18 | 2 |
+| API-3 ✅ | Notification settings: `GET/PUT /notifications/settings` (per event and channel, quiet hours); verified mobile number: `POST /account/sms-phone` (send a code), `POST /account/sms-phone/verify`, `DELETE /account/sms-phone`. | M-18 | 2 |
 | API-4 ✅ | Account closure: `POST /client/account/closure`, `DELETE /client/account/closure` (cancel during the grace period), `GET` status (D29). | M-19 | **1** (store requirement) |
-| API-5 | Version check: `GET /app/version?platform=ios\|android` returning `minimum`, `latest` and `store_url`, set in config or admin. | M-46 | 2 |
-| API-6 | Call details: `GET /client/calls/{ulid}` with the transcript, AI summary and a short-lived signed recording URL (permission-checked and audited, D60). | M-21 | 2 |
+| API-5 ✅ | Version check: `GET /app/version?platform=ios\|android` returning `minimum`, `latest` and `store_url`, set in config or admin. | M-46 | 2 |
+| API-6 ✅ | Call details: `GET /client/calls/{ulid}` with the transcript, AI summary and a short-lived signed recording URL (permission-checked and audited, D60). | M-21 | 2 |
 | API-7 | Inbox actions: assign, close and reopen; start a text conversation (consent rules, D62); attachments (send and receive pictures); mark read. | M-22 | 2 |
 | API-8 | Customers: create and edit (with duplicate detection, as the web does), notes. | M-24 | 3 |
 | API-9 | Social: create and edit posts (`SavePost` rules, approval), media upload, Write with AI and rewrite (`ContentStudio`, D66), last-minute openings (D69), and link-in-bio settings. | M-26, M-31 | 3 |
@@ -184,6 +184,11 @@ The web-repo session builds these. Each follows the existing conventions: envelo
 - API-1: `GET /me/capabilities`.
 - API-2: `GET /notifications`, `GET /notifications/unread-count`, `POST /notifications/{id}/read`, `POST /notifications/read-all`, `DELETE /notifications/{id}`. Push data gains `notification_id`, `route` and `route_params`.
 - API-4: `GET/POST/DELETE /account/closure`, for any signed-in person; only the owner may close.
+
+- API-3: `GET/PUT /notifications/settings`, `POST /account/sms-phone`, `POST /account/sms-phone/verify`, `DELETE /account/sms-phone`.
+- API-5: `GET /app/version?platform=&version=`, with no sign-in.
+- API-6: `GET /client/calls/{call_id}`; the recording is a signed link valid for 15 minutes.
+- API-10: `GET /client/results?month=` and `GET /client/results/pdf`.
 
 The web repo's `docs/api.md` has the details and the event and route list.
 

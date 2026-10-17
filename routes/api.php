@@ -7,7 +7,9 @@ use App\Http\Controllers\Api\AgentCompanyController;
 use App\Http\Controllers\Api\AgentDashboardController;
 use App\Http\Controllers\Api\AppNotificationController;
 use App\Http\Controllers\Api\AppointmentController;
+use App\Http\Controllers\Api\AppVersionController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CallDetailController;
 use App\Http\Controllers\Api\CapabilitiesController;
 use App\Http\Controllers\Api\ClientBusinessController;
 use App\Http\Controllers\Api\ClientDashboardController;
@@ -18,6 +20,8 @@ use App\Http\Controllers\Api\EscalationController;
 use App\Http\Controllers\Api\InboxController;
 use App\Http\Controllers\Api\KnowledgeController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\NotificationSettingsController;
+use App\Http\Controllers\Api\ResultsController;
 use App\Http\Controllers\Api\SocialPostController;
 use App\Http\Controllers\Api\TaskController;
 use App\Http\Controllers\Api\ThemeController as ApiThemeController;
@@ -91,6 +95,10 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
     // Authentication routes
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
     Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+    // The app's update check (API-5): no sign-in, so too-old builds can still be told to update.
+    Route::get('/app/version', AppVersionController::class)->middleware('throttle:60,1');
+    // A call recording from a short-lived signed link (API-6): audio players can't send a token.
+    Route::get('/recordings/{voiceCall}', [CallDetailController::class, 'recording'])->middleware(['signed', 'throttle:60,1'])->name('api.recordings.play');
 });
 
 // Protected API routes (authentication required, active accounts only)
@@ -105,6 +113,12 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
     // What this person may use (API-1), and closing the account from the app (API-4)
     Route::get('/me/capabilities', CapabilitiesController::class);
     Route::get('/account/closure', [AccountClosureController::class, 'show']);
+    // Notification settings and the verified mobile number for notification texts (API-3)
+    Route::get('/notifications/settings', [NotificationSettingsController::class, 'show']);
+    Route::put('/notifications/settings', [NotificationSettingsController::class, 'update']);
+    Route::post('/account/sms-phone', [NotificationSettingsController::class, 'sendPhoneCode'])->middleware('throttle:6,10');
+    Route::post('/account/sms-phone/verify', [NotificationSettingsController::class, 'verifyPhone'])->middleware('throttle:10,10');
+    Route::delete('/account/sms-phone', [NotificationSettingsController::class, 'removePhone']);
     Route::post('/account/closure', [AccountClosureController::class, 'store'])->middleware('throttle:10,1');
     Route::delete('/account/closure', [AccountClosureController::class, 'destroy']);
 
@@ -120,6 +134,12 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
             Route::get('/call-history', [ClientDashboardController::class, 'getCallHistory']);
             Route::get('/service-requests', [ClientDashboardController::class, 'getServiceRequests']);
             Route::get('/calendar', [ClientDashboardController::class, 'getCalendarData']);
+            Route::get('/calls/{callId}', [CallDetailController::class, 'show']);   // API-6
+        });
+        // Results, as on the web and in the monthly PDF (API-10)
+        Route::middleware('can:reports.view')->group(function () {
+            Route::get('/results', [ResultsController::class, 'show']);
+            Route::get('/results/pdf', [ResultsController::class, 'pdf'])->name('api.client.results.pdf');
         });
         Route::get('/business', [ClientBusinessController::class, 'show'])->middleware('can:organization.view');
         Route::get('/services', [ClientBusinessController::class, 'services'])->middleware('can:organization.view');

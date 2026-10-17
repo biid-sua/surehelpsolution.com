@@ -103,6 +103,13 @@ They are the same values the website uses. Fetch `/themes` once per session; the
 | POST | `/account/closure` | Owner only: `business_name` (typed exactly, case doesn't matter) and `password`. The account closes after the grace period and an email confirms it. `422` wrong name or password, `409` already scheduled, `429` after 5 tries in 10 minutes, `403` not the owner |
 | DELETE | `/account/closure` | Owner only: keep the account (cancels a scheduled closure) |
 
+| GET | `/notifications/settings` | Notification settings (API-3), the same choices as the web → `data.channels[]` (`key`, `label`, `enabled`), `data.events[]` (`key`, `label`, `description`, `channels[]` chosen), `data.quiet_hours` (`start`, `end`, `timezone`, or `null` = off), `data.daily_summary` (`time` or `null`, `options[]`; business users only, otherwise `null`), `data.sms_phone` (`number`, `display`, `verified`, `texts_available`) |
+| PUT | `/notifications/settings` | Any of: `events{event_key: [channel, …]}` (only the events and channels listed above), `quiet_hours` (`{start, end}` as `HH:MM`, or `null` to turn off), `daily_summary` (`off` or one of the options; business users only) → the same as GET |
+| POST | `/account/sms-phone` | `phone`: a US or Canadian mobile number. Texts a 6-digit code (valid 10 minutes, 3 codes per 10 minutes) → `data.sms_phone`-shaped `data`. `422` with a message when texts aren't set up or the number isn't valid |
+| POST | `/account/sms-phone/verify` | `code` → `data.verified: true`, or `422` (wrong or expired; 5 tries per code) |
+| DELETE | `/account/sms-phone` | Removes the number: no more notification texts |
+| GET | `/app/version` | **No sign-in needed.** `platform` (`ios` or `android`), `version?` (e.g. `1.4.2`) → `data.minimum`, `data.latest`, `data.store_url`, `data.update_required` (older than `minimum`: block the app with "Please update"), `data.update_available` (older than `latest`: a gentle prompt). Set in `.env`: `MOBILE_IOS_MINIMUM`, `MOBILE_IOS_LATEST`, `MOBILE_IOS_STORE_URL`, and the same for `ANDROID` (API-5) |
+
 #### Push notifications and opening the right screen (API-2)
 Every push carries `notification.title` and `notification.body`, plus `data` (all strings):
 - `url`: the web address;
@@ -169,6 +176,15 @@ Common routes:
 | POST | `/client/social/posts/{id}/approve` | Permission `social.manage` and **business owner** (403 otherwise). Posts waiting for approval only (422 otherwise) |
 | POST | `/client/social/posts/{id}/request-changes` | Same rules. `note` required: the post returns to draft with the note |
 
+
+#### Calls and Results in the app (D71)
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/client/calls/{call_id}` | One call (API-6), `calls.view` → `data.call`: `id`, `created_at`, `caller{name, phone, email}`, `customer{id, name}`, `reason`, `outcome`, `outcome_label`, `status`, `agent_name`, `notes`, `service{date, window, location}`, `tasks[]` (with `tasks.view`), `phone_call` (calls on a SureHelp line): `direction`, `status`, `status_label`, `other_party`, `after_hours`, `started_at`, `answered_at`, `ended_at`, `wait_seconds`, `duration_seconds`, `transferred_to`, `can_hear`; and, with `calls.recording.view` only, `recording{url, seconds, expires_in}`, `summary` and `transcript[]` (`speaker`, `text`, `at`) |
+| GET | `/recordings/{id}?…signature` | The `recording.url` above: a signed link valid 15 minutes (`MOBILE_RECORDING_LINK_MINUTES`) that an audio player opens **without** the token. It still checks the person may hear it; each play is audited. Fetch the call again for a fresh link |
+| GET | `/client/results` | Results for a month (API-10), `reports.view`. `month?` = `YYYY-MM` (this month by default) → `data.month`, `label`, `is_current`, `currency`, `summary` (`calls`, `answered`, `after_hours`, `leads`, `booked`, `appointments`, `job_value_cents`, `revenue_cents`, `change{…%}`), `call_outcomes[]`, `appointment_outcomes[]`, `reasons[]`, `busiest`, `heatmap` (7 days × 24 hours, Sunday first, business timezone), `sources` (leads and bookings by source, website and social numbers, D68), `pdf_url` |
+| GET | `/client/results/pdf` | The monthly report PDF (`month?`), with the token like any other call |
+
 ### Agent workspace — role `agent` or `admin`
 | Method | Path | Notes |
 |---|---|---|
@@ -220,6 +236,7 @@ A staff member without the permission gets `403`. Dashboard: `dashboard.view`. A
 
 | Date | Change |
 |---|---|
+| 2026-11-09 | For the mobile app (D71): `GET/PUT /notifications/settings`; `POST/DELETE /account/sms-phone`, `POST /account/sms-phone/verify`; `GET /app/version` (no sign-in); `GET /client/calls/{call_id}` with a signed recording link (`GET /recordings/{id}`); `GET /client/results`, `GET /client/results/pdf`. |
 | 2026-11-08 | For the new mobile app (D70): `GET /me/capabilities`; the notification centre (`GET /notifications`, `/unread-count`, `POST /{id}/read`, `/read-all`, `DELETE /{id}`); `GET/POST/DELETE /account/closure`. Push `data` gains `notification_id`, `route` and `route_params` (additive). |
 | 2026-10-28 | Colour themes (D59): `data.theme` on `/login` and `/user` (additive); `GET /themes`; `PUT /user/theme`. |
 | 2026-10-23 | Optional `Idempotency-Key` header on create endpoints (D52). |
