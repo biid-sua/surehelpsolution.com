@@ -3,6 +3,7 @@
 use App\Http\Controllers\Account\EmailVerificationController;
 use App\Http\Controllers\Account\InvitationController;
 use App\Http\Controllers\Account\PasswordResetController;
+use App\Http\Controllers\Account\SignupController;
 use App\Http\Controllers\Account\TermsController;
 use App\Http\Controllers\Account\ThemeController;
 use App\Http\Controllers\Account\TwoFactorChallengeController;
@@ -151,9 +152,14 @@ Route::middleware('guest')->group(function () {
     Route::post('/forgot-password', [PasswordResetController::class, 'email'])->middleware('throttle:5,1')->name('password.email');
     Route::get('/reset-password/{token}', [PasswordResetController::class, 'edit'])->name('password.reset');
     Route::post('/reset-password', [PasswordResetController::class, 'update'])->middleware('throttle:10,1')->name('password.store');
+
+    // Self-serve sign-up from the website (D65)
+    Route::get('/start', [SignupController::class, 'show'])->name('signup');
+    Route::post('/start', [SignupController::class, 'store'])->middleware('throttle:signup')->name('signup.store');
 });
 Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('auth.logout');
 Route::post('/impersonation/stop', [ImpersonationController::class, 'stop'])->middleware('auth.home')->name('impersonation.stop');
+Route::get('/email/verify', [EmailVerificationController::class, 'notice'])->middleware('auth.home')->name('verification.notice');
 Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])->middleware(['signed', 'throttle:10,1'])->whereNumber('id')->name('verification.verify');
 
 // Media for social networks to download while publishing: short-lived signed links only (D33).

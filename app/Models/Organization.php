@@ -33,6 +33,7 @@ use Illuminate\Support\Str;
  * @property array<string, mixed>|null $seo_settings target services, areas and keywords; autopilot on/off (D57)
  * @property int|null $customer_change_hours customers may change or cancel online until this many hours before (CAL-09); null = not offered
  * @property int|null $retention_months months of history kept (null = all)
+ * @property Carbon|null $signed_up_at the business created its own account from the website (D65)
  * @property Carbon|null $closure_requested_at
  * @property Carbon|null $closes_at when a requested closure takes effect
  * @property Carbon|null $closed_at
@@ -57,6 +58,7 @@ class Organization extends Model
             'status' => OrganizationStatus::class,
             'setup_progress' => 'array',
             'setup_completed_at' => 'datetime',
+            'signed_up_at' => 'datetime',
             'autopay_enabled_at' => 'datetime',
             'average_job_value_cents' => 'integer',
             'approve_agent_bookings' => 'boolean',

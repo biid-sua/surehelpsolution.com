@@ -20,6 +20,6 @@
     </form>
 
     <x-slot:footer>
-        New to SureHelp? <a href="{{ route('home') }}#contact" class="text-brand-300 hover:underline">Talk to us</a>
+        New to SureHelp? <a href="{{ route('signup') }}" class="text-brand-300 hover:underline">Start a free trial</a>
     </x-slot:footer>
 </x-auth-layout>

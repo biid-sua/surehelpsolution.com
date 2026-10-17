@@ -2039,7 +2039,7 @@
                     </div>
                 </div>
                 <div class="card-footer">
-                    <a href="/#contact" class="pricing-cta"><span>Start Free Trial</span><i class="fas fa-arrow-right"></i></a>
+                    <a href="{{ route('signup', ['plan' => 'essential']) }}" class="pricing-cta"><span>Start Free Trial</span><i class="fas fa-arrow-right"></i></a>
                 </div>
             </div>
 
@@ -2073,7 +2073,7 @@
                     </div>
                 </div>
                 <div class="card-footer">
-                    <a href="/#contact" class="pricing-cta"><span>Start Free Trial</span><i class="fas fa-arrow-right"></i></a>
+                    <a href="{{ route('signup', ['plan' => 'professional']) }}" class="pricing-cta"><span>Start Free Trial</span><i class="fas fa-arrow-right"></i></a>
                 </div>
             </div>
 
@@ -2107,7 +2107,7 @@
                     </div>
                 </div>
                 <div class="card-footer">
-                    <a href="/#contact" class="pricing-cta"><span>Start Free Trial</span><i class="fas fa-arrow-right"></i></a>
+                    <a href="{{ route('signup', ['plan' => 'growth']) }}" class="pricing-cta"><span>Start Free Trial</span><i class="fas fa-arrow-right"></i></a>
                 </div>
             </div>
 
@@ -2136,7 +2136,7 @@
                     </div>
                 </div>
                 <div class="card-footer">
-                    <a href="/#contact" class="pricing-cta"><span>Start Free Trial</span><i class="fas fa-arrow-right"></i></a>
+                    <a href="{{ route('signup', ['plan' => 'enterprise']) }}" class="pricing-cta"><span>Start Free Trial</span><i class="fas fa-arrow-right"></i></a>
                 </div>
             </div>
         </div>

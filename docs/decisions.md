@@ -931,3 +931,23 @@ Start these early. The code can be built and tested with your own accounts befor
 - **Not in this part:** refunds through the app (made in Stripe), retrying declined charges, Stripe Billing subscriptions (SureHelp keeps its own billing, D22), and bank debit (ACH) through Stripe.
 
 **Why:** card payments, and payments that happen without anyone chasing them, were the next step in Phase 5. Building them behind the existing interface means switching on Stripe later is a configuration change, not a migration.
+
+## D65 — Self-serve sign-up from the website (2026-11-03)
+**Decision:** a public `/start` page where a business creates its own account: pick a plan, enter the business and owner details, accept the terms, start the plan's free trial. Details: `docs/signup.md`.
+- **What a sign-up creates**, in one transaction:
+  - the owner (business owner role, own password, no forced change);
+  - their business, named as entered, in **onboarding** like a business staff create, and marked `signed_up_at`;
+  - the chosen plan's free trial (nothing is invoiced until the trial ends; a plan without trial days is invoiced straight away, as in Admin);
+  - the accepted Terms, Privacy Policy and DPA;
+  - an audit entry `organization.signed_up`.
+- **Email confirmed first:** the owner is signed in but sees "Check your email" until they open the link. This applies to the portal and to the mobile app login. Businesses created by staff aren't affected.
+- **Staff are told:** "New sign-up" (in-app and email) to everyone who can manage businesses. Admin › Organizations shows "Signed up online".
+- **Going live stays with staff:** connecting the phone line and switching the business to active work as before.
+- **Abuse protection:**
+  - a hidden spam-trap field (a filled-in form looks accepted but creates nothing);
+  - 5 attempts per IP an hour (`SIGNUP_PER_HOUR`);
+  - `SIGNUP_ENABLED=false` closes it and points visitors to the contact form.
+- **Website:** the pricing cards' "Start Free Trial" buttons open `/start?plan=…`. A plan whose slug matches is preselected, otherwise the first public plan. The sign-in page links here too.
+- **Not in this part:** taking a card at sign-up (owners can save one under Billing, D64), a CAPTCHA, and choosing add-ons at sign-up.
+
+**Why:** every new business needed a sales call and staff typing in their details. Letting businesses start a trial themselves removes that step, while staff keep control of going live.

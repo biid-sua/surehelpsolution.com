@@ -183,6 +183,13 @@ class User extends Authenticatable
         $this->notify(new ResetPassword($token));
     }
 
+    /** Owners of businesses that signed up on the website confirm their email before using SureHelp (D65). */
+    public function needsEmailConfirmation(): bool
+    {
+        return $this->role === 'client' && ! $this->hasVerifiedEmail()
+            && Organization::query()->where('owner_user_id', $this->id)->whereNotNull('signed_up_at')->exists();
+    }
+
     public function sendEmailVerificationNotification(): void
     {
         $this->notify(new VerifyEmail);

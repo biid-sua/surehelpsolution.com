@@ -51,6 +51,10 @@ class AuthController extends Controller
                 ], 403);
             }
 
+            if ($user->needsEmailConfirmation()) {
+                return response()->json(['success' => false, 'email_verification_required' => true, 'message' => 'Confirm your email address first: open the link we emailed you, then sign in to the app.'], 403);
+            }
+
             // Two-step sign-in (D8, D24): the app sends the code with the password.
             if ($user->hasTwoFactor()) {
                 $code = (string) $request->input('two_factor_code', '');

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Account;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Support\Audit\Audit;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -27,8 +28,19 @@ class EmailVerificationController extends Controller
         $message = 'Thanks, your email address is confirmed.';
 
         return $request->user()
-            ? redirect()->route('account.profile')->with('status', $message)
+            ? redirect()->to($request->session()->pull('url.intended', route('account.profile')))->with('status', $message)
             : redirect()->route('login')->with('status', $message);
+    }
+
+    /** "Check your email": where businesses that signed up themselves wait until they confirm it (D65). */
+    public function notice(Request $request): View|RedirectResponse
+    {
+        $user = $request->user();
+        if ($user->hasVerifiedEmail()) {
+            return redirect()->to($user->homeUrl());
+        }
+
+        return view('auth.verify-email', ['user' => $user]);
     }
 
     public function send(Request $request): RedirectResponse

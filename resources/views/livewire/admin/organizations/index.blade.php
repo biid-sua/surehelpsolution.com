@@ -56,6 +56,7 @@
                                     \App\Enums\OrganizationStatus::Paused => 'warning',
                                     \App\Enums\OrganizationStatus::Cancelled => 'danger',
                                 }">{{ $organization->status->label() }}</x-ui.badge>
+                                @if ($organization->signed_up_at)<p class="mt-1 text-xs text-subtle">Signed up online</p>@endif
                             </td>
                             <td>
                                 @if ($organization->isSetUp())

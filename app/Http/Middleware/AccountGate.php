@@ -17,6 +17,7 @@ use Symfony\Component\HttpFoundation\Response;
  *  2. Idle too long (staff and agents, 30 min): this session ends.
  *  3. Staff and agents without two-step sign-in set it up before anything else.
  *  4. Everyone accepts the current Terms / Privacy Policy (and DPA for businesses).
+ *  5. Business owners who signed up on the website confirm their email address first (D65).
  */
 class AccountGate
 {
@@ -83,6 +84,14 @@ class AccountGate
                 return $this->send($request, 'account.terms');
             }
             $session->put('legal.ok', $fingerprint);
+        }
+
+        // 5. Self-serve sign-ups: email confirmed before using the portal.
+        if (! $session->get('email.ok')) {
+            if ($user->needsEmailConfirmation()) {
+                return $this->send($request, 'verification.notice');
+            }
+            $session->put('email.ok', true);
         }
 
         return $next($request);

@@ -256,6 +256,7 @@ Requirements: [requirements/agent-university-and-assignments.md](requirements/ag
 | TEL-4 | Sending pictures by text, recording the conference part of a warm transfer, calls out beyond US/Canada | later |
 | BIL-STRIPE | Card payments on Stripe Checkout, automatic payments with a saved card, signed idempotent webhooks booking payments; off until Stripe keys are set (Payoneer stays the default) | **done** 2026-11-02 (D64) |
 | NTF-SMS/PUSH | Notification texts (verified mobile number, SureHelp's own sending number, STOP) and phone push on FCM HTTP v1 (service account, dead-device cleanup); quiet hours cover both; urgent escalations forced to push | **done** 2026-11-01 (D63) |
+| SIGNUP | Self-serve sign-up at `/start`: plan choice, owner account, free trial, terms, email confirmation before the portal and app, staff notice, spam trap, rate limit and off switch; website "Start Free Trial" buttons link to it | **done** 2026-11-03 (D65) |
 
 ## 5. Later phases (outline, in spec order)
 
