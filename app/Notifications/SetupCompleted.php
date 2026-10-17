@@ -41,6 +41,7 @@ class SetupCompleted extends Notification implements ShouldQueue
             'title' => "{$this->organization->name} finished setup",
             'body' => 'Check their details, assign agents and connect their phone line.',
             'url' => route('admin.organizations.show', $this->organization, absolute: false),
+            'event' => 'setup.completed',
         ];
     }
 }

@@ -6,10 +6,14 @@ use App\Enums\SocialNetwork;
 use App\Enums\SocialPostStatus;
 use App\Livewire\Concerns\ScopedToOrganization;
 use App\Models\SocialAccount;
+use App\Models\SocialAiRun;
 use App\Models\SocialPost;
+use App\Services\Growth\Openings;
+use App\Services\Social\Ai\ContentStudio;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
@@ -38,6 +42,15 @@ class Index extends Component
     #[Url(except: '')]
     public string $network = '';
 
+    /** Month plan with AI (D66) */
+    public bool $planning = false;
+
+    public string $planMonth = '';
+
+    public int $planPerWeek = 3;
+
+    public string $planFocus = '';
+
     public function mount(): void
     {
         $this->authorize('social.view', $this->organization());
@@ -55,6 +68,39 @@ class Index extends Component
         if (in_array($property, ['view', 'status', 'network'], true)) {
             $this->resetPage();
         }
+    }
+
+    public function openPlan(): void
+    {
+        $this->authorize('social.manage', $this->organization());
+        $this->planMonth = $this->monthStart()->format('Y-m') < CarbonImmutable::now($this->organization()->timezoneOrDefault())->format('Y-m')
+            ? CarbonImmutable::now($this->organization()->timezoneOrDefault())->format('Y-m')
+            : $this->monthStart()->format('Y-m');
+        $this->planning = true;
+    }
+
+    public function planWithAi(ContentStudio $studio): void
+    {
+        $organization = $this->organization();
+        $this->authorize('social.manage', $organization);
+        $this->validate([
+            'planMonth' => ['required', 'date_format:Y-m'],
+            'planPerWeek' => ['required', 'integer', 'min:1', 'max:'.(int) config('social.ai.max_posts_per_week', 5)],
+            'planFocus' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        try {
+            $studio->requestPlan($organization, auth()->user(), $this->planMonth, $this->planPerWeek, $this->planFocus);
+        } catch (ValidationException $e) {
+            $this->addError('planMonth', collect($e->errors())->flatten()->first());
+
+            return;
+        }
+
+        $this->planning = false;
+        $this->planFocus = '';
+        $this->month = $this->planMonth;
+        $this->view = 'calendar';
     }
 
     public function shiftMonth(int $by): void
@@ -93,6 +139,10 @@ class Index extends Component
             'awaiting' => SocialPost::query()->forOrganization($organization)->where('status', SocialPostStatus::InReview)->count(),
             'hasAccounts' => SocialAccount::query()->forOrganization($organization)->where('is_enabled', true)->exists(),
             'canManage' => auth()->user()->can('social.manage', $organization),
+            'lastPlan' => SocialAiRun::query()->forOrganization($organization)->where('kind', 'plan')->where('created_at', '>=', now()->subDay())->latest('id')->first(),
+            'aiBlocker' => app(ContentStudio::class)->blocker($organization),
+            'openings' => $this->view === 'calendar' && auth()->user()->can('social.manage', $organization) ? app(Openings::class)->upcoming($organization) : [],
+            'planMonths' => collect(range(0, 3))->map(fn (int $i) => CarbonImmutable::now($timezone)->startOfMonth()->addMonthsNoOverflow($i)),
         ];
 
         if ($this->view === 'calendar') {

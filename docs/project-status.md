@@ -154,7 +154,7 @@ Everything the 2026-10-23 audit found has been built (A-5 to A-12 above). What's
 
 | # | Item | Notes |
 |---|---|---|
-| – | Content-Security-Policy header | Now possible: the public site no longer loads anything from CDNs (D55). Remaining work: nonces for Livewire's inline scripts |
+| – | Content-Security-Policy header | **Done** (D67): enforced on every page with per-request nonces; `CSP_MODE=report` to roll back ([security.md](security.md)) |
 
 ### B. Needs action from you (operations)
 | Item | Notes |

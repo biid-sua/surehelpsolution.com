@@ -14,7 +14,7 @@
     <p class="site-theme-picker__note">Saved in this browser only.</p>
   </div>
 </div>
-<script>
+<script nonce="{{ Vite::cspNonce() }}">
   (() => {
     const KEY = 'surehelp.site-theme';
     const picker = document.getElementById('site-theme-picker');

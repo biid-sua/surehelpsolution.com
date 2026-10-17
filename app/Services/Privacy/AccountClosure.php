@@ -36,8 +36,8 @@ class AccountClosure
         // personal data; social accounts hold access tokens.
         'ai_feedback', 'ai_guidelines', 'messages', 'ai_runs', 'conversations', 'ai_assistants', 'chat_widgets',
         // SEO service (D57): its AI work, Search Console tokens and history go before the websites they point at.
-        'seo_tasks', 'website_checks', 'seo_daily_metrics', 'search_console_connections',
-        'social_posts', 'social_accounts', 'websites',
+        'seo_tasks', 'website_checks', 'website_daily_views', 'seo_daily_metrics', 'search_console_connections',
+        'social_ai_runs', 'social_posts', 'social_accounts', 'websites',
         // Support requests (D49); their attachment files are removed with the business's folder below.
         'support_ticket_messages', 'support_tickets',
         // Automations and their history (D50).
@@ -51,6 +51,13 @@ class AccountClosure
     ];
 
     public function __construct(private readonly Audit $audit) {}
+
+    /** Only a business's owner can close it (in the app too, API-4); agents and staff ask SureHelp. */
+    public static function canRequest(User $user, ?Organization $organization): bool
+    {
+        return $organization !== null && $user->isClient() && $organization->owner_user_id === $user->id
+            && $user->hasPermissionIn('organization.update', $organization);
+    }
 
     public function request(Organization $organization, User $owner, string $typedName, string $password): void
     {

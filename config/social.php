@@ -58,4 +58,14 @@ return [
         'link_minutes' => 120,
     ],
 
+    // AI content studio (G-2, D66): tokens a business may use a month for writing, rewriting and
+    // planning posts. A plan's "social_ai_tokens" limit overrides the default.
+    'ai' => [
+        'monthly_tokens' => (int) env('SOCIAL_AI_MONTHLY_TOKENS', 150000),
+        'min_tokens_to_start' => 3000,
+        'effort' => env('SOCIAL_AI_EFFORT', 'medium'),
+        'plan_effort' => env('SOCIAL_AI_PLAN_EFFORT', 'high'),
+        'max_posts_per_week' => 5,
+    ],
+
 ];

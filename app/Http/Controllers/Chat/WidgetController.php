@@ -12,6 +12,7 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Services\Ai\Contracts\AiProvider;
 use App\Services\Billing\FeatureAccess;
+use App\Services\Metrics\WebsiteViews;
 use App\Support\Phone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -47,6 +48,7 @@ class WidgetController extends Controller
     {
         $widget = $this->allowed($request, $key);
         $organization = $widget->organization;
+        app(WebsiteViews::class)->record($organization);   // one settings request per page viewed (D68)
         $assistant = AiAssistant::for($organization);
         $aiOn = $ai->isConfigured() && $assistant->modeFor(InboxChannel::WebChat) === 'auto';
         $business = BusinessProfile::query()->forOrganization($organization)->value('display_name') ?? $organization->name;
@@ -146,7 +148,7 @@ class WidgetController extends Controller
     private function allowed(Request $request, string $key): ChatWidget
     {
         $widget = $this->widget($key);
-        abort_unless($widget->allowsOrigin($request->headers->get('Origin')), 403, 'This website may not use this chat.');
+        abort_unless($widget->allowsOrigin(ChatWidget::pageOrigin($request)), 403, 'This website may not use this chat.');
 
         return $widget;
     }

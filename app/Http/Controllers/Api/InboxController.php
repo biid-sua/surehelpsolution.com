@@ -11,6 +11,7 @@ use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
 
 /**
@@ -25,7 +26,7 @@ class InboxController extends Controller
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $page = Conversation::query()->forOrganization($current->get())->with('customer:id,ulid,first_name,last_name,company')
+        $page = Conversation::query()->forOrganization($current->get())->with(['customer:id,ulid,first_name,last_name,company', 'assignee:id,name'])
             ->tap(fn (Builder $q) => match ($request->query('filter', 'attention')) {
                 'ai' => $q->where('status', 'open')->where('needs_human', false)->where('ai_paused', false),
                 'open' => $q->where('status', 'open'),
@@ -57,7 +58,7 @@ class InboxController extends Controller
                 'from' => $m->author_type,
                 'author' => $m->author?->name,
                 'text' => $m->body,
-                'attachments' => $m->attachments ?? [],
+                'attachments' => array_map(fn (array $a) => self::signedAttachment($a, $current->get()->ulid, request()->user()->id), (array) ($m->attachments ?? [])),
                 'is_note' => $m->is_note,
                 'status' => $m->status,
                 'error' => $m->status === 'failed' ? $m->error : null,
@@ -78,6 +79,24 @@ class InboxController extends Controller
         return ApiResponse::success(['message' => ['id' => $message->ulid, 'status' => $message->status]], 'Sent.');
     }
 
+    /**
+     * Texted pictures live behind a web page that needs a browser session; the app gets a signed link (API-7).
+     *
+     * @param  array<string, mixed>  $attachment
+     * @return array<string, mixed>
+     */
+    private static function signedAttachment(array $attachment, string $organizationUlid, int $userId): array
+    {
+        $prefix = url('/inbox-media/'.$organizationUlid).'/';
+        $url = (string) ($attachment['url'] ?? '');
+        if (str_starts_with($url, $prefix)) {
+            $attachment['url'] = URL::temporarySignedRoute('api.inbox.media', now()->addMinutes(60),
+                ['organization' => $organizationUlid, 'file' => substr($url, strlen($prefix)), 'user' => $userId]);
+        }
+
+        return $attachment;
+    }
+
     private function find(CurrentOrganization $current, string $ulid): Conversation
     {
         return Conversation::query()->forOrganization($current->get())->where('ulid', $ulid)->firstOrFail();
@@ -94,6 +113,8 @@ class InboxController extends Controller
             'name' => $c->displayName(),
             'customer_id' => $c->customer?->ulid,
             'status' => $c->status,
+            'assigned_to' => $c->assigned_to_user_id ? ['id' => $c->assigned_to_user_id, 'name' => $c->assignee?->name] : null,
+            'ai_paused' => (bool) $c->ai_paused,
             'needs_human' => $c->needs_human,
             'ai_handling' => ! $c->needs_human && ! $c->ai_paused && $c->status === 'open',
             'unread' => $c->unread_count,

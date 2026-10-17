@@ -25,6 +25,7 @@ class SocialPostResource extends JsonResource
             'scheduled_at' => $this->scheduled_at?->toIso8601String(),
             'published_at' => $this->published_at?->toIso8601String(),
             'source' => $this->source,
+            'ai_label' => $this->aiLabel(),
             'author' => $this->whenLoaded('author', fn () => $this->author?->name),
             'review_note' => $this->review_note,
             'accounts' => $this->whenLoaded('targets', fn () => $this->targets->filter(fn ($t) => $t->account !== null)->map(fn ($t) => [

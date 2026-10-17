@@ -148,7 +148,8 @@ class NotificationChannelsTest extends TestCase
         $this->assertSame(['+15125559000', '+15125550147'], [$this->fake()->texts[0]['from'], $this->fake()->texts[0]['to']]);
 
         Http::assertSent(fn (HttpRequest $r) => str_ends_with($r->url(), '/v1/projects/surehelp-app/messages:send') && $r->hasHeader('Authorization', 'Bearer ya29.test')
-            && $r['message']['token'] === 'tok-ok' && $r['message']['notification']['title'] === 'Missed call from Maria Lopez' && $r['message']['data']['url'] === url('/app/tasks'));
+            && $r['message']['token'] === 'tok-ok' && $r['message']['notification']['title'] === 'Missed call from Maria Lopez' && $r['message']['data']['url'] === url('/app/tasks')
+            && $r['message']['data']['route'] === 'app.tasks.index' && $r['message']['data']['route_params'] === '[]' && filled($r['message']['data']['notification_id'] ?? null));
         Http::assertNotSent(fn (HttpRequest $r) => ($r['message']['token'] ?? null) === 'someone-elses');
         $this->assertCount(1, Http::recorded(fn (HttpRequest $r) => str_contains($r->url(), 'oauth2')), 'the access token is cached');
         $this->assertSame(['tok-ok'], FcmToken::query()->where('user_id', $this->owner->id)->pluck('token')->all(), 'Firebase forgot it: removed');

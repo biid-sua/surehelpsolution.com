@@ -44,6 +44,7 @@ class NewSignup extends Notification implements ShouldQueue
             'title' => "New sign-up: {$this->organization->name}",
             'body' => "{$this->owner->name} signed up on the website{$this->planText()}.",
             'url' => route('admin.organizations.show', $this->organization, absolute: false),
+            'event' => 'organization.signed_up',
         ];
     }
 

@@ -275,7 +275,7 @@
             <p class="download-description">
                 Download a PDF copy of this Privacy Policy for your records and compliance documentation.
             </p>
-            <button class="download-button" onclick="downloadPDF('privacy-policy')">
+            <button class="download-button" data-call="downloadPDF" data-arg="privacy-policy">
                 <i class="fas fa-file-pdf"></i>
                 Download PDF
             </button>
@@ -286,7 +286,7 @@
 @endsection
 
 @section('scripts')
-<script>
+<script nonce="{{ Vite::cspNonce() }}">
 // PDF Download Function
 function downloadPDF(documentType) {
     // For now, we'll create a simple alert. In a real implementation, 

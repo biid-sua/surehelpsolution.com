@@ -17,7 +17,7 @@
 </div>
 
 @if (session('toast'))
-    <script>
+    <script nonce="{{ Vite::cspNonce() }}">
         document.addEventListener('alpine:initialized', () => window.dispatchEvent(new CustomEvent('toast', { detail: @js(session('toast')) })));
     </script>
 @endif

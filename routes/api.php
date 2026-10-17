@@ -1,26 +1,41 @@
 <?php
 
 use App\Http\Controllers\Agent\TrainingFileController;
+use App\Http\Controllers\Api\AccountClosureController;
 use App\Http\Controllers\Api\AdminDashboardController;
 use App\Http\Controllers\Api\AgentCompanyController;
 use App\Http\Controllers\Api\AgentDashboardController;
+use App\Http\Controllers\Api\AgentWorkController;
+use App\Http\Controllers\Api\AppNotificationController;
 use App\Http\Controllers\Api\AppointmentController;
+use App\Http\Controllers\Api\AppVersionController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BillingController;
+use App\Http\Controllers\Api\CallDetailController;
+use App\Http\Controllers\Api\CapabilitiesController;
 use App\Http\Controllers\Api\ClientBusinessController;
 use App\Http\Controllers\Api\ClientDashboardController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\DutyScheduleController;
 use App\Http\Controllers\Api\EscalationController;
+use App\Http\Controllers\Api\InboxActionsController;
 use App\Http\Controllers\Api\InboxController;
 use App\Http\Controllers\Api\KnowledgeController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\NotificationSettingsController;
+use App\Http\Controllers\Api\OpenApiController;
+use App\Http\Controllers\Api\ResultsController;
+use App\Http\Controllers\Api\SearchController;
+use App\Http\Controllers\Api\SocialManageController;
 use App\Http\Controllers\Api\SocialPostController;
 use App\Http\Controllers\Api\TaskController;
+use App\Http\Controllers\Api\TeamController;
 use App\Http\Controllers\Api\ThemeController as ApiThemeController;
 use App\Http\Controllers\Api\TrainingController;
 use App\Http\Controllers\Chat\SiteToolsController;
 use App\Http\Controllers\Chat\WidgetController;
+use App\Http\Controllers\CspReportController;
 use App\Http\Controllers\Webhooks\CalendarWebhookController;
 use App\Http\Controllers\Webhooks\MetaWebhookController;
 use App\Http\Controllers\Webhooks\SmsWebhookController;
@@ -78,12 +93,23 @@ Route::prefix('webhooks/sms')->name('webhooks.sms.')->middleware([VerifyTelephon
 });
 
 // Card payments: Stripe confirms payments here (signed with the endpoint secret, D64).
+// What the Content-Security-Policy blocked, reported by browsers (D67).
+Route::post('/csp-report', CspReportController::class)->middleware('throttle:60,1')->name('csp.report');
+
 Route::post('/webhooks/stripe', StripeWebhookController::class)->middleware('throttle:600,1')->name('webhooks.stripe');
 
 Route::prefix('v1')->middleware('throttle:api')->group(function () {
     // Authentication routes
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
     Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+    // The API description, generated from these routes (API-19)
+    Route::get('/openapi.json', OpenApiController::class)->middleware('throttle:30,1');
+    // The app's update check (API-5): no sign-in, so too-old builds can still be told to update.
+    Route::get('/app/version', AppVersionController::class)->middleware('throttle:60,1');
+    // A call recording from a short-lived signed link (API-6): audio players can't send a token.
+    // A picture texted to a business, from a short-lived signed link (API-7).
+    Route::get('/inbox-media/{organization}/{file}', [InboxActionsController::class, 'media'])->middleware(['signed', 'throttle:240,1'])->name('api.inbox.media');
+    Route::get('/recordings/{voiceCall}', [CallDetailController::class, 'recording'])->middleware(['signed', 'throttle:60,1'])->name('api.recordings.play');
 });
 
 // Protected API routes (authentication required, active accounts only)
@@ -94,6 +120,18 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
     Route::get('/themes', [ApiThemeController::class, 'index']);
     Route::put('/user/theme', [ApiThemeController::class, 'update'])->middleware('throttle:30,1');
     Route::post('/refresh-token', [AuthController::class, 'refresh']);
+
+    // What this person may use (API-1), and closing the account from the app (API-4)
+    Route::get('/me/capabilities', CapabilitiesController::class);
+    Route::get('/account/closure', [AccountClosureController::class, 'show']);
+    // Notification settings and the verified mobile number for notification texts (API-3)
+    Route::get('/notifications/settings', [NotificationSettingsController::class, 'show']);
+    Route::put('/notifications/settings', [NotificationSettingsController::class, 'update']);
+    Route::post('/account/sms-phone', [NotificationSettingsController::class, 'sendPhoneCode'])->middleware('throttle:6,10');
+    Route::post('/account/sms-phone/verify', [NotificationSettingsController::class, 'verifyPhone'])->middleware('throttle:10,10');
+    Route::delete('/account/sms-phone', [NotificationSettingsController::class, 'removePhone']);
+    Route::post('/account/closure', [AccountClosureController::class, 'store'])->middleware('throttle:10,1');
+    Route::delete('/account/closure', [AccountClosureController::class, 'destroy']);
 
     // Signed-in devices (docs/api.md)
     Route::get('/devices', [DeviceController::class, 'index']);
@@ -107,6 +145,14 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
             Route::get('/call-history', [ClientDashboardController::class, 'getCallHistory']);
             Route::get('/service-requests', [ClientDashboardController::class, 'getServiceRequests']);
             Route::get('/calendar', [ClientDashboardController::class, 'getCalendarData']);
+            Route::get('/calls/{callId}', [CallDetailController::class, 'show']);   // API-6
+        });
+        // Search across the business, as on the web (API-17)
+        Route::get('/search', SearchController::class)->middleware(['can:dashboard.view', 'throttle:60,1']);
+        // Results, as on the web and in the monthly PDF (API-10)
+        Route::middleware('can:reports.view')->group(function () {
+            Route::get('/results', [ResultsController::class, 'show']);
+            Route::get('/results/pdf', [ResultsController::class, 'pdf'])->name('api.client.results.pdf');
         });
         Route::get('/business', [ClientBusinessController::class, 'show'])->middleware('can:organization.view');
         Route::get('/services', [ClientBusinessController::class, 'services'])->middleware('can:organization.view');
@@ -114,12 +160,78 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
         Route::get('/rules', [KnowledgeController::class, 'rules'])->middleware('can:organization.view');
         Route::middleware('can:customers.view')->group(function () {
             Route::get('/customers', [CustomerController::class, 'index']);
+            Route::get('/customers/lookup', [CustomerController::class, 'lookup']);   // API-8
             Route::get('/customers/{ulid}', [CustomerController::class, 'show']);
+        });
+        // Adding and editing customers (API-8)
+        Route::post('/customers', [CustomerController::class, 'store'])->middleware(['can:customers.create', 'idempotent']);
+        Route::middleware('can:customers.update')->group(function () {
+            Route::patch('/customers/{ulid}', [CustomerController::class, 'update']);
+            Route::post('/customers/{ulid}/notes', [CustomerController::class, 'addNote'])->middleware('idempotent');
+            Route::post('/customers/{ulid}/tags', [CustomerController::class, 'addTag']);
+            Route::delete('/customers/{ulid}/tags/{tag}', [CustomerController::class, 'removeTag'])->whereNumber('tag');
         });
         Route::get('/inbox/conversations', [InboxController::class, 'index'])->middleware('can:messages.view');
         Route::get('/inbox/conversations/{ulid}', [InboxController::class, 'show'])->middleware('can:messages.view');
         Route::post('/inbox/conversations/{ulid}/reply', [InboxController::class, 'reply'])->middleware(['can:messages.send', 'idempotent']);
+        // Inbox actions (API-7)
+        Route::post('/inbox/conversations/{ulid}/read', [InboxActionsController::class, 'read'])->middleware('can:messages.view');
+        Route::post('/inbox/conversations/{ulid}/messages/{message}/rate', [InboxActionsController::class, 'rate'])->middleware('can:messages.view');
+        Route::middleware('can:messages.send')->group(function () {
+            Route::post('/inbox/conversations', [InboxActionsController::class, 'start'])->middleware('idempotent');
+            Route::get('/inbox/assignees', [InboxActionsController::class, 'assignees']);
+            Route::post('/inbox/conversations/{ulid}/assign', [InboxActionsController::class, 'assign']);
+            Route::post('/inbox/conversations/{ulid}/close', [InboxActionsController::class, 'close']);
+            Route::post('/inbox/conversations/{ulid}/reopen', [InboxActionsController::class, 'reopen']);
+            Route::post('/inbox/conversations/{ulid}/ai', [InboxActionsController::class, 'ai']);
+            Route::post('/inbox/conversations/{ulid}/drafts/{message}/send', [InboxActionsController::class, 'sendDraft'])->middleware('idempotent');
+            Route::post('/inbox/conversations/{ulid}/drafts/{message}/discard', [InboxActionsController::class, 'discardDraft']);
+        });
         Route::get('/social/posts', [SocialPostController::class, 'index'])->middleware('can:social.view');
+        // Writing and scheduling posts (API-9)
+        Route::middleware('feature:social_publishing')->group(function () {
+            Route::middleware('can:social.view')->group(function () {
+                Route::get('/social/accounts', [SocialManageController::class, 'accounts']);
+                Route::get('/social/posts/{ulid}', [SocialManageController::class, 'show']);
+                Route::get('/social/openings', [SocialManageController::class, 'openings']);
+                Route::get('/social/link-page', [SocialManageController::class, 'linkPage']);
+            });
+            Route::middleware('can:social.manage')->group(function () {
+                Route::post('/social/posts/check', [SocialManageController::class, 'check']);
+                Route::post('/social/posts', [SocialManageController::class, 'store'])->middleware('idempotent');
+                Route::put('/social/posts/{ulid}', [SocialManageController::class, 'update']);
+                Route::post('/social/posts/{ulid}/cancel', [SocialManageController::class, 'cancel']);
+                Route::post('/social/posts/{ulid}/retry', [SocialManageController::class, 'retry']);
+                Route::delete('/social/posts/{ulid}', [SocialManageController::class, 'destroy']);
+                Route::post('/social/media', [SocialManageController::class, 'upload'])->middleware('throttle:30,1');
+                Route::post('/social/ai/write', [SocialManageController::class, 'write'])->middleware('throttle:20,1');
+                Route::post('/social/ai/rewrite', [SocialManageController::class, 'rewrite'])->middleware('throttle:30,1');
+                Route::put('/social/link-page', [SocialManageController::class, 'updateLinkPage']);
+            });
+        });
+        // Billing (API-11): everyone with billing.view sees it, owners pay
+        Route::middleware('can:billing.view')->group(function () {
+            Route::get('/billing', [BillingController::class, 'summary']);
+            Route::get('/billing/invoices', [BillingController::class, 'index']);
+            Route::get('/billing/invoices/{ulid}', [BillingController::class, 'show']);
+            Route::get('/billing/invoices/{ulid}/pdf', [BillingController::class, 'pdf'])->name('api.client.billing.invoice.pdf');
+        });
+        Route::middleware('can:billing.manage')->group(function () {
+            Route::post('/billing/invoices/{ulid}/pay', [BillingController::class, 'pay'])->middleware('throttle:10,1');
+            Route::post('/billing/invoices/{ulid}/report-payment', [BillingController::class, 'reportPayment']);
+            Route::delete('/billing/autopay', [BillingController::class, 'stopAutopay']);
+        });
+        // Team (API-12)
+        Route::get('/team', [TeamController::class, 'index'])->middleware('can:users.view');
+        Route::middleware('can:users.create')->group(function () {
+            Route::post('/team/invitations', [TeamController::class, 'invite'])->middleware('throttle:20,10');
+            Route::post('/team/invitations/{id}/resend', [TeamController::class, 'resend'])->whereNumber('id')->middleware('throttle:20,10');
+            Route::delete('/team/invitations/{id}', [TeamController::class, 'revoke'])->whereNumber('id');
+        });
+        Route::middleware('can:users.delete')->group(function () {
+            Route::patch('/team/members/{id}', [TeamController::class, 'changeRole'])->whereNumber('id');
+            Route::delete('/team/members/{id}', [TeamController::class, 'remove'])->whereNumber('id');
+        });
         Route::post('/social/posts/{ulid}/approve', [SocialPostController::class, 'approve'])->middleware('can:social.manage');
         Route::post('/social/posts/{ulid}/request-changes', [SocialPostController::class, 'requestChanges'])->middleware('can:social.manage');
         Route::get('/tasks', [TaskController::class, 'index'])->middleware('can:tasks.view');
@@ -146,6 +258,15 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
 
     // Agent Dashboard Routes
     Route::prefix('agent')->middleware('role:agent,admin')->group(function () {
+        // Shift requests (API-13), my quality reviews (API-14) and phone availability (API-15)
+        Route::get('/shift-requests', [AgentWorkController::class, 'shiftRequests']);
+        Route::post('/shift-requests', [AgentWorkController::class, 'requestShiftChange'])->middleware(['idempotent', 'throttle:20,10']);
+        Route::post('/shift-requests/{ulid}/withdraw', [AgentWorkController::class, 'withdrawShiftRequest']);
+        Route::get('/quality/reviews', [AgentWorkController::class, 'reviews']);
+        Route::get('/quality/reviews/{ulid}', [AgentWorkController::class, 'review']);
+        Route::post('/quality/reviews/{ulid}/acknowledge', [AgentWorkController::class, 'acknowledgeReview']);
+        Route::get('/presence', [AgentWorkController::class, 'presence']);
+        Route::put('/presence', [AgentWorkController::class, 'setPresence'])->middleware('throttle:30,1');
         Route::get('/dashboard/kpi', [AgentDashboardController::class, 'getKpiData']);
         Route::get('/dashboard/performance', [AgentDashboardController::class, 'getPerformanceData']);
         Route::get('/call-logs', [AgentDashboardController::class, 'getCallLogs']);
@@ -208,6 +329,12 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
     });
 
     Route::prefix('notifications')->group(function () {
+        // The in-app notification centre (API-2)
+        Route::get('/', [AppNotificationController::class, 'index']);
+        Route::get('/unread-count', [AppNotificationController::class, 'unreadCount']);
+        Route::post('/read-all', [AppNotificationController::class, 'readAll']);
+        Route::post('/{id}/read', [AppNotificationController::class, 'read'])->whereUuid('id');
+        Route::delete('/{id}', [AppNotificationController::class, 'destroy'])->whereUuid('id');
         Route::post('/device-token', [NotificationController::class, 'storeDeviceToken']);
         Route::delete('/device-token', [NotificationController::class, 'destroyDeviceToken']);
         Route::post('/test', [NotificationController::class, 'sendTestNotification'])->middleware('role:admin');
