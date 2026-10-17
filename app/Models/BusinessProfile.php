@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $closed_from
  * @property Carbon|null $closed_until
  * @property bool $emergency_available
+ * @property string|null $brand_voice how social posts should sound, for the AI content studio (D66)
  */
 class BusinessProfile extends Model
 {
@@ -20,7 +21,7 @@ class BusinessProfile extends Model
     protected $fillable = [
         'organization_id', 'display_name', 'legal_name', 'logo_path', 'description', 'business_type', 'industry',
         'website', 'phone', 'email', 'service_area', 'emergency_available', 'emergency_instructions',
-        'closed_from', 'closed_until', 'closure_message', 'social_approval',
+        'closed_from', 'closed_until', 'closure_message', 'social_approval', 'brand_voice',
     ];
 
     /** Away (vacation mode) on this date: from closed_from (or straight away) up to and including closed_until. */

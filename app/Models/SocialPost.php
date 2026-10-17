@@ -21,6 +21,8 @@ use Illuminate\Support\Str;
  * @property Carbon|null $published_at
  * @property Carbon|null $submitted_at
  * @property Carbon|null $approved_at
+ * @property bool $ai_assisted written or rewritten with the AI content studio (D66)
+ * @property string|null $ai_note the AI's suggestion for a month-plan draft, e.g. a photo idea
  */
 class SocialPost extends Model
 {
@@ -29,9 +31,10 @@ class SocialPost extends Model
     protected $fillable = [
         'organization_id', 'body', 'link_url', 'status', 'scheduled_at', 'published_at', 'source', 'created_by_user_id',
         'created_by_impersonator_id', 'submitted_at', 'approved_by_user_id', 'approved_at', 'review_note',
+        'ai_assisted', 'ai_note',
     ];
 
-    protected $attributes = ['status' => 'draft', 'source' => 'manual'];
+    protected $attributes = ['status' => 'draft', 'source' => 'manual', 'ai_assisted' => false];
 
     protected function casts(): array
     {
@@ -41,7 +44,18 @@ class SocialPost extends Model
             'published_at' => 'datetime',
             'submitted_at' => 'datetime',
             'approved_at' => 'datetime',
+            'ai_assisted' => 'boolean',
         ];
+    }
+
+    /** "AI draft" (planned by AI, not yet scheduled), "Written by AI", "AI-assisted" (a person wrote it with AI), or null. */
+    public function aiLabel(): ?string
+    {
+        return match (true) {
+            $this->source === 'ai' => $this->status === SocialPostStatus::Draft ? 'AI draft' : 'Written by AI',
+            $this->ai_assisted => 'AI-assisted',
+            default => null,
+        };
     }
 
     protected static function booted(): void

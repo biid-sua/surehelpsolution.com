@@ -37,7 +37,7 @@ class AccountClosure
         'ai_feedback', 'ai_guidelines', 'messages', 'ai_runs', 'conversations', 'ai_assistants', 'chat_widgets',
         // SEO service (D57): its AI work, Search Console tokens and history go before the websites they point at.
         'seo_tasks', 'website_checks', 'seo_daily_metrics', 'search_console_connections',
-        'social_posts', 'social_accounts', 'websites',
+        'social_ai_runs', 'social_posts', 'social_accounts', 'websites',
         // Support requests (D49); their attachment files are removed with the business's folder below.
         'support_ticket_messages', 'support_tickets',
         // Automations and their history (D50).

@@ -86,12 +86,23 @@
                     <span>{{ $label }}@if ($value === 'owner') <span class="text-subtle">(recommended)</span>@endif</span>
                 </label>
             @endforeach
-            <p class="text-xs text-subtle">AI-written posts always need approval.</p>
+            <p class="text-xs text-subtle">Drafts planned by AI always need an owner's approval, unless an owner schedules them.</p>
             @if ($canSetApproval)
                 <x-ui.button type="submit" size="sm" class="mt-2">Save</x-ui.button>
             @else
                 <p class="text-xs text-subtle">Only the business owner can change this.</p>
             @endif
+        </form>
+    </x-ui.card>
+
+    <x-ui.card class="mt-6" id="brand-voice">
+        <h2 class="text-base font-semibold text-ink">Brand voice</h2>
+        <p class="mt-1 text-sm text-muted">How your posts should sound when you write them with AI: your tone, words you like or avoid, emojis or not, how you sign off.</p>
+        <form wire:submit="saveVoice" class="mt-4 space-y-2">
+            <label for="brand-voice-text" class="sr-only">Brand voice</label>
+            <textarea id="brand-voice-text" wire:model="brandVoice" rows="4" maxlength="1000" class="sh-input" placeholder="e.g. Warm and down-to-earth, like a family business. Say &quot;our team&quot;, not &quot;our technicians&quot;. One emoji at most. Never use the word &quot;cheap&quot;." @disabled(! $canManage)></textarea>
+            @error('brandVoice') <p class="text-sm text-danger">{{ $message }}</p> @enderror
+            @if ($canManage)<x-ui.button type="submit" size="sm">Save</x-ui.button>@endif
         </form>
     </x-ui.card>
 </div>

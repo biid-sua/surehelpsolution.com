@@ -28,10 +28,14 @@ class Accounts extends Component
 
     public string $approvalMode = 'owner';
 
+    /** How posts written with AI should sound (D66). */
+    public string $brandVoice = '';
+
     public function mount(SocialApproval $approval): void
     {
         $this->authorize('social.view', $this->organization());
         $this->approvalMode = $approval->mode($this->organization());
+        $this->brandVoice = (string) BusinessProfile::query()->forOrganization($this->organization())->value('brand_voice');
 
         if ($message = session('success')) {
             $this->dispatch('toast', type: 'success', message: $message);
@@ -82,6 +86,20 @@ class Accounts extends Component
         $audit->changes('social.approval_changed', $profile, ['social_approval']);
 
         $this->dispatch('toast', type: 'success', message: 'Approval setting saved.');
+    }
+
+    public function saveVoice(Audit $audit): void
+    {
+        $organization = $this->organization();
+        $this->authorize('social.manage', $organization);
+        $this->validate(['brandVoice' => ['nullable', 'string', 'max:1000']]);
+
+        $profile = BusinessProfile::firstOrNew(['organization_id' => $organization->id]);
+        $profile->brand_voice = trim($this->brandVoice) ?: null;
+        $profile->save();
+        $audit->changes('social.brand_voice_changed', $profile, ['brand_voice']);
+
+        $this->dispatch('toast', type: 'success', message: 'Brand voice saved. The AI uses it from the next post.');
     }
 
     private function account(string $ulid): SocialAccount

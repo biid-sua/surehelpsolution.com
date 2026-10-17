@@ -951,3 +951,31 @@ Start these early. The code can be built and tested with your own accounts befor
 - **Not in this part:** taking a card at sign-up (owners can save one under Billing, D64), a CAPTCHA, and choosing add-ons at sign-up.
 
 **Why:** every new business needed a sales call and staff typing in their details. Letting businesses start a trial themselves removes that step, while staff keep control of going live.
+
+## D66 — AI content studio for social posts (2026-11-04)
+**Decision:** the social composer and calendar get AI writing (G-2). It runs on the existing `AiProvider` (Claude, structured JSON output) with the SEO service's public-facts builder (D57). Setup and behaviour: `docs/social.md` › Writing with AI.
+- **Three uses:**
+  - **write:** a version per network from a short brief and a tone;
+  - **rewrite:** shorter, friendlier, more professional, or with a call to action;
+  - **plan the month:** 1–5 posts a week as drafts in the calendar, queued (`PlanSocialMonth`).
+- **Only public facts:** the AI sees the business's public details and its brand voice. Internal and team-only knowledge never reach it, as for SEO.
+- **Fact checks for a person to resolve:**
+  - claims the AI itself couldn't back up;
+  - phone numbers, prices, discounts and "years in business" not found in the details (`FactCheck`);
+  - network-rule errors.
+
+  Nothing is removed automatically; the person reading the post decides.
+- **People stay in charge:**
+  - AI never publishes; month-plan posts are drafts that the publisher ignores.
+  - An AI draft scheduled by anyone but an owner waits for an owner's approval, even with approval switched off. An owner scheduling it counts as approving it. This replaces "AI posts always need approval", which made owners approve their own scheduling.
+- **Labels:** *AI draft*, *Written by AI* or *AI-assisted* on posts; `ai_label` in the API.
+- **Allowance:**
+  - each request is logged in `social_ai_runs` with its tokens;
+  - 150,000 tokens a month by default, or the plan's `social_ai_tokens` limit;
+  - separate from the SEO allowance;
+  - an unavailable AI uses none;
+  - the runs are deleted when an account closes.
+- **Brand voice:** one free-text field on the business profile, edited under Social › Accounts & settings by people who manage posts.
+- **Not in this part:** AI-chosen photos or image generation, alt text suggestions, writing in other languages, and learning from post results (G-5 analytics first).
+
+**Why:** a blank post box is the main reason businesses stop posting. Drafting from the business's own facts, with a person checking and scheduling, keeps posts accurate and on-brand. The AI and approval plumbing already existed.
