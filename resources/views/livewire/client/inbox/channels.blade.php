@@ -6,9 +6,9 @@
         <x-ui.card title="Website chat" description="A chat button on your website. Works on any site: WordPress, Wix, Squarespace or your own.">
             <div class="mb-4">
                 <p class="sh-label">Add this line to your website, just before &lt;/body&gt;</p>
-                <div x-data="{ copied: false }" class="flex gap-2">
-                    <input type="text" readonly value="{{ $chat->snippet() }}" class="sh-input font-mono text-xs" aria-label="Website snippet" onclick="this.select()">
-                    <x-ui.button variant="secondary" x-on:click="navigator.clipboard.writeText(@js($chat->snippet())); copied = true; setTimeout(() => copied = false, 2000)">
+                <div x-data="{ copied: false, snippet: @js($chat->snippet()) }" class="flex gap-2">
+                    <input type="text" readonly value="{{ $chat->snippet() }}" class="sh-input font-mono text-xs" aria-label="Website snippet" x-on:click="$el.select()">
+                    <x-ui.button variant="secondary" x-on:click="navigator.clipboard.writeText(snippet); copied = true; setTimeout(() => copied = false, 2000)">
                         <span x-text="copied ? 'Copied' : 'Copy'">Copy</span>
                     </x-ui.button>
                 </div>

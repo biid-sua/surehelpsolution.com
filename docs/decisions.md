@@ -979,3 +979,25 @@ Start these early. The code can be built and tested with your own accounts befor
 - **Not in this part:** AI-chosen photos or image generation, alt text suggestions, writing in other languages, and learning from post results (G-5 analytics first).
 
 **Why:** a blank post box is the main reason businesses stop posting. Drafting from the business's own facts, with a person checking and scheduling, keeps posts accurate and on-brand. The AI and approval plumbing already existed.
+
+## D67 — Content-Security-Policy on every page (2026-11-05)
+**Decision:** every HTML page gets a Content-Security-Policy, in force by default. Details: `docs/security.md`.
+- **Scripts:**
+  - run only from this site, the public website's three CDNs, or inline with a fresh per-request nonce;
+  - Vite and Livewire add the nonce themselves; our inline scripts use `Vite::cspNonce()`;
+  - inline event handlers on the public site became `data-call` attributes handled by one listener.
+- **Kept on purpose:**
+  - `'unsafe-eval'`, because Alpine inside Livewire evaluates its attributes. Moving to Alpine's CSP build would mean rewriting every inline expression.
+  - Inline styles, because the design sets colours and sizes in `style` attributes. Style injection is far less dangerous than script injection.
+  - Any HTTPS image or media source: social avatars and media.
+- **Blocked:** plugins (`object-src 'none'`), `<base>` changes, framing by other sites, and connections except to this site and Twilio.
+- **Reporting and rollback:**
+  - browsers report what was blocked to `/api/csp-report` (throttled), written to the security log;
+  - `CSP_MODE=report` switches to report-only by changing `.env` (then `php artisan config:cache`), with no code deploy;
+  - `CSP_MODE=off` removes it.
+- **Checked in a browser:** all 92 pages without parameters, as a visitor, owner, agent and admin, with no violations. The phone, charts, calendar, Alpine panels, Livewire saves and the website calculator all work under the policy.
+- **Fixed along the way (existing bugs):**
+  - the FAQ page script failed on items without a paragraph;
+  - the website chat snippet's Copy button never worked, because `@js()` isn't compiled inside a component attribute.
+
+**Why:** the last open item from the security audit. With a policy, an injected script, the usual result of an XSS bug, doesn't run, even if a template mistake lets one through.

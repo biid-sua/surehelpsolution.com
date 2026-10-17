@@ -1,5 +1,5 @@
 {{-- Colour theme (D59): "Match my device" picks Light or Midnight before the page paints, and follows the device when it changes. --}}
-<script>
+<script nonce="{{ Vite::cspNonce() }}">
     (() => {
         const root = document.documentElement;
         const light = window.matchMedia('(prefers-color-scheme: light)');

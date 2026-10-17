@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\ThemeController as ApiThemeController;
 use App\Http\Controllers\Api\TrainingController;
 use App\Http\Controllers\Chat\SiteToolsController;
 use App\Http\Controllers\Chat\WidgetController;
+use App\Http\Controllers\CspReportController;
 use App\Http\Controllers\Webhooks\CalendarWebhookController;
 use App\Http\Controllers\Webhooks\MetaWebhookController;
 use App\Http\Controllers\Webhooks\SmsWebhookController;
@@ -78,6 +79,9 @@ Route::prefix('webhooks/sms')->name('webhooks.sms.')->middleware([VerifyTelephon
 });
 
 // Card payments: Stripe confirms payments here (signed with the endpoint secret, D64).
+// What the Content-Security-Policy blocked, reported by browsers (D67).
+Route::post('/csp-report', CspReportController::class)->middleware('throttle:60,1')->name('csp.report');
+
 Route::post('/webhooks/stripe', StripeWebhookController::class)->middleware('throttle:600,1')->name('webhooks.stripe');
 
 Route::prefix('v1')->middleware('throttle:api')->group(function () {

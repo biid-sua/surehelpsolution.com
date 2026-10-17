@@ -2,22 +2,33 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Security\ContentSecurityPolicy;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Vite;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Baseline security headers on every response (spec §58).
- *
- * A Content-Security-Policy is deliberately not set yet: the public website still
- * loads CDN scripts and inline JS. It will be added once the website moves to the
- * Vite-built design system (docs/implementation-plan.md).
+ * Baseline security headers on every response (spec §58), and a Content-Security-Policy on pages
+ * (D67). The nonce is created before the page renders, so Vite, Livewire and our inline scripts get it.
  */
 class SecurityHeaders
 {
+    public function __construct(private readonly ContentSecurityPolicy $csp) {}
+
     public function handle(Request $request, Closure $next): Response
     {
+        $mode = (string) config('csp.mode', 'enforce');
+        if ($mode !== 'off' && ! $request->is('api/*')) {
+            Vite::useCspNonce();
+        }
+
         $response = $next($request);
+
+        if ($mode !== 'off' && $this->isPage($response)
+            && ! $response->headers->has('Content-Security-Policy') && ! $response->headers->has('Content-Security-Policy-Report-Only')) {
+            $response->headers->set($mode === 'report' ? 'Content-Security-Policy-Report-Only' : 'Content-Security-Policy', $this->csp->header());
+        }
 
         $headers = [
             'X-Content-Type-Options' => 'nosniff',
@@ -44,5 +55,15 @@ class SecurityHeaders
         }
 
         return $response;
+    }
+
+    /** An HTML page (Laravel sets the content type of a rendered view only when sending it). */
+    private function isPage(Response $response): bool
+    {
+        $type = $response->headers->get('Content-Type');
+
+        return $type === null
+            ? $response instanceof \Illuminate\Http\Response
+            : str_contains($type, 'text/html');
     }
 }

@@ -4,7 +4,8 @@
     <a href="{{ route('app.billing') }}" style="color:#c7d2fe; text-decoration:none">← Billing</a>
     <span style="flex:1"></span>
     <a href="{{ route('app.billing.invoice.pdf', $invoice->ulid) }}" style="color:#fff; background:#4f46e5; padding:6px 12px; border-radius:6px; text-decoration:none">Download PDF</a>
-    <a href="#" onclick="window.print(); return false;" style="color:#fff; text-decoration:none">Print</a>
+    <a href="#" id="print-invoice" style="color:#fff; text-decoration:none">Print</a>
 </div>
+<script nonce="{{ Vite::cspNonce() }}">document.getElementById('print-invoice').addEventListener('click', (e) => { e.preventDefault(); window.print(); });</script>
 <style>@media print { .no-print { display: none !important; } }</style>
 @include('billing.invoice', ['pdf' => false])
