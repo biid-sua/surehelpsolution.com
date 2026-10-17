@@ -1001,3 +1001,32 @@ Start these early. The code can be built and tested with your own accounts befor
   - the website chat snippet's Copy button never worked, because `@js()` isn't compiled inside a component attribute.
 
 **Why:** the last open item from the security audit. With a policy, an injected script, the usual result of an XSS bug, doesn't run, even if a template mistake lets one through.
+
+## D68 — Where customers come from, in Results (2026-11-06)
+**Decision:** Results, its PDF and its CSV get a "Where customers came from" section (the first part of G-5). It is counted only from SureHelp's own records, so it works today without any network's analytics approval.
+- **New customers by how they first got in touch:**
+  - phone calls;
+  - website form or online booking;
+  - website chat;
+  - Facebook Messenger, Instagram and text messages, taken from the customer's first conversation.
+
+  Customers the business typed in or imported are shown apart ("not counted"), so the sources add up to real inbound interest.
+- **Bookings by who made them:**
+  - SureHelp agents by phone;
+  - online booking on the website;
+  - the AI assistant;
+  - the business's own team.
+
+  Events copied in from a connected Google or Microsoft calendar aren't counted as bookings.
+- **Website pages viewed:**
+  - the snippet asks for its settings once per page, so that request is counted;
+  - one number per business per day (`website_daily_views`), in the business's timezone;
+  - no visitor, IP address or cookie is stored, and no extra request is made;
+  - shown as "—" until the snippet has reported a view.
+- **Social media:** posts published (per account) and new Facebook and Instagram conversations.
+- **Comparisons:** each total is compared with the previous period of the same length. The page views are deleted when an account closes.
+- **Not in this part (rest of G-5):**
+  - reach, engagement and clicks from Facebook, Instagram, LinkedIn and Google, which need each network's insights permissions after app review;
+  - tracking links in posts.
+
+**Why:** owners asked which of the things they pay for actually bring customers. The data was already in SureHelp, just never added up.

@@ -10,7 +10,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
  */
 class ResultsPdf
 {
-    public function __construct(private readonly ResultsReport $report) {}
+    public function __construct(private readonly ResultsReport $report, private readonly SourceReport $sources) {}
 
     public function render(Organization $organization, ?string $month): string
     {
@@ -20,6 +20,7 @@ class ResultsPdf
             'organization' => $organization,
             'period' => $period,
             'r' => $this->report->compute($organization, $period['start'], $period['end']),
+            's' => $this->sources->compute($organization, $period['start'], $period['end']),
         ])->setPaper('letter')->output();
     }
 

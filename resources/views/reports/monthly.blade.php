@@ -82,6 +82,34 @@
         </td>
     </tr></table>
 
+    @isset($s)
+        <h2>Where customers came from</h2>
+        <table style="width:100%"><tr>
+            <td style="width:50%; vertical-align:top; padding-right:12px">
+                <table class="list">
+                    <tr><td><strong>New customers</strong></td><td class="right"><strong>{{ number_format($s['leads_total']) }}</strong></td></tr>
+                    @foreach (\App\Services\Metrics\SourceReport::LEAD_SOURCES as $key => $label)
+                        @continue($s['leads'][$key] === 0)
+                        <tr><td>{{ $label }}</td><td class="right">{{ number_format($s['leads'][$key]) }}</td></tr>
+                    @endforeach
+                </table>
+            </td>
+            <td style="width:50%; vertical-align:top; padding-left:12px">
+                <table class="list">
+                    <tr><td><strong>Bookings made</strong></td><td class="right"><strong>{{ number_format($s['bookings_total']) }}</strong></td></tr>
+                    @foreach (\App\Services\Metrics\SourceReport::BOOKING_SOURCES as $key => $label)
+                        @continue($s['bookings'][$key] === 0)
+                        <tr><td>{{ $label }}</td><td class="right">{{ number_format($s['bookings'][$key]) }}</td></tr>
+                    @endforeach
+                </table>
+            </td>
+        </tr></table>
+        <p class="muted small">
+            @if ($s['website_views'] !== null)Website: {{ number_format($s['website_views']) }} pages viewed, {{ number_format($s['website_leads']) }} new customers. @endif
+            Social media: {{ number_format($s['social_posts']) }} posts published, {{ number_format($s['social_messages']) }} Facebook and Instagram conversations.
+        </p>
+    @endisset
+
     @if ($r['busiest'])
         <p style="margin-top:18px">Busiest time: <strong>{{ $r['busiest'] }}</strong>.</p>
     @endif
