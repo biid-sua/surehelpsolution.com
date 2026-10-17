@@ -177,6 +177,31 @@ Common routes:
 | POST | `/client/social/posts/{id}/request-changes` | Same rules. `note` required: the post returns to draft with the note |
 
 
+#### Inbox and customers in the app (D72)
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/client/inbox/conversations` | Start a text conversation (API-7, D62), `messages.send`, `Idempotency-Key`: `to` (phone), `text` (up to 1,600) → `201` with `data.conversation.id`. `422` when the customer hasn't agreed to texts, texting isn't on, or the number isn't valid |
+| GET | `/client/inbox/assignees` | People on the team a conversation can be assigned to → `data.assignees[]` (`id`, `name`) |
+| POST | `/client/inbox/conversations/{id}/assign` | `user_id` (or `null` to unassign) → `data.assigned_to` |
+| POST | `/client/inbox/conversations/{id}/close` · `/reopen` | → `data.status` |
+| POST | `/client/inbox/conversations/{id}/ai` | `on`: `true` lets the AI assistant answer again, `false` keeps it for people → `data.ai_paused`, `data.needs_human` |
+| POST | `/client/inbox/conversations/{id}/read` | Mark read (opening it with GET also does) |
+| POST | `/client/inbox/conversations/{id}/drafts/{message}/send` · `/discard` | The AI's suggested reply (mode "suggest"): send it as it is, or discard it. Each draft can be used once |
+| POST | `/client/inbox/conversations/{id}/messages/{message}/rate` | `rating` (`helpful` or `unhelpful`), `correction?` (what it should have said; becomes a guideline for the owner to approve, D39) |
+| | (in `GET …/conversations/{id}`) | Conversations now include `assigned_to` and `ai_paused`. Texted pictures in `messages[].attachments[].url` are signed links valid 60 minutes (`/api/v1/inbox-media/…`) that open without the token |
+| GET | `/client/customers/lookup` | `phone?`, `email?` → `data.match` (`id`, `name`, `matched_by`) or `null`: warn about a duplicate while typing (API-8) |
+| POST | `/client/customers` | `customers.create`, `Idempotency-Key`: `first_name`, `last_name`, `company` (a name or a company), `phone`, `email` (a phone or an email) → `201` with `data.customer`. **`409`** when another customer has the phone number, with `existing` (`id`, `name`): open that customer instead |
+| PATCH | `/client/customers/{id}` | `customers.update`. Any of: `first_name`, `last_name`, `company`, `phone`, `email`, `address_line1`, `address_line2`, `city`, `state`, `postal_code`, `status`, `preferred_contact` (`phone`, `sms`, `email`), `sms_consent`, `email_consent`, `notes`. Fields not sent keep their value; consent changes are recorded with who and when (spec §57). `422` if the phone belongs to another customer |
+| POST | `/client/customers/{id}/notes` | `note` → `201` with `data.event` (the timeline entry) |
+| POST | `/client/customers/{id}/tags` | `name` → `data.tags[]` |
+| DELETE | `/client/customers/{id}/tags/{tag_id}` | → `data.tags[]` |
+
+#### Links that open the app (API-16)
+- `/.well-known/assetlinks.json` (Android App Links) and `/.well-known/apple-app-site-association` (iOS Universal Links) are served from `config/mobile.php`.
+- Set `MOBILE_ANDROID_SHA256` (signing certificate fingerprints from Play Console › App integrity, comma-separated) and `MOBILE_IOS_APP_IDS` (`TEAMID.bundle.id`).
+- Until then the files list no app. The app handles `/app/*`, `/agent/*`, `/invitations/*`, `/account/*` and `/b/*`.
+- **Hosting:** the server must serve both addresses directly, over HTTPS, with no redirect.
+
 #### Calls and Results in the app (D71)
 | Method | Path | Notes |
 |---|---|---|
@@ -236,6 +261,7 @@ A staff member without the permission gets `403`. Dashboard: `dashboard.view`. A
 
 | Date | Change |
 |---|---|
+| 2026-11-10 | For the mobile app (D72): inbox actions (start a text, assign, close and reopen, AI on or off, read, AI suggestions, rating); signed links for texted pictures; adding and editing customers, with a duplicate lookup, notes and tags; the app-link files under `/.well-known/`. Conversations gain `assigned_to` and `ai_paused` (additive). |
 | 2026-11-09 | For the mobile app (D71): `GET/PUT /notifications/settings`; `POST/DELETE /account/sms-phone`, `POST /account/sms-phone/verify`; `GET /app/version` (no sign-in); `GET /client/calls/{call_id}` with a signed recording link (`GET /recordings/{id}`); `GET /client/results`, `GET /client/results/pdf`. |
 | 2026-11-08 | For the new mobile app (D70): `GET /me/capabilities`; the notification centre (`GET /notifications`, `/unread-count`, `POST /{id}/read`, `/read-all`, `DELETE /{id}`); `GET/POST/DELETE /account/closure`. Push `data` gains `notification_id`, `route` and `route_params` (additive). |
 | 2026-10-28 | Colour themes (D59): `data.theme` on `/login` and `/user` (additive); `GET /themes`; `PUT /user/theme`. |

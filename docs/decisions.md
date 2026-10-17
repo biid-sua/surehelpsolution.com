@@ -1087,3 +1087,24 @@ Start these early. The code can be built and tested with your own accounts befor
 - **Results:** the same numbers as the web page and PDF, including where customers came from (D68), plus the PDF itself.
 
 **Why:** these are the screens owners use most on the phone: who called and what was said, how the month went, and controlling what buzzes them. The update check lets old builds be retired safely once the new app ships.
+
+## D72 — API for the mobile app: inbox actions, customers, app links (2026-11-10)
+**Decision:** the next server tasks from `docs/mobile-app-plan.md` (API-7, API-8, API-16). Details: `docs/api.md`.
+- **Inbox:** the web Inbox's actions, all audited as on the web:
+  - start a text conversation (the consent rules of D62);
+  - assign, close and reopen;
+  - turn the AI off or on for a conversation;
+  - mark read;
+  - send or discard the AI's suggested reply;
+  - rate AI answers with a correction.
+
+  Texted pictures sit behind a web address that needs a browser session, so the app gets signed links valid for an hour; each still checks the person's `messages.view`. Sending pictures is still TEL-4.
+- **Customers:**
+  - adding uses one `CreateCustomer` action, now shared with the web, so duplicate checks are identical;
+  - a taken phone number answers `409` with the existing customer, and a lookup warns while typing;
+  - editing is partial (fields not sent are kept) through the web's `UpdateCustomer`, which records consent changes;
+  - notes and tags as on the web.
+- **App links:** `/.well-known/assetlinks.json` and `/.well-known/apple-app-site-association` are built from config. They list no app until the store builds' fingerprints and team id are set.
+- **Bug found while testing:** the first version of the signed picture link had a double slash in it, because `url()` drops a trailing slash. A test now opens the link.
+
+**Why:** answering customers and keeping their details right are the things owners do most between jobs. App links make every email and notification link open straight in the app.

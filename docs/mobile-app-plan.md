@@ -166,8 +166,8 @@ The web-repo session builds these. Each follows the existing conventions: envelo
 | API-4 ✅ | Account closure: `POST /client/account/closure`, `DELETE /client/account/closure` (cancel during the grace period), `GET` status (D29). | M-19 | **1** (store requirement) |
 | API-5 ✅ | Version check: `GET /app/version?platform=ios\|android` returning `minimum`, `latest` and `store_url`, set in config or admin. | M-46 | 2 |
 | API-6 ✅ | Call details: `GET /client/calls/{ulid}` with the transcript, AI summary and a short-lived signed recording URL (permission-checked and audited, D60). | M-21 | 2 |
-| API-7 | Inbox actions: assign, close and reopen; start a text conversation (consent rules, D62); attachments (send and receive pictures); mark read. | M-22 | 2 |
-| API-8 | Customers: create and edit (with duplicate detection, as the web does), notes. | M-24 | 3 |
+| API-7 ✅ | Inbox actions: assign, close and reopen; start a text conversation (consent rules, D62); attachments (send and receive pictures); mark read. | M-22 | 2 |
+| API-8 ✅ | Customers: create and edit (with duplicate detection, as the web does), notes. | M-24 | 3 |
 | API-9 | Social: create and edit posts (`SavePost` rules, approval), media upload, Write with AI and rewrite (`ContentStudio`, D66), last-minute openings (D69), and link-in-bio settings. | M-26, M-31 | 3 |
 | API-10 | Results: `GET /client/results?month=` (the same numbers as the web, including sources D68), `GET /client/results/pdf`. | M-27 | 2 |
 | API-11 | Billing: invoices list and detail, the PDF, `POST /client/invoices/{ulid}/pay` returning a Stripe Checkout URL (D64), and automatic payments on or off. | M-29 | 3 |
@@ -175,7 +175,7 @@ The web-repo session builds these. Each follows the existing conventions: envelo
 | API-13 | Shift requests: list mine, create a swap or time-off request, cancel (D28). | M-35 | 3 |
 | API-14 | QA reviews for agents: list mine, read, confirm (D27). | M-37 | 3 |
 | API-15 | Agent availability: `GET/PUT /agent/presence` (the same states as the softphone, D60). | M-38 | 3 |
-| API-16 | Serve `/.well-known/assetlinks.json` and `/.well-known/apple-app-site-association` (app ids and paths from config). | M-43 | 2 |
+| API-16 ✅ | Serve `/.well-known/assetlinks.json` and `/.well-known/apple-app-site-association` (app ids and paths from config). | M-43 | 2 |
 | API-17 | Search: `GET /client/search?q=` (customers, calls, appointments), the same as the web search. | M-44 | 3 |
 | API-18 | (Only if M-45 is approved) a Twilio Voice access token for mobile and VoIP push credentials. | M-45 | later |
 | API-19 | Generated OpenAPI spec (`/api/v1/openapi.json`), so the app can generate or check its models. | M-4 | 2 |
@@ -189,6 +189,10 @@ The web-repo session builds these. Each follows the existing conventions: envelo
 - API-5: `GET /app/version?platform=&version=`, with no sign-in.
 - API-6: `GET /client/calls/{call_id}`; the recording is a signed link valid for 15 minutes.
 - API-10: `GET /client/results?month=` and `GET /client/results/pdf`.
+
+- API-7: `POST /client/inbox/conversations`, `/{id}/assign`, `/close`, `/reopen`, `/ai`, `/read`, `/drafts/{m}/send` and `/discard`, `/messages/{m}/rate`, `GET /client/inbox/assignees`; texted pictures as signed links. Sending pictures waits for TEL-4.
+- API-8: `GET /client/customers/lookup`, `POST /client/customers` (`409` with `existing` for a duplicate), `PATCH /client/customers/{id}`, `/notes`, `/tags`.
+- API-16: `/.well-known/assetlinks.json` and `/.well-known/apple-app-site-association`; set `MOBILE_ANDROID_SHA256` and `MOBILE_IOS_APP_IDS`.
 
 The web repo's `docs/api.md` has the details and the event and route list.
 

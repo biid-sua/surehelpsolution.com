@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\DutyScheduleController;
 use App\Http\Controllers\Api\EscalationController;
+use App\Http\Controllers\Api\InboxActionsController;
 use App\Http\Controllers\Api\InboxController;
 use App\Http\Controllers\Api\KnowledgeController;
 use App\Http\Controllers\Api\NotificationController;
@@ -98,6 +99,8 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
     // The app's update check (API-5): no sign-in, so too-old builds can still be told to update.
     Route::get('/app/version', AppVersionController::class)->middleware('throttle:60,1');
     // A call recording from a short-lived signed link (API-6): audio players can't send a token.
+    // A picture texted to a business, from a short-lived signed link (API-7).
+    Route::get('/inbox-media/{organization}/{file}', [InboxActionsController::class, 'media'])->middleware(['signed', 'throttle:240,1'])->name('api.inbox.media');
     Route::get('/recordings/{voiceCall}', [CallDetailController::class, 'recording'])->middleware(['signed', 'throttle:60,1'])->name('api.recordings.play');
 });
 
@@ -147,11 +150,33 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
         Route::get('/rules', [KnowledgeController::class, 'rules'])->middleware('can:organization.view');
         Route::middleware('can:customers.view')->group(function () {
             Route::get('/customers', [CustomerController::class, 'index']);
+            Route::get('/customers/lookup', [CustomerController::class, 'lookup']);   // API-8
             Route::get('/customers/{ulid}', [CustomerController::class, 'show']);
+        });
+        // Adding and editing customers (API-8)
+        Route::post('/customers', [CustomerController::class, 'store'])->middleware(['can:customers.create', 'idempotent']);
+        Route::middleware('can:customers.update')->group(function () {
+            Route::patch('/customers/{ulid}', [CustomerController::class, 'update']);
+            Route::post('/customers/{ulid}/notes', [CustomerController::class, 'addNote'])->middleware('idempotent');
+            Route::post('/customers/{ulid}/tags', [CustomerController::class, 'addTag']);
+            Route::delete('/customers/{ulid}/tags/{tag}', [CustomerController::class, 'removeTag'])->whereNumber('tag');
         });
         Route::get('/inbox/conversations', [InboxController::class, 'index'])->middleware('can:messages.view');
         Route::get('/inbox/conversations/{ulid}', [InboxController::class, 'show'])->middleware('can:messages.view');
         Route::post('/inbox/conversations/{ulid}/reply', [InboxController::class, 'reply'])->middleware(['can:messages.send', 'idempotent']);
+        // Inbox actions (API-7)
+        Route::post('/inbox/conversations/{ulid}/read', [InboxActionsController::class, 'read'])->middleware('can:messages.view');
+        Route::post('/inbox/conversations/{ulid}/messages/{message}/rate', [InboxActionsController::class, 'rate'])->middleware('can:messages.view');
+        Route::middleware('can:messages.send')->group(function () {
+            Route::post('/inbox/conversations', [InboxActionsController::class, 'start'])->middleware('idempotent');
+            Route::get('/inbox/assignees', [InboxActionsController::class, 'assignees']);
+            Route::post('/inbox/conversations/{ulid}/assign', [InboxActionsController::class, 'assign']);
+            Route::post('/inbox/conversations/{ulid}/close', [InboxActionsController::class, 'close']);
+            Route::post('/inbox/conversations/{ulid}/reopen', [InboxActionsController::class, 'reopen']);
+            Route::post('/inbox/conversations/{ulid}/ai', [InboxActionsController::class, 'ai']);
+            Route::post('/inbox/conversations/{ulid}/drafts/{message}/send', [InboxActionsController::class, 'sendDraft'])->middleware('idempotent');
+            Route::post('/inbox/conversations/{ulid}/drafts/{message}/discard', [InboxActionsController::class, 'discardDraft']);
+        });
         Route::get('/social/posts', [SocialPostController::class, 'index'])->middleware('can:social.view');
         Route::post('/social/posts/{ulid}/approve', [SocialPostController::class, 'approve'])->middleware('can:social.manage');
         Route::post('/social/posts/{ulid}/request-changes', [SocialPostController::class, 'requestChanges'])->middleware('can:social.manage');
