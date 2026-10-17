@@ -21,6 +21,7 @@ use App\Http\Controllers\Client\CallExportController;
 use App\Http\Controllers\Client\CustomerExportController;
 use App\Http\Controllers\Client\DataExportController as ClientDataExportController;
 use App\Http\Controllers\Client\InvoiceController as ClientInvoiceController;
+use App\Http\Controllers\Client\InvoicePaymentController as ClientInvoicePaymentController;
 use App\Http\Controllers\Client\ResultsCsvController;
 use App\Http\Controllers\Client\ResultsPdfController;
 use App\Http\Controllers\Client\SearchConsoleController;
@@ -224,6 +225,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/billing', ClientBilling::class)->name('billing');
         Route::get('/billing/invoices/{invoice}', [ClientInvoiceController::class, 'show'])->name('billing.invoice');
         Route::get('/billing/invoices/{invoice}/pdf', [ClientInvoiceController::class, 'pdf'])->name('billing.invoice.pdf');
+        Route::get('/billing/invoices/{invoice}/pay', ClientInvoicePaymentController::class)->middleware('throttle:20,1')->name('billing.pay');
     });
     Route::middleware('can:integrations.manage')->whereIn('provider', ['google', 'microsoft'])->group(function () {
         Route::get('/integrations/calendar/{provider}/connect', [CalendarOAuthController::class, 'redirect'])->middleware('feature:calendar_sync')->name('integrations.calendar.connect');

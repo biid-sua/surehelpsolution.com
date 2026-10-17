@@ -1,5 +1,6 @@
 <div>
     <x-ui.page-header title="Billing" description="Your plan, invoices and payments." />
+    @if (session('status'))<x-ui.alert tone="success" class="mb-6">{{ session('status') }}</x-ui.alert>@endif
 
     @if ($balance > 0)
         @php($first = $outstanding->first())
@@ -29,7 +30,19 @@
                         <div class="rounded-xl bg-surface-2 p-4 ring-1 ring-line">
                             <p class="font-medium text-ink">{{ $option->title }}</p>
                             <p class="mt-1 text-sm text-muted">{{ $option->description }}</p>
-                            @if ($option->url)
+                            @if ($option->key === 'stripe_checkout')
+                                @if ($canManage)
+                                    <div class="mt-3 flex flex-wrap gap-2">
+                                        <x-ui.button :href="$option->url" icon="card">Pay {{ $first->money($first->balanceCents()) }}</x-ui.button>
+                                        @unless ($autopayCard)
+                                            <x-ui.button variant="secondary" :href="$option->url.'?save=1'">Pay and save card for automatic payments</x-ui.button>
+                                        @endunless
+                                    </div>
+                                    @if ($first->autopay_error)<p class="mt-2 text-xs text-danger">Automatic payment didn't go through: {{ $first->autopay_error }}</p>@endif
+                                @else
+                                    <p class="mt-3 text-xs text-subtle">The business owner can pay here.</p>
+                                @endif
+                            @elseif ($option->url)
                                 <x-ui.button class="mt-3" :href="$option->url" target="_blank" rel="noopener" icon="card">Pay {{ $first->money($first->balanceCents()) }}</x-ui.button>
                             @endif
                             @if ($option->details)
@@ -42,6 +55,24 @@
             @else
                 <p class="mt-4 text-sm text-muted">We'll email you how to pay this invoice.</p>
             @endif
+        </x-ui.card>
+    @endif
+
+    @if ($cardPayments)
+        <x-ui.card class="mb-6">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <p class="font-medium text-ink">Automatic payments</p>
+                    @if ($autopayCard)
+                        <p class="mt-1 text-sm text-muted"><x-ui.icon name="card" class="inline size-4" /> {{ $autopayCard }} pays each new invoice when it's issued. You get a receipt by email.</p>
+                    @else
+                        <p class="mt-1 text-sm text-muted">Off. Pay an invoice by card and choose "save card" to have future invoices paid automatically.</p>
+                    @endif
+                </div>
+                @if ($autopayCard && $canManage)
+                    <x-ui.button variant="ghost" wire:click="stopAutopay" wire:confirm="Stop automatic payments and remove the saved card?">Turn off</x-ui.button>
+                @endif
+            </div>
         </x-ui.card>
     @endif
 

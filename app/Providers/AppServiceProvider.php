@@ -16,6 +16,7 @@ use App\Services\Billing\Entitlements;
 use App\Services\Billing\FeatureAccess;
 use App\Services\Billing\Gateways\PaymentGateway;
 use App\Services\Billing\Gateways\PayoneerGateway;
+use App\Services\Billing\Gateways\StripeGateway;
 use App\Services\Calls\CallOutcomes;
 use App\Services\Rules\BusinessRules;
 use App\Services\Telephony\FakeProvider;
@@ -59,6 +60,7 @@ class AppServiceProvider extends ServiceProvider
             default => $this->app->make(FakeProvider::class),
         });
         $this->app->bind(PaymentGateway::class, fn () => match (config('billing.gateway')) {
+            'stripe' => $this->app->make(StripeGateway::class),
             default => $this->app->make(PayoneerGateway::class),
         });
     }

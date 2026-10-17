@@ -24,6 +24,7 @@ use App\Http\Controllers\Chat\WidgetController;
 use App\Http\Controllers\Webhooks\CalendarWebhookController;
 use App\Http\Controllers\Webhooks\MetaWebhookController;
 use App\Http\Controllers\Webhooks\SmsWebhookController;
+use App\Http\Controllers\Webhooks\StripeWebhookController;
 use App\Http\Controllers\Webhooks\VoiceWebhookController;
 use App\Http\Middleware\VerifyTelephonyWebhook;
 use Illuminate\Support\Facades\Route;
@@ -75,6 +76,9 @@ Route::prefix('webhooks/sms')->name('webhooks.sms.')->middleware([VerifyTelephon
     Route::post('/incoming', [SmsWebhookController::class, 'incoming'])->name('incoming');
     Route::post('/status', [SmsWebhookController::class, 'status'])->name('status');
 });
+
+// Card payments: Stripe confirms payments here (signed with the endpoint secret, D64).
+Route::post('/webhooks/stripe', StripeWebhookController::class)->middleware('throttle:600,1')->name('webhooks.stripe');
 
 Route::prefix('v1')->middleware('throttle:api')->group(function () {
     // Authentication routes

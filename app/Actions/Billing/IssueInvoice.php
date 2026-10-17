@@ -4,6 +4,7 @@ namespace App\Actions\Billing;
 
 use App\Actions\Notifications\NotifyOrganization;
 use App\Enums\InvoiceStatus;
+use App\Jobs\ChargeInvoice;
 use App\Models\BusinessLocation;
 use App\Models\Invoice;
 use App\Models\Organization;
@@ -106,6 +107,9 @@ class IssueInvoice
         $this->audit->record('invoice.issued', $invoice, new: ['number' => $invoice->number, 'total_cents' => $total, 'currency' => $currency],
             organization: $organization, actor: $actor, label: $invoice->number);
         $this->notify->handle($organization, new InvoiceIssued($invoice), 'billing.view');
+        if ($organization->autopay_payment_method) {
+            ChargeInvoice::dispatch($invoice->id)->afterCommit(); // automatic payments (D64)
+        }
 
         return $invoice;
     }

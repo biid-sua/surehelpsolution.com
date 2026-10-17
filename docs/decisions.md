@@ -909,3 +909,25 @@ Start these early. The code can be built and tested with your own accounts befor
 - **Mobile API:** `DELETE /api/v1/notifications/device-token` removes the app's device on sign-out.
 
 **Why:** owners and agents asked to hear about missed calls and urgent problems on their phones. Push had silently stopped working when Google retired the old API.
+
+## D64 — Card payments and automatic payments through Stripe, ready to switch on (2026-11-02)
+**Decision:** a `StripeGateway` behind the existing `PaymentGateway` interface (D22), off until `BILLING_GATEWAY=stripe` and the Stripe keys are set. Payoneer stays the default. Setup steps: `docs/billing.md`.
+- **Paying an invoice:**
+  - **Pay by card** creates a Stripe Checkout session for the invoice's balance. It uses the business's Stripe customer (created on first use) and an idempotency key.
+  - Card details are entered only on Stripe's page.
+  - Only `billing.manage` (owners) can pay.
+- **Booking what Stripe confirms:**
+  - signed webhooks (`Stripe-Signature`, HMAC-SHA256 with a 5-minute window) for completed checkouts and payment intents;
+  - each event id is processed once;
+  - payments are booked through `RecordPayment` with method `stripe_card` and the PaymentIntent id as the reference, so no payment is booked twice;
+  - no person is the "recorded by";
+  - a payment is never booked above the open balance.
+- **Automatic payments:**
+  - **Saving the card:** "Pay and save card" sets `setup_future_usage=off_session`. The card's id and label are stored on the business, and both actions are audited.
+  - **Charging it:** each newly issued invoice is charged to the saved card once (`ChargeInvoice`, idempotency key `autopay-{invoice}`), off session.
+  - **A decline or a bank's request to confirm** leaves the invoice open, records the reason on the invoice and in the audit log, and sends "Automatic payment didn't go through" (payment.failed). It isn't retried.
+  - **Turning it off** removes the card (detached at Stripe).
+- **No SDK:** a small form-encoded REST client, tested with faked responses.
+- **Not in this part:** refunds through the app (made in Stripe), retrying declined charges, Stripe Billing subscriptions (SureHelp keeps its own billing, D22), and bank debit (ACH) through Stripe.
+
+**Why:** card payments, and payments that happen without anyone chasing them, were the next step in Phase 5. Building them behind the existing interface means switching on Stripe later is a configuration change, not a migration.

@@ -20,6 +20,10 @@ use Illuminate\Support\Str;
  * @property OrganizationStatus $status
  * @property string|null $status_reason why staff last paused or cancelled the service
  * @property Carbon|null $status_changed_at
+ * @property string|null $stripe_customer_id card payments (D64)
+ * @property string|null $autopay_payment_method saved card that pays new invoices automatically
+ * @property string|null $autopay_card_label e.g. "Visa •••• 4242 · 08/28"
+ * @property Carbon|null $autopay_enabled_at
  * @property array<string, string>|null $setup_progress setup wizard step => done | skipped
  * @property Carbon|null $setup_completed_at
  * @property int|null $average_job_value_cents for estimated revenue in Results
@@ -53,6 +57,7 @@ class Organization extends Model
             'status' => OrganizationStatus::class,
             'setup_progress' => 'array',
             'setup_completed_at' => 'datetime',
+            'autopay_enabled_at' => 'datetime',
             'average_job_value_cents' => 'integer',
             'approve_agent_bookings' => 'boolean',
             'customer_change_hours' => 'integer',

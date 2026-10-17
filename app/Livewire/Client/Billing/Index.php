@@ -17,6 +17,7 @@ use App\Notifications\PlanChangeRequested;
 use App\Services\Billing\BillingSettings;
 use App\Services\Billing\Entitlements;
 use App\Services\Billing\Gateways\PaymentGateway;
+use App\Services\Billing\Stripe\CardPayments;
 use App\Services\Billing\Usage;
 use App\Support\Audit\Audit;
 use Illuminate\Contracts\View\View;
@@ -44,6 +45,19 @@ class Index extends Component
     public function mount(): void
     {
         $this->authorize('billing.view', $this->organization());
+        // Back from Stripe Checkout: the payment is booked when Stripe confirms it, usually within seconds.
+        if (is_string(request()->query('paid'))) {
+            session()->flash('status', 'Thank you! Your card payment is being confirmed and will show here in a moment.');
+        }
+    }
+
+    /** Stop charging new invoices to the saved card (D64). */
+    public function stopAutopay(CardPayments $payments): void
+    {
+        $organization = $this->organization();
+        $this->authorize('billing.manage', $organization);
+        $payments->stopAutopay($organization, auth()->user());
+        $this->dispatch('toast', type: 'success', message: 'Automatic payments are off. The card was removed.');
     }
 
     public function startReport(string $ulid): void
@@ -139,6 +153,8 @@ class Index extends Component
                 $active->pluck('addon')->filter(fn (?Addon $a) => $a && ! $a->is_active)   // retired, but this business still has it
             ),
             'activeAddons' => $active,
+            'cardPayments' => app(CardPayments::class)->enabled(),
+            'autopayCard' => $organization->fresh()?->autopay_card_label,
         ]);
     }
 }

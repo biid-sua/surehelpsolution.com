@@ -72,9 +72,44 @@ php artisan optimize
 
 The cron entry for `schedule:run` already in place runs `billing:run` daily. To test it by hand, run `php artisan billing:run`; it's safe to run more than once a day.
 
-## Later: automatic payments
+## Card payments and automatic payments (Stripe, D64)
 
-`App\Services\Billing\Gateways\PaymentGateway` is the seam. When an automated checkout becomes available, a new gateway can return a hosted-checkout URL per invoice and confirm payments from a webhook through the same `RecordPayment` action. Candidates are Payoneer Checkout (it currently needs a Hong Kong entity and about $20k a month in volume), Stripe or Paddle. Nothing else changes: invoices, numbers, reminders and receipts stay as they are.
+Built and switched off. Payoneer stays the provider (`BILLING_GATEWAY=payoneer`) until you have a Stripe account, which needs a US company or another country Stripe supports.
+
+### What changes when Stripe is on
+- **Paying an invoice:** on *Billing*, owners see **Pay by card**. It opens Stripe's own secure checkout page, so card numbers never touch SureHelp.
+- **Saving the card:** **Pay and save card for automatic payments** keeps the card at Stripe. Every new invoice is then charged to it when it's issued.
+  - The owner sees the card ("Visa •••• 4242 · 08/28") and can **Turn off** automatic payments at any time; the card is removed from Stripe.
+- **Recording payments:** payments are booked automatically when Stripe confirms them, with the method "Card (Stripe)" and Stripe's payment ID as the reference.
+  - The receipt email and the in-app notice go out as before.
+  - Nobody records these payments in *Admin › Billing*.
+- **A declined automatic charge:** the invoice stays open with the normal reminders.
+  - The owner gets "Automatic payment didn't go through", with the bank's reason.
+  - The Billing page shows the reason next to the Pay button.
+  - The charge isn't retried automatically.
+- **Other ways to pay:** bank transfer and "I've paid" remain for people who don't pay by card. Admins can still record any payment by hand.
+- **Managers** can see billing but can't pay. That's the owner's job, as before.
+
+### Turning it on
+1. Create a Stripe account and activate it (business details, bank account for payouts).
+2. **Developers › API keys:** copy the **secret key** (`sk_live_…`).
+3. **Developers › Webhooks › Add endpoint:**
+   - URL: `https://YOUR-DOMAIN/api/webhooks/stripe`.
+   - Events: `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `payment_intent.succeeded`, `payment_intent.payment_failed`.
+   - Copy the endpoint's **signing secret** (`whsec_…`).
+4. In `.env`, set the following, then run `php artisan config:cache`:
+   ```
+   BILLING_GATEWAY=stripe
+   STRIPE_SECRET=sk_live_...
+   STRIPE_WEBHOOK_SECRET=whsec_...
+   ```
+5. Run `php artisan migrate` (Stripe customer, saved card and charge-attempt fields).
+6. Test with Stripe's test keys first (`sk_test_…`, card 4242 4242 4242 4242), then switch to the live keys.
+
+### Notes
+- **Refunds** are made in the Stripe dashboard. Record a credit or adjust the invoice in *Admin › Billing*, because a refund doesn't change SureHelp's records by itself.
+- **Duplicate events:** Stripe may send an event more than once. Each event is handled once, and a payment is booked only once (its Stripe ID is the reference).
+- **No overpayment:** a payment larger than what's left on the invoice is booked only up to the balance, and the rest is reported to the error log for a refund.
 
 ## Usage, add-ons and limits (D30)
 

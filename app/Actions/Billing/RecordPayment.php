@@ -27,9 +27,11 @@ class RecordPayment
     ) {}
 
     /**
+     * @param  User|null  $actor  null when the payment provider confirmed it itself (D64)
+     *
      * @throws ValidationException
      */
-    public function handle(Invoice $invoice, int $amountCents, PaymentMethod $method, ?string $reference, User $actor, ?CarbonImmutable $receivedAt = null, ?string $notes = null): Payment
+    public function handle(Invoice $invoice, int $amountCents, PaymentMethod $method, ?string $reference, ?User $actor, ?CarbonImmutable $receivedAt = null, ?string $notes = null): Payment
     {
         $reference = filled($reference) ? trim((string) $reference) : null;
 
@@ -55,7 +57,7 @@ class RecordPayment
                 'provider' => $method->provider(),
                 'reference' => $reference,
                 'received_at' => $receivedAt ?? now(),
-                'recorded_by_user_id' => $actor->id,
+                'recorded_by_user_id' => $actor?->id,
                 'notes' => $notes,
             ]);
 
