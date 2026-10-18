@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
 use App\Services\Metrics\ResultsReport;
+use App\Services\Metrics\SourceReport;
 use App\Support\Money;
 use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Http\Request;
@@ -14,7 +15,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class ResultsCsvController extends Controller
 {
-    public function __invoke(Request $request, CurrentOrganization $current, ResultsReport $report): StreamedResponse
+    public function __invoke(Request $request, CurrentOrganization $current, ResultsReport $report, SourceReport $sources): StreamedResponse
     {
         $organization = $current->get();
         abort_if($organization === null, 403);
@@ -42,6 +43,18 @@ class ResultsCsvController extends Controller
         foreach ($r['reasons'] as $reason => $count) {
             $rows[] = ['Top reasons for calling', $reason, $count, ''];
         }
+        $s = $sources->compute($organization, $period['start'], $period['end']);
+        foreach (SourceReport::LEAD_SOURCES as $key => $label) {
+            $rows[] = ['New customers by source', $label, $s['leads'][$key], ''];
+        }
+        $rows[] = ['New customers by source', 'Added or imported by your team', $s['added_by_team'], ''];
+        foreach (SourceReport::BOOKING_SOURCES as $key => $label) {
+            $rows[] = ['Bookings by source', $label, $s['bookings'][$key], ''];
+        }
+        $rows[] = ['Website', 'Pages viewed with the SureHelp snippet', $s['website_views'] ?? '', $s['change']['website_views'] ?? ''];
+        $rows[] = ['Website', 'New customers from the website', $s['website_leads'], $s['change']['website_leads'] ?? ''];
+        $rows[] = ['Social media', 'Posts published', $s['social_posts'], $s['change']['social_posts'] ?? ''];
+        $rows[] = ['Social media', 'Facebook and Instagram conversations', $s['social_messages'], $s['change']['social_messages'] ?? ''];
         if ($r['busiest']) {
             $rows[] = ['Busiest time', $r['busiest'], '', ''];
         }

@@ -14,13 +14,14 @@
         <x-ui.card class="mb-6">
             <div class="flex flex-wrap items-center gap-3">
                 <x-ui.badge :tone="$post->status->tone()">{{ $post->status->label() }}</x-ui.badge>
+                @if ($post->aiLabel())<x-ui.badge tone="info">{{ $post->aiLabel() }}</x-ui.badge>@endif
                 <span class="text-sm text-muted">
                     @if ($post->scheduled_at && in_array($post->status->value, ['scheduled', 'in_review', 'draft'], true))
                         Planned for {{ $post->scheduled_at->setTimezone($timezone)->format('l j F Y, g:i A') }} ({{ $timezone }})
                     @elseif ($post->published_at)
                         Published {{ $post->published_at->setTimezone($timezone)->format('j M Y, g:i A') }}
                     @endif
-                    · by {{ $post->source === 'team' ? 'the SureHelp team' : ($post->author->name ?? 'a former team member') }}
+                    · {{ $post->source === 'ai' ? 'planned by AI for' : 'by' }} {{ $post->source === 'team' ? 'the SureHelp team' : ($post->author->name ?? 'a former team member') }}
                     @if ($post->approver) · approved by {{ $post->approver->name }} @endif
                 </span>
             </div>
@@ -117,10 +118,64 @@
                         @error('accounts') <p class="mt-2 text-sm text-danger">{{ $message }}</p> @enderror
                     </fieldset>
 
+                    @if ($editable)
+                        {{-- AI content studio (D66) --}}
+                        <div x-data="{ open: {{ $body === '' && ! $post ? 'true' : 'false' }} }" class="mt-5 rounded-xl bg-surface-2 p-4 ring-1 ring-line">
+                            <button type="button" @click="open = ! open" class="flex w-full items-center justify-between gap-3 text-left" :aria-expanded="open">
+                                <span class="flex items-center gap-2 font-medium text-ink"><x-ui.icon name="sparkles" class="size-4 text-brand-300" /> Write with AI</span>
+                                <span class="text-xs text-subtle">{{ $aiUsedPercent }}% of this month's AI allowance used</span>
+                            </button>
+                            <div x-show="open" x-cloak class="mt-3 space-y-3">
+                                @if ($aiBlocker)
+                                    <p class="text-sm text-muted">{{ $aiBlocker }}</p>
+                                @else
+                                    <div>
+                                        <label for="ai-brief" class="sh-label">What's the post about?</label>
+                                        <textarea id="ai-brief" wire:model="aiBrief" rows="2" maxlength="1000" class="sh-input" placeholder="e.g. Remind people to get their AC checked before summer. We have openings next week."></textarea>
+                                        @error('aiBrief') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror
+                                    </div>
+                                    <div class="flex flex-wrap items-end gap-3">
+                                        <div>
+                                            <label for="ai-tone" class="sh-label">Tone</label>
+                                            <select id="ai-tone" wire:model="aiTone" class="sh-input py-1.5">
+                                                @foreach ($tones as $value => $label)<option value="{{ $value }}">{{ $label }}</option>@endforeach
+                                            </select>
+                                        </div>
+                                        <x-ui.button type="button" icon="sparkles" wire:click="writeWithAi" wire:loading.attr="disabled" wire:target="writeWithAi">
+                                            <span wire:loading.remove wire:target="writeWithAi">{{ $body === '' ? 'Write it' : 'Write it again' }}</span>
+                                            <span wire:loading wire:target="writeWithAi">Writing…</span>
+                                        </x-ui.button>
+                                    </div>
+                                    <p class="text-xs text-subtle">Written for each network you picked, from your business details and <a href="{{ route('app.social.accounts') }}#brand-voice" class="text-brand-300 hover:underline">brand voice</a>. Read it before you post.</p>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+
+                    @if ($aiNote)
+                        <x-ui.alert tone="info" class="mt-5" title="From the AI's month plan">{{ $aiNote }}</x-ui.alert>
+                    @endif
+
+                    @if ($aiFlags !== [])
+                        <x-ui.alert tone="warning" class="mt-5" title="Check before posting">
+                            <ul class="list-disc space-y-0.5 pl-4">@foreach ($aiFlags as $flag)<li>{{ $flag }}</li>@endforeach</ul>
+                        </x-ui.alert>
+                    @endif
+
                     <div class="mt-5">
                         <label for="post-body" class="sh-label">Text</label>
                         <textarea id="post-body" wire:model.live.debounce.400ms="body" rows="7" class="sh-input" placeholder="What do you want to tell your customers?" @disabled(! $editable)></textarea>
-                        <p class="mt-1 text-right text-xs text-subtle">{{ mb_strlen($body) }} characters</p>
+                        <div class="mt-1 flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex flex-wrap gap-1.5">
+                                @if ($editable && ! $aiBlocker && $body !== '')
+                                    @foreach ($rewrites as $how => $label)
+                                        <button type="button" wire:click="rewriteWithAi('{{ $how }}')" wire:loading.attr="disabled" wire:target="rewriteWithAi" class="rounded-full px-2.5 py-1 text-xs text-muted ring-1 ring-line hover:text-ink hover:ring-brand-400 disabled:opacity-50">{{ $label }}</button>
+                                    @endforeach
+                                    <span wire:loading wire:target="rewriteWithAi" class="px-1 py-1 text-xs text-subtle">Rewriting…</span>
+                                @endif
+                            </div>
+                            <p class="text-xs text-subtle">@if ($aiAssisted)<span class="mr-2 text-brand-300">AI-assisted</span>@endif{{ mb_strlen($body) }} characters</p>
+                        </div>
                         @error('body') <div class="mt-1 space-y-0.5 text-sm text-danger">@foreach ($errors->get('body') as $m) <p>{{ $m }}</p> @endforeach</div> @enderror
                     </div>
 

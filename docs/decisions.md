@@ -951,3 +951,192 @@ Start these early. The code can be built and tested with your own accounts befor
 - **Not in this part:** taking a card at sign-up (owners can save one under Billing, D64), a CAPTCHA, and choosing add-ons at sign-up.
 
 **Why:** every new business needed a sales call and staff typing in their details. Letting businesses start a trial themselves removes that step, while staff keep control of going live.
+
+## D66 — AI content studio for social posts (2026-11-04)
+**Decision:** the social composer and calendar get AI writing (G-2). It runs on the existing `AiProvider` (Claude, structured JSON output) with the SEO service's public-facts builder (D57). Setup and behaviour: `docs/social.md` › Writing with AI.
+- **Three uses:**
+  - **write:** a version per network from a short brief and a tone;
+  - **rewrite:** shorter, friendlier, more professional, or with a call to action;
+  - **plan the month:** 1–5 posts a week as drafts in the calendar, queued (`PlanSocialMonth`).
+- **Only public facts:** the AI sees the business's public details and its brand voice. Internal and team-only knowledge never reach it, as for SEO.
+- **Fact checks for a person to resolve:**
+  - claims the AI itself couldn't back up;
+  - phone numbers, prices, discounts and "years in business" not found in the details (`FactCheck`);
+  - network-rule errors.
+
+  Nothing is removed automatically; the person reading the post decides.
+- **People stay in charge:**
+  - AI never publishes; month-plan posts are drafts that the publisher ignores.
+  - An AI draft scheduled by anyone but an owner waits for an owner's approval, even with approval switched off. An owner scheduling it counts as approving it. This replaces "AI posts always need approval", which made owners approve their own scheduling.
+- **Labels:** *AI draft*, *Written by AI* or *AI-assisted* on posts; `ai_label` in the API.
+- **Allowance:**
+  - each request is logged in `social_ai_runs` with its tokens;
+  - 150,000 tokens a month by default, or the plan's `social_ai_tokens` limit;
+  - separate from the SEO allowance;
+  - an unavailable AI uses none;
+  - the runs are deleted when an account closes.
+- **Brand voice:** one free-text field on the business profile, edited under Social › Accounts & settings by people who manage posts.
+- **Not in this part:** AI-chosen photos or image generation, alt text suggestions, writing in other languages, and learning from post results (G-5 analytics first).
+
+**Why:** a blank post box is the main reason businesses stop posting. Drafting from the business's own facts, with a person checking and scheduling, keeps posts accurate and on-brand. The AI and approval plumbing already existed.
+
+## D67 — Content-Security-Policy on every page (2026-11-05)
+**Decision:** every HTML page gets a Content-Security-Policy, in force by default. Details: `docs/security.md`.
+- **Scripts:**
+  - run only from this site, the public website's three CDNs, or inline with a fresh per-request nonce;
+  - Vite and Livewire add the nonce themselves; our inline scripts use `Vite::cspNonce()`;
+  - inline event handlers on the public site became `data-call` attributes handled by one listener.
+- **Kept on purpose:**
+  - `'unsafe-eval'`, because Alpine inside Livewire evaluates its attributes. Moving to Alpine's CSP build would mean rewriting every inline expression.
+  - Inline styles, because the design sets colours and sizes in `style` attributes. Style injection is far less dangerous than script injection.
+  - Any HTTPS image or media source: social avatars and media.
+- **Blocked:** plugins (`object-src 'none'`), `<base>` changes, framing by other sites, and connections except to this site and Twilio.
+- **Reporting and rollback:**
+  - browsers report what was blocked to `/api/csp-report` (throttled), written to the security log;
+  - `CSP_MODE=report` switches to report-only by changing `.env` (then `php artisan config:cache`), with no code deploy;
+  - `CSP_MODE=off` removes it.
+- **Checked in a browser:** all 92 pages without parameters, as a visitor, owner, agent and admin, with no violations. The phone, charts, calendar, Alpine panels, Livewire saves and the website calculator all work under the policy.
+- **Fixed along the way (existing bugs):**
+  - the FAQ page script failed on items without a paragraph;
+  - the website chat snippet's Copy button never worked, because `@js()` isn't compiled inside a component attribute.
+
+**Why:** the last open item from the security audit. With a policy, an injected script, the usual result of an XSS bug, doesn't run, even if a template mistake lets one through.
+
+## D68 — Where customers come from, in Results (2026-11-06)
+**Decision:** Results, its PDF and its CSV get a "Where customers came from" section (the first part of G-5). It is counted only from SureHelp's own records, so it works today without any network's analytics approval.
+- **New customers by how they first got in touch:**
+  - phone calls;
+  - website form or online booking;
+  - website chat;
+  - Facebook Messenger, Instagram and text messages, taken from the customer's first conversation.
+
+  Customers the business typed in or imported are shown apart ("not counted"), so the sources add up to real inbound interest.
+- **Bookings by who made them:**
+  - SureHelp agents by phone;
+  - online booking on the website;
+  - the AI assistant;
+  - the business's own team.
+
+  Events copied in from a connected Google or Microsoft calendar aren't counted as bookings.
+- **Website pages viewed:**
+  - the snippet asks for its settings once per page, so that request is counted;
+  - one number per business per day (`website_daily_views`), in the business's timezone;
+  - no visitor, IP address or cookie is stored, and no extra request is made;
+  - shown as "—" until the snippet has reported a view.
+- **Social media:** posts published (per account) and new Facebook and Instagram conversations.
+- **Comparisons:** each total is compared with the previous period of the same length. The page views are deleted when an account closes.
+- **Not in this part (rest of G-5):**
+  - reach, engagement and clicks from Facebook, Instagram, LinkedIn and Google, which need each network's insights permissions after app review;
+  - tracking links in posts.
+
+**Why:** owners asked which of the things they pay for actually bring customers. The data was already in SureHelp, just never added up.
+
+## D69 — Link-in-bio page and last-minute openings (2026-11-07)
+**Decision:** the first two growth tools from G-6, built only on what SureHelp already has.
+
+**Link in bio** (Social › Accounts & settings): a public page at `/b/{business-slug}` for Instagram, Facebook and TikTok bios.
+- **What it shows:** the logo or initial, name, town and description.
+- **Buttons:**
+  - **Book online** and **Send us a message**, when those website tools are on: they open the SureHelp snippet on the page;
+  - **Call**, from the profile phone;
+  - **Visit our website**;
+  - up to six links of the business's own.
+- **When it's public:** it's off until the business switches it on, and it disappears while the business is paused, cancelled or closed. Changes are audited.
+- **The snippet can now be opened from any page:**
+  - links to `#surehelp-book`, `#surehelp-chat`, `#surehelp-call` or `#surehelp-lead`, the same in the page address, or `SureHelp.open('book')`;
+  - so a business's own website can have a "Book now" button too.
+- **Snippet fixes:**
+  - SureHelp's own pages are always allowed, even when a business limits the snippet to its own site.
+  - When a browser sends no `Origin` (a same-site page load), the `Referer` tells where the page is. Before, such requests were refused.
+
+**Last-minute openings** (Social › Posts):
+- **The card:** shows free one-hour times in the next three open days, at most four per day, spread across the day. It uses the same rules as online booking: hours, notice, existing appointments and busy time from connected calendars.
+- **"Post about these openings":** opens a new post with the times and the booking link, the link page's `#surehelp-book` when it's live, otherwise the website. A matching brief is filled in for Write with AI.
+
+**Not in this part (rest of G-6):** Google Business Profile sync, turning reviews into posts, job photos from agents, seasonal campaign packs, and several locations.
+
+**Why:** "link in bio" and "we have a slot tomorrow" are the two posts small service businesses make most. Both now take a click and lead straight to a booking.
+
+## D70 — API for the new mobile app: capabilities, notification centre, account closure (2026-11-08)
+**Decision:** the first server tasks from `docs/mobile-app-plan.md` (API-1, API-2, API-4). Details: `docs/api.md`.
+- **`GET /me/capabilities`:** the permissions a person actually has, plus for business users their role, features, plan limits and plan, and the account's state (email confirmed, two-step sign-in on or required, may close the account). The app hides what someone can't use; the server still checks every call.
+- **Notification centre:**
+  - the same items as the web bell, paginated, with read state, mark one or all read, and remove;
+  - each item gets a `target`: the web route name and its parameters, worked out from the stored link by matching the router. Links to other sites get no URL or target.
+  - Pushes now carry `notification_id`, `route` and `route_params`, so a tap opens the right screen and marks the item read.
+  - The two staff notifications that lacked an `event` got one.
+- **Account closure in the app:** the same rules as the web (owner only, business name and password, 5 tries per 10 minutes, a 30-day grace period, keep the account until then).
+  - Everyone else gets `can_request: false`, with whom to ask and the contact email.
+  - This meets Apple's rule 5.1.1(v) and Google Play's account-deletion requirement for apps with sign-in: businesses own their data, so closing the business is the deletion.
+- **Not in this part:** the other API tasks (API-3 and API-5 to API-19) in the plan's order.
+
+**Why:** the mobile app can't be submitted to the stores without in-app account deletion. A notification centre and screens that open from a push are the base of the app's experience. Telling the app what a person may use stops it showing screens that would only answer 403.
+
+## D71 — API for the mobile app: settings, update check, call details, Results (2026-11-09)
+**Decision:** the next server tasks from `docs/mobile-app-plan.md` (API-3, API-5, API-6, API-10). Details: `docs/api.md`.
+- **Notification settings:**
+  - the same choices as the web pages, per person: events and channels (only those the person can receive), quiet hours, and the daily summary for business users;
+  - the texting number is verified with a code, using the web's `NotificationPhone` rules (10 minutes, 5 tries, 3 codes per 10 minutes).
+- **Update check:**
+  - `GET /app/version` needs no sign-in, so a build too old to sign in can still be told to update;
+  - `minimum` blocks the app with "Please update" and `latest` shows a gentle prompt, both per platform in `.env`.
+- **Call details:**
+  - what the agent logged, plus the phone call itself;
+  - the recording, AI summary and transcript need `calls.recording.view`, as on the web;
+  - the recording is a signed link valid for 15 minutes that an audio player opens without the token, still checked against the person's permission and audited with `channel: app`.
+- **Results:** the same numbers as the web page and PDF, including where customers came from (D68), plus the PDF itself.
+
+**Why:** these are the screens owners use most on the phone: who called and what was said, how the month went, and controlling what buzzes them. The update check lets old builds be retired safely once the new app ships.
+
+## D72 — API for the mobile app: inbox actions, customers, app links (2026-11-10)
+**Decision:** the next server tasks from `docs/mobile-app-plan.md` (API-7, API-8, API-16). Details: `docs/api.md`.
+- **Inbox:** the web Inbox's actions, all audited as on the web:
+  - start a text conversation (the consent rules of D62);
+  - assign, close and reopen;
+  - turn the AI off or on for a conversation;
+  - mark read;
+  - send or discard the AI's suggested reply;
+  - rate AI answers with a correction.
+
+  Texted pictures sit behind a web address that needs a browser session, so the app gets signed links valid for an hour; each still checks the person's `messages.view`. Sending pictures is still TEL-4.
+- **Customers:**
+  - adding uses one `CreateCustomer` action, now shared with the web, so duplicate checks are identical;
+  - a taken phone number answers `409` with the existing customer, and a lookup warns while typing;
+  - editing is partial (fields not sent are kept) through the web's `UpdateCustomer`, which records consent changes;
+  - notes and tags as on the web.
+- **App links:** `/.well-known/assetlinks.json` and `/.well-known/apple-app-site-association` are built from config. They list no app until the store builds' fingerprints and team id are set.
+- **Bug found while testing:** the first version of the signed picture link had a double slash in it, because `url()` drops a trailing slash. A test now opens the link.
+
+**Why:** answering customers and keeping their details right are the things owners do most between jobs. App links make every email and notification link open straight in the app.
+
+## D73 — API for the mobile app: social posts, billing, team (2026-11-11)
+**Decision:** API-9, API-11 and API-12 from `docs/mobile-app-plan.md`, each through the same actions as the web, so the rules can't drift. Details: `docs/api.md`.
+- **Social posts:** the web composer's rules through `SavePost`:
+  - per-network checks;
+  - owner approval for managers' posts and AI drafts;
+  - the scheduling window.
+
+  Also: a "check without saving" endpoint for live hints, photo upload, Write with AI and rewrites (D66), last-minute openings, the link page (D69), cancel, retry and delete. They're behind the `social_publishing` feature like the web pages.
+- **Billing:**
+  - the plan, balance, invoices with lines and payments, and the PDF;
+  - paying by card returns a Stripe Checkout address for an in-app browser. Stripe sends people back to `/app/billing?paid=…`, which app links open in the app. The payment is booked from Stripe's webhook as before.
+  - Also: reporting a payment made another way, and turning automatic payments off.
+  - Managers see billing; only owners pay or change it.
+- **Team:** members and pending invitations, inviting (managers invite staff; owners invite managers too; seat limits apply), resending and cancelling invitations, changing roles and removing people (owners). Nobody changes the owner's access or their own.
+
+**Why:** with these, a business owner can run their day from the phone: posts, money and people. Each endpoint uses the web's action, so a rule changed for the web changes for the app too.
+
+## D74 — API for the mobile app: agents, search, OpenAPI (2026-11-12)
+**Decision:** the last planned server tasks from `docs/mobile-app-plan.md` (API-13, 14, 15, 17, 19). Only API-18 is left, and it waits for a decision on calls in the app. Details: `docs/api.md`.
+- **Shift requests:** swap or time off through the web's `ShiftRequests` service. Agents see their requests and withdraw waiting ones; schedulers still decide on the web.
+- **Quality reviews:** agents read only their own scored calls, with the scorecard, strengths and improvements, and confirm they've read them.
+- **Availability:** calls still ring the softphone on a computer, so the app can only step away or come back while that softphone is online. It changes the status without counting as a softphone check-in, so the router never offers calls to a device that can't answer.
+- **Search:** the web search's queries moved into a shared `BusinessSearch` service used by the web page and the app, with the same per-permission groups.
+- **OpenAPI:** `GET /openapi.json` is built from the routes, so it can't drift:
+  - paths, methods and parameters;
+  - sign-in, permission, role and feature checks, idempotency keys and rate limits;
+  - a summary from each controller's doc comment.
+
+  Field detail stays in `docs/api.md`.
+
+**Why:** with these, the app covers agents' day too: schedule, feedback, and stepping away. The generated description gives the mobile team a checkable contract.

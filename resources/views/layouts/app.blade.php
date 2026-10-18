@@ -16,13 +16,23 @@
   <link rel="apple-touch-icon" href="{{ asset('assets/img/favicon.png') }}">
 
   <!-- Colour theme (D59): the visitor's choice, kept in this browser only; applied before the page paints. -->
-  <script>
+  <script nonce="{{ Vite::cspNonce() }}">
     (() => {
       try {
         const theme = localStorage.getItem('surehelp.site-theme');
         if (@json(array_keys(config('themes.site'))).includes(theme) && theme !== 'indigo') document.documentElement.dataset.siteTheme = theme;
       } catch (e) { /* storage blocked: default theme */ }
     })();
+
+    // Buttons name the page function they run (data-call, data-arg) instead of inline onclick
+    // attributes, which the Content-Security-Policy blocks (D67).
+    document.addEventListener('click', (event) => {
+      const el = event.target.closest('[data-call]');
+      if (!el) return;
+      if (el.dataset.call === 'removeParent') { el.parentElement?.remove(); return; }
+      const fn = window[el.dataset.call];
+      if (typeof fn === 'function') fn(el.dataset.arg);
+    });
   </script>
   <link href="{{ asset('assets/css/site-themes.css') }}" rel="stylesheet">
 
@@ -952,7 +962,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 
-<script>
+<script nonce="{{ Vite::cspNonce() }}">
   // Initialize AOS
   AOS.init({
     duration: 1000,

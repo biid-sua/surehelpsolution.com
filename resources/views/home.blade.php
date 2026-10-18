@@ -2212,39 +2212,39 @@
 
                 <!-- Buttons -->
                 <div class="calculator-buttons">
-                  <button class="calc-btn function-btn" onclick="clearCalculator()">C</button>
-                  <button id="btnCalls" class="calc-btn function-btn" onclick="setField('missedCalls')">
+                  <button class="calc-btn function-btn" data-call="clearCalculator">C</button>
+                  <button id="btnCalls" class="calc-btn function-btn" data-call="setField" data-arg="missedCalls">
                     Calls<br> <span id="btnCallsValue">0</span>
                   </button>
-                  <button id="btnValue" class="calc-btn function-btn" onclick="setField('avgCallValue')">
+                  <button id="btnValue" class="calc-btn function-btn" data-call="setField" data-arg="avgCallValue">
                     Value<br> $<span id="btnValueAmount">200</span>
                   </button>
-                  <button id="btnRate" class="calc-btn function-btn" onclick="setField('conversionRate')">
+                  <button id="btnRate" class="calc-btn function-btn" data-call="setField" data-arg="conversionRate">
                     Rate<br> <span id="btnRatePercent">25</span>%
                   </button>
 
                   <!-- Row 1 -->
-                  <button class="calc-btn number-btn" onclick="inputNumber('7')">7</button>
-                  <button class="calc-btn number-btn" onclick="inputNumber('8')">8</button>
-                  <button class="calc-btn number-btn" onclick="inputNumber('9')">9</button>
-                  <button class="calc-btn operation-btn" onclick="calculateROI()">=</button>
+                  <button class="calc-btn number-btn" data-call="inputNumber" data-arg="7">7</button>
+                  <button class="calc-btn number-btn" data-call="inputNumber" data-arg="8">8</button>
+                  <button class="calc-btn number-btn" data-call="inputNumber" data-arg="9">9</button>
+                  <button class="calc-btn operation-btn" data-call="calculateROI">=</button>
 
                   <!-- Row 2 -->
-                  <button class="calc-btn number-btn" onclick="inputNumber('4')">4</button>
-                  <button class="calc-btn number-btn" onclick="inputNumber('5')">5</button>
-                  <button class="calc-btn number-btn" onclick="inputNumber('6')">6</button>
-                  <button class="calc-btn function-btn" onclick="backspace()">⌫</button>
+                  <button class="calc-btn number-btn" data-call="inputNumber" data-arg="4">4</button>
+                  <button class="calc-btn number-btn" data-call="inputNumber" data-arg="5">5</button>
+                  <button class="calc-btn number-btn" data-call="inputNumber" data-arg="6">6</button>
+                  <button class="calc-btn function-btn" data-call="backspace">⌫</button>
 
                   <!-- Row 3 -->
-                  <button class="calc-btn number-btn" onclick="inputNumber('1')">1</button>
-                  <button class="calc-btn number-btn" onclick="inputNumber('2')">2</button>
-                  <button class="calc-btn number-btn" onclick="inputNumber('3')">3</button>
-                  <button class="calc-btn number-btn" onclick="inputNumber('.')">.</button>
+                  <button class="calc-btn number-btn" data-call="inputNumber" data-arg="1">1</button>
+                  <button class="calc-btn number-btn" data-call="inputNumber" data-arg="2">2</button>
+                  <button class="calc-btn number-btn" data-call="inputNumber" data-arg="3">3</button>
+                  <button class="calc-btn number-btn" data-call="inputNumber" data-arg=".">.</button>
 
                   <!-- Row 4 -->
-                  <button class="calc-btn number-btn zero-btn" onclick="inputNumber('0')">0</button>
-                  <button class="calc-btn function-btn" onclick="showResults()">Results</button>
-                  <button class="calc-btn function-btn" onclick="resetCalculator()">Reset</button>
+                  <button class="calc-btn number-btn zero-btn" data-call="inputNumber" data-arg="0">0</button>
+                  <button class="calc-btn function-btn" data-call="showResults">Results</button>
+                  <button class="calc-btn function-btn" data-call="resetCalculator">Reset</button>
                 </div>
 
                 <!-- Hidden Inputs -->
@@ -2302,7 +2302,7 @@
 
               <!-- CTA -->
               <div class="cta-section">
-                <button type="button" class="btn btn-primary btn-lg" data-bs-dismiss="modal" onclick="scrollToContact()">
+                <button type="button" class="btn btn-primary btn-lg" data-bs-dismiss="modal" data-call="scrollToContact">
                   <i class="fas fa-rocket"></i> Start Capturing Every Lead Today
                 </button>
               </div>
@@ -2321,7 +2321,7 @@
 @endsection
 
 @section('scripts')
-  <script>
+  <script nonce="{{ Vite::cspNonce() }}">
   // Add click event to the toggle
         document.getElementById('pricingToggle').addEventListener('change', function() {
             const monthlyPrices = document.querySelectorAll('.price-monthly');

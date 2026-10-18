@@ -13,6 +13,7 @@ use App\Http\Controllers\Agent\CalendarOAuthController as AgentCalendarOAuthCont
 use App\Http\Controllers\Agent\CallExportController as AgentCallExportController;
 use App\Http\Controllers\Agent\PhoneController as AgentPhoneController;
 use App\Http\Controllers\Agent\TrainingFileController;
+use App\Http\Controllers\AppLinksController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BusinessLogoController;
 use App\Http\Controllers\Client\AppointmentExportController;
@@ -30,6 +31,7 @@ use App\Http\Controllers\Client\SocialOAuthController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InboxMediaController;
+use App\Http\Controllers\LinkPageController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PasswordChangeController;
@@ -285,6 +287,13 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
 });
 
 // Agent workspace (spec §20–21)
+// Links that open the mobile app (API-16): read by Android and iOS, no redirects allowed.
+Route::get('/.well-known/assetlinks.json', [AppLinksController::class, 'android'])->name('app-links.android');
+Route::get('/.well-known/apple-app-site-association', [AppLinksController::class, 'apple'])->name('app-links.apple');
+
+// A business's link-in-bio page (D69): public when the business switches it on.
+Route::get('/b/{slug}', LinkPageController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:120,1')->name('link-page');
+
 // Business logos (public; shown on customer pages).
 Route::get('/logo/{business}', BusinessLogoController::class)->whereUlid('business')->middleware('throttle:120,1')->name('business.logo');
 

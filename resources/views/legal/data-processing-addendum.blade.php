@@ -452,7 +452,7 @@
             <p class="download-description">
                 Download a PDF copy of this Data Processing Addendum for your records and GDPR compliance documentation.
             </p>
-            <button class="download-button" onclick="downloadPDF('data-processing-addendum')">
+            <button class="download-button" data-call="downloadPDF" data-arg="data-processing-addendum">
                 <i class="fas fa-file-pdf"></i>
                 Download PDF
             </button>
@@ -463,7 +463,7 @@
 @endsection
 
 @section('scripts')
-<script>
+<script nonce="{{ Vite::cspNonce() }}">
 // PDF Download Function
 function downloadPDF(documentType) {
     // For now, we'll create a simple alert. In a real implementation, 

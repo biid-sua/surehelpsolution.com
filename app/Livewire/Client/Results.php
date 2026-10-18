@@ -5,6 +5,7 @@ namespace App\Livewire\Client;
 use App\Livewire\Concerns\ScopedToOrganization;
 use App\Models\CallLog;
 use App\Services\Metrics\ResultsReport;
+use App\Services\Metrics\SourceReport;
 use App\Support\Audit\Audit;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
@@ -51,7 +52,7 @@ class Results extends Component
         $this->dispatch('toast', type: 'success', message: 'Average job value saved.');
     }
 
-    public function render(ResultsReport $report): View
+    public function render(ResultsReport $report, SourceReport $sources): View
     {
         $organization = $this->organization();
         $period = $report->month($organization, $this->month ?: null);
@@ -69,6 +70,9 @@ class Results extends Component
             'period' => $period,
             'months' => $months,
             'r' => $report->compute($organization, $period['start'], $period['end']),
+            's' => $sources->compute($organization, $period['start'], $period['end']),
+            'leadSources' => SourceReport::LEAD_SOURCES,
+            'bookingSources' => SourceReport::BOOKING_SOURCES,
             'isCurrent' => $period['key'] === CarbonImmutable::now($organization->timezoneOrDefault())->format('Y-m'),
             'canEditValue' => auth()->user()->can('organization.update', $organization),
         ]);

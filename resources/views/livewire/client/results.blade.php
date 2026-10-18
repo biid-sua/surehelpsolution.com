@@ -51,7 +51,39 @@
             hint="{{ $r['after_hours'] === null ? 'set your hours to see this' : 'answered while you were closed' }}" />
     </div>
 
+    {{-- Where customers came from (G-5, D68) --}}
+    <h2 class="mt-8 mb-3 text-base font-semibold text-ink">Where customers came from</h2>
+    <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <x-ui.stat label="New customers" icon="users" :value="number_format($s['leads_total'])" :change="$s['change']['leads_total'] ?? null" hint="who got in touch themselves" />
+        <x-ui.stat label="Bookings made" icon="calendar" :value="number_format($s['bookings_total'])" :change="$s['change']['bookings_total'] ?? null" hint="by phone, online and by your team" />
+        <x-ui.stat label="Website pages viewed" icon="globe" :value="$s['website_views'] === null ? '—' : number_format($s['website_views'])" :change="$s['change']['website_views'] ?? null"
+            hint="{{ $s['website_views'] === null ? 'add the SureHelp snippet to your site to see this' : number_format($s['website_leads']).' new customers from your website' }}" />
+        <x-ui.stat label="Social posts published" icon="megaphone" :value="number_format($s['social_posts'])" :change="$s['change']['social_posts'] ?? null"
+            hint="{{ number_format($s['social_messages']) }} Facebook and Instagram conversations" />
+    </div>
+
     <div class="mt-6 grid gap-6 lg:grid-cols-2">
+        @foreach ([['New customers by how they first got in touch', $leadSources, $s['leads'], $s['leads_total']], ['Bookings by who made them', $bookingSources, $s['bookings'], $s['bookings_total']]] as [$title, $labels, $counts, $sum])
+            <x-ui.card :title="$title" :padding="false">
+                <ul class="divide-y divide-line">
+                    @foreach ($labels as $key => $label)
+                        @continue($counts[$key] === 0)
+                        <li class="px-5 py-3">
+                            <div class="flex items-center justify-between text-sm"><span class="text-ink">{{ $label }}</span><span class="tabular-nums text-muted">{{ number_format($counts[$key]) }} · {{ round($counts[$key] / max(1, $sum) * 100) }}%</span></div>
+                            <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-2"><div class="h-full rounded-full bg-brand-500" style="width: {{ round($counts[$key] / max(1, $sum) * 100) }}%"></div></div>
+                        </li>
+                    @endforeach
+                    @if ($sum === 0)<li class="px-5 py-4 text-sm text-muted">None in {{ $period['label'] }}.</li>@endif
+                </ul>
+                @if ($loop->first && $s['added_by_team'] > 0)
+                    <p class="border-t border-line px-5 py-3 text-xs text-subtle">Not counted: {{ number_format($s['added_by_team']) }} {{ \Illuminate\Support\Str::plural('customer', $s['added_by_team']) }} your team added or imported.</p>
+                @endif
+            </x-ui.card>
+        @endforeach
+    </div>
+
+    <h2 class="mt-8 mb-3 text-base font-semibold text-ink">Calls</h2>
+    <div class="grid gap-6 lg:grid-cols-2">
         <x-ui.card title="How calls ended" :padding="false">
             @php $total = max(1, $r['calls']); @endphp
             <ul class="divide-y divide-line">

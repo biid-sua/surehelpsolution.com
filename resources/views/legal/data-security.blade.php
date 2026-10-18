@@ -214,7 +214,7 @@
             <p class="download-description">
                 Download a PDF copy of this Data Security Statement for your records and security documentation.
             </p>
-            <button class="download-button" onclick="downloadPDF('data-security-statement')">
+            <button class="download-button" data-call="downloadPDF" data-arg="data-security-statement">
                 <i class="fas fa-file-pdf"></i>
                 Download PDF
             </button>
@@ -225,7 +225,7 @@
 @endsection
 
 @section('scripts')
-<script>
+<script nonce="{{ Vite::cspNonce() }}">
 // PDF Download Function
 function downloadPDF(documentType) {
     // For now, we'll create a simple alert. In a real implementation, 

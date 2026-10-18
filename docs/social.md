@@ -97,9 +97,41 @@ Before Community Management approval, connecting still works for the person's ow
 3. Add `https://YOUR-DOMAIN/app/social/connect/google/callback` to the OAuth client's redirect URIs, and the `business.manage` scope to the consent screen.
 4. Set `GOOGLE_BUSINESS_ENABLED=true`. It reuses the calendar client ID and secret, unless `GOOGLE_BUSINESS_CLIENT_ID` and `GOOGLE_BUSINESS_CLIENT_SECRET` are set.
 
+## Writing with AI (G-2, D66)
+
+Needs `ANTHROPIC_API_KEY`. Without it the panels say "Writing with AI isn't switched on yet".
+
+- **Write with AI** (in the post composer): the business describes the post in a sentence or two and picks a tone. The AI writes a version for each network chosen:
+  - Instagram gets hashtags and no links;
+  - Google gets no hashtags and no phone numbers;
+  - every version stays within the network's length limit.
+
+  The first version goes in the shared text. A network whose version is different gets its own text.
+- **Rewrite buttons** under the text: Shorter, Friendlier, More professional, Add a call to action. The result fits the strictest network chosen.
+- **Plan the month with AI** (Posts page): the AI drafts 1–5 posts a week for this month or one of the next three.
+  - Drafts are spread from tomorrow to the month's end, each with an idea and a photo suggestion.
+  - They appear in the calendar as **AI drafts**. Drafts are never published.
+  - A manager scheduling one sends it to the owner for approval. An owner scheduling one approves it.
+- **What the AI may say:** only the business's public details: profile, address, service area, services and public knowledge. Internal and team-only knowledge never reach it.
+- **Checked before posting:** a "Check before posting" list flags:
+  - claims the AI couldn't back up;
+  - phone numbers, prices, discounts and "years in business" that aren't in those details;
+  - text that breaks a network's rules.
+- **Brand voice** (*Accounts & settings*): free text, up to 1,000 characters, that steers every post.
+- **Labels:** posts show *AI draft*, *Written by AI* or *AI-assisted* in the calendar, the list, the post page and the API (`ai_label`).
+- **Allowance:**
+  - 150,000 tokens a month per business (`SOCIAL_AI_MONTHLY_TOKENS`), or the plan's `social_ai_tokens` limit;
+  - counted in the business's timezone, shown as a percentage in the composer;
+  - a failed request uses none.
+
+## Link in bio and last-minute openings (D69)
+
+- **Link in bio:** *Accounts & settings* › Link in bio switches on a page at `/b/{business-slug}`. It has Book online, Call, Send us a message, the website and up to six links of the business's own. Booking and messages open the website snippet on the page.
+- **Opening the snippet from any page:** `#surehelp-book` (or `-chat`, `-call`, `-lead`) as a link or in the page address, or `SureHelp.open('book')` from a script.
+- **Last-minute openings:** the Posts page shows free times in the next three open days. "Post about these openings" starts a post with the times and the booking link.
+
 ## Later
 
-- AI writing with SEO (G-2)
 - Post analytics in Results (G-5)
 - TikTok, YouTube Shorts, Pinterest and Threads adapters
 - X as a paid add-on

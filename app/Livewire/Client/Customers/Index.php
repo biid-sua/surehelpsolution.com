@@ -2,15 +2,17 @@
 
 namespace App\Livewire\Client\Customers;
 
+use App\Actions\Customers\CreateCustomer;
+use App\Actions\Customers\DuplicateCustomer;
 use App\Enums\CustomerStatus;
 use App\Livewire\Concerns\ScopedToOrganization;
 use App\Models\Customer;
 use App\Models\Tag;
 use App\Services\Customers\DuplicateCustomers;
-use App\Support\Audit\Audit;
-use App\Support\Phone;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
@@ -65,49 +67,31 @@ class Index extends Component
         $this->adding = true;
     }
 
-    public function create(Audit $audit): mixed
+    public function create(CreateCustomer $create): mixed
     {
         $organization = $this->organization();
         $this->authorize('customers.create', $organization);
 
-        $this->validate([
-            'form.first_name' => ['nullable', 'string', 'max:100', 'required_without_all:form.last_name,form.company'],
-            'form.last_name' => ['nullable', 'string', 'max:100'],
-            'form.company' => ['nullable', 'string', 'max:255'],
-            'form.phone' => ['nullable', 'string', 'max:40', 'required_without:form.email'],
-            'form.email' => ['nullable', 'email', 'max:255'],
-        ], [
-            'form.first_name.required_without_all' => 'Enter a name or a company.',
-            'form.phone.required_without' => 'Enter a phone number or an email.',
-        ]);
-
-        $e164 = Phone::normalize($this->form['phone']);
-        if (filled($this->form['phone']) && $e164 === null) {
-            $this->addError('form.phone', 'This doesn\'t look like a valid phone number.');
+        $validator = Validator::make($this->form, CreateCustomer::rules(), CreateCustomer::messages());
+        if ($validator->fails()) {
+            foreach ($validator->errors()->messages() as $field => $messages) {
+                $this->addError('form.'.$field, $messages[0]);
+            }
 
             return null;
         }
 
-        // Duplicate prevention (spec §15/§93): point to the existing customer instead of creating a second one.
-        if ($e164 && $existing = Customer::withTrashed()->forOrganization($organization)->where('phone_e164', $e164)->first()) {
-            $this->addError('form.phone', "{$existing->fullName()} already has this number.");
+        try {
+            $customer = $create->handle($organization, $this->form, auth()->user());
+        } catch (ValidationException $e) {
+            $this->addError('form.phone', collect($e->errors())->flatten()->first());
+
+            return null;
+        } catch (DuplicateCustomer $e) {
+            $this->addError('form.phone', $e->getMessage());
 
             return null;
         }
-
-        $customer = Customer::create([
-            'organization_id' => $organization->id,
-            'first_name' => $this->form['first_name'] ?: null,
-            'last_name' => $this->form['last_name'] ?: null,
-            'company' => $this->form['company'] ?: null,
-            'phone' => $this->form['phone'] ?: null,
-            'email' => $this->form['email'] ?: null,
-            'status' => CustomerStatus::Lead,
-            'source' => 'manual',
-            'created_by_user_id' => auth()->id(),
-            'last_activity_at' => now(),
-        ]);
-        $audit->record('customer.created', $customer, new: ['name' => $customer->fullName(), 'source' => 'manual']);
 
         return $this->redirectRoute('app.customers.show', $customer, navigate: false);
     }

@@ -8,9 +8,14 @@ use App\Actions\Social\StoreMedia;
 use App\Enums\SocialNetwork;
 use App\Enums\SocialPostStatus;
 use App\Livewire\Concerns\ScopedToOrganization;
+use App\Models\BusinessProfile;
 use App\Models\MediaAsset;
 use App\Models\SocialAccount;
 use App\Models\SocialPost;
+use App\Services\Growth\LinkPage;
+use App\Services\Growth\Openings;
+use App\Services\Social\Ai\ContentStudio;
+use App\Services\Social\Ai\ContentTokens;
 use App\Services\Social\PostValidator;
 use App\Services\Social\Publishers\GoogleBusinessPublisher;
 use App\Services\Social\SocialApproval;
@@ -66,6 +71,18 @@ class Compose extends Component
 
     public string $changesNote = '';
 
+    /** AI content studio (D66) */
+    public string $aiBrief = '';
+
+    public string $aiTone = 'friendly';
+
+    /** @var list<string> things a person should check before publishing */
+    public array $aiFlags = [];
+
+    public bool $aiAssisted = false;
+
+    public ?string $aiNote = null;
+
     public function mount(?string $post = null): void
     {
         $organization = $this->organization();
@@ -78,6 +95,8 @@ class Compose extends Component
             $this->body = $model->body;
             $this->link = (string) $model->link_url;
             $this->media = $model->media->pluck('ulid')->all();
+            $this->aiAssisted = $model->ai_assisted;
+            $this->aiNote = $model->ai_note;
             foreach ($model->targets as $target) {
                 if (! $target->account) {
                     continue;
@@ -100,6 +119,17 @@ class Compose extends Component
             $day = request()->query('date');
             $this->date = is_string($day) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $day) && $day >= $start->format('Y-m-d') ? $day : $start->format('Y-m-d');
             $this->time = $start->format('H:i');
+
+            // From "Post about these openings" (D69): the free times and where to book.
+            if (request()->query('openings') && ($days = app(Openings::class)->upcoming($organization)) !== []) {
+                $links = app(LinkPage::class);
+                $website = BusinessProfile::query()->forOrganization($organization)->value('website');
+                $this->body = app(Openings::class)->postText($organization, $days,
+                    $links->isLive($organization) ? $links->url($organization).'#surehelp-book' : ($website ?: null));
+                $this->aiBrief = 'Last-minute openings: '.implode('; ', array_map(fn ($d) => $d['date']->format('l').' '.implode(', ', array_map(fn ($t) => $t->format('g:i A'), $d['times'])), $days)).'. Invite people to book.';
+                $this->date = $start->format('Y-m-d');
+                $this->time = $start->format('H:i');
+            }
         }
     }
 
@@ -133,7 +163,8 @@ class Compose extends Component
                 'custom' => collect($this->selected)->mapWithKeys(fn ($u) => [$u => ($this->customOn[$u] ?? false) ? ($this->custom[$u] ?? '') : null])->all(),
                 'options' => collect($this->selected)->mapWithKeys(fn ($u) => [$u => $this->gbp[$u] ?? []])->all(),
                 'media' => array_values($this->media),
-                'scheduled_at' => $intent === 'schedule' ? $when : null,
+                'scheduled_at' => $intent === 'now' ? null : $when,   // a draft keeps its planned time for the calendar
+                'ai_assisted' => $this->aiAssisted,
             ], auth()->user(), $intent);
         } catch (ValidationException $e) {
             foreach ($e->errors() as $field => $messages) {
@@ -153,6 +184,77 @@ class Compose extends Component
         session()->flash('success', $message);
 
         return $this->redirectRoute('app.social.posts.edit', $post, navigate: false);
+    }
+
+    /** Write the post for each chosen network from a short brief (D66). */
+    public function writeWithAi(ContentStudio $studio): void
+    {
+        $organization = $this->organization();
+        $this->authorize('social.manage', $organization);
+        $this->validate(['aiBrief' => ['required', 'string', 'min:5', 'max:1000'], 'aiTone' => ['required', 'in:'.implode(',', array_keys(ContentStudio::TONES))]],
+            ['aiBrief.required' => 'Say what the post is about.', 'aiBrief.min' => 'Say a little more about what the post is about.']);
+
+        $accounts = $this->selectedAccounts();
+        try {
+            $result = $studio->write($organization, auth()->user(), $this->aiBrief, $this->networksOf($accounts), $this->aiTone);
+        } catch (ValidationException $e) {
+            $this->addError('aiBrief', collect($e->errors())->flatten()->first());
+
+            return;
+        }
+
+        $versions = $result['versions'];
+        $this->body = $versions[$accounts->first()?->network->value] ?? reset($versions);
+        foreach ($accounts as $account) {
+            $text = $versions[$account->network->value] ?? $this->body;
+            $this->customOn[$account->ulid] = $text !== $this->body;
+            $this->custom[$account->ulid] = $text !== $this->body ? $text : '';
+        }
+        $this->aiFlags = $result['flags'];
+        $this->aiAssisted = true;
+    }
+
+    /** Change the shared text one way: shorter, friendlier, more professional, with a call to action. */
+    public function rewriteWithAi(string $how, ContentStudio $studio): void
+    {
+        $organization = $this->organization();
+        $this->authorize('social.manage', $organization);
+        abort_unless(array_key_exists($how, ContentStudio::REWRITES), 400);
+        if (trim($this->body) === '') {
+            $this->addError('aiBrief', 'Write or generate a post first.');
+
+            return;
+        }
+
+        try {
+            $result = $studio->rewrite($organization, auth()->user(), $this->body, $how, $this->networksOf($this->selectedAccounts()));
+        } catch (ValidationException $e) {
+            $this->addError('aiBrief', collect($e->errors())->flatten()->first());
+
+            return;
+        }
+
+        $this->body = $result['text'];
+        $this->aiFlags = $result['flags'];
+        $this->aiAssisted = true;
+    }
+
+    /** @return Collection<int, SocialAccount> */
+    private function selectedAccounts(): Collection
+    {
+        $order = array_flip(array_values($this->selected));
+
+        return SocialAccount::query()->forOrganization($this->organization())->whereIn('ulid', $this->selected)->get()
+            ->sortBy(fn (SocialAccount $a) => $order[$a->ulid] ?? 0)->values();
+    }
+
+    /**
+     * @param  Collection<int, SocialAccount>  $accounts
+     * @return list<SocialNetwork>
+     */
+    private function networksOf(Collection $accounts): array
+    {
+        return array_values($accounts->map(fn (SocialAccount $a) => $a->network)->unique(fn (SocialNetwork $n) => $n->value)->all());
     }
 
     public function approve(PostWorkflow $workflow): void
@@ -240,7 +342,7 @@ class Compose extends Component
         return $this->post() ?? abort(404);
     }
 
-    public function render(PostValidator $validator, SocialApproval $approval): View
+    public function render(PostValidator $validator, SocialApproval $approval, ContentStudio $studio, ContentTokens $tokens): View
     {
         $organization = $this->organization();
         $post = $this->post()?->load(['targets.account', 'author', 'approver']);
@@ -270,6 +372,10 @@ class Compose extends Component
             'buttons' => GoogleBusinessPublisher::BUTTONS,
             'topics' => GoogleBusinessPublisher::TOPICS,
             'google' => SocialNetwork::GoogleBusiness,
+            'aiBlocker' => $studio->blocker($organization),
+            'aiUsedPercent' => $tokens->percentUsed($organization),
+            'tones' => ContentStudio::TONES,
+            'rewrites' => ContentStudio::REWRITES,
         ])->title($post ? 'Social post' : 'New social post');
     }
 

@@ -185,7 +185,7 @@
 @endsection
 
 @section('scripts')
-<script>
+<script nonce="{{ Vite::cspNonce() }}">
 document.addEventListener('DOMContentLoaded', function () {
     // Same entrance animation as the legal pages.
     const sections = document.querySelectorAll('.legal-card');

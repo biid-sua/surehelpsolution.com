@@ -9,7 +9,8 @@ use App\Services\Account\Impersonation;
 
 /**
  * Who must approve a post before it goes out (spec §41). With the default "owner" setting, posts by
- * anyone but an owner (managers, SureHelp's team viewing as the business, AI) wait for an owner.
+ * anyone but an owner (managers, SureHelp's team viewing as the business) wait for an owner. Drafts
+ * the AI planned (D66) always wait for an owner, unless an owner schedules them, which approves them.
  */
 class SocialApproval
 {
@@ -42,7 +43,7 @@ class SocialApproval
             return false;
         }
 
-        return $source === 'ai' || ! $this->isOwner($organization, $author);
+        return ! $this->isOwner($organization, $author);
     }
 
     public function canApprove(Organization $organization, User $user): bool

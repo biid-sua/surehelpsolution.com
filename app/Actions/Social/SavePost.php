@@ -35,7 +35,7 @@ class SavePost
     ) {}
 
     /**
-     * @param  array{body: string, link_url?: ?string, accounts: list<string>, custom?: array<string, ?string>, options?: array<string, array<string, mixed>>, media?: list<string>, scheduled_at?: ?CarbonImmutable}  $data
+     * @param  array{body: string, link_url?: ?string, accounts: list<string>, custom?: array<string, ?string>, options?: array<string, array<string, mixed>>, media?: list<string>, scheduled_at?: ?CarbonImmutable, ai_assisted?: bool}  $data
      *
      * @throws ValidationException
      */
@@ -75,6 +75,7 @@ class SavePost
                 'approved_by_user_id' => null,
                 'approved_at' => null,
             ]);
+            $post->ai_assisted = $post->ai_assisted || ! empty($data['ai_assisted']);
             if ($byTeam) {
                 $post->source = $post->source === 'ai' ? 'ai' : 'team';
                 $post->created_by_impersonator_id ??= app(Impersonation::class)->impersonator(request())?->id;

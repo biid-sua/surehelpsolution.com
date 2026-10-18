@@ -92,6 +92,54 @@ They are the same values the website uses. Fetch `/themes` once per session; the
 | DELETE | `/devices/{id}` | Sign out one of **your** devices (others' → 404) |
 | DELETE | `/devices` | Sign out every device except this one → `data.revoked` |
 | POST | `/notifications/device-token` | Register a push token: `token`, `platform?`, `device_name?` |
+| DELETE | `/notifications/device-token` | Stop pushes to this device (`token`); call it on sign-out |
+| GET | `/me/capabilities` | What this person may use (API-1) → `data.role`, `data.permissions[]` (granted permission keys, in their business for business users), `data.business` (`null` for staff and agents): `id`, `name`, `status`, `serving`, `role` (`owner`, `manager` or `staff`), `is_owner`, `features{key: bool}`, `limits{calls, team_members, calendars, social_accounts, social_ai_tokens, seo_ai_tokens}` (`null` = no limit), `plan{name, status, trial_ends_on, current_period_end}`, `closes_at`; and `data.account`: `email_verified`, `two_factor_enabled`, `two_factor_required`, `can_close_account`. Show only what's granted; the server checks again on every call |
+| GET | `/notifications` | The notification centre (API-2), newest first, 20 per page (`per_page` up to 50, `page`, `unread=1`) → `data.notifications[]`: `id`, `type` (e.g. `task_activity`), `event` (see below), `title`, `body`, `url` (web address, `null` if not one of our pages), `target` (`{route, params}`: the web route name and its parameters, for opening the matching app screen; `null` when there's none), `read_at`, `created_at`; `meta.unread`, `meta.pagination` |
+| GET | `/notifications/unread-count` | `data.unread`, for the app-icon badge |
+| POST | `/notifications/{id}/read` | Mark one read → `data.notification`, `data.unread` |
+| POST | `/notifications/read-all` | Mark all read → `data.unread` = 0 |
+| DELETE | `/notifications/{id}` | Remove one from the list |
+| GET | `/account/closure` | Closing the account (API-4, D29) → `data.can_request` (only the business owner), `business_name`, `grace_days` (30), `scheduled`, `requested_at`, `closes_at`; for everyone else `message` and `contact_email` say whom to ask |
+| POST | `/account/closure` | Owner only: `business_name` (typed exactly, case doesn't matter) and `password`. The account closes after the grace period and an email confirms it. `422` wrong name or password, `409` already scheduled, `429` after 5 tries in 10 minutes, `403` not the owner |
+| DELETE | `/account/closure` | Owner only: keep the account (cancels a scheduled closure) |
+
+| GET | `/notifications/settings` | Notification settings (API-3), the same choices as the web → `data.channels[]` (`key`, `label`, `enabled`), `data.events[]` (`key`, `label`, `description`, `channels[]` chosen), `data.quiet_hours` (`start`, `end`, `timezone`, or `null` = off), `data.daily_summary` (`time` or `null`, `options[]`; business users only, otherwise `null`), `data.sms_phone` (`number`, `display`, `verified`, `texts_available`) |
+| PUT | `/notifications/settings` | Any of: `events{event_key: [channel, …]}` (only the events and channels listed above), `quiet_hours` (`{start, end}` as `HH:MM`, or `null` to turn off), `daily_summary` (`off` or one of the options; business users only) → the same as GET |
+| POST | `/account/sms-phone` | `phone`: a US or Canadian mobile number. Texts a 6-digit code (valid 10 minutes, 3 codes per 10 minutes) → `data.sms_phone`-shaped `data`. `422` with a message when texts aren't set up or the number isn't valid |
+| POST | `/account/sms-phone/verify` | `code` → `data.verified: true`, or `422` (wrong or expired; 5 tries per code) |
+| DELETE | `/account/sms-phone` | Removes the number: no more notification texts |
+| GET | `/app/version` | **No sign-in needed.** `platform` (`ios` or `android`), `version?` (e.g. `1.4.2`) → `data.minimum`, `data.latest`, `data.store_url`, `data.update_required` (older than `minimum`: block the app with "Please update"), `data.update_available` (older than `latest`: a gentle prompt). Set in `.env`: `MOBILE_IOS_MINIMUM`, `MOBILE_IOS_LATEST`, `MOBILE_IOS_STORE_URL`, and the same for `ANDROID` (API-5) |
+
+#### Push notifications and opening the right screen (API-2)
+Every push carries `notification.title` and `notification.body`, plus `data` (all strings):
+- `url`: the web address;
+- `event`: the event, below;
+- `notification_id`: mark it read with `POST /notifications/{id}/read`;
+- `route` and `route_params` (JSON): the same `target` as the list.
+
+Map `route` to app screens and fall back to the notification list for routes the app doesn't have. Events in use:
+- **Calls:** `call.logged`, `call.missed`.
+- **Follow-ups:** `followup.created`, `followup.overdue`, `task.assigned`.
+- **Appointments:** `appointment.created`, `appointment.updated`, `appointment.cancelled`.
+- **Messages and escalations:** `message.received`, `escalation.created`, `ai.escalation`.
+- **Social:** `social.approval_requested`, `social.post_failed`, `social.account_disconnected`.
+- **Billing:** `invoice.issued`, `payment.received`, `payment.failed`, `payment.reported`, `billing.usage`, `subscription.updated`, `plan.change_requested`.
+- **Reports and data:** `report.monthly`, `data_export.ready`.
+- **Agents:**
+  - `assignment.started`, `assignment.changed`;
+  - training: `training.assigned`, `training.due`, `training.completed`, `training.certification`;
+  - `qa.reviewed`;
+  - shift requests: `shift_request.*`;
+  - calendar: `agent_calendar.disconnected`.
+- **Account and service:** `integration.disconnected`, `service.status`, `support.update`, `automation.notice`, `ui.theme_reset`.
+- **Staff:** `organization.signed_up`, `setup.completed`.
+
+Common routes:
+- **Business:**
+  - `app.calls.show` {callId}, `app.inbox.show` {conversation}, `app.customers.show`, `app.social.posts.edit`;
+  - `app.appointments.index`, `app.tasks.index`, `app.escalations.index`;
+  - `app.billing`, `app.billing.invoice`, `app.results`, `app.dashboard`.
+- **Agents:** `agent.home`, `agent.companies`, `agent.university.course`, `agent.quality`, `agent.schedule`.
 
 ### Business portal — role `client`, permission `calls.view`
 | Method | Path | Notes |
@@ -127,6 +175,83 @@ They are the same values the website uses. Fetch `/themes` once per session; the
 | GET | `/client/social/posts?status=upcoming\|awaiting_approval\|published\|failed\|all&per_page` | Permission `social.view`. Default `upcoming` (waiting, scheduled, publishing), soonest first. `data.posts[]`: `id` (ULID), `status` (`draft`, `in_review`, `scheduled`, `publishing`, `published`, `partly_published`, `failed`, `cancelled`), `status_label`, `body`, `link_url`, `scheduled_at`, `published_at`, `source` (`manual`, `team`, `ai`), `author`, `review_note`, `accounts[] {network, name, status, url, error}`, `media[] {url, alt}` (signed links, valid 2 hours), `web_url`. Paged like customers. Tokens are never included |
 | POST | `/client/social/posts/{id}/approve` | Permission `social.manage` and **business owner** (403 otherwise). Posts waiting for approval only (422 otherwise) |
 | POST | `/client/social/posts/{id}/request-changes` | Same rules. `note` required: the post returns to draft with the note |
+
+
+#### Agents, search and the API description (D74)
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/agent/shift-requests` | My requests from the last 30 days and all waiting ones → `data.requests[]` (`id`, `type` `swap`/`leave`, `status` `pending`/`approved`/`declined`/`cancelled`, `status_label`, `shift{id, starts_at, ends_at}`, `swap_with{id, name}`, `leave_from`, `leave_until`, `reason`, `decision_note`, `decided_at`, `created_at`), `data.colleagues[]` (`id`, `name`) |
+| POST | `/agent/shift-requests` | `Idempotency-Key`. `type`: `swap` with `shift_id` and `swap_with_id?`; or `leave` with `leave_from` and `leave_until` (dates from today), plus `reason?` → `201`. Schedulers decide on the web; the agent hears back by notification (`shift_request.*`) |
+| POST | `/agent/shift-requests/{id}/withdraw` | Withdraw a waiting request |
+| GET | `/agent/quality/reviews` | My scored calls (D27) → `data.summary` (`count`, `average`, `pass_rate` over 30 days), `data.pass_score`, `data.reviews[]` (`id`, `score`, `passed`, `business`, `call{id, caller, at}`, `reviewer`, `reviewed_at`, `acknowledged_at`) |
+| GET | `/agent/quality/reviews/{id}` | Plus `scores[]` (`key`, `label`, `weight`, `critical`, `mark`, `mark_label`), `strengths`, `improvements` |
+| POST | `/agent/quality/reviews/{id}/acknowledge` | "I've read it" |
+| GET | `/agent/presence` | → `data.status` (`offline`, `available`, `away`, `busy`, `wrap_up`), `label`, `softphone_online`, `since` |
+| PUT | `/agent/presence` | `status`: `away` (calls stop ringing) or `available`. Calls ring the softphone on a computer, so this works only while that softphone is online (`409` otherwise, or while on a call). The app never counts as the softphone checking in |
+| GET | `/client/search` | `q` (2+ characters), `limit?` (up to 20 per group) → `data.results`: `customers[]`, `calls[]`, `appointments[]`, `tasks[]`; a group is `null` when the person may not see that kind of record (the same as the web search) |
+| GET | `/openapi.json` | **No sign-in.** OpenAPI 3.1 description of every `/api/v1` path, built from the routes: methods, path parameters, sign-in, permissions, idempotency keys, rate limits and a summary each. Field detail stays in this document |
+
+#### Social posts, billing and team in the app (D73)
+Social endpoints need the `social_publishing` feature (`403` with `feature` otherwise). Viewing needs `social.view`; everything that changes something needs `social.manage`.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/client/social/accounts` | Connected accounts → `data.accounts[]`: `id`, `network`, `network_label`, `name`, `avatar_url`, `enabled`, `needs_reconnect`, `limits` (`max_chars`, `requires_media`, `max_images`, `links`, `clickable_links`, `max_hashtags`) |
+| GET | `/client/social/posts/{id}` | One post: the list fields plus `ai_note`, `custom{account_id: text}`, `account_ids[]`, `media_ids[]`, `editable` |
+| POST | `/client/social/posts/check` | Check without saving: `body`, `link_url?`, `accounts[]`, `custom?`, `media[]?` → `data.checks[]`: `account`, `errors[]`, `warnings[]` (the web's per-network rules) |
+| POST | `/client/social/posts` | `Idempotency-Key`. `intent` (`draft`, `schedule` or `now`), `body`, `link_url?`, `accounts[]` (account ids), `custom?{account_id: text}`, `media[]?` (ids from `/social/media`), `scheduled_at?` (ISO 8601, required to schedule), `options?{account_id: {…}}` (Google button and offer fields), `ai_assisted?` → `201` with `data.post`. A manager's or an AI draft's post goes to `in_review` for the owner, as on the web. `422` lists each network's problems |
+| PUT | `/client/social/posts/{id}` | The same fields, for a post that's still a draft, in review or scheduled |
+| POST | `/client/social/posts/{id}/cancel` · `/retry` · DELETE `/{id}` | Cancel a planned post, try a failed one again, delete |
+| POST | `/client/social/media` | Multipart `photo` (JPG, PNG or WebP) and `alt?` → `201` with `data.media{id, url, alt}` |
+| POST | `/client/social/ai/write` | `brief`, `tone?` (`friendly`, `professional`, `playful`, `urgent`), `accounts[]?` → `data.versions{network: text}`, `data.flags[]` ("check before posting"). `422` when AI isn't on or the month's allowance is used (D66) |
+| POST | `/client/social/ai/rewrite` | `text`, `how` (`shorter`, `friendlier`, `professional`, `cta`), `accounts[]?` → `data.text`, `data.flags[]` |
+| GET | `/client/social/openings` | Last-minute openings (D69) → `data.days[]` (`date`, `times[]`), `data.text` (a ready post, or `null` with no openings) |
+| GET / PUT | `/client/social/link-page` | Link in bio: `enabled`, `links[]` (`label`, `url`, up to 6) → `data.enabled`, `live`, `url`, `links`, `max_links` |
+| GET | `/client/billing` | `billing.view` → `data.plan` (`name`, `status`, `price_cents`, `currency`, `interval`, `trial_ends_on`, `renews_on`, `cancel_at_period_end`), `balance_cents`, `overdue`, `card_payments` (Stripe on), `autopay` (`card`, `since`, or `null`), `can_pay` |
+| GET | `/client/billing/invoices` | `status?` (`open`, `paid`, `all`), paginated → `data.invoices[]`: `id`, `number`, `status`, `currency`, `total_cents`, `paid_cents`, `balance_cents`, `period`, `issued_at`, `due_at`, `paid_at`, `overdue`, `autopay_error`, `pdf_url` |
+| GET | `/client/billing/invoices/{id}` | Plus `items[]` (`description`, `quantity`, `unit_cents`, `amount_cents`), `payments[]` (`amount_cents`, `method`, `received_at`, `reference`), `notes`, `reported_paid_at` |
+| GET | `/client/billing/invoices/{id}/pdf` | The invoice PDF |
+| POST | `/client/billing/invoices/{id}/pay` | `billing.manage` (owners). `save?` (also save the card for automatic payments) → `data.checkout_url`: open it in an in-app browser. Stripe returns to `/app/billing?paid={id}` (an app link); the payment shows when Stripe confirms it, usually within seconds. `404` when card payments are off, `409` already paid |
+| POST | `/client/billing/invoices/{id}/report-payment` | `note` ("Bank transfer on Nov 3"): the team confirms it |
+| DELETE | `/client/billing/autopay` | Turn automatic payments off and remove the card |
+| GET | `/client/team` | `users.view` → `data.members[]` (`id`, `name`, `email`, `role`, `last_login_at`, `is_you`), `data.invitations[]` (pending: `id`, `email`, `role`, `invited_by`, `expires_at`), `roles`, `can_invite[]` (roles this person may invite), `can_manage` |
+| POST | `/client/team/invitations` | `users.create`: `email`, `role` (managers may invite `staff` only) → `201`. Plan seat limits apply (`422`) |
+| POST | `/client/team/invitations/{id}/resend` · DELETE `/{id}` | Send it again, or cancel it |
+| PATCH | `/client/team/members/{id}` | Owners: `role` (`manager` or `staff`) |
+| DELETE | `/client/team/members/{id}` | Owners: remove the person. Without another business they're switched off and signed out everywhere. The owner and yourself can't be changed (`403`) |
+
+#### Inbox and customers in the app (D72)
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/client/inbox/conversations` | Start a text conversation (API-7, D62), `messages.send`, `Idempotency-Key`: `to` (phone), `text` (up to 1,600) → `201` with `data.conversation.id`. `422` when the customer hasn't agreed to texts, texting isn't on, or the number isn't valid |
+| GET | `/client/inbox/assignees` | People on the team a conversation can be assigned to → `data.assignees[]` (`id`, `name`) |
+| POST | `/client/inbox/conversations/{id}/assign` | `user_id` (or `null` to unassign) → `data.assigned_to` |
+| POST | `/client/inbox/conversations/{id}/close` · `/reopen` | → `data.status` |
+| POST | `/client/inbox/conversations/{id}/ai` | `on`: `true` lets the AI assistant answer again, `false` keeps it for people → `data.ai_paused`, `data.needs_human` |
+| POST | `/client/inbox/conversations/{id}/read` | Mark read (opening it with GET also does) |
+| POST | `/client/inbox/conversations/{id}/drafts/{message}/send` · `/discard` | The AI's suggested reply (mode "suggest"): send it as it is, or discard it. Each draft can be used once |
+| POST | `/client/inbox/conversations/{id}/messages/{message}/rate` | `rating` (`helpful` or `unhelpful`), `correction?` (what it should have said; becomes a guideline for the owner to approve, D39) |
+| | (in `GET …/conversations/{id}`) | Conversations now include `assigned_to` and `ai_paused`. Texted pictures in `messages[].attachments[].url` are signed links valid 60 minutes (`/api/v1/inbox-media/…`) that open without the token |
+| GET | `/client/customers/lookup` | `phone?`, `email?` → `data.match` (`id`, `name`, `matched_by`) or `null`: warn about a duplicate while typing (API-8) |
+| POST | `/client/customers` | `customers.create`, `Idempotency-Key`: `first_name`, `last_name`, `company` (a name or a company), `phone`, `email` (a phone or an email) → `201` with `data.customer`. **`409`** when another customer has the phone number, with `existing` (`id`, `name`): open that customer instead |
+| PATCH | `/client/customers/{id}` | `customers.update`. Any of: `first_name`, `last_name`, `company`, `phone`, `email`, `address_line1`, `address_line2`, `city`, `state`, `postal_code`, `status`, `preferred_contact` (`phone`, `sms`, `email`), `sms_consent`, `email_consent`, `notes`. Fields not sent keep their value; consent changes are recorded with who and when (spec §57). `422` if the phone belongs to another customer |
+| POST | `/client/customers/{id}/notes` | `note` → `201` with `data.event` (the timeline entry) |
+| POST | `/client/customers/{id}/tags` | `name` → `data.tags[]` |
+| DELETE | `/client/customers/{id}/tags/{tag_id}` | → `data.tags[]` |
+
+#### Links that open the app (API-16)
+- `/.well-known/assetlinks.json` (Android App Links) and `/.well-known/apple-app-site-association` (iOS Universal Links) are served from `config/mobile.php`.
+- Set `MOBILE_ANDROID_SHA256` (signing certificate fingerprints from Play Console › App integrity, comma-separated) and `MOBILE_IOS_APP_IDS` (`TEAMID.bundle.id`).
+- Until then the files list no app. The app handles `/app/*`, `/agent/*`, `/invitations/*`, `/account/*` and `/b/*`.
+- **Hosting:** the server must serve both addresses directly, over HTTPS, with no redirect.
+
+#### Calls and Results in the app (D71)
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/client/calls/{call_id}` | One call (API-6), `calls.view` → `data.call`: `id`, `created_at`, `caller{name, phone, email}`, `customer{id, name}`, `reason`, `outcome`, `outcome_label`, `status`, `agent_name`, `notes`, `service{date, window, location}`, `tasks[]` (with `tasks.view`), `phone_call` (calls on a SureHelp line): `direction`, `status`, `status_label`, `other_party`, `after_hours`, `started_at`, `answered_at`, `ended_at`, `wait_seconds`, `duration_seconds`, `transferred_to`, `can_hear`; and, with `calls.recording.view` only, `recording{url, seconds, expires_in}`, `summary` and `transcript[]` (`speaker`, `text`, `at`) |
+| GET | `/recordings/{id}?…signature` | The `recording.url` above: a signed link valid 15 minutes (`MOBILE_RECORDING_LINK_MINUTES`) that an audio player opens **without** the token. It still checks the person may hear it; each play is audited. Fetch the call again for a fresh link |
+| GET | `/client/results` | Results for a month (API-10), `reports.view`. `month?` = `YYYY-MM` (this month by default) → `data.month`, `label`, `is_current`, `currency`, `summary` (`calls`, `answered`, `after_hours`, `leads`, `booked`, `appointments`, `job_value_cents`, `revenue_cents`, `change{…%}`), `call_outcomes[]`, `appointment_outcomes[]`, `reasons[]`, `busiest`, `heatmap` (7 days × 24 hours, Sunday first, business timezone), `sources` (leads and bookings by source, website and social numbers, D68), `pdf_url` |
+| GET | `/client/results/pdf` | The monthly report PDF (`month?`), with the token like any other call |
 
 ### Agent workspace — role `agent` or `admin`
 | Method | Path | Notes |
@@ -179,6 +304,11 @@ A staff member without the permission gets `403`. Dashboard: `dashboard.view`. A
 
 | Date | Change |
 |---|---|
+| 2026-11-12 | For the mobile app (D74): agents' shift requests, quality reviews and availability; `GET /client/search`; `GET /openapi.json`. |
+| 2026-11-11 | For the mobile app (D73): writing, checking and scheduling social posts, photos, AI writing, openings, link page; billing summary, invoices, PDF, card payment, payment reports, automatic payments off; the team (members, invitations, roles). |
+| 2026-11-10 | For the mobile app (D72): inbox actions (start a text, assign, close and reopen, AI on or off, read, AI suggestions, rating); signed links for texted pictures; adding and editing customers, with a duplicate lookup, notes and tags; the app-link files under `/.well-known/`. Conversations gain `assigned_to` and `ai_paused` (additive). |
+| 2026-11-09 | For the mobile app (D71): `GET/PUT /notifications/settings`; `POST/DELETE /account/sms-phone`, `POST /account/sms-phone/verify`; `GET /app/version` (no sign-in); `GET /client/calls/{call_id}` with a signed recording link (`GET /recordings/{id}`); `GET /client/results`, `GET /client/results/pdf`. |
+| 2026-11-08 | For the new mobile app (D70): `GET /me/capabilities`; the notification centre (`GET /notifications`, `/unread-count`, `POST /{id}/read`, `/read-all`, `DELETE /{id}`); `GET/POST/DELETE /account/closure`. Push `data` gains `notification_id`, `route` and `route_params` (additive). |
 | 2026-10-28 | Colour themes (D59): `data.theme` on `/login` and `/user` (additive); `GET /themes`; `PUT /user/theme`. |
 | 2026-10-23 | Optional `Idempotency-Key` header on create endpoints (D52). |
 | 2026-10-06 (A-4) | `/agent/training/…` (Agent University). Required training can now refuse company endpoints (`403 training_required`) and call logging (`422`) (D43). |

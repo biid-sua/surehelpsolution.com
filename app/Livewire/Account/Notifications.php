@@ -19,7 +19,7 @@ use Livewire\Component;
 class Notifications extends Component
 {
     /** Workforce events, in the order shown. */
-    private const EVENTS = [
+    public const EVENTS = [
         NotificationEvent::AssignmentStarted, NotificationEvent::AssignmentChanged, NotificationEvent::TrainingAssigned,
         NotificationEvent::TrainingDue, NotificationEvent::CertificationExpiring, NotificationEvent::TrainingCompleted,
     ];

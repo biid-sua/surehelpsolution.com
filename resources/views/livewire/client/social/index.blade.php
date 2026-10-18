@@ -2,11 +2,79 @@
     <x-ui.page-header title="Social media" description="Plan, write and schedule posts for every account in one place. Times are in {{ $timezone }}.">
         @if ($canManage)
             <x-slot:actions>
+                <x-ui.button variant="secondary" icon="sparkles" wire:click="openPlan">Plan the month with AI</x-ui.button>
                 <x-ui.button icon="megaphone" :href="route('app.social.posts.create')">New post</x-ui.button>
             </x-slot:actions>
         @endif
     </x-ui.page-header>
     @include('livewire.client.social._tabs')
+
+    {{-- Month plan with AI (D66) --}}
+    @if ($planning && $canManage)
+        <x-ui.card class="mb-6">
+            <h2 class="flex items-center gap-2 text-base font-semibold text-ink"><x-ui.icon name="sparkles" class="size-4 text-brand-300" /> Plan the month with AI</h2>
+            <p class="mt-1 text-sm text-muted">The AI drafts posts from your business details and brand voice, spread over the month. They appear in the calendar as <span class="text-ink">AI drafts</span>: nothing is published until you add photos where needed and schedule them. Drafts scheduled by someone other than an owner wait for an owner's approval.</p>
+            @if ($aiBlocker)
+                <x-ui.alert tone="info" class="mt-4">{{ $aiBlocker }}</x-ui.alert>
+            @else
+                <form wire:submit="planWithAi" class="mt-4 grid gap-4 sm:grid-cols-[12rem_10rem_minmax(0,1fr)]">
+                    <div>
+                        <label for="plan-month" class="sh-label">Month</label>
+                        <select id="plan-month" wire:model="planMonth" class="sh-input">
+                            @foreach ($planMonths as $m)<option value="{{ $m->format('Y-m') }}">{{ $m->format('F Y') }}</option>@endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label for="plan-per-week" class="sh-label">Posts a week</label>
+                        <select id="plan-per-week" wire:model="planPerWeek" class="sh-input">
+                            @foreach (range(1, (int) config('social.ai.max_posts_per_week', 5)) as $n)<option value="{{ $n }}">{{ $n }}</option>@endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label for="plan-focus" class="sh-label">Anything to focus on? <span class="font-normal text-subtle">(optional)</span></label>
+                        <input id="plan-focus" type="text" wire:model="planFocus" maxlength="1000" class="sh-input" placeholder="e.g. spring AC tune-ups, our new technician Sam, the Riverside fair on the 14th">
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3 sm:col-span-3">
+                        <x-ui.button type="submit" icon="sparkles" wire:loading.attr="disabled" wire:target="planWithAi">Write the drafts</x-ui.button>
+                        <x-ui.button type="button" variant="ghost" wire:click="$set('planning', false)">Cancel</x-ui.button>
+                        @error('planMonth') <p class="text-sm text-danger">{{ $message }}</p> @enderror
+                    </div>
+                </form>
+            @endif
+        </x-ui.card>
+    @endif
+
+    @if ($lastPlan)
+        @php($planLabel = \Carbon\CarbonImmutable::createFromFormat('Y-m-d', ($lastPlan->input['month'] ?? now()->format('Y-m')).'-01')->format('F Y'))
+        @if (in_array($lastPlan->status, ['queued', 'running'], true))
+            <div wire:poll.4s>
+                <x-ui.alert tone="info" class="mb-6">The AI is writing your posts for {{ $planLabel }}. This takes a minute or two; they'll appear in the calendar.</x-ui.alert>
+            </div>
+        @elseif ($lastPlan->status === 'failed')
+            <x-ui.alert tone="warning" class="mb-6">The month plan for {{ $planLabel }} didn't work: {{ $lastPlan->error }}</x-ui.alert>
+        @elseif ($lastPlan->updated_at->greaterThan(now()->subMinutes(30)))
+            <x-ui.alert tone="success" class="mb-6">{{ $lastPlan->output['drafts'] ?? 0 }} AI {{ str('draft')->plural($lastPlan->output['drafts'] ?? 0) }} added for {{ $planLabel }}. Open each one to check it, add a photo and schedule it.</x-ui.alert>
+        @endif
+    @endif
+
+    {{-- Last-minute openings (D69) --}}
+    @if ($openings !== [])
+        <x-ui.card class="mb-6">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-base font-semibold text-ink">Last-minute openings</h2>
+                    <p class="mt-1 text-sm text-muted">Free times in the next few days. A quick post can fill them.</p>
+                    <ul class="mt-3 space-y-1 text-sm">
+                        @foreach ($openings as $day)
+                            <li><span class="font-medium text-ink">{{ $day['date']->isToday() ? 'Today' : ($day['date']->isTomorrow() ? 'Tomorrow' : $day['date']->format('l')) }}</span>
+                                <span class="text-muted">{{ implode(', ', array_map(fn ($t) => $t->format('g:i A'), $day['times'])) }}</span></li>
+                        @endforeach
+                    </ul>
+                </div>
+                <x-ui.button icon="megaphone" :href="route('app.social.posts.create', ['openings' => 1])">Post about these openings</x-ui.button>
+            </div>
+        </x-ui.card>
+    @endif
 
     @unless ($hasAccounts)
         <x-ui.alert tone="info" class="mb-6" title="Connect your accounts to start posting">
@@ -71,8 +139,9 @@
                                         <ul class="mt-1 space-y-1">
                                             @foreach ($items->take(3) as $p)
                                                 <li>
-                                                    <a href="{{ route('app.social.posts.edit', $p) }}" class="block truncate rounded-md bg-surface-2 px-1.5 py-1 text-xs text-ink ring-1 ring-line hover:ring-brand-400" title="{{ $p->status->label() }}: {{ $p->excerpt(200) }}">
+                                                    <a href="{{ route('app.social.posts.edit', $p) }}" class="block truncate rounded-md bg-surface-2 px-1.5 py-1 text-xs text-ink ring-1 ring-line hover:ring-brand-400" title="{{ $p->aiLabel() ? $p->aiLabel().' · ' : '' }}{{ $p->status->label() }}: {{ $p->excerpt(200) }}">
                                                         @foreach ($p->targets->pluck('account.network')->filter()->unique() as $n)<span class="mr-0.5 inline-block size-2 rounded-full" style="background: {{ $n->color() }}"></span>@endforeach
+                                                        @if ($p->status->value === 'draft')<span class="font-medium text-subtle">{{ $p->source === 'ai' ? 'AI draft' : 'Draft' }}</span>@endif
                                                         <span class="text-subtle">{{ ($p->scheduled_at ?? $p->published_at)?->setTimezone($timezone)->format('g:ia') }}</span>
                                                         {{ $p->excerpt(40) }}
                                                     </a>
@@ -117,7 +186,7 @@
                                         @endforeach
                                     </div>
                                 </td>
-                                <td><x-ui.badge :tone="$p->status->tone()">{{ $p->status->label() }}</x-ui.badge></td>
+                                <td><x-ui.badge :tone="$p->status->tone()">{{ $p->status->label() }}</x-ui.badge>@if ($p->aiLabel()) <x-ui.badge tone="info">{{ $p->aiLabel() }}</x-ui.badge>@endif</td>
                             </tr>
                         @endforeach
                     </tbody>

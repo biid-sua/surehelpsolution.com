@@ -89,7 +89,7 @@
             <p class="download-description">
                 Download a PDF copy of this FAQ document for your records and reference.
             </p>
-            <button class="download-button" onclick="downloadPDF('faq-document')">
+            <button class="download-button" data-call="downloadPDF" data-arg="faq-document">
                 <i class="fas fa-file-pdf"></i>
                 Download PDF
             </button>
@@ -100,7 +100,7 @@
 @endsection
 
 @section('scripts')
-<script>
+<script nonce="{{ Vite::cspNonce() }}">
 // PDF Download Function
 function downloadPDF(documentType) {
     // For now, we'll create a simple alert. In a real implementation, 
@@ -118,6 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
     faqItems.forEach(item => {
         const question = item.querySelector('h5');
         const answer = item.querySelector('p');
+        if (!question || !answer) return;   // items laid out differently (e.g. lists) stay as they are
         
         // Create expand/collapse functionality
         answer.style.maxHeight = 'none';

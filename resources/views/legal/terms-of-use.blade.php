@@ -299,7 +299,7 @@
             <p class="download-description">
                 Download a PDF copy of this Terms of Use for your records and legal documentation.
             </p>
-            <button class="download-button" onclick="downloadPDF('terms-of-use')">
+            <button class="download-button" data-call="downloadPDF" data-arg="terms-of-use">
                 <i class="fas fa-file-pdf"></i>
                 Download PDF
             </button>
@@ -310,7 +310,7 @@
 @endsection
 
 @section('scripts')
-<script>
+<script nonce="{{ Vite::cspNonce() }}">
 // PDF Download Function
 function downloadPDF(documentType) {
     // For now, we'll create a simple alert. In a real implementation, 
