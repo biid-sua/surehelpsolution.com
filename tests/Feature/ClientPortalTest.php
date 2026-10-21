@@ -81,18 +81,28 @@ class ClientPortalTest extends TestCase
         return $call;
     }
 
+    public function test_the_calendar_comes_first_and_the_numbers_after(): void
+    {
+        [$client, $organization] = $this->client();
+        $organization->forceFill(['setup_completed_at' => now()])->save();
+
+        $this->assertSame(route('app.calendar'), $client->fresh()->homeUrl());
+        $this->actingAs($client)->get(route('app.calendar'))->assertOk()
+            ->assertSeeInOrder(['Calendar', 'Appointments', 'Dashboard', 'Results']);
+    }
+
     public function test_login_sends_clients_to_the_business_portal(): void
     {
         [$client, $organization] = $this->client(['email' => 'owner@plumbing.test', 'password' => 'Secret123!']);
 
-        // A new business starts in the setup wizard; once set up, owners land on the dashboard.
+        // A new business starts in the setup wizard; once set up, owners land on their calendar.
         $this->postJson(route('auth.login'), ['email' => 'owner@plumbing.test', 'password' => 'Secret123!'])
             ->assertOk()
             ->assertJsonPath('redirect', route('app.setup'));
         $this->post(route('auth.logout'));
         $organization->forceFill(['setup_completed_at' => now()])->save();
         $this->postJson(route('auth.login'), ['email' => 'owner@plumbing.test', 'password' => 'Secret123!'])
-            ->assertJsonPath('redirect', route('app.dashboard'));
+            ->assertJsonPath('redirect', route('app.calendar'));
     }
 
     public function test_dashboard_shows_real_counts_for_own_business_only(): void

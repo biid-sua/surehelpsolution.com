@@ -270,6 +270,8 @@ class SocialManageController extends Controller
             'ai_note' => $post->ai_note,
             'custom' => $post->targets->filter(fn ($t) => $t->account !== null && filled($t->body))->mapWithKeys(fn ($t) => [$t->account->ulid => $t->body])->all(),
             'account_ids' => $post->targets->filter(fn ($t) => $t->account !== null)->map(fn ($t) => $t->account->ulid)->values()->all(),
+            // Additive (D76): per-account options (Google: topic, button, button_url, title, starts_on, ends_on, coupon, terms).
+            'options' => (object) $post->targets->filter(fn ($t) => $t->account !== null && filled($t->options))->mapWithKeys(fn ($t) => [$t->account->ulid => $t->options])->all(),
             'media_ids' => $post->media->pluck('ulid')->all(),
             'editable' => $post->status->isEditable(),
         ];

@@ -440,11 +440,23 @@ class User extends Authenticatable
         return match ($this->role) {
             'admin' => route('admin.home'),
             'agent' => route('agent.home'),
-            // A business owner who hasn't finished setup starts in the setup wizard (spec ONB).
-            'client' => ($organization = $this->primaryOrganization()) && ! $organization->isSetUp() && $this->organizationRole($organization) === 'owner'
-                ? route('app.setup')
-                : route('app.dashboard'),
+            'client' => $this->clientHomeUrl(),
         };
+    }
+
+    /**
+     * Business users start on their calendar: their schedule is why they open SureHelp. A business
+     * owner who hasn't finished setup starts in the setup wizard (spec ONB), and anyone who can't see
+     * the calendar starts on the dashboard.
+     */
+    private function clientHomeUrl(): string
+    {
+        $organization = $this->primaryOrganization();
+        if ($organization && ! $organization->isSetUp() && $this->organizationRole($organization) === 'owner') {
+            return route('app.setup');
+        }
+
+        return $organization && $this->can('calls.view', $organization) ? route('app.calendar') : route('app.dashboard');
     }
 
     public function requiresPasswordChange(): bool

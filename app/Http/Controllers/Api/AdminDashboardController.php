@@ -67,6 +67,14 @@ class AdminDashboardController extends Controller
                 $query->where('is_active', $status === 'active');
             }
 
+            // Search by name, email, phone or staff id (additive)
+            $search = trim(mb_substr((string) $request->get('search', ''), 0, 100));
+            if ($search !== '') {
+                $like = '%'.addcslashes($search, '%_\\').'%';
+                $query->where(fn ($q) => $q->where('name', 'like', $like)->orWhere('email', 'like', $like)
+                    ->orWhere('phone', 'like', $like)->orWhere('unique_id', 'like', $like));
+            }
+
             $users = $query
                 ->orderBy('created_at', 'desc')
                 ->offset($offset)

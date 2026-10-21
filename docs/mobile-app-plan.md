@@ -4,6 +4,16 @@
 **Written from:** the web system (`biid-sua/surehelpsolution.com`), as of decision D69.
 **Goal:** bring the app up to date with the web system and make it fast, reliable and pleasant for **business owners (clients)** and **agents**. Admin features stay light: staff work on the web.
 
+## Status (2026-10-21)
+
+- **Built and merged:** M-1 to M-44 and M-46 to M-50, in `biid-sua/SHS_Mobile_App` (pull requests #1 and #2). Every API task except API-18 is built too, plus the follow-ups in D76.
+- **M-45, calls in the app:** a proposal only (`docs/CALLS_IN_APP_PROPOSAL.md` in the app repo). API-18 waits on that decision.
+- **Since then:**
+  - business users start on the Calendar tab (D75);
+  - the app uses the D76 follow-ups (follow-ups linked to their call, tag ids, the business on call logs, the business briefing for agents, admin search).
+- **Still to do in the app:** a month view in the calendar, Google offer and button options for posts, app-icon shortcuts and the in-app review prompt, the remaining text in translation files, home-screen widgets.
+- **Needs the owner:** the developer accounts, Firebase iOS file and APNs key, the Xcode capabilities, the Android upload key, and store listings (the app's `docs/STORE.md`).
+
 Tasks are numbered **M-…** (mobile repo) and **API-…** (web repo, built by the web-repo session). A mobile task that needs a new endpoint names it, e.g. *needs API-3*. Do the phases in order; tasks inside a phase can run in parallel.
 
 ---

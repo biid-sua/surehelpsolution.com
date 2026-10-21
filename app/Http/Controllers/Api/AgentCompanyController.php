@@ -7,10 +7,15 @@ use App\Http\Resources\CustomerResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\AgentAssignment;
 use App\Models\Appointment;
+use App\Models\BusinessProfile;
+use App\Models\BusinessService;
 use App\Models\CallLog;
 use App\Models\Conversation;
 use App\Models\Customer;
+use App\Models\KnowledgeItem;
 use App\Models\Organization;
+use App\Services\Business\BusinessHours;
+use App\Services\Rules\BusinessRules;
 use App\Services\Training\TrainingReadiness;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -45,9 +50,10 @@ class AgentCompanyController extends Controller
         ])->values()]);
     }
 
-    public function show(Request $request, string $company): JsonResponse
+    public function show(Request $request, string $company, BusinessHours $hours, BusinessRules $rules): JsonResponse
     {
         $organization = $this->company($request, $company, 'organization.view');
+        $profile = BusinessProfile::query()->forOrganization($organization)->first();
         $timezone = $organization->timezoneOrDefault();
         $today = [CarbonImmutable::now($timezone)->startOfDay()->utc(), CarbonImmutable::now($timezone)->endOfDay()->utc()];
 
@@ -56,6 +62,22 @@ class AgentCompanyController extends Controller
             'name' => $organization->name,
             'timezone' => $timezone,
             'appointments_today' => Appointment::query()->forOrganization($organization)->blocking()->whereBetween('starts_at', $today)->count(),
+            // Additive: what the agent reads before answering for this business (the web workspace's sidebar).
+            'status' => $hours->status($organization),
+            'hours' => $hours->weekly($organization),
+            'briefing' => $rules->briefing($organization),
+            'emergency' => ['available' => (bool) $profile?->emergency_available, 'instructions' => $profile?->emergency_instructions],
+            'services' => BusinessService::query()->forOrganization($organization)->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get()
+                ->map(fn (BusinessService $s) => [
+                    'id' => $s->id,
+                    'name' => $s->name,
+                    'price_label' => $s->price_type->display($s->price_cents, $s->currency),
+                    'duration_minutes' => $s->duration_minutes,
+                    'bookable' => (bool) $s->is_bookable,
+                ])->values(),
+            'knowledge' => KnowledgeItem::query()->forOrganization($organization)->forAgents()->ordered()->limit(30)->get()
+                ->map(fn (KnowledgeItem $k) => ['id' => $k->id, 'title' => $k->title, 'content' => $k->content, 'category' => $k->category, 'pinned' => (bool) $k->is_pinned])
+                ->values(),
         ]]);
     }
 

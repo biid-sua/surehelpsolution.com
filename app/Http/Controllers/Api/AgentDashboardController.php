@@ -105,7 +105,7 @@ class AgentDashboardController extends Controller
             $offset = $request->get('offset', 0);
             $status = $request->get('status', 'all'); // all, new, service-requested, completed, etc.
 
-            $query = CallLog::where('user_id', $userId)->visibleToAgent($user);
+            $query = CallLog::where('user_id', $userId)->visibleToAgent($user)->with('organization:id,ulid,name');
 
             // Filter by status if specified
             if ($status !== 'all') {
@@ -117,28 +117,7 @@ class AgentDashboardController extends Controller
                 ->offset($offset)
                 ->limit($limit)
                 ->get()
-                ->map(function ($log) {
-                    return [
-                        'id' => $log->id,
-                        'call_id' => $log->call_id ?? $log->id,
-                        'call_date' => $log->call_date,
-                        'call_time' => $log->call_time,
-                        'caller_name' => $log->caller_name,
-                        'caller_phone' => $log->caller_phone,
-                        'caller_email' => $log->caller_email,
-                        'reason_for_call' => $log->reason_for_call,
-                        'call_outcome' => $log->call_outcome,
-                        'agent_name' => $log->agent_name,
-                        'status' => $log->status,
-                        'service_request' => $log->service_request,
-                        'service_date' => $log->service_date,
-                        'service_window' => $log->service_window,
-                        'service_location' => $log->service_location,
-                        'notes' => $log->notes,
-                        'created_at' => $log->created_at,
-                        'updated_at' => $log->updated_at,
-                    ];
-                });
+                ->map(fn (CallLog $log) => $this->presentLog($log));
 
             return response()->json([
                 'success' => true,
@@ -333,6 +312,8 @@ class AgentDashboardController extends Controller
                         'phone' => $client->phone ?? '',
                         // The outcomes this business offers, for the call form (added P2-4a).
                         'call_outcomes' => $outcomes->menu($client->organizations->first()),
+                        // Additive: the business this client account runs, to preselect it in the call form.
+                        'business' => ($business = $client->organizations->first()) ? ['id' => $business->ulid, 'name' => $business->name] : null,
                     ];
                 });
 
@@ -351,5 +332,48 @@ class AgentDashboardController extends Controller
                 'message' => 'Failed to fetch clients list',
             ], 500);
         }
+    }
+
+    /**
+     * One of my call logs (GET /agent/call-logs/{id}), for editing it. Someone else's call, or one in
+     * a company I no longer serve, answers 404 (D40).
+     */
+    public function showCallLog(Request $request, string $id)
+    {
+        $callLog = CallLog::query()->whereKey($id)->where('user_id', $request->user()->id)->visibleToAgent($request->user())
+            ->with('organization:id,ulid,name')->first();
+        if (! $callLog || $request->user()->cannot('view', $callLog)) {
+            return response()->json(['success' => false, 'message' => 'Call log not found'], 404);
+        }
+
+        return response()->json(['success' => true, 'data' => ['call_log' => $this->presentLog($callLog)]]);
+    }
+
+    /** @return array<string, mixed> */
+    private function presentLog(CallLog $log): array
+    {
+        return [
+            'id' => $log->id,
+            'call_id' => $log->call_id ?? $log->id,
+            'call_date' => $log->call_date,
+            'call_time' => $log->call_time,
+            'caller_name' => $log->caller_name,
+            'caller_phone' => $log->caller_phone,
+            'caller_email' => $log->caller_email,
+            'reason_for_call' => $log->reason_for_call,
+            'call_outcome' => $log->call_outcome,
+            'agent_name' => $log->agent_name,
+            'status' => $log->status,
+            'service_request' => $log->service_request,
+            'service_date' => $log->service_date,
+            'service_window' => $log->service_window,
+            'service_location' => $log->service_location,
+            'notes' => $log->notes,
+            'created_at' => $log->created_at,
+            'updated_at' => $log->updated_at,
+            // Additive: the business it was logged for, and the client_id the form sends back.
+            'client_id' => $log->client_id,
+            'business' => $log->organization ? ['id' => $log->organization->ulid, 'name' => $log->organization->name] : null,
+        ];
     }
 }
