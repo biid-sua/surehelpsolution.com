@@ -1,6 +1,6 @@
 # Project status
 
-_As of 2026-10-06. Detailed tracker: [implementation-plan.md](implementation-plan.md). Reasons behind decisions: [decisions.md](decisions.md)._
+_As of 2026-10-21. Detailed tracker: [implementation-plan.md](implementation-plan.md). Reasons behind decisions: [decisions.md](decisions.md)._
 
 **Summary:** Phases 0–2 are merged and **deployed to production** (2026-10-04). Since then, merged into `develop` and **not yet deployed**:
 - **Google / Microsoft calendar sync (P3-1)** is built. It goes live once the two OAuth apps are registered ([calendar-sync.md](calendar-sync.md)).
@@ -36,7 +36,25 @@ _As of 2026-10-06. Detailed tracker: [implementation-plan.md](implementation-pla
 - **Connect a website (G-3, D44):** owners prove they own their site, get a health and SEO check with plain-language fixes (re-checked monthly), and the one snippet now offers chat, online booking, click-to-call and a contact form, all landing in the CRM ([websites.md](websites.md)).
 - **SEO service (D57):** businesses take SEO as a paid add-on. AI does the SEO work within a monthly token allowance: keyword plans, page titles and descriptions, local pages, FAQs and Google Business Profile posts. The work is reviewed and then marked live. Before-and-after statistics come from Google Search Console, website health history and website leads. Setup steps: [seo.md](seo.md).
 
-380 automated tests pass.
+- **Colour themes (D59):** ten portal themes, chosen per person, with an administrator default; the same choice in the app.
+- **Live calls, texting and phone push (D60–D63):**
+  - Twilio calls ring agents' web softphone, with after-hours routing, calling out, warm transfer and recordings in quality reviews.
+  - Texting in the Inbox (with pictures), missed-call text-back and appointment reminder texts.
+  - Notification texts to a verified mobile number, and push to the phone app.
+  - All of it is built; it goes live with the Twilio account and A2P 10DLC approval.
+- **Card payments through Stripe (D64):** card payment and automatic payments, ready to switch on.
+- **Self-serve sign-up (D65)** from the website.
+- **Growth extras (D66–D69):**
+  - an AI writer for social posts;
+  - where customers come from, in Results;
+  - a link-in-bio page;
+  - last-minute openings posts.
+- **Content-Security-Policy (D67)** on every page.
+- **The API for the new mobile app (D70–D74, D76):** capabilities, the notification centre, settings, account closure, call details, Results, inbox actions, customers, social, billing, team, agents' requests, reviews and availability, search, app links, an update check and a generated OpenAPI description.
+- **Calendar first (D75):** business users land on their calendar after signing in.
+- **The mobile app was rebuilt** in its own repo (`biid-sua/SHS_Mobile_App`) for businesses, agents and admins, and merged. Its own README lists the store steps.
+
+561 automated tests pass.
 
 ---
 
@@ -160,7 +178,7 @@ Everything the 2026-10-23 audit found has been built (A-5 to A-12 above). What's
 | Item | Notes |
 |---|---|
 | **Before deploying the accounts release** | Tell staff and agents they'll need an authenticator app on their phone. Check outgoing email works (password resets, invitations). Set `SESSION_DRIVER=database`. See [deployment.md](deployment.md) |
-| Mobile app: two-step code field | Staff and agents can't sign in to the app until it sends `two_factor_code` ([api.md](api.md)) |
+| **Mobile app release** | The app sends two-step codes now. Before the stores: add the iOS Firebase file and APNs key, set up the Xcode capabilities, create the Android upload key, then upload. After the first uploads, set `MOBILE_ANDROID_SHA256`, `MOBILE_IOS_APP_IDS` and the `MOBILE_*_STORE_URL` settings here (the app repo's `docs/STORE.md`) |
 | **Deploy `develop`** | Everything is merged. On the server: `composer install --no-dev -o`, `php artisan migrate --force`, `npm ci && npm run build`, `php artisan optimize`. Enable the PHP `zip` extension first. Set `TENANCY_AUTO_ASSIGN_AGENTS=false`, then review automatic assignments under *Agent assignments* (admin menu) |
 | **Billing setup** | *Admin › Billing › Payment settings*: Payoneer payment link and receiving-account bank details. Then create plans and subscribe businesses ([billing.md](billing.md)) |
 | Production clean-up from P1-0 | Confirm `/.env` returns 403, rotate secrets if it was ever reachable, delete old `storage/logs/*.log` (they contain passwords), move `.zip`/old backups off the server, run `php artisan audit:call-ownership --details` |
@@ -202,19 +220,19 @@ Phase 3 Calendar
   ├─ internal calendar ............ done (P2-5)
   └─ Google / Microsoft sync ...... built (P3-1); live after OAuth app registrations
 
-Phase 3b Telephony ............... needs Twilio account
+Phase 3b Telephony ............... built (D60–D62); live with a Twilio account
   └─ call recordings / transcripts feed later AI features (Phase 7)
 
 Phase 4 Communication
-  ├─ email templates, reminders ... ready to build
-  └─ SMS .......................... needs A2P 10DLC approval
+  ├─ email templates, reminders ... done
+  └─ SMS .......................... built (D61–D63); live after A2P 10DLC approval
         └─ urgent-escalation SMS (finishes P2-4c)
 
 Phase 5 Billing .................. P5-1 done with Payoneer (manual confirmation)
-  ├─ automatic payments ........... needs Payoneer Checkout or Stripe
+  ├─ automatic payments ........... Stripe built (D64); live with Stripe keys
   └─ plan limits and add-ons gate Phases 6–9 features (Entitlements service ready)
 
-Phase 6 AI foundation ............ needs LLM vendor + DPA/BAA
+Phase 6 AI foundation ............ built; live with the Anthropic key + DPA
   └─ Phase 7 AI products (chatbot, copilot, call summaries)
        └─ uses Phase 2 knowledge base and rules, Phase 3b transcripts
 
@@ -226,16 +244,15 @@ Phase 8 Growth (D33–D36)
   ├─ G-4 SureHelp Sites ........... needs sites domain + Cloudflare; custom domains need hosting move
   └─ G-5 analytics in Results ..... after G-1/G-3 and provider approvals
 
-Phase 10 Mobile .................. needs Apple/Google developer accounts + Firebase key
-  └─ generated OpenAPI spec (deferred from P1-6)
+Phase 10 Mobile .................. app built and merged; needs Apple/Google developer accounts + Firebase key
+  └─ generated OpenAPI spec ....... done (/api/v1/openapi.json)
 
 Hosting move (D6) ................ unlocks real-time updates (Reverb) and a long-running worker (Horizon)
 ```
 
 **Suggested order:**
-1. Deploy calendar sync and billing.
-2. Fill in the Payoneer settings and start invoicing.
-3. Register the Google and Microsoft apps, and submit Google verification.
-4. Start A2P 10DLC.
-5. Submit Meta App Review and LinkedIn API access, and get an Anthropic API key (Growth, D33–D34).
-6. While approvals come through, build what isn't blocked: G-1 social foundation, G-3 connect a website, Phase 4 email.
+1. Start the slow approvals now: A2P 10DLC, Meta App Review and Business Verification, Google verification (calendar and Search Console), the Apple and Google developer accounts.
+2. Deploy `develop` (section B).
+3. Add the keys as they arrive: Anthropic, Firebase service account, the Google and Microsoft calendar apps, Twilio, Stripe.
+4. Fill in the billing settings and start invoicing.
+5. Release the mobile app (section B).
