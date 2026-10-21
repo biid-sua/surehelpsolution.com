@@ -22,16 +22,17 @@ class PortalNavigation
     {
         return match ($portal) {
             'client' => [
-                $this->item('Dashboard', 'home', 'app.dashboard', 'app.dashboard', 'dashboard.view'),
-                $this->item('Results', 'trend-up', 'app.results', 'app.results*', 'reports.view'),
-                $this->item('Calls', 'phone', 'app.calls.index', 'app.calls.*', 'calls.view'),
+                // The schedule first (they open SureHelp for it); the numbers are a tap away, not the first screen.
                 $this->item('Calendar', 'calendar', 'app.calendar', 'app.calendar', 'calls.view'),
                 $this->item('Appointments', 'list', 'app.appointments.index', 'app.appointments.*', 'appointments.view'),
+                $this->item('Inbox', 'chat', 'app.inbox.index', 'app.inbox.*', 'messages.view'),
+                $this->item('Calls', 'phone', 'app.calls.index', 'app.calls.*', 'calls.view'),
                 $this->item('Customers', 'users', 'app.customers.index', 'app.customers.*', 'customers.view'),
                 $this->item('Tasks', 'check-circle', 'app.tasks.index', 'app.tasks.*', 'tasks.view'),
                 $this->item('Escalations', 'alert', 'app.escalations.index', 'app.escalations.*', 'escalations.view'),
+                $this->item('Dashboard', 'home', 'app.dashboard', 'app.dashboard', 'dashboard.view'),
+                $this->item('Results', 'trend-up', 'app.results', 'app.results*', 'reports.view'),
                 $this->item('Social', 'megaphone', 'app.social.index', 'app.social.*', 'social.view', 'social_publishing'),
-                $this->item('Inbox', 'chat', 'app.inbox.index', 'app.inbox.*', 'messages.view'),
                 $this->item('Business', 'building', 'app.business.profile', 'app.business.*', 'organization.view'),
                 $this->item('Website', 'globe', 'app.website', 'app.website*', 'integrations.view', 'website_tools'),
                 $this->item('SEO', 'trend-up', 'app.seo', 'app.seo*', 'seo.view'),

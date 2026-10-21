@@ -388,7 +388,7 @@ class Wizard extends Component
 
         $progress->complete($organization, auth()->user());
         session()->flash('status', 'You\'re all set. SureHelp will check your details and confirm when your line is live.');
-        $this->redirectRoute('app.dashboard');
+        $this->redirect(auth()->user()->homeUrl());
     }
 
     public function render(SetupProgress $progress, CalendarManager $calendars): View

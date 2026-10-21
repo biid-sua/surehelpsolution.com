@@ -1140,3 +1140,10 @@ Start these early. The code can be built and tested with your own accounts befor
   Field detail stays in `docs/api.md`.
 
 **Why:** with these, the app covers agents' day too: schedule, feedback, and stepping away. The generated description gives the mobile team a checkable contract.
+
+## D75 — Business users start on their calendar (2026-10-21)
+**Decision:** after signing in, business users land on the **Calendar** (website and app), not the dashboard.
+- **Website:** `User::homeUrl()` sends them to `app.calendar` when they may see it, otherwise to the dashboard. An owner who hasn't finished setup still starts in the setup wizard, and finishing it lands on the calendar. In the menu, Calendar, Appointments and Inbox come first; Dashboard and Results come after the day-to-day pages.
+- **App:** the tabs are Calendar, Inbox, Calls, Overview (the old Home, with the numbers) and More. Business users land on Calendar.
+
+**Why:** businesses open SureHelp to see and run their schedule. Their numbers matter, but they aren't what people need at first glance, and profit and loss isn't something SureHelp works out.
