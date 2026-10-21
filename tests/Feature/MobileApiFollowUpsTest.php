@@ -4,11 +4,13 @@ namespace Tests\Feature;
 
 use App\Actions\Assignments\AssignAgent;
 use App\Actions\Organizations\ProvisionUserTenancy;
+use App\Enums\SocialNetwork;
 use App\Models\BusinessService;
 use App\Models\CallLog;
 use App\Models\Customer;
 use App\Models\KnowledgeItem;
 use App\Models\Organization;
+use App\Models\SocialAccount;
 use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -130,5 +132,19 @@ class MobileApiFollowUpsTest extends TestCase
         $names = collect($this->getJson('/api/v1/admin/users?search=priya')->assertOk()->json('data.users'))->pluck('name')->all();
         $this->assertSame(['Priya Sharma'], $names);
         $this->assertCount(0, $this->getJson('/api/v1/admin/users?search=%25')->json('data.users'), 'wildcards are taken literally');
+    }
+
+    public function test_google_post_options_come_back_for_editing(): void
+    {
+        $google = SocialAccount::create(['organization_id' => $this->business->id, 'network' => SocialNetwork::GoogleBusiness, 'external_id' => 'g-1',
+            'name' => 'Rivera on Google', 'access_token' => 't', 'is_enabled' => true]);
+
+        Sanctum::actingAs($this->owner);
+        $options = ['topic' => 'OFFER', 'button' => 'BOOK', 'button_url' => 'https://rivera.test/book', 'title' => '10% off tune-ups',
+            'starts_on' => now()->addDay()->toDateString(), 'ends_on' => now()->addDays(8)->toDateString(), 'coupon' => 'SPRING10'];
+        $id = $this->postJson('/api/v1/client/social/posts', ['intent' => 'draft', 'body' => 'Spring tune-ups', 'accounts' => [$google->ulid],
+            'options' => [$google->ulid => $options]])->assertCreated()->json('data.post.id');
+
+        $this->assertSame($options, $this->getJson("/api/v1/client/social/posts/{$id}")->assertOk()->json("data.post.options.{$google->ulid}"));
     }
 }

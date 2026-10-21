@@ -197,9 +197,9 @@ Social endpoints need the `social_publishing` feature (`403` with `feature` othe
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/client/social/accounts` | Connected accounts → `data.accounts[]`: `id`, `network`, `network_label`, `name`, `avatar_url`, `enabled`, `needs_reconnect`, `limits` (`max_chars`, `requires_media`, `max_images`, `links`, `clickable_links`, `max_hashtags`) |
-| GET | `/client/social/posts/{id}` | One post: the list fields plus `ai_note`, `custom{account_id: text}`, `account_ids[]`, `media_ids[]`, `editable` |
+| GET | `/client/social/posts/{id}` | One post: the list fields plus `ai_note`, `custom{account_id: text}`, `options{account_id: {…}}` (D76), `account_ids[]`, `media_ids[]`, `editable` |
 | POST | `/client/social/posts/check` | Check without saving: `body`, `link_url?`, `accounts[]`, `custom?`, `media[]?` → `data.checks[]`: `account`, `errors[]`, `warnings[]` (the web's per-network rules) |
-| POST | `/client/social/posts` | `Idempotency-Key`. `intent` (`draft`, `schedule` or `now`), `body`, `link_url?`, `accounts[]` (account ids), `custom?{account_id: text}`, `media[]?` (ids from `/social/media`), `scheduled_at?` (ISO 8601, required to schedule), `options?{account_id: {…}}` (Google button and offer fields), `ai_assisted?` → `201` with `data.post`. A manager's or an AI draft's post goes to `in_review` for the owner, as on the web. `422` lists each network's problems |
+| POST | `/client/social/posts` | `Idempotency-Key`. `intent` (`draft`, `schedule` or `now`), `body`, `link_url?`, `accounts[]` (account ids), `custom?{account_id: text}`, `media[]?` (ids from `/social/media`), `scheduled_at?` (ISO 8601, required to schedule), `options?{account_id: {…}}` (Google Business: `topic` `STANDARD`/`OFFER`/`EVENT`, `button` `BOOK`/`ORDER`/`SHOP`/`LEARN_MORE`/`SIGN_UP`/`CALL`, `button_url`, and for offers and events `title`, `starts_on`, `ends_on` (`YYYY-MM-DD`), plus `coupon` and `terms` for offers), `ai_assisted?` → `201` with `data.post`. A manager's or an AI draft's post goes to `in_review` for the owner, as on the web. `422` lists each network's problems |
 | PUT | `/client/social/posts/{id}` | The same fields, for a post that's still a draft, in review or scheduled |
 | POST | `/client/social/posts/{id}/cancel` · `/retry` · DELETE `/{id}` | Cancel a planned post, try a failed one again, delete |
 | POST | `/client/social/media` | Multipart `photo` (JPG, PNG or WebP) and `alt?` → `201` with `data.media{id, url, alt}` |
@@ -305,7 +305,7 @@ A staff member without the permission gets `403`. Dashboard: `dashboard.view`. A
 
 | Date | Change |
 |---|---|
-| 2026-10-21 | For the mobile app (D76): `call_id` on `POST /client/tasks`; `customer.tag_list` with ids; `business` on `/agent/clients` and agent call logs; `GET /agent/call-logs/{id}`; the business's hours, briefing, services and knowledge on `GET /agent/companies/{id}`; `search` on `GET /admin/users`. All additive. |
+| 2026-10-21 | For the mobile app (D76): `call_id` on `POST /client/tasks`; `customer.tag_list` with ids; `business` on `/agent/clients` and agent call logs; `GET /agent/call-logs/{id}`; the business's hours, briefing, services and knowledge on `GET /agent/companies/{id}`; `search` on `GET /admin/users`; `options` on `GET /client/social/posts/{id}`. All additive. |
 | 2026-11-12 | For the mobile app (D74): agents' shift requests, quality reviews and availability; `GET /client/search`; `GET /openapi.json`. |
 | 2026-11-11 | For the mobile app (D73): writing, checking and scheduling social posts, photos, AI writing, openings, link page; billing summary, invoices, PDF, card payment, payment reports, automatic payments off; the team (members, invitations, roles). |
 | 2026-11-10 | For the mobile app (D72): inbox actions (start a text, assign, close and reopen, AI on or off, read, AI suggestions, rating); signed links for texted pictures; adding and editing customers, with a duplicate lookup, notes and tags; the app-link files under `/.well-known/`. Conversations gain `assigned_to` and `ai_paused` (additive). |
