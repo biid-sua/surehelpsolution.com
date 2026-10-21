@@ -1147,3 +1147,14 @@ Start these early. The code can be built and tested with your own accounts befor
 - **App:** the tabs are Calendar, Inbox, Calls, Overview (the old Home, with the numbers) and More. Business users land on Calendar.
 
 **Why:** businesses open SureHelp to see and run their schedule. Their numbers matter, but they aren't what people need at first glance, and profit and loss isn't something SureHelp works out.
+
+## D76 — API follow-ups for the mobile app (2026-10-21)
+**Decision:** small, additive API changes that remove workarounds in the new app:
+- `POST /client/tasks` takes `call_id`, so a follow-up links to its call;
+- `customer.tag_list` adds tag ids next to the existing `tags` names;
+- `/agent/clients` and agent call logs name their business;
+- `GET /agent/call-logs/{id}` opens one log for editing;
+- `GET /agent/companies/{id}` carries the business's hours, briefing, services and knowledge (the web workspace's sidebar);
+- `GET /admin/users` takes `search`.
+
+**Why:** the app had to guess or make extra calls for each of these. Nothing existing changes shape, so older apps keep working (the v1 compatibility promise).

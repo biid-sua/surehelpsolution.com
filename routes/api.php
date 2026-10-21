@@ -271,6 +271,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
         Route::get('/dashboard/performance', [AgentDashboardController::class, 'getPerformanceData']);
         Route::get('/call-logs', [AgentDashboardController::class, 'getCallLogs']);
         Route::post('/call-logs', [AgentDashboardController::class, 'createCallLog'])->middleware(['can:calls.create', 'idempotent']);
+        Route::get('/call-logs/{id}', [AgentDashboardController::class, 'showCallLog'])->whereNumber('id');
         Route::put('/call-logs/{id}', [AgentDashboardController::class, 'updateCallLog']);
         Route::get('/clients', [AgentDashboardController::class, 'getClientsList']);
         // Assigned companies (D40): the same check as the web portal; unassigned = 404.

@@ -151,9 +151,9 @@ Common routes:
 | GET | `/client/business` | Permission `organization.view`. `data.business`, `data.location`, `data.hours` (weekday → list of `"9 AM – 5 PM"`), `data.upcoming_holidays[]`, `data.status` (`open`, `label`, `until`, `next_open`, `reason`) |
 | GET | `/client/services?include_inactive=1` | `data.services[]`: `price_cents` + `currency` (integer minor units), `price_label`, `duration_minutes`, `buffer_minutes`, `required_fields` |
 | GET | `/client/customers?search&status&per_page` | Permission `customers.view`. `data.customers[]` (`id` = ULID), `meta` (`page`, `per_page`, `total`, `last_page`) |
-| GET | `/client/customers/{id}` | `data.customer` + `data.timeline[]` (latest 50) |
+| GET | `/client/customers/{id}` | `data.customer` + `data.timeline[]` (latest 50). `customer.tags` are names; `customer.tag_list[]` (`id`, `name`) adds the ids for removing one |
 | GET | `/client/tasks?status=open\|overdue\|done\|all&mine&customer&per_page` | Permission `tasks.view`. Default `open`, most urgent first. `data.tasks[]`: `id` (ULID), `type` (`callback`, `follow_up`, `todo`), `title`, `description`, `priority` (`urgent`, `high`, `normal`, `low`), `status` (`open`, `in_progress`, `completed`, `cancelled`), `is_overdue`, `due_at`, `source`, `customer {id, name}`, `call_id`, `assigned_to {id, name}`, `completed_at`, `created_at`. Paged like customers |
-| POST | `/client/tasks` | Permission `tasks.create`. `title` (required), `type`, `priority`, `description`, `due_at` (ISO 8601), `customer_id` (customer ULID), `assigned_to` (user id of an active team member). 201 with `data.task` |
+| POST | `/client/tasks` | Permission `tasks.create`. `title` (required), `type`, `priority`, `description`, `due_at` (ISO 8601), `customer_id` (customer ULID), `call_id?` (the call it follows up, e.g. `CL-…`; its customer comes along; another business's call is `422`), `assigned_to` (user id of an active team member). 201 with `data.task` |
 | GET | `/client/tasks/{id}` | `data.task` |
 | GET | `/client/knowledge?type&search` | Permission `knowledge_base.view`. Active items, pinned first: `data.items[] {id, type, title, content, category, visibility, pinned, updated_at}` |
 | GET | `/client/rules` | `data.rules[] {id, type, description, enforced, active}`; `description` is the rule as a sentence |
@@ -260,12 +260,13 @@ Social endpoints need the `social_publishing` feature (`403` with `feature` othe
 | GET | `/agent/dashboard/performance` | `data.performance_data` |
 | GET | `/agent/call-logs?status&limit&offset` | Own calls, for businesses the agent serves now |
 | POST | `/agent/call-logs` | Permission `calls.create` **in the client's business** (else 422 on `client_id`). `call_outcome` must be one of that business's active outcomes (else 422 on `call_outcome`). Optional `escalation_type` / `escalation_priority` for outcomes in the escalated category (default `urgent_issue`, priority from the type). Callback outcomes create a task; escalated outcomes raise an escalation. Notifies the business |
+| GET | `/agent/call-logs/{id}` | One of my call logs, for editing → `data.call_log` (the list's fields). Someone else's, or one in a business I no longer serve, is `404` |
 | PUT | `/agent/call-logs/{id}` | Own calls, while still assigned to that business. Anything else is `404` |
-| GET | `/agent/clients` | Only businesses the agent is assigned to. Each client carries `call_outcomes: [{key, label, category}]`, the pick-list for that business (added P2-4a, additive) |
+| GET | `/agent/clients` | Only businesses the agent is assigned to. Each client carries `call_outcomes: [{key, label, category}]`, the pick-list for that business (added P2-4a, additive), and `business {id, name}` (ULID; D76). Call logs in `GET /agent/call-logs` also carry `client_id` and `business {id, name}` |
 | PUT | `/agent/call-logs/{id}` with a new `call_outcome` | Must be one of the call's business's active outcomes (else 422 on `call_outcome`) |
 | GET | `/duty-schedules`, `/duty-schedules/calendar` | Own shifts; staff with `users.view` see everyone's (and may pass `agent_id`) |
 | GET | `/agent/companies` | Businesses the agent is assigned to now: `data.companies[]` with `id` (ULID), `name`, `timezone`, `assignment {status, type, starts_at, ends_at}`. Platform staff see every business |
-| GET | `/agent/companies/{id}` | `data.company` with `appointments_today`. Permission `organization.view` there |
+| GET | `/agent/companies/{id}` | `data.company` with `appointments_today`, and what the agent reads before answering (D76): `status` (open now, as on `/client/business`), `hours` (weekday → ranges), `briefing[]` (the business's instructions and rules as sentences), `emergency {available, instructions}`, `services[]` (`id`, `name`, `price_label`, `duration_minutes`, `bookable`), `knowledge[]` (`id`, `title`, `content`, `category`, `pinned`; up to 30, team-only items left out). Permission `organization.view` there |
 | GET | `/agent/companies/{id}/customers?search&per_page` | Paged (`meta.page`, `per_page`, `total`, `last_page`). `customers.view` |
 | GET | `/agent/companies/{id}/customers/{customer}` | Looked up inside that business only. `customers.view` |
 | GET | `/agent/companies/{id}/appointments` | Next 14 days. `appointments.view` |
@@ -296,7 +297,7 @@ A course the agent may not take answers `404`: another company's course, an unpu
 ### Admin — role `admin`, then each endpoint's permission (D32)
 A staff member without the permission gets `403`. Dashboard: `dashboard.view`. Analytics and agent performance: `reports.view`. Users: `users.view` (GET), `users.create` (POST), `users.update` (PUT), `users.delete` (DELETE). Call logs: `calls.view`. Duty schedules: `users.view` to read, `users.update` to create, change, delete or check conflicts.
 
-`/admin/dashboard/stats`, `/admin/analytics`, `/admin/agent-performance`, `/admin/users` (GET/POST, PUT/DELETE `/{id}`), `/admin/call-logs`, `/admin/duty-schedules` (GET/POST, PUT/DELETE `/{id}`, `/calendar`, `/check-conflicts`). Duty schedules use `schedule_date` + `start_time`/`end_time` (`H:i` or `H:i:s`) + `notes`.
+`/admin/dashboard/stats`, `/admin/analytics`, `/admin/agent-performance`, `/admin/users` (GET with `role`, `status`, `search` (name, email, phone or staff id; D76), `limit`, `offset`; POST, PUT/DELETE `/{id}`), `/admin/call-logs`, `/admin/duty-schedules` (GET/POST, PUT/DELETE `/{id}`, `/calendar`, `/check-conflicts`). Duty schedules use `schedule_date` + `start_time`/`end_time` (`H:i` or `H:i:s`) + `notes`.
 
 ---
 
@@ -304,6 +305,7 @@ A staff member without the permission gets `403`. Dashboard: `dashboard.view`. A
 
 | Date | Change |
 |---|---|
+| 2026-10-21 | For the mobile app (D76): `call_id` on `POST /client/tasks`; `customer.tag_list` with ids; `business` on `/agent/clients` and agent call logs; `GET /agent/call-logs/{id}`; the business's hours, briefing, services and knowledge on `GET /agent/companies/{id}`; `search` on `GET /admin/users`. All additive. |
 | 2026-11-12 | For the mobile app (D74): agents' shift requests, quality reviews and availability; `GET /client/search`; `GET /openapi.json`. |
 | 2026-11-11 | For the mobile app (D73): writing, checking and scheduling social posts, photos, AI writing, openings, link page; billing summary, invoices, PDF, card payment, payment reports, automatic payments off; the team (members, invitations, roles). |
 | 2026-11-10 | For the mobile app (D72): inbox actions (start a text, assign, close and reopen, AI on or off, read, AI suggestions, rating); signed links for texted pictures; adding and editing customers, with a duplicate lookup, notes and tags; the app-link files under `/.well-known/`. Conversations gain `assigned_to` and `ai_paused` (additive). |

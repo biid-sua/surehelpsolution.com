@@ -11,6 +11,7 @@ use App\Enums\TaskType;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\TaskResource;
 use App\Http\Responses\ApiResponse;
+use App\Models\CallLog;
 use App\Models\Customer;
 use App\Models\Task;
 use App\Support\Tenancy\CurrentOrganization;
@@ -71,8 +72,16 @@ class TaskController extends Controller
             'description' => ['nullable', 'string', 'max:5000'],
             'due_at' => ['nullable', 'date'],
             'customer_id' => ['nullable', 'string', 'max:26'],
+            // The call it follows up (the call's public id, e.g. from GET /client/calls/{call_id}).
+            'call_id' => ['nullable', 'string', 'max:64'],
             'assigned_to' => ['nullable', 'integer'],
         ]);
+
+        $call = null;
+        if (! empty($data['call_id'])) {
+            $call = CallLog::query()->forOrganization($organization)->where('call_id', $data['call_id'])->first()
+                ?? throw ValidationException::withMessages(['call_id' => ['That call isn’t one of yours.']]);
+        }
 
         $customer = null;
         if (! empty($data['customer_id'])) {
@@ -86,7 +95,8 @@ class TaskController extends Controller
             'priority' => $data['priority'] ?? TaskPriority::Normal->value,
             'description' => $data['description'] ?? null,
             'due_at' => isset($data['due_at']) ? Carbon::parse($data['due_at'])->utc() : null,
-            'customer_id' => $customer?->id,
+            'customer_id' => $customer->id ?? $call?->customer_id,
+            'call_log_id' => $call?->id,
             'assigned_to_user_id' => $data['assigned_to'] ?? null,
         ], $request->user());
 

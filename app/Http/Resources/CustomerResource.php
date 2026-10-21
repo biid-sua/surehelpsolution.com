@@ -32,6 +32,8 @@ class CustomerResource extends JsonResource
             'sms_consent' => $this->sms_consent,
             'email_consent' => $this->email_consent,
             'tags' => $this->whenLoaded('tags', fn () => $this->tags->pluck('name')),
+            // Additive: the same tags with their ids, for removing one (DELETE …/tags/{tag_id}).
+            'tag_list' => $this->whenLoaded('tags', fn () => $this->tags->map(fn ($tag) => ['id' => $tag->id, 'name' => $tag->name])->values()),
             'last_activity_at' => $this->last_activity_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
