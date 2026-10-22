@@ -33,10 +33,7 @@ class DashboardLayout
      */
     public function for(User $user, Organization $organization): array
     {
-        $saved = collect(is_array($user->dashboard_layout) ? $user->dashboard_layout : [])
-            ->filter(fn ($row) => is_array($row) && isset(self::SECTIONS[$row['key'] ?? '']))
-            ->unique('key')
-            ->mapWithKeys(fn (array $row) => [$row['key'] => (bool) ($row['visible'] ?? true)]);
+        $saved = collect($this->saved($user));
         // Sections added after someone saved their layout appear at the end, shown.
         $order = $saved->keys()->merge(array_diff(array_keys(self::SECTIONS), $saved->keys()->all()));
 
@@ -113,21 +110,38 @@ class DashboardLayout
     private function stored(User $user, Organization $organization): array
     {
         $allowed = collect($this->for($user, $organization))->keyBy('key');
-        $saved = collect(is_array($user->dashboard_layout) ? $user->dashboard_layout : [])
-            ->filter(fn ($row) => is_array($row) && isset(self::SECTIONS[$row['key'] ?? '']))
-            ->unique('key')->keyBy('key');
+        $saved = collect($this->saved($user));
         $order = $saved->keys()->merge(array_diff(array_keys(self::SECTIONS), $saved->keys()->all()));
 
         return $order->map(fn (string $key) => [
             'key' => $key,
-            'visible' => (bool) ($allowed->get($key)['visible'] ?? $saved->get($key)['visible'] ?? true),
+            'visible' => (bool) ($allowed->get($key)['visible'] ?? $saved->get($key, true)),
         ])->values()->all();
+    }
+
+    /**
+     * What this person saved, section => visible, in their order. The column is raw JSON, so rows for
+     * unknown sections, malformed rows and repeats (the first one counts) are dropped.
+     *
+     * @return array<string, bool>
+     */
+    private function saved(User $user): array
+    {
+        $saved = [];
+        foreach (is_array($user->dashboard_layout) ? $user->dashboard_layout : [] as $row) {
+            $key = is_array($row) && is_string($row['key'] ?? null) ? $row['key'] : null;
+            if ($key !== null && isset(self::SECTIONS[$key]) && ! array_key_exists($key, $saved)) {
+                $saved[$key] = (bool) ($row['visible'] ?? true);
+            }
+        }
+
+        return $saved;
     }
 
     /** @param list<array{key: string, visible: bool}> $rows */
     private function save(User $user, array $rows): void
     {
-        $user->forceFill(['dashboard_layout' => array_values($rows)])->save();
+        $user->forceFill(['dashboard_layout' => $rows])->save();
     }
 
     private function allowed(User $user, Organization $organization, string $key): bool
