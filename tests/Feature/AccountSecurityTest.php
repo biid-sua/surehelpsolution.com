@@ -62,7 +62,7 @@ class AccountSecurityTest extends TestCase
         $this->post(route('auth.login'), ['email' => $owner->email, 'password' => 'Secret123!'])->assertRedirect(route('app.customers.index'));
         $this->assertAuthenticatedAs($owner);
 
-        $this->get(route('login'))->assertRedirect(route('app.calendar'));
+        $this->get(route('login'))->assertRedirect(route('app.dashboard'));
         $this->post(route('auth.logout'))->assertRedirect(route('login'));
         $this->get(route('login'))->assertSee('You\'re signed out.');
     }
@@ -144,7 +144,7 @@ class AccountSecurityTest extends TestCase
         // forgetting that stands in for waiting for the next window.)
         Cache::forget('two-factor:last:'.$owner->id);
         $code = $this->twoFactorCode($secret);
-        $this->post(route('two-factor.verify'), ['code' => $code])->assertRedirect(route('app.calendar'));
+        $this->post(route('two-factor.verify'), ['code' => $code])->assertRedirect(route('app.dashboard'));
         $this->post(route('auth.logout'));
         $this->post(route('auth.login'), ['email' => $owner->email, 'password' => 'Secret123!']);
         $this->post(route('two-factor.verify'), ['code' => $code])->assertSessionHasErrors('code');
@@ -278,7 +278,7 @@ class AccountSecurityTest extends TestCase
         $this->post(route('invitations.accept', $token), ['name' => 'Sam Lee', 'password' => 'Secret123!', 'password_confirmation' => 'Secret123!'])
             ->assertSessionHasErrors('accept');
         $this->post(route('invitations.accept', $token), ['name' => 'Sam Lee', 'password' => 'Secret123!', 'password_confirmation' => 'Secret123!', 'accept' => '1'])
-            ->assertRedirect(route('app.calendar'));
+            ->assertRedirect(route('app.dashboard'));
 
         $sam = User::where('email', 'sam@rivera.test')->sole();
         $this->assertAuthenticatedAs($sam);
