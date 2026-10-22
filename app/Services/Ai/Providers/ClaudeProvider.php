@@ -52,9 +52,9 @@ class ClaudeProvider implements AiProvider
 
         try {
             $message = $this->client()->beta->messages->create(
-                maxTokens: (int) config('ai.anthropic.max_tokens', 16000),
+                maxTokens: $request->maxTokens ?? (int) config('ai.anthropic.max_tokens', 16000),
                 messages: array_map(fn (array $m) => $this->message($m), $request->messages),
-                model: $this->model(),
+                model: $request->model ?: $this->model(),
                 fallbacks: $fallbacks ? 'default' : null,
                 outputConfig: array_filter([
                     'effort' => $request->effort ?? (string) config('ai.anthropic.effort', 'medium'),

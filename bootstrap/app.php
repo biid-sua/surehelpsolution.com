@@ -50,6 +50,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(prepend: [
             EnsureFrontendRequestsAreStateful::class,
         ]);
+        // Sanctum treats requests from our own site as stateful and checks the CSRF token. The public
+        // chats are sessionless (a visitor token instead), so they're left out (D78).
+        $middleware->validateCsrfTokens(except: ['api/sales-chat/*', 'api/chat/*']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Order matters: the logger only observes (returns null), the renderer answers /api requests.

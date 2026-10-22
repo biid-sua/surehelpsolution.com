@@ -52,9 +52,10 @@ _As of 2026-10-21. Detailed tracker: [implementation-plan.md](implementation-pla
 - **Content-Security-Policy (D67)** on every page.
 - **The API for the new mobile app (D70–D74, D76):** capabilities, the notification centre, settings, account closure, call details, Results, inbox actions, customers, social, billing, team, agents' requests, reviews and availability, search, app links, an update check and a generated OpenAPI description.
 - **Dashboard with the calendar first (D77, replacing D75 on the website):** business users land on the dashboard, which opens on the calendar. Each person can show, hide and reorder the dashboard's sections.
+- **Website sales chat (D78):** an AI assistant on SureHelp's own site answers questions, captures leads (scored hot / warm / cold) and books demo calls with the team, with a person able to take over from Admin › Website enquiries. Buttons and forms cost no AI tokens, and daily caps keep the cost small.
 - **The mobile app was rebuilt** in its own repo (`biid-sua/SHS_Mobile_App`) for businesses, agents and admins, and merged. Its own README lists the store steps.
 
-564 automated tests pass.
+572 automated tests pass.
 
 ---
 

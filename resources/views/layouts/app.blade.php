@@ -1153,6 +1153,8 @@
 })();
 </script>
 
+@include('partials.sales-chat')
+
 @yield('scripts')
 
 </body>

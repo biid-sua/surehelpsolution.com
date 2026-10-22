@@ -1178,3 +1178,29 @@ Start these early. The code can be built and tested with your own accounts befor
 - **The mobile app is unchanged.** It still opens on its Calendar tab, with the numbers under Overview.
 
 **Why:** one fixed first screen didn't suit every business. Most want their schedule first, while some owners want the numbers first. Putting the calendar inside the dashboard gives both: the schedule at first glance, and the dashboard stays home. The code is in `App\Support\Dashboard\DashboardLayout` and `x-client.calendar-board`.
+
+## D78 — An AI sales chat on SureHelp's own website (2026-10-22)
+**Decision:** the public website gets its own sales assistant. It answers questions, captures leads and
+books demo calls with the SureHelp team. It doesn't reuse a business's Inbox chat, because those leads
+belong to SureHelp, not to a tenant.
+- **Leads.** Leads become website enquiries (source "Chat") with a rule-based hot / warm / cold score, the
+  details the chat learned and the transcript. The team can take over and reply from Admin › Website
+  enquiries.
+- **Demos.** Demo times come from sales hours in `config/sales.php`. Booking takes a row lock, so two
+  visitors can't take the same place. The visitor gets an email invitation with a calendar file.
+- **The AI only reads free text.** Buttons, the time picker and the form never call it. Each call uses:
+  - a cached prompt (plans, facts, FAQ);
+  - the last 12 messages, plus the lead's details as facts;
+  - low effort, a 2,000-token cap and 4 tool rounds.
+- **Caps.** Each chat, each IP and each day has a limit. Without a key, or past the budget, the chat keeps
+  working on buttons, forms and keyword answers. The model is configurable (`SALES_CHAT_MODEL`).
+- **Gentle on visitors.**
+  - The chat only asks for a name and email when booking or for a follow-up.
+  - It never re-asks for something it already knows.
+  - Text consent is only the optional checkbox.
+- **Fix.** The public chat APIs (`api/sales-chat/*`, and `api/chat/*` used on SureHelp-hosted pages) are
+  left out of Sanctum's CSRF check, which counted our own site as a stateful front end.
+
+**Why:** the website's only lead path was a long contact form, and "Book a demo" led to it. A chat that
+answers at once and books a time in a few taps turns more visitors into calls with the team. Keeping the
+AI to free text and caching keeps the cost per lead small. Details are in `docs/sales-chat.md`.

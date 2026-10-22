@@ -122,6 +122,9 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute(300)->by('chat-widget:'.$request->route('key')),
         ]);
 
+        // The website sales chat (D78): per visitor IP; replies, leads and bookings have their own limits in the controller.
+        RateLimiter::for('sales-chat', fn (Request $request) => Limit::perMinute(40)->by('sales-chat:'.$request->ip()));
+
         // Self-serve sign-up (D65): a few attempts per IP an hour.
         RateLimiter::for('signup', fn (Request $request) => Limit::perHour(max(1, (int) config('signup.per_hour', 5)))->by('signup:'.$request->ip()));
 
