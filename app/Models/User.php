@@ -28,6 +28,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $last_summary_on
  * @property string|null $theme own colour theme (D59); null follows the default
  * @property Carbon|null $theme_chosen_at
+ * @property array<mixed>|null $dashboard_layout own dashboard sections (D77), rows of {key, visible} as saved; null is the default. Read it through DashboardLayout, which drops anything malformed
  * @property string $phone_status softphone readiness (D60): offline, available, away, busy, wrap_up
  * @property Carbon|null $phone_status_at
  * @property Carbon|null $phone_seen_at last softphone check-in
@@ -98,6 +99,7 @@ class User extends Authenticatable
             'is_active' => 'boolean',
             'must_change_password' => 'boolean',
             'theme_chosen_at' => 'datetime',
+            'dashboard_layout' => 'array',
             'phone_status_at' => 'datetime',
             'phone_seen_at' => 'datetime',
             'sms_phone_verified_at' => 'datetime',
@@ -445,9 +447,8 @@ class User extends Authenticatable
     }
 
     /**
-     * Business users start on their calendar: their schedule is why they open SureHelp. A business
-     * owner who hasn't finished setup starts in the setup wizard (spec ONB), and anyone who can't see
-     * the calendar starts on the dashboard.
+     * Business users start on their dashboard, whose first section is the calendar unless they chose
+     * otherwise (D77). A business owner who hasn't finished setup starts in the setup wizard (spec ONB).
      */
     private function clientHomeUrl(): string
     {
@@ -456,7 +457,7 @@ class User extends Authenticatable
             return route('app.setup');
         }
 
-        return $organization && $this->can('calls.view', $organization) ? route('app.calendar') : route('app.dashboard');
+        return route('app.dashboard');
     }
 
     public function requiresPasswordChange(): bool

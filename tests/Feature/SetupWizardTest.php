@@ -94,11 +94,11 @@ class SetupWizardTest extends TestCase
         $this->assertSame('skipped', $org->fresh()->setup_progress['calendar']);
 
         // 7. Finish: SureHelp staff hear about it, the owner lands on the dashboard.
-        $wizard->call('finish')->assertRedirect(route('app.calendar'));
+        $wizard->call('finish')->assertRedirect(route('app.dashboard'));
         $this->assertTrue($org->fresh()->isSetUp());
         Notification::assertSentTo($admin, SetupCompleted::class);
         $this->get(route('app.dashboard'))->assertDontSee('Finish setting up SureHelp');
-        $this->assertSame(route('app.calendar'), $owner->fresh()->homeUrl());
+        $this->assertSame(route('app.dashboard'), $owner->fresh()->homeUrl());
     }
 
     public function test_required_steps_must_be_done_and_progress_is_kept(): void
@@ -123,7 +123,7 @@ class SetupWizardTest extends TestCase
         $org->members()->attach($staff->id, ['role' => 'staff', 'status' => 'active']);
         $this->actingAs($staff)->get(route('app.setup'))->assertForbidden();
         $this->actingAs($staff)->get(route('app.dashboard'))->assertOk()->assertDontSee('Finish setting up');
-        $this->assertSame(route('app.calendar'), $staff->homeUrl());
+        $this->assertSame(route('app.dashboard'), $staff->homeUrl());
 
         $org->forceFill(['setup_progress' => ['business' => 'done', 'hours' => 'done']])->save();
         $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);

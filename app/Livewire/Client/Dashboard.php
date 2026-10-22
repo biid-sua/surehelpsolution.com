@@ -10,6 +10,8 @@ use App\Services\Metrics\ClientMetrics;
 use App\Services\Metrics\DashboardAlerts;
 use App\Services\Setup\SetupProgress;
 use App\Support\Audit\Audit;
+use App\Support\Calendar\CalendarSources;
+use App\Support\Dashboard\DashboardLayout;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
@@ -36,6 +38,9 @@ class Dashboard extends Component
     #[Url(except: '')]
     public string $to = '';
 
+    /** The "Customise" panel is open (D77). */
+    public bool $customising = false;
+
     public function mount(): void
     {
         $this->authorize('dashboard.view', $this->organization());
@@ -52,40 +57,79 @@ class Dashboard extends Component
         }
     }
 
-    public function render(ClientMetrics $metrics, DashboardAlerts $alerts): View
+    public function render(ClientMetrics $metrics, DashboardAlerts $alerts, DashboardLayout $layout, CalendarSources $calendarSources): View
     {
         $organization = $this->organization();
+        $user = auth()->user();
         [$from, $to] = $this->period === 'custom' ? [$this->from, $this->to] : [null, null];
         $customValid = $this->period !== 'custom' || ClientMetrics::customBounds($from, $to, $organization->timezoneOrDefault()) !== null;
         $hour = (int) now($organization->timezone ?: config('app.timezone'))->format('G');
         $partOfDay = $hour < 12 ? 'morning' : ($hour < 18 ? 'afternoon' : 'evening');
 
+        // Only what's on screen is worked out: hidden sections cost nothing.
+        $sections = $layout->for($user, $organization);
+        $shown = collect($sections)->where('visible', true)->keyBy('key');
+        $kpis = $metrics->kpis($organization, $this->period, $from, $to); // the alerts read these too
+        $calendar = null;
+        if ($shown->has('calendar')) {
+            $all = $calendarSources->for($organization);
+            $external = collect($all)->where('kind', 'external');
+            $calendar = [
+                'sources' => $all,
+                'anyConnected' => $external->contains('connected', true),
+                'needsReconnect' => $external->where('status', 'needs_reauth')->pluck('label'),
+            ];
+        }
+
         return view('livewire.client.dashboard', [
             'organization' => $organization,
-            'greeting' => 'Good '.$partOfDay.', '.Str::before(trim(auth()->user()->name).' ', ' '),
+            'greeting' => 'Good '.$partOfDay.', '.Str::before(trim($user->name).' ', ' '),
             'periods' => ClientMetrics::PERIODS,
-            'kpis' => $metrics->kpis($organization, $this->period, $from, $to),
-            'series' => $metrics->series($organization, $this->period, $from, $to),
+            'sections' => $sections,
+            'placed' => DashboardLayout::place($sections),
+            'usesPeriod' => $shown->contains('period', true),
+            'kpis' => $kpis,
+            'calendar' => $calendar,
+            'series' => $shown->has('call_volume') ? $metrics->series($organization, $this->period, $from, $to) : null,
             'hourly' => $metrics->range($organization, $this->period, $from, $to)['days'] === 1,
             'customValid' => $customValid,
             'maxDays' => ClientMetrics::MAX_CUSTOM_DAYS,
-            'alerts' => $alerts->for($organization, auth()->user()),
-            'activity' => auth()->user()->can('customers.view', $organization) ? $metrics->customerActivity($organization, $this->period, $from, $to) : null,
-            'schedule' => $metrics->todaysSchedule($organization),
-            'recentCalls' => $metrics->recentCalls($organization),
+            'alerts' => $alerts->for($organization, $user),
+            'activity' => $shown->has('activity') ? $metrics->customerActivity($organization, $this->period, $from, $to) : null,
+            'schedule' => $shown->has('schedule') ? $metrics->todaysSchedule($organization) : collect(),
+            'recentCalls' => $shown->has('recent_calls') ? $metrics->recentCalls($organization) : collect(),
             'away' => (function () use ($organization) {
                 $profile = BusinessProfile::query()->forOrganization($organization)->first();
                 $today = now($organization->timezoneOrDefault())->toDateString();
 
                 return $profile?->hasAwayAhead($today) ? ['now' => $profile->isAwayOn($today), 'profile' => $profile] : null;
             })(),
-            'canManageHours' => auth()->user()->can('organization.update', $organization),
-            'setup' => ! $organization->isSetUp() && auth()->user()->can('organization.update', $organization)
+            'canManageHours' => $user->can('organization.update', $organization),
+            'setup' => ! $organization->isSetUp() && $user->can('organization.update', $organization)
                 ? app(SetupProgress::class)->count($organization) : null,
-            'activeEscalations' => auth()->user()->can('escalations.view', $organization)
+            'activeEscalations' => $user->can('escalations.view', $organization)
                 ? Escalation::query()->forOrganization($organization)->active()->count()
                 : 0,
         ]);
+    }
+
+    /** Show or hide a section of this person's dashboard (D77). */
+    public function toggleSection(string $key, DashboardLayout $layout): void
+    {
+        abort_unless(isset(DashboardLayout::SECTIONS[$key]), 404);
+        $layout->toggle(auth()->user(), $this->organization(), $key);
+    }
+
+    public function moveSection(string $key, int $direction, DashboardLayout $layout): void
+    {
+        abort_unless(isset(DashboardLayout::SECTIONS[$key]), 404);
+        $layout->move(auth()->user(), $this->organization(), $key, $direction);
+    }
+
+    public function resetLayout(DashboardLayout $layout): void
+    {
+        $layout->reset(auth()->user());
+        $this->dispatch('toast', type: 'success', message: 'Your dashboard is back to the standard layout.');
     }
 
     /** Back early: vacation mode ends today. */

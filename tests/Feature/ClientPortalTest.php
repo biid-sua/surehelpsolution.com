@@ -16,6 +16,7 @@ use App\Models\Organization;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\Metrics\DashboardAlerts;
+use App\Support\Dashboard\DashboardLayout;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
@@ -81,28 +82,80 @@ class ClientPortalTest extends TestCase
         return $call;
     }
 
-    public function test_the_calendar_comes_first_and_the_numbers_after(): void
+    public function test_the_dashboard_opens_on_the_calendar(): void
     {
         [$client, $organization] = $this->client();
         $organization->forceFill(['setup_completed_at' => now()])->save();
 
-        $this->assertSame(route('app.calendar'), $client->fresh()->homeUrl());
-        $this->actingAs($client)->get(route('app.calendar'))->assertOk()
-            ->assertSeeInOrder(['Calendar', 'Appointments', 'Dashboard', 'Results']);
+        $this->assertSame(route('app.dashboard'), $client->fresh()->homeUrl());
+        $this->actingAs($client)->get(route('app.dashboard'))->assertOk()
+            ->assertSeeInOrder(['Dashboard', 'Calendar', 'Appointments'])
+            ->assertSee('aria-label="Business calendar"', false)
+            ->assertSeeInOrder(['Business calendar', 'Calls that booked', 'Recent calls'], false);
+    }
+
+    public function test_each_person_chooses_their_own_dashboard_sections(): void
+    {
+        [$client, $organization] = $this->client();
+        $organization->forceFill(['setup_completed_at' => now()])->save();
+        $colleague = User::factory()->create(['role' => 'client', 'is_active' => true]);
+        $organization->members()->attach($colleague->id, ['role' => 'owner', 'status' => 'active']);
+        $this->actingAs($client);
+
+        $page = Livewire::test(Dashboard::class)
+            ->call('toggleSection', 'calendar')
+            ->call('moveSection', 'recent_calls', -1)
+            ->call('moveSection', 'recent_calls', -1);
+        $page->assertDontSee('aria-label="Business calendar"', false)
+            ->assertSeeInOrder(['Recent calls', 'Call volume'], false);
+        $this->assertSame(
+            ['calendar', 'numbers', 'recent_calls', 'call_volume', 'schedule', 'activity'],
+            array_column($client->fresh()->dashboard_layout, 'key'),
+        );
+        $this->assertFalse($client->fresh()->dashboard_layout[0]['visible']);
+
+        // Only theirs: a colleague still gets the standard layout.
+        $this->actingAs($colleague)->get(route('app.dashboard'))->assertSee('aria-label="Business calendar"', false);
+
+        // Everything hidden: the page says how to get sections back; reset restores the standard layout.
+        $this->actingAs($client);
+        $page = Livewire::test(Dashboard::class);
+        foreach (['numbers', 'recent_calls', 'call_volume', 'schedule', 'activity'] as $key) {
+            $page->call('toggleSection', $key);
+        }
+        $page->assertSee('Your dashboard is empty')->assertDontSee('Time period');
+        $page->call('resetLayout')->assertSee('aria-label="Business calendar"', false);
+        $this->assertNull($client->fresh()->dashboard_layout);
+
+        $page->call('toggleSection', 'nonsense')->assertStatus(404);
+    }
+
+    public function test_sections_someone_cannot_see_stay_off_their_dashboard(): void
+    {
+        [, $organization] = $this->client();
+        $staff = User::factory()->create(['role' => 'client', 'is_active' => true]);
+        $organization->members()->attach($staff->id, ['role' => 'staff', 'status' => 'active']);
+        $staff->forceFill(['dashboard_layout' => [['key' => 'activity', 'visible' => true], ['key' => 'bogus', 'visible' => true]]])->save();
+
+        $keys = array_column(app(DashboardLayout::class)->for($staff, $organization), 'key');
+        $this->assertNotContains('bogus', $keys);
+        foreach ([['calendar', 'calls.view'], ['activity', 'customers.view']] as [$key, $permission]) {
+            $this->assertSame($staff->can($permission, $organization), in_array($key, $keys, true));
+        }
     }
 
     public function test_login_sends_clients_to_the_business_portal(): void
     {
         [$client, $organization] = $this->client(['email' => 'owner@plumbing.test', 'password' => 'Secret123!']);
 
-        // A new business starts in the setup wizard; once set up, owners land on their calendar.
+        // A new business starts in the setup wizard; once set up, owners land on the dashboard (which opens on the calendar).
         $this->postJson(route('auth.login'), ['email' => 'owner@plumbing.test', 'password' => 'Secret123!'])
             ->assertOk()
             ->assertJsonPath('redirect', route('app.setup'));
         $this->post(route('auth.logout'));
         $organization->forceFill(['setup_completed_at' => now()])->save();
         $this->postJson(route('auth.login'), ['email' => 'owner@plumbing.test', 'password' => 'Secret123!'])
-            ->assertJsonPath('redirect', route('app.calendar'));
+            ->assertJsonPath('redirect', route('app.dashboard'));
     }
 
     public function test_dashboard_shows_real_counts_for_own_business_only(): void

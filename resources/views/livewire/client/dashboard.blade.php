@@ -1,25 +1,30 @@
 <div>
     <x-ui.page-header :title="$greeting" description="Here's what's happening at {{ $organization->name }}.">
         <x-slot:actions>
-            <div class="inline-flex rounded-lg border border-line bg-surface p-1" role="group" aria-label="Time period">
-                @foreach ($periods as $key => $label)
-                    <button type="button" wire:click="$set('period', '{{ $key }}')" aria-pressed="{{ $period === $key ? 'true' : 'false' }}"
-                        @class([
-                            'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                            'bg-brand-600 text-white' => $period === $key,
-                            'text-muted hover:text-ink' => $period !== $key,
-                        ])>{{ $label }}</button>
-                @endforeach
-            </div>
-            @if ($period === 'custom')
-                <div class="flex flex-wrap items-center gap-2">
-                    <label for="d-from" class="sr-only">From</label>
-                    <input id="d-from" type="date" wire:model.live.debounce.500ms="from" class="sh-input w-40">
-                    <span class="text-sm text-muted">to</span>
-                    <label for="d-to" class="sr-only">To</label>
-                    <input id="d-to" type="date" wire:model.live.debounce.500ms="to" class="sh-input w-40">
+            @if ($usesPeriod)
+                <div class="inline-flex rounded-lg border border-line bg-surface p-1" role="group" aria-label="Time period">
+                    @foreach ($periods as $key => $label)
+                        <button type="button" wire:click="$set('period', '{{ $key }}')" aria-pressed="{{ $period === $key ? 'true' : 'false' }}"
+                            @class([
+                                'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                                'bg-brand-600 text-white' => $period === $key,
+                                'text-muted hover:text-ink' => $period !== $key,
+                            ])>{{ $label }}</button>
+                    @endforeach
                 </div>
+                @if ($period === 'custom')
+                    <div class="flex flex-wrap items-center gap-2">
+                        <label for="d-from" class="sr-only">From</label>
+                        <input id="d-from" type="date" wire:model.live.debounce.500ms="from" class="sh-input w-40">
+                        <span class="text-sm text-muted">to</span>
+                        <label for="d-to" class="sr-only">To</label>
+                        <input id="d-to" type="date" wire:model.live.debounce.500ms="to" class="sh-input w-40">
+                    </div>
+                @endif
             @endif
+            <x-ui.button variant="secondary" icon="settings" wire:click="$toggle('customising')" aria-expanded="{{ $customising ? 'true' : 'false' }}" aria-controls="dashboard-customise">
+                {{ $customising ? 'Done' : 'Customise' }}
+            </x-ui.button>
         </x-slot:actions>
     </x-ui.page-header>
 
@@ -98,45 +103,98 @@
         </div>
     @endif
 
+    @if ($customising)
+        <x-ui.card id="dashboard-customise" class="mb-6" title="Customise your dashboard"
+            description="Choose what you see first. Only you see these changes; your team keeps their own.">
+            <ul class="divide-y divide-line" aria-label="Dashboard sections">
+                @foreach ($sections as $section)
+                    <li class="flex items-center gap-3 py-3 first:pt-0 last:pb-0" wire:key="customise-{{ $section['key'] }}">
+                        <span @class(['flex size-9 shrink-0 items-center justify-center rounded-lg', 'bg-brand-500/15 text-brand-300' => $section['visible'], 'bg-surface-2 text-subtle' => ! $section['visible']])>
+                            <x-ui.icon :name="$section['icon']" class="size-5" />
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <p @class(['text-sm font-medium', 'text-ink' => $section['visible'], 'text-subtle line-through decoration-line-strong' => ! $section['visible']])>{{ $section['label'] }}</p>
+                            <p class="truncate text-xs text-muted">{{ $section['description'] }}</p>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button type="button" wire:click="moveSection('{{ $section['key'] }}', -1)" @disabled($loop->first)
+                                class="rounded-md p-1.5 text-muted hover:bg-surface-2 hover:text-ink disabled:opacity-30 disabled:hover:bg-transparent"
+                                aria-label="Move {{ $section['label'] }} up"><x-ui.icon name="chevron-up" class="size-4" /></button>
+                            <button type="button" wire:click="moveSection('{{ $section['key'] }}', 1)" @disabled($loop->last)
+                                class="rounded-md p-1.5 text-muted hover:bg-surface-2 hover:text-ink disabled:opacity-30 disabled:hover:bg-transparent"
+                                aria-label="Move {{ $section['label'] }} down"><x-ui.icon name="chevron-down" class="size-4" /></button>
+                            <button type="button" role="switch" wire:click="toggleSection('{{ $section['key'] }}')"
+                                aria-checked="{{ $section['visible'] ? 'true' : 'false' }}" aria-label="Show {{ $section['label'] }}"
+                                @class(['relative ml-2 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors', 'bg-brand-600' => $section['visible'], 'bg-surface-2 ring-1 ring-inset ring-line-strong' => ! $section['visible']])>
+                                <span @class(['inline-block size-4 rounded-full bg-white shadow transition-transform', 'translate-x-6' => $section['visible'], 'translate-x-1' => ! $section['visible']])></span>
+                            </button>
+                        </div>
+                    </li>
+                @endforeach
+            </ul>
+            <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+                <button type="button" wire:click="resetLayout" class="text-sm text-muted underline underline-offset-2 hover:text-ink">Back to the standard layout</button>
+                <x-ui.button size="sm" wire:click="$set('customising', false)">Done</x-ui.button>
+            </div>
+        </x-ui.card>
+    @endif
+
     <div class="relative">
         <div wire:loading.flex wire:target="period,from,to" class="absolute inset-0 z-10 items-start justify-center rounded-2xl bg-canvas/40 pt-24 backdrop-blur-[1px]">
             <span class="rounded-full bg-surface-2 px-3 py-1 text-xs text-muted ring-1 ring-line">Updating…</span>
         </div>
 
-        {{-- KPI cards --}}
-        <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <x-ui.stat label="Calls" icon="phone" :value="number_format($kpis['calls']['value'])" :change="$kpis['calls']['change']"
-                hint="vs previous" :href="route('app.calls.index')" />
-            <x-ui.stat label="Appointments" icon="calendar" :value="number_format($kpis['appointments']['value'])" :change="$kpis['appointments']['change']"
-                hint="scheduled in this period" :href="route('app.appointments.index')" />
-            <x-ui.stat label="New leads" icon="users" :value="number_format($kpis['leads']['value'])" :change="$kpis['leads']['change']"
-                hint="new customer records" :href="route('app.customers.index')" />
-            <x-ui.stat label="Service requests" icon="wrench" :value="number_format($kpis['service_requests']['value'])" :change="$kpis['service_requests']['change']"
-                hint="vs previous" :href="route('app.calls.index', ['view' => 'service'])" />
-            <x-ui.stat label="Calls that booked" icon="check-circle" :value="number_format($kpis['scheduled']['value'])" :change="$kpis['scheduled']['change']"
-                hint="vs previous" :href="route('app.calls.index', ['view' => 'scheduled'])" />
-            <x-ui.stat label="Missed / dropped" icon="phone-x" :value="number_format($kpis['missed']['value'])" :change="$kpis['missed']['change']"
-                :invert="true" hint="vs previous" :href="route('app.calls.index', ['view' => 'missed'])" />
-            <x-ui.stat label="Pending follow-ups" icon="callback" :value="number_format($kpis['follow_ups']['value'])"
-                hint="open right now" :href="route('app.tasks.index')" class="col-span-2" />
-        </div>
+        @if ($placed === [])
+            <x-ui.card>
+                <x-ui.empty-state icon="settings" title="Your dashboard is empty"
+                    description="You've hidden every section. Pick what you'd like to see first.">
+                    <x-ui.button variant="secondary" size="sm" wire:click="$set('customising', true)" icon="settings">Customise</x-ui.button>
+                </x-ui.empty-state>
+            </x-ui.card>
+        @endif
 
-        <div class="mt-6 grid gap-6 lg:grid-cols-3">
-            {{-- Call volume --}}
-            <x-ui.card class="lg:col-span-2" title="Call volume" :description="$hourly ? 'Calls per hour' : 'Calls per day'">
+        {{-- In the order this person chose (D77). A wide and a narrow section side by side share a row. --}}
+        <div class="grid gap-6 lg:grid-cols-3">
+            @foreach ($placed as $section)
+                <div @class(['min-w-0', 'lg:col-span-3' => $section['span'] === 3, 'lg:col-span-2' => $section['span'] === 2]) wire:key="section-{{ $section['key'] }}">
+                    @switch($section['key'])
+                        @case('calendar')
+                            <x-client.calendar-board title="Calendar" :nudge="false" :organization="$organization" :sources="$calendar['sources']"
+                                :any-connected="$calendar['anyConnected']" :needs-reconnect="$calendar['needsReconnect']" wire:key="dashboard-calendar" />
+                            @break
+                        @case('numbers')
+            <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+                <x-ui.stat label="Calls" icon="phone" :value="number_format($kpis['calls']['value'])" :change="$kpis['calls']['change']"
+                    hint="vs previous" :href="route('app.calls.index')" />
+                <x-ui.stat label="Appointments" icon="calendar" :value="number_format($kpis['appointments']['value'])" :change="$kpis['appointments']['change']"
+                    hint="scheduled in this period" :href="route('app.appointments.index')" />
+                <x-ui.stat label="New leads" icon="users" :value="number_format($kpis['leads']['value'])" :change="$kpis['leads']['change']"
+                    hint="new customer records" :href="route('app.customers.index')" />
+                <x-ui.stat label="Service requests" icon="wrench" :value="number_format($kpis['service_requests']['value'])" :change="$kpis['service_requests']['change']"
+                    hint="vs previous" :href="route('app.calls.index', ['view' => 'service'])" />
+                <x-ui.stat label="Calls that booked" icon="check-circle" :value="number_format($kpis['scheduled']['value'])" :change="$kpis['scheduled']['change']"
+                    hint="vs previous" :href="route('app.calls.index', ['view' => 'scheduled'])" />
+                <x-ui.stat label="Missed / dropped" icon="phone-x" :value="number_format($kpis['missed']['value'])" :change="$kpis['missed']['change']"
+                    :invert="true" hint="vs previous" :href="route('app.calls.index', ['view' => 'missed'])" />
+                <x-ui.stat label="Pending follow-ups" icon="callback" :value="number_format($kpis['follow_ups']['value'])"
+                    hint="open right now" :href="route('app.tasks.index')" class="col-span-2" />
+            </div>
+                            @break
+                        @case('call_volume')
+            <x-ui.card class="h-full" title="Call volume" :description="$hourly ? 'Calls per hour' : 'Calls per day'">
                 @if (array_sum($series['data']) === 0)
                     <x-ui.empty-state icon="chart" title="No calls in this period yet"
                         description="As soon as our team answers a call for you, it shows up here." />
                 @else
-                    <div class="h-64" wire:key="chart-{{ $period }}-{{ md5(json_encode($series)) }}"
+                    <div class="h-64" wire:ignore wire:key="chart-{{ $period }}-{{ md5(json_encode($series)) }}"
                         x-data="chart({ type: 'bar', labels: @js($series['labels']), series: [{ label: 'Calls', data: @js($series['data']) }] })">
                         <canvas x-ref="canvas" role="img" aria-label="Bar chart of calls, {{ array_sum($series['data']) }} in total"></canvas>
                     </div>
                 @endif
             </x-ui.card>
-
-            {{-- Today's schedule --}}
-            <x-ui.card title="Today's schedule" description="Appointments and visits booked for today" :padding="false">
+                            @break
+                        @case('schedule')
+            <x-ui.card class="h-full" title="Today's schedule" description="Appointments and visits booked for today" :padding="false">
                 @forelse ($schedule as $visit)
                     <a href="{{ $visit['url'] }}" class="flex items-start gap-3 border-b border-line px-5 py-3 last:border-0 hover:bg-surface-2">
                         <span class="mt-0.5 rounded-md bg-brand-500/15 px-2 py-1 text-xs font-semibold text-brand-300 tabular-nums">{{ $visit['time'] }}</span>
@@ -153,48 +211,46 @@
                     </x-ui.empty-state>
                 @endforelse
             </x-ui.card>
-        </div>
-
-        {{-- Recent calls --}}
-        <x-ui.card class="mt-6" title="Recent calls" :padding="false">
-            <x-slot:actions>
-                <x-ui.button variant="ghost" size="sm" :href="route('app.calls.index')">View all <x-ui.icon name="chevron-right" class="size-4" /></x-ui.button>
-            </x-slot:actions>
-            @if ($recentCalls->isEmpty())
-                <x-ui.empty-state icon="phone" title="No calls yet"
-                    description="Once your phone forwarding is live, every call our team handles appears here with notes and outcome." />
-            @else
-                <x-ui.table>
-                    <thead>
-                        <tr>
-                            <th scope="col">Caller</th>
-                            <th scope="col">Reason</th>
-                            <th scope="col">Outcome</th>
-                            <th scope="col">Agent</th>
-                            <th scope="col" class="text-right">When</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-line">
-                        @foreach ($recentCalls as $call)
+                            @break
+                        @case('recent_calls')
+            <x-ui.card title="Recent calls" :padding="false">
+                <x-slot:actions>
+                    <x-ui.button variant="ghost" size="sm" :href="route('app.calls.index')">View all <x-ui.icon name="chevron-right" class="size-4" /></x-ui.button>
+                </x-slot:actions>
+                @if ($recentCalls->isEmpty())
+                    <x-ui.empty-state icon="phone" title="No calls yet"
+                        description="Once your phone forwarding is live, every call our team handles appears here with notes and outcome." />
+                @else
+                    <x-ui.table>
+                        <thead>
                             <tr>
-                                <td>
-                                    <a href="{{ route('app.calls.show', $call->call_id) }}" class="font-medium text-ink hover:text-brand-300">{{ \App\Models\CallLog::display($call->caller_name) }}</a>
-                                    <p class="text-xs text-subtle">{{ \App\Models\CallLog::display($call->caller_phone) }}</p>
-                                </td>
-                                <td class="text-muted">{{ \Illuminate\Support\Str::headline($call->reason_for_call) }}</td>
-                                <td><x-ui.badge :tone="$call->statusTone()">{{ $call->statusLabel() }}</x-ui.badge></td>
-                                <td class="text-muted">{{ \App\Models\CallLog::display($call->agent_name) }}</td>
-                                <td class="whitespace-nowrap text-right text-muted" title="{{ $call->created_at->setTimezone($organization->timezone ?: config('app.timezone'))->toDayDateTimeString() }}">{{ $call->created_at->diffForHumans() }}</td>
+                                <th scope="col">Caller</th>
+                                <th scope="col">Reason</th>
+                                <th scope="col">Outcome</th>
+                                <th scope="col">Agent</th>
+                                <th scope="col" class="text-right">When</th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </x-ui.table>
-            @endif
-        </x-ui.card>
-
-        @if ($activity)
-            {{-- Customer activity (spec §8.1) --}}
-            <x-ui.card class="mt-6" title="Customer activity" :padding="false">
+                        </thead>
+                        <tbody class="divide-y divide-line">
+                            @foreach ($recentCalls as $call)
+                                <tr>
+                                    <td>
+                                        <a href="{{ route('app.calls.show', $call->call_id) }}" class="font-medium text-ink hover:text-brand-300">{{ \App\Models\CallLog::display($call->caller_name) }}</a>
+                                        <p class="text-xs text-subtle">{{ \App\Models\CallLog::display($call->caller_phone) }}</p>
+                                    </td>
+                                    <td class="text-muted">{{ \Illuminate\Support\Str::headline($call->reason_for_call) }}</td>
+                                    <td><x-ui.badge :tone="$call->statusTone()">{{ $call->statusLabel() }}</x-ui.badge></td>
+                                    <td class="text-muted">{{ \App\Models\CallLog::display($call->agent_name) }}</td>
+                                    <td class="whitespace-nowrap text-right text-muted" title="{{ $call->created_at->setTimezone($organization->timezone ?: config('app.timezone'))->toDayDateTimeString() }}">{{ $call->created_at->diffForHumans() }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </x-ui.table>
+                @endif
+            </x-ui.card>
+                            @break
+                        @case('activity')
+            <x-ui.card title="Customer activity" :padding="false">
                 <x-slot:actions>
                     <x-ui.button variant="ghost" size="sm" :href="route('app.customers.index')">Customers <x-ui.icon name="chevron-right" class="size-4" /></x-ui.button>
                 </x-slot:actions>
@@ -220,6 +276,10 @@
                     </div>
                 </div>
             </x-ui.card>
-        @endif
+                            @break
+                    @endswitch
+                </div>
+            @endforeach
+        </div>
     </div>
 </div>

@@ -1148,6 +1148,8 @@ Start these early. The code can be built and tested with your own accounts befor
 
 **Why:** businesses open SureHelp to see and run their schedule. Their numbers matter, but they aren't what people need at first glance, and profit and loss isn't something SureHelp works out.
 
+**Update:** on the website this is replaced by D77. The dashboard is home again and opens on the calendar.
+
 ## D76 — API follow-ups for the mobile app (2026-10-21)
 **Decision:** small, additive API changes that remove workarounds in the new app:
 - `POST /client/tasks` takes `call_id`, so a follow-up links to its call;
@@ -1158,3 +1160,21 @@ Start these early. The code can be built and tested with your own accounts befor
 - `GET /admin/users` takes `search`.
 
 **Why:** the app had to guess or make extra calls for each of these. Nothing existing changes shape, so older apps keep working (the v1 compatibility promise).
+
+## D77 — The dashboard opens on the calendar, and each person picks its sections (2026-10-22)
+**Decision:** this replaces the website half of D75.
+- **Landing page.** Business users land on the **Dashboard** again, and Dashboard is back at the top of the menu (then Calendar, Appointments, Inbox and the rest).
+- **The calendar comes first.** The calendar is the dashboard's first section by default. It's the same calendar as the Calendar page, with its source switches and live refresh.
+- **Each person chooses what they see.** "Customise" on the dashboard lets each person show, hide and reorder the sections. The sections are:
+  - Calendar
+  - Key numbers
+  - Call volume
+  - Today's schedule
+  - Recent calls
+  - Customer activity
+- **Where the choice is stored.** The choice belongs to the person, not the business. It's kept in `users.dashboard_layout`, and null means the standard layout.
+- **What stays fixed.** "Back to the standard layout" resets it. Alerts (escalations, follow-ups, service status, setup) always stay at the top.
+- **Permissions still apply.** Sections someone isn't allowed to see never show, whatever is saved: the calendar needs `calls.view` and customer activity needs `customers.view`. Hidden sections aren't computed at all. The period switch shows only while a section that uses it is on screen.
+- **The mobile app is unchanged.** It still opens on its Calendar tab, with the numbers under Overview.
+
+**Why:** one fixed first screen didn't suit every business. Most want their schedule first, while some owners want the numbers first. Putting the calendar inside the dashboard gives both: the schedule at first glance, and the dashboard stays home. The code is in `App\Support\Dashboard\DashboardLayout` and `x-client.calendar-board`.
