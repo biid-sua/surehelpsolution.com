@@ -10,6 +10,7 @@ use App\Models\Plan;
 use App\Models\User;
 use App\Notifications\NewSignup;
 use App\Services\Account\LegalDocuments;
+use App\Services\Billing\Referrals;
 use App\Support\Audit\Audit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,7 +31,7 @@ class SignUpBusiness
     ) {}
 
     /**
-     * @param  array{business: string, name: string, email: string, phone?: ?string, password: string}  $data
+     * @param  array{business: string, name: string, email: string, phone?: ?string, password: string, ref?: ?string}  $data
      */
     public function handle(array $data, ?Plan $plan, ?Request $request = null): User
     {
@@ -58,6 +59,7 @@ class SignUpBusiness
             if ($plan) {
                 $this->subscriptions->subscribe($organization, $plan, $user);
             }
+            app(Referrals::class)->signedUp($organization, $data['ref'] ?? null);
             $this->legal->accept($user, $request);
             $this->audit->record('organization.signed_up', $organization, new: ['plan' => $plan?->slug, 'ip' => $request?->ip()],
                 organization: $organization, actor: $user, label: $business);

@@ -1537,3 +1537,22 @@ data. One person can now belong to several of them and move between them.
 
 **Why:** franchises and owners with several branches want one sign-in and one view. Keeping locations
 as separate accounts means none of the tenancy, permission or billing rules change.
+
+## D90 — Referral programme (2026-10-23)
+**Decision:** every business has a referral link (`/start?ref=CODE`) on its *Billing* page, with how
+many businesses joined, how many were rewarded, and the credit left.
+- **Signing up.** The code is remembered for the visit and recorded on sign-up (`referrals`).
+  Unknown codes and a business's own code are ignored.
+- **The reward.** When the referred business pays its first invoice (any payment method, through
+  `RecordPayment`), the referrer gets **one month of its current plan price** as a `billing_credits`
+  entry, and a notification.
+  - At most 12 rewards a year (`REFERRALS_MAX_PER_YEAR`), never twice for the same business.
+- **Using it.** Credits come off subscription invoices automatically, oldest first, as a negative
+  "Credit · Referral: …" line.
+  - An invoice that becomes $0 is marked paid straight away and not charged.
+  - One-off invoices aren't touched.
+- `REFERRALS_ENABLED=false` turns it off. The link is hidden when online sign-up is off.
+
+**Why:** happy local businesses know other local businesses. A free month is easy to explain, costs
+nothing until the new business has paid, and needs no payouts or tax paperwork, because it's a credit,
+not cash.

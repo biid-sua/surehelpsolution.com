@@ -70,9 +70,10 @@ _As of 2026-10-21. Detailed tracker: [implementation-plan.md](implementation-pla
 - **API keys and webhooks (D87):** businesses create read-only or read-write API keys for the business API, and add signed webhooks for 14 events (bookings, calls, new customers, reviews, surveys, payments…), with retries and a test button. This lets them connect n8n, Zapier or Make.
 - **AI help for agents (D88):** in the call workspace, *Ask AI* answers the caller's question from the business's own facts, and *Fill the form from my notes* fills the empty call-form fields. There's a daily cap per business.
 - **Multi-location (D89):** one person can belong to several businesses (linked by staff) and switch between them from the top bar or the app. *All locations* compares the month's calls, leads, bookings, reviews and payments, with totals.
+- **Referrals (D90):** each business has a referral link. When a business it referred pays its first invoice, the referrer gets a month of its plan as credit, taken off its next invoices.
 - **The mobile app was rebuilt** in its own repo (`biid-sua/SHS_Mobile_App`) for businesses, agents and admins, and merged. Its own README lists the store steps.
 
-618 automated tests pass.
+620 automated tests pass.
 
 ---
 
