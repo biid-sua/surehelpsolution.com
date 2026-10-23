@@ -404,7 +404,7 @@ class DemoSeeder extends Seeder
         $this->plans['pro'] = Plan::create([
             'slug' => 'pro', 'name' => 'Pro', 'description' => 'Everything, for busy service businesses: social publishing and website tools included.',
             'price_cents' => 49900, 'interval' => 'month', 'trial_days' => 14, 'sort_order' => 3,
-            'features' => ['customer_emails', 'calendar_sync', 'ai_assistant', 'social_publishing', 'website_tools', 'white_label'],
+            'features' => ['customer_emails', 'calendar_sync', 'ai_assistant', 'social_publishing', 'website_tools', 'white_label', 'customer_payments'],
             'limits' => ['calls' => 600, 'extra_call_cents' => 100, 'team_members' => 15, 'calendars' => 5],
         ]);
 
@@ -426,6 +426,7 @@ class DemoSeeder extends Seeder
             'website_tools' => FeatureAccess::PLAN,
             'seo_service' => FeatureAccess::PLAN,
             'white_label' => FeatureAccess::PLAN,
+            'customer_payments' => FeatureAccess::PLAN,
         ]);
     }
 

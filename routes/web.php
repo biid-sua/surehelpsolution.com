@@ -24,6 +24,7 @@ use App\Http\Controllers\Client\CustomerExportController;
 use App\Http\Controllers\Client\DataExportController as ClientDataExportController;
 use App\Http\Controllers\Client\InvoiceController as ClientInvoiceController;
 use App\Http\Controllers\Client\InvoicePaymentController as ClientInvoicePaymentController;
+use App\Http\Controllers\Client\PaymentsConnectController;
 use App\Http\Controllers\Client\ResultsCsvController;
 use App\Http\Controllers\Client\ResultsPdfController;
 use App\Http\Controllers\Client\SearchConsoleController;
@@ -35,6 +36,7 @@ use App\Http\Controllers\LinkPageController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PasswordChangeController;
+use App\Http\Controllers\PayController;
 use App\Http\Controllers\RecordingController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\SupportAttachmentController;
@@ -112,6 +114,7 @@ use App\Livewire\Client\Escalations\Index as EscalationsIndex;
 use App\Livewire\Client\Inbox\Assistant as InboxAssistant;
 use App\Livewire\Client\Inbox\Channels as InboxChannels;
 use App\Livewire\Client\Inbox\Index as InboxIndex;
+use App\Livewire\Client\Payments as ClientPayments;
 use App\Livewire\Client\Results as ClientResults;
 use App\Livewire\Client\Reviews as ClientReviews;
 use App\Livewire\Client\Search as ClientSearch;
@@ -136,6 +139,11 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])->name('seo.sitemap');
 Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('seo.robots');
 Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:6,10')->name('contact.store');
+// Payment links (D85): public, by token.
+Route::middleware('throttle:30,1')->prefix('pay/{token}')->name('pay.')->group(function () {
+    Route::get('/', [PayController::class, 'show'])->name('show');
+    Route::post('/', [PayController::class, 'checkout'])->name('checkout');
+});
 // Satisfaction surveys (D84): public, by token.
 Route::middleware('throttle:30,1')->prefix('s/{token}')->name('survey.')->group(function () {
     Route::get('/', [SurveyController::class, 'show'])->name('show');
@@ -275,6 +283,8 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/appointments', AppointmentsIndex::class)->name('appointments.index');
         Route::get('/appointments/export', AppointmentExportController::class)->name('appointments.export');
     });
+    Route::get('/payments', ClientPayments::class)->middleware('can:payments.view')->name('payments');
+    Route::get('/payments/connect', PaymentsConnectController::class)->middleware(['can:payments.manage', 'feature:customer_payments'])->name('payments.connect');
     Route::get('/reviews', ClientReviews::class)->middleware(['can:reviews.view', 'feature:reviews'])->name('reviews');
     Route::get('/escalations', EscalationsIndex::class)->middleware('can:escalations.view')->name('escalations.index');
     Route::middleware('can:customers.view')->group(function () {

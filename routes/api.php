@@ -40,6 +40,7 @@ use App\Http\Controllers\SalesChatController;
 use App\Http\Controllers\Webhooks\CalendarWebhookController;
 use App\Http\Controllers\Webhooks\MetaWebhookController;
 use App\Http\Controllers\Webhooks\SmsWebhookController;
+use App\Http\Controllers\Webhooks\StripeConnectWebhookController;
 use App\Http\Controllers\Webhooks\StripeWebhookController;
 use App\Http\Controllers\Webhooks\VoiceWebhookController;
 use App\Http\Middleware\VerifyTelephonyWebhook;
@@ -107,6 +108,7 @@ Route::prefix('webhooks/sms')->name('webhooks.sms.')->middleware([VerifyTelephon
 Route::post('/csp-report', CspReportController::class)->middleware('throttle:60,1')->name('csp.report');
 
 Route::post('/webhooks/stripe', StripeWebhookController::class)->middleware('throttle:600,1')->name('webhooks.stripe');
+Route::post('/webhooks/stripe/connect', StripeConnectWebhookController::class)->middleware('throttle:600,1')->name('webhooks.stripe-connect');
 
 Route::prefix('v1')->middleware('throttle:api')->group(function () {
     // Authentication routes

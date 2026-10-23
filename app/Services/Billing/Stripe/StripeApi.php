@@ -26,10 +26,10 @@ class StripeApi
      *
      * @throws BillingUnavailable
      */
-    public function post(string $path, array $data = [], ?string $idempotencyKey = null): array
+    public function post(string $path, array $data = [], ?string $idempotencyKey = null, ?string $account = null): array
     {
         return $this->send(fn () => Http::withToken((string) config('billing.stripe.secret'))->asForm()
-            ->withHeaders(array_filter(['Idempotency-Key' => $idempotencyKey]))->timeout(20)->post(self::BASE.$path, $data));
+            ->withHeaders(array_filter(['Idempotency-Key' => $idempotencyKey, 'Stripe-Account' => $account]))->timeout(20)->post(self::BASE.$path, $data));
     }
 
     /**
@@ -38,17 +38,20 @@ class StripeApi
      *
      * @throws BillingUnavailable
      */
-    public function get(string $path, array $query = []): array
+    public function get(string $path, array $query = [], ?string $account = null): array
     {
-        return $this->send(fn () => Http::withToken((string) config('billing.stripe.secret'))->timeout(20)->get(self::BASE.$path, $query));
+        return $this->send(fn () => Http::withToken((string) config('billing.stripe.secret'))
+            ->withHeaders(array_filter(['Stripe-Account' => $account]))->timeout(20)->get(self::BASE.$path, $query));
     }
 
     /**
+     * The Connect endpoint (D85, events from businesses' own accounts) has its own secret.
+     *
      * Stripe-Signature: "t=…,v1=…": HMAC-SHA256 of "t.payload" with the endpoint's signing secret, within 5 minutes.
      */
-    public function isGenuine(string $payload, string $header, int $toleranceSeconds = 300): bool
+    public function isGenuine(string $payload, string $header, int $toleranceSeconds = 300, ?string $secret = null): bool
     {
-        $secret = (string) config('billing.stripe.webhook_secret');
+        $secret ??= (string) config('billing.stripe.webhook_secret');
         $parts = [];
         foreach (explode(',', $header) as $piece) {
             [$k, $v] = array_pad(explode('=', trim($piece), 2), 2, '');

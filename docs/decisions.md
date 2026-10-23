@@ -1403,3 +1403,40 @@ answer a call* (30 minutes after it's logged).
 happy majority to Google, which lifts the rating fairly. Google's policies allow asking every customer
 for a review; we only choose *when* to show the link, and every customer can still review the business
 on Google themselves.
+
+## D85 — Deposits and pay-by-text (Stripe Connect) (2026-10-23)
+**Decision:** businesses take card payments from their own customers through **Stripe Connect with
+Standard accounts**. Each business has its own Stripe account and dashboard. Customers pay on Stripe
+Checkout, and the money goes straight to the business. SureHelp never holds the funds and never sees
+card details. It's a plan feature, `customer_payments`, closed by default.
+- **Connecting.** *Payments › Connect Stripe*:
+  - creates the account (`type=standard`, named after the business) and sends the owner to Stripe's
+    onboarding;
+  - when they come back, and on `account.updated`, it checks `charges_enabled`.
+- **Pay-by-text.** *Request a payment* (on Payments, or from a customer's page): customer, amount and
+  what it's for.
+  - The link is sent by text, email or both. Payment messages are transactional, so they don't need
+    marketing consent, but numbers that texted STOP are never texted.
+  - The link (`/pay/{token}`) shows the business, the amount and a *Pay* button. That button creates a
+    Checkout session on the business's account (`Stripe-Account` header), re-created after 23 hours if
+    unused.
+  - Open requests can be copied, sent again or cancelled. Cancelling also expires the Checkout session.
+- **Deposits.** With *Ask for a deposit* on, a booking from the website or link page:
+  - gets a deposit request (emailed and texted);
+  - shows a *Pay $X deposit* button straight after booking, in the widget.
+  - The booking is never held back or lost because of the deposit. The business sees who paid.
+- **Confirmation.**
+  - A separate **Connect webhook** (`/api/webhooks/stripe/connect`, `STRIPE_CONNECT_WEBHOOK_SECRET`)
+    marks requests paid on `checkout.session.completed`, but only if the event's account and amount
+    match ours.
+  - `charge.refunded` marks them refunded.
+  - Events are de-duplicated by id.
+  - The team gets a *Customer payment received* notification, and the customer's timeline records it.
+- **Fee.** Optional `STRIPE_CONNECT_FEE_PERCENT` (0 by default, capped at 20%) is added as Stripe's
+  `application_fee_amount`.
+- **Who.** Owners and managers connect, change deposit settings and cancel. Staff can view and send
+  requests.
+
+**Why:** deposits cut no-shows and getting paid on the spot shortens the wait for money. Both are
+strong reasons to upgrade. Standard accounts leave refunds, disputes, payouts and tax with the
+business's own Stripe dashboard, so SureHelp isn't a payment facilitator.

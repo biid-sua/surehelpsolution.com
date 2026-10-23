@@ -97,6 +97,7 @@ class LaunchReadiness
             ],
             'Stripe: webhook endpoint' => [
                 ['label' => 'Events: checkout, invoices, payment methods', 'url' => route('webhooks.stripe')],
+                ['label' => 'Connect endpoint ("events on connected accounts"): checkout.session.completed, charge.refunded, account.updated', 'url' => route('webhooks.stripe-connect')],
             ],
             'Mobile app links (must answer on the live domain)' => [
                 ['label' => 'Android (Digital Asset Links)', 'url' => route('app-links.android')],
@@ -192,6 +193,8 @@ class LaunchReadiness
                 'After A2P 10DLC brand and campaign approval in Twilio, set TELEPHONY_SMS=true.'),
             $this->feature($g, 'Card payments (Stripe)', config('billing.gateway') === 'stripe' && filled(config('billing.stripe.secret')) && filled(config('billing.stripe.webhook_secret')),
                 'BILLING_GATEWAY=stripe, STRIPE_SECRET, STRIPE_WEBHOOK_SECRET', 'Optional. Without it, invoices are paid through Payoneer (see docs/billing.md).'),
+            $this->feature($g, 'Customer payments (Stripe Connect)', filled(config('billing.stripe.secret')) && filled(config('billing.stripe.connect_webhook_secret')),
+                'STRIPE_SECRET, STRIPE_CONNECT_WEBHOOK_SECRET', 'Optional (D85). Turn on Connect in Stripe, add the Connect webhook from --urls, then businesses can take deposits and pay links.'),
             $this->feature($g, 'Invoice details', filled($billing->get('company_address')) && filled($billing->get('company_email'))
                 && (filled($billing->get('payoneer_payment_link')) || filled($billing->get('bank_details')) || config('billing.gateway') === 'stripe'),
                 'Admin › Billing › Payment settings', 'Fill in your company address, billing email and how clients pay.'),

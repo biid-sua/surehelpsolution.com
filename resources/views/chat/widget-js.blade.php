@@ -226,7 +226,14 @@
       var body = contact();
       body.service = service.value; body.starts_at = chosen; body.address = address.value; body.notes = notes.value;
       submit.disabled = true;
-      req('POST', '/booking', body).then(function (j) { done(v, j.message); })
+      req('POST', '/booking', body).then(function (j) {
+          done(v, j.message);
+          // A deposit to pay (D85): a plain link to the business's secure payment page.
+          if (j.pay_url && /^https:\/\//.test(j.pay_url)) {
+            var pay = el('a', { class: 'call', href: j.pay_url, target: '_blank', rel: 'noopener', style: 'margin-top:10px' }, j.pay_label || 'Pay deposit');
+            v.firstChild.appendChild(pay);
+          }
+        })
         .catch(function (err) { error.textContent = err.message; if (err.data && err.data.times) times(); })
         .then(function () { submit.disabled = false; });
     });

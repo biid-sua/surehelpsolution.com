@@ -83,6 +83,7 @@ Follow [deployment.md](deployment.md) › Every release:
 | A2P 10DLC (texts) | Create the Messaging Service with the approved campaign, then `TELEPHONY_SMS=true` and `php artisan config:cache`. Text a line and reply from the Inbox |
 | Meta App Review | `META_APP_ID` / `_SECRET` / `META_WEBHOOK_VERIFY_TOKEN`. Connect a page and send it a Messenger message |
 | LinkedIn | `LINKEDIN_CLIENT_ID` / `_SECRET` |
+| Stripe Connect (optional, D85) | Turn on Connect (Standard accounts) in the Stripe dashboard, add the Connect webhook from `--urls` and set `STRIPE_CONNECT_WEBHOOK_SECRET`. Optionally set `STRIPE_CONNECT_FEE_PERCENT`. Businesses then connect under *Payments* |
 | Stripe (optional) | `BILLING_GATEWAY=stripe`, `STRIPE_SECRET`, plus the webhook endpoint from `--urls` and its `STRIPE_WEBHOOK_SECRET` ([billing.md](billing.md) › Stripe) |
 | Firebase (push) | `FCM_PROJECT_ID`, `FCM_CREDENTIALS` (service-account JSON) and the APNs key uploaded for iOS |
 | Store listings live | `MOBILE_IOS_STORE_URL`, `MOBILE_ANDROID_STORE_URL`, `MOBILE_ANDROID_SHA256` and `MOBILE_IOS_APP_IDS` (app links). Then open the two `.well-known` addresses from `--urls` in a browser to check them |

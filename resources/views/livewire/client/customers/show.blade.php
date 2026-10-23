@@ -3,6 +3,9 @@
         description="Customer since {{ $stats['first_seen']->setTimezone($timezone)->format('M j, Y') }} · {{ $stats['calls'] }} {{ \Illuminate\Support\Str::plural('call', $stats['calls']) }}">
         <x-slot:actions>
             <x-ui.badge :tone="$customer->status->tone()" class="text-sm">{{ $customer->status->label() }}</x-ui.badge>
+            @if ($canRequestPayment)
+                <x-ui.button variant="secondary" icon="card" :href="route('app.payments', ['new' => 1, 'customer' => $customer->ulid])">Request payment</x-ui.button>
+            @endif
             @if ($canUpdate)
                 <x-ui.button variant="secondary" wire:click="edit">Edit</x-ui.button>
             @endif

@@ -32,6 +32,7 @@ class PortalNavigation
                 $this->item('Tasks', 'check-circle', 'app.tasks.index', 'app.tasks.*', 'tasks.view'),
                 $this->item('Escalations', 'alert', 'app.escalations.index', 'app.escalations.*', 'escalations.view'),
                 $this->item('Results', 'trend-up', 'app.results', 'app.results*', 'reports.view'),
+                $this->item('Payments', 'card', 'app.payments', 'app.payments*', 'payments.view'),
                 $this->item('Reviews', 'star', 'app.reviews', 'app.reviews', 'reviews.view', 'reviews'),
                 $this->item('Social', 'megaphone', 'app.social.index', 'app.social.*', 'social.view', 'social_publishing'),
                 $this->item('Business', 'building', 'app.business.profile', 'app.business.*', 'organization.view'),

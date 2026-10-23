@@ -12,6 +12,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BusinessService;
 use App\Models\ChatWidget;
 use App\Services\Billing\FeatureAccess;
+use App\Services\Payments\CustomerPayments;
 use App\Services\Rules\BusinessRules;
 use App\Services\Scheduling\Availability;
 use App\Services\Tasks\CallbackDueTime;
@@ -106,13 +107,22 @@ class SiteToolsController extends Controller
         }
 
         $when = $appointment->starts_at->setTimezone($organization->timezoneOrDefault())->format('l j F, g:i A');
+        // A deposit, when the business takes one (D85). A problem with it never loses the booking.
+        try {
+            $deposit = app(CustomerPayments::class)->depositFor($appointment);
+        } catch (\Throwable $e) {
+            report($e);
+            $deposit = null;
+        }
 
-        return $this->json($request, $widget, [
+        return $this->json($request, $widget, array_filter([
             'status' => $appointment->status->value,
-            'message' => $widget->bookings_need_confirmation
+            'message' => ($widget->bookings_need_confirmation
                 ? "Thanks! We've received your request for {$when}. We'll confirm it shortly."
-                : "You're booked for {$when}. See you then!",
-        ], 201);
+                : "You're booked for {$when}. See you then!").($deposit ? ' Please pay the '.$deposit->amount().' deposit to secure your time.' : ''),
+            'pay_url' => $deposit?->link(),
+            'pay_label' => $deposit ? 'Pay '.$deposit->amount().' deposit' : null,
+        ]), 201);
     }
 
     public function lead(Request $request, MatchOrCreateCustomer $customers, CreateTask $tasks, CallbackDueTime $callbackDue, string $key): JsonResponse

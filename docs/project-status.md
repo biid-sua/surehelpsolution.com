@@ -65,9 +65,10 @@ _As of 2026-10-21. Detailed tracker: [implementation-plan.md](implementation-pla
 - **White-label (D82):** *Business › Branding* sets the business's own colour and email sender name. SureHelp's name is removed from customer emails and pages, and the portal can show the business's logo and colour. Included in plans that list `white_label`.
 - **Reviews (D83):** Google reviews come in every hour, with an alert for each new one and a task for low ratings. Owners reply from SureHelp, with an optional AI draft. The page shows the rating over time, and Results shows each month's reviews. There's also a new automation trigger for reviews.
 - **Satisfaction surveys (D84):** "How did we do? 1–5" by text or email after jobs or calls. Customers answer with one tap or a text reply. Happy customers are offered the Google review link; unhappy ones create a call-back task and alert the team. Scores appear in Results and on agents' Quality pages.
+- **Deposits and pay-by-text (D85):** businesses connect their own Stripe account (Stripe Connect) and send pay links by text or email. Online bookings can ask for a deposit, and Stripe's webhook marks payments paid or refunded. Included in plans that list `customer_payments`.
 - **The mobile app was rebuilt** in its own repo (`biid-sua/SHS_Mobile_App`) for businesses, agents and admins, and merged. Its own README lists the store steps.
 
-606 automated tests pass.
+610 automated tests pass.
 
 ---
 
