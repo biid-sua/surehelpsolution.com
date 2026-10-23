@@ -217,11 +217,11 @@ class AutomationsTwoTest extends TestCase
         $this->assertSame(1, $this->emailsTo('owner@rivera.test', 'Escalation: Flooded basement'));
 
         Livewire::test(Automations::class)->call('start')
-            ->set('form.name', 'Loop')->set('form.trigger', 'task_overdue')->set('form.action', 'create_task')
-            ->set('form.title', 'Again')->set('form.due_hours', '2')->call('save')->assertHasErrors('form.action');
+            ->set('form.name', 'Loop')->set('form.trigger', 'task_overdue')->set('form.steps.0.action', 'create_task')
+            ->set('form.steps.0.title', 'Again')->set('form.steps.0.due_hours', '2')->call('save')->assertHasErrors('form.steps.0.action');
         Livewire::test(Automations::class)->call('start')
-            ->set('form.name', 'Leak')->set('form.trigger', 'escalation_raised')->set('form.action', 'send_email')
-            ->set('form.subject', 'x')->set('form.body', 'y')->call('save')->assertHasErrors('form.action');
+            ->set('form.name', 'Leak')->set('form.trigger', 'escalation_raised')->set('form.steps.0.action', 'send_email')
+            ->set('form.steps.0.subject', 'x')->set('form.steps.0.body', 'y')->call('save')->assertHasErrors('form.steps.0.action');
     }
 
     public function test_recipes_and_the_condition_builder(): void

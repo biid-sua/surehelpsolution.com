@@ -13,6 +13,8 @@ use Illuminate\Support\Carbon;
  *
  * @property Carbon $run_at
  * @property Carbon|null $ran_at
+ * @property list<int|string>|null $cursor where a flow is up to (D81), e.g. [2, "then", 0]
+ * @property list<array{at: string, step: string, status: string, text: string}>|null $log what each step did
  */
 class AutomationRun extends Model
 {
@@ -23,11 +25,11 @@ class AutomationRun extends Model
         'conversation' => Conversation::class, 'escalation' => Escalation::class, 'task' => Task::class,
     ];
 
-    protected $fillable = ['automation_id', 'organization_id', 'subject_type', 'subject_id', 'status', 'run_at', 'attempts', 'result', 'ran_at'];
+    protected $fillable = ['automation_id', 'organization_id', 'subject_type', 'subject_id', 'customer_id', 'status', 'run_at', 'attempts', 'result', 'ran_at', 'cursor', 'log'];
 
     protected function casts(): array
     {
-        return ['run_at' => 'datetime', 'ran_at' => 'datetime', 'attempts' => 'integer'];
+        return ['run_at' => 'datetime', 'ran_at' => 'datetime', 'attempts' => 'integer', 'cursor' => 'array', 'log' => 'array'];
     }
 
     /** @return BelongsTo<Automation, $this> */

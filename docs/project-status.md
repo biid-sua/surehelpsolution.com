@@ -58,9 +58,13 @@ _As of 2026-10-21. Detailed tracker: [implementation-plan.md](implementation-pla
   - 13 triggers: bookings, coming-up, moves, no-shows, calls, missed calls, first messages, inactive customers, escalations and overdue tasks.
   - New actions: texts, emailing anyone, tags and status.
   - Conditions, and 10 recipes.
+- **Automations 2.0, step 2 (D81):**
+  - Flows of up to 15 steps: actions, waits, and an "if / otherwise" (for example, "if they haven't replied").
+  - A visual builder, and a test run that shows what would happen without sending anything.
+  - An *Automations* card on each customer's page.
 - **The mobile app was rebuilt** in its own repo (`biid-sua/SHS_Mobile_App`) for businesses, agents and admins, and merged. Its own README lists the store steps.
 
-584 automated tests pass.
+594 automated tests pass.
 
 ---
 

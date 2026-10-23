@@ -20,6 +20,7 @@ use App\Models\CallLog;
 use App\Models\Conversation;
 use App\Models\Customer;
 use App\Models\Escalation;
+use App\Models\Message;
 use App\Models\Organization;
 use App\Models\Tag;
 use App\Models\Task;
@@ -84,6 +85,7 @@ class AutomationEngine
                 'organization_id' => $automation->organization_id,
                 'subject_type' => $type,
                 'subject_id' => $subject->getKey(),
+                'customer_id' => $this->customerOf($subject)?->id,
                 'status' => 'pending',
                 'run_at' => $runAt,
                 'created_at' => now(),
@@ -154,7 +156,7 @@ class AutomationEngine
 
         return AutomationRun::withoutGlobalScopes()->insertOrIgnore([
             'automation_id' => $automation->id, 'organization_id' => $automation->organization_id,
-            'subject_type' => Automation::SUBJECT_FOR[$automation->trigger], 'subject_id' => $subject->getKey(),
+            'subject_type' => Automation::SUBJECT_FOR[$automation->trigger], 'subject_id' => $subject->getKey(), 'customer_id' => $this->customerOf($subject)?->id,
             'status' => 'pending', 'run_at' => now()->addMinutes($automation->delay_minutes), 'created_at' => now(), 'updated_at' => now(),
         ]);
     }
@@ -185,6 +187,11 @@ class AutomationEngine
         return $counts;
     }
 
+    /**
+     * Run a flow from where it is up to (D81) until it ends or reaches a wait. A single-action automation
+     * is a one-step flow. Before every action the trigger and conditions are checked again; a step
+     * that can't apply (no consent, no email) is logged as skipped and the flow carries on.
+     */
     private function run(AutomationRun $run): string
     {
         $automation = $run->automation;
@@ -194,29 +201,176 @@ class AutomationEngine
             ! $automation || ! $automation->is_active => 'The automation was switched off.',
             ! $subject => 'What it was about no longer exists.',
             ! Organization::query()->find($run->organization_id)?->isServing() => 'The business\'s service is paused.',
-            default => $this->conditionsHold($automation, $subject),
+            default => null,
         };
         if ($reason !== null) {
             return $this->finish($run, 'cancelled', $reason);
         }
 
-        try {
-            $result = $this->perform($automation, $subject);
-        } catch (SkipRun $e) {
-            return $this->finish($run, 'skipped', $e->getMessage());
-        } catch (\Throwable $e) {
-            report($e);
-            $attempts = $run->attempts + 1;
-            if ($attempts < self::MAX_ATTEMPTS) {
-                $run->forceFill(['status' => 'pending', 'attempts' => $attempts, 'run_at' => now()->addMinutes(5 * $attempts), 'result' => 'Will retry: '.mb_substr($e->getMessage(), 0, 200)])->save();
+        $steps = $automation->flow();
+        $cursor = $run->cursor ?? Flow::first($steps);
+        $log = $run->log ?? [];
+        $since = $run->created_at ?? now();
 
-                return 'retry';
+        for ($guard = 0; $guard < 2 * Automation::MAX_STEPS && $cursor !== null; $guard++) {
+            $step = Flow::at($steps, $cursor);
+            if (! $step) {
+                break;
             }
 
-            return $this->finish($run, 'failed', mb_substr($e->getMessage(), 0, 400), $attempts);
+            if ($step['type'] === 'wait') {
+                $next = Flow::next($steps, $cursor);
+                if ($next === null) {
+                    break;
+                }
+                $minutes = max(1, (int) ($step['minutes'] ?? 0));
+                $log[] = $this->entry(Flow::waitLabel($step), 'waiting', 'Paused, then carries on.');
+                $run->forceFill(['status' => 'pending', 'run_at' => now()->addMinutes($minutes), 'cursor' => $next, 'log' => $log, 'attempts' => 0,
+                    'result' => 'Waiting: '.mb_strtolower(Flow::waitLabel($step)).'.'])->save();
+
+                return 'waiting';
+            }
+
+            if ($step['type'] === 'branch') {
+                $holds = true;
+                foreach ((array) ($step['rules'] ?? []) as $rule) {
+                    if ($this->ruleFails($rule, $subject, $this->customerOf($subject), $since) !== null) {
+                        $holds = false;
+                        break;
+                    }
+                }
+                $log[] = $this->entry('If '.$this->rulesLabel((array) ($step['rules'] ?? [])), 'done', $holds ? 'Yes: took the first path.' : 'No: took the "otherwise" path.');
+                $cursor = Flow::enter($steps, $cursor, $holds ? 'then' : 'else');
+
+                continue;
+            }
+
+            // An action: still applies?
+            if ($reason = $this->conditionsHold($automation, $subject)) {
+                $log[] = $this->entry($this->actionLabel($step), 'cancelled', $reason);
+
+                return $this->finish($run->forceFill(['log' => $log, 'cursor' => null]), 'cancelled', $reason);
+            }
+            try {
+                $text = $this->perform($this->stepAutomation($automation, $step), $subject);
+                $log[] = $this->entry($this->actionLabel($step), 'done', $text);
+            } catch (SkipRun $e) {
+                $log[] = $this->entry($this->actionLabel($step), 'skipped', $e->getMessage());
+            } catch (\Throwable $e) {
+                report($e);
+                $attempts = $run->attempts + 1;
+                if ($attempts < self::MAX_ATTEMPTS) {
+                    $run->forceFill(['status' => 'pending', 'attempts' => $attempts, 'run_at' => now()->addMinutes(5 * $attempts), 'cursor' => $cursor, 'log' => $log,
+                        'result' => 'Will retry: '.mb_substr($e->getMessage(), 0, 200)])->save();
+
+                    return 'retry';
+                }
+                $log[] = $this->entry($this->actionLabel($step), 'failed', mb_substr($e->getMessage(), 0, 300));
+
+                return $this->finish($run->forceFill(['log' => $log, 'cursor' => null]), 'failed', mb_substr($e->getMessage(), 0, 400), $attempts);
+            }
+            $run->attempts = 0;
+            $cursor = Flow::next($steps, $cursor);
         }
 
-        return $this->finish($run, 'done', $result);
+        // The end: done if anything was done, otherwise skipped (with the reason).
+        $actions = array_values(array_filter($log, fn ($e) => in_array($e['status'], ['done', 'skipped'], true) && ! str_starts_with($e['step'], 'If ')));
+        $did = array_filter($actions, fn ($e) => $e['status'] === 'done');
+        $last = end($actions) ?: ['text' => 'Nothing to do.'];
+        $summary = $did ? implode(' ', array_map(fn ($e) => $e['text'], $did)) : $last['text'];
+        $run->forceFill(['log' => $log, 'cursor' => null]);
+
+        return $this->finish($run, $did ? 'done' : 'skipped', $summary);
+    }
+
+    /** One step of a flow as an automation the actions understand (same trigger, so consent rules match). */
+    private function stepAutomation(Automation $automation, array $step): Automation
+    {
+        $copy = $automation->replicate();
+        $copy->id = $automation->id;
+        $copy->ulid = $automation->ulid;
+        $copy->action = (string) ($step['action'] ?? '');
+        $copy->action_config = (array) ($step['config'] ?? []);
+
+        return $copy;
+    }
+
+    /** @return array{at: string, step: string, status: string, text: string} */
+    private function entry(string $step, string $status, string $text): array
+    {
+        return ['at' => now()->toIso8601String(), 'step' => $step, 'status' => $status, 'text' => mb_substr($text, 0, 300)];
+    }
+
+    /** @param array<string, mixed> $step */
+    public function actionLabel(array $step): string
+    {
+        return Automation::ACTIONS[$step['action'] ?? ''] ?? 'Action';
+    }
+
+    /** @param list<array<string, mixed>> $rules */
+    public function rulesLabel(array $rules): string
+    {
+        if ($rules === []) {
+            return 'always';
+        }
+
+        return collect($rules)->map(function (array $r) {
+            $field = Automation::CONDITION_FIELDS[$r['field'] ?? ''] ?? null;
+
+            return $field ? mb_strtolower($field['label']).' '.($field['ops'][$r['op'] ?? ''] ?? '') : '';
+        })->filter()->implode(' and ');
+    }
+
+    /**
+     * What the flow would do for this subject now, without doing it (D81 test run). Waits move a
+     * pretend clock; branches are decided on today's data.
+     *
+     * @return list<array{at: string, step: string, status: string, text: string}>
+     */
+    public function simulate(Automation $automation, Model $subject): array
+    {
+        $lines = [];
+        $clock = $this->runAt($automation, $subject) ?? now();
+        $entry = fn (string $step, string $status, string $text) => ['at' => $clock->toIso8601String(), 'step' => $step, 'status' => $status, 'text' => $text];
+        if ($automation->waitsBefore() && ! $this->runAt($automation, $subject)) {
+            return [$entry('Start', 'cancelled', 'The appointment has already started, so nothing would happen.')];
+        }
+        if ($reason = $this->conditionsHold($automation, $subject)) {
+            return [$entry('Start', 'cancelled', 'Wouldn\'t start: '.$reason)];
+        }
+        $lines[] = $entry('Start', 'done', $clock->lte(now()->addMinute()) ? 'Starts straight away.' : 'Starts '.$clock->toDayDateTimeString().' (UTC).');
+
+        $steps = $automation->flow();
+        $cursor = Flow::first($steps);
+        for ($guard = 0; $guard < 2 * Automation::MAX_STEPS && $cursor !== null; $guard++) {
+            $step = Flow::at($steps, $cursor);
+            if (! $step) {
+                break;
+            }
+            if ($step['type'] === 'wait') {
+                $clock = $clock->copy()->addMinutes(max(1, (int) ($step['minutes'] ?? 0)));
+                $lines[] = $entry(Flow::waitLabel($step), 'waiting', 'Then at '.$clock->toDayDateTimeString().' (UTC):');
+                $cursor = Flow::next($steps, $cursor);
+
+                continue;
+            }
+            if ($step['type'] === 'branch') {
+                $holds = collect((array) ($step['rules'] ?? []))->every(fn ($rule) => $this->ruleFails($rule, $subject, $this->customerOf($subject), now()) === null);
+                $lines[] = $entry('If '.$this->rulesLabel((array) ($step['rules'] ?? [])), 'done', ($holds ? 'Yes' : 'No').', as things stand today.');
+                $cursor = Flow::enter($steps, $cursor, $holds ? 'then' : 'else');
+
+                continue;
+            }
+            try {
+                $lines[] = $entry($this->actionLabel($step), 'done', $this->perform($this->stepAutomation($automation, $step), $subject, dry: true));
+            } catch (SkipRun $e) {
+                $lines[] = $entry($this->actionLabel($step), 'skipped', 'Would be skipped: '.$e->getMessage());
+            }
+            $cursor = Flow::next($steps, $cursor);
+        }
+        $lines[] = $entry('End', 'done', 'Nothing was sent: this was a test run.');
+
+        return $lines;
     }
 
     private function finish(AutomationRun $run, string $status, string $result, ?int $attempts = null): string
@@ -272,7 +426,7 @@ class AutomationEngine
     }
 
     /** @param array{field: string, op: string, value?: string} $rule */
-    private function ruleFails(array $rule, Model $subject, ?Customer $customer): ?string
+    private function ruleFails(array $rule, Model $subject, ?Customer $customer, ?CarbonInterface $since = null): ?string
     {
         $op = $rule['op'];
         $value = (string) ($rule['value'] ?? '');
@@ -309,6 +463,18 @@ class AutomationEngine
                 $open = $organization && $this->hours->isOpenAt($organization, $at);
 
                 return ($op === 'open') === $open ? null : ($op === 'open' ? 'It happened while you were closed.' : 'It happened while you were open.');
+            case 'replied':
+                $replied = $customer && Message::withoutGlobalScopes()->where('direction', Message::IN)->where('is_note', false)
+                    ->where('created_at', '>', $since ?? now())
+                    ->whereIn('conversation_id', Conversation::withoutGlobalScopes()->where('customer_id', $customer->id)->select('id'))->exists();
+
+                return ($op === 'yes') === $replied ? null : ($op === 'yes' ? 'They haven\'t replied.' : 'They replied.');
+            case 'booked_since':
+                $booked = $customer && $customer->appointments()->where('created_at', '>', $since ?? now())
+                    ->whereNot('status', AppointmentStatus::Cancelled)
+                    ->when($subject instanceof Appointment, fn ($q) => $q->whereKeyNot($subject->getKey()))->exists();
+
+                return ($op === 'yes') === $booked ? null : ($op === 'yes' ? 'They haven\'t booked.' : 'They booked.');
         }
 
         return null;
@@ -325,24 +491,24 @@ class AutomationEngine
     }
 
     /** @return string what happened, for the history */
-    private function perform(Automation $automation, Model $subject): string
+    private function perform(Automation $automation, Model $subject, bool $dry = false): string
     {
         $organization = Organization::query()->findOrFail($automation->organization_id);
         $customer = $this->customerOf($subject);
 
         return match ($automation->action) {
-            'send_email' => $this->sendEmail($automation, $organization, $subject, $customer),
-            'create_task' => $this->createTask($automation, $organization, $subject, $customer),
-            'notify_team' => $this->notifyTeam($automation, $organization, $subject, $customer),
-            'send_text' => $this->sendText($automation, $organization, $subject, $customer),
-            'email_address' => $this->emailAddress($automation, $organization, $subject, $customer),
-            'add_tag', 'remove_tag' => $this->tag($automation, $organization, $customer),
-            'set_status' => $this->setStatus($automation, $customer),
+            'send_email' => $this->sendEmail($automation, $organization, $subject, $customer, $dry),
+            'create_task' => $this->createTask($automation, $organization, $subject, $customer, $dry),
+            'notify_team' => $this->notifyTeam($automation, $organization, $subject, $customer, $dry),
+            'send_text' => $this->sendText($automation, $organization, $subject, $customer, $dry),
+            'email_address' => $this->emailAddress($automation, $organization, $subject, $customer, $dry),
+            'add_tag', 'remove_tag' => $this->tag($automation, $organization, $customer, $dry),
+            'set_status' => $this->setStatus($automation, $customer, $dry),
             default => throw new SkipRun('Unknown action.'),
         };
     }
 
-    private function sendEmail(Automation $automation, Organization $organization, Model $subject, ?Customer $customer): string
+    private function sendEmail(Automation $automation, Organization $organization, Model $subject, ?Customer $customer, bool $dry = false): string
     {
         if (! $this->features->allows($organization, 'customer_emails')) {
             throw new SkipRun('Customer emails aren\'t in the business\'s plan.');
@@ -357,6 +523,9 @@ class AutomationEngine
         $values = $this->values($automation, $organization, $subject, $customer);
         $subjectLine = $this->messages->render((string) $automation->config('subject', ''), $values);
         $body = $this->messages->render((string) $automation->config('body', ''), $values);
+        if ($dry) {
+            return 'Would email '.$customer->email.': "'.$subjectLine.'".';
+        }
         $replyTo = BusinessProfile::withoutGlobalScopes()->where('organization_id', $organization->id)->value('email') ?: $organization->owner?->email;
 
         Notification::route('mail', $customer->email)->notify(new CustomerEmail($subjectLine, $body, $values['business'], $replyTo));
@@ -366,9 +535,12 @@ class AutomationEngine
         return 'Emailed '.$customer->email.'.';
     }
 
-    private function createTask(Automation $automation, Organization $organization, Model $subject, ?Customer $customer): string
+    private function createTask(Automation $automation, Organization $organization, Model $subject, ?Customer $customer, bool $dry = false): string
     {
         $values = $this->values($automation, $organization, $subject, $customer);
+        if ($dry) {
+            return 'Would create the task "'.mb_substr($this->messages->render((string) $automation->config('title', 'Follow up with {first_name}'), $values), 0, 200).'".';
+        }
         $task = $this->createTask->handle($organization, [
             'type' => TaskType::FollowUp,
             'title' => mb_substr($this->messages->render((string) $automation->config('title', 'Follow up with {first_name}'), $values), 0, 200),
@@ -380,16 +552,19 @@ class AutomationEngine
         return 'Created the task "'.$task->title.'".';
     }
 
-    private function notifyTeam(Automation $automation, Organization $organization, Model $subject, ?Customer $customer): string
+    private function notifyTeam(Automation $automation, Organization $organization, Model $subject, ?Customer $customer, bool $dry = false): string
     {
         $values = $this->values($automation, $organization, $subject, $customer);
         $text = $this->messages->render((string) $automation->config('message', '{first_name}: {service}'), $values);
+        if ($dry) {
+            return 'Would tell your team: "'.$text.'".';
+        }
         $sent = $this->notify->handle($organization, new AutomationNotice($organization, $automation->name, $text, $customer?->ulid), 'customers.view');
 
         return 'Told '.$sent->count().' '.str('person')->plural($sent->count()).'.';
     }
 
-    private function sendText(Automation $automation, Organization $organization, Model $subject, ?Customer $customer): string
+    private function sendText(Automation $automation, Organization $organization, Model $subject, ?Customer $customer, bool $dry = false): string
     {
         $phone = $customer?->phone_e164 ?: ($subject instanceof VoiceCall ? $subject->from_number : null)
             ?: ($subject instanceof Conversation && $subject->channel === InboxChannel::Sms ? $subject->external_thread_id : null);
@@ -406,6 +581,9 @@ class AutomationEngine
         }
 
         $body = $this->messages->render((string) $automation->config('text', ''), $this->values($automation, $organization, $subject, $customer));
+        if ($dry) {
+            return 'Would text '.Phone::display($phone).': "'.$body.'".';
+        }
         $message = $this->texting->sendAutomatic($organization, $phone, $body, 'automation');
         if ($message === null) {
             throw new SkipRun('This number can\'t be texted (not a US or Canadian mobile, or it texted STOP).');
@@ -417,7 +595,7 @@ class AutomationEngine
         return 'Texted '.Phone::display($phone).'.';
     }
 
-    private function emailAddress(Automation $automation, Organization $organization, Model $subject, ?Customer $customer): string
+    private function emailAddress(Automation $automation, Organization $organization, Model $subject, ?Customer $customer, bool $dry = false): string
     {
         $to = (string) $automation->config('to', '');
         if (filter_var($to, FILTER_VALIDATE_EMAIL) === false) {
@@ -427,12 +605,15 @@ class AutomationEngine
             + ['customer' => $customer?->fullName() ?: 'A customer'];
         $subjectLine = $this->messages->render((string) $automation->config('subject', ''), $values);
         $body = $this->messages->render((string) $automation->config('body', ''), $values);
+        if ($dry) {
+            return 'Would email '.$to.': "'.$subjectLine.'".';
+        }
         Notification::route('mail', $to)->notify(new CustomerEmail($subjectLine, $body, $values['business'], null));
 
         return 'Emailed '.$to.'.';
     }
 
-    private function tag(Automation $automation, Organization $organization, ?Customer $customer): string
+    private function tag(Automation $automation, Organization $organization, ?Customer $customer, bool $dry = false): string
     {
         if (! $customer) {
             throw new SkipRun('No customer to tag.');
@@ -440,6 +621,9 @@ class AutomationEngine
         $tag = Tag::withoutGlobalScopes()->where('organization_id', $organization->id)->find((int) $automation->config('tag_id'));
         if (! $tag) {
             throw new SkipRun('The tag no longer exists.');
+        }
+        if ($dry) {
+            return $automation->action === 'add_tag' ? 'Would tag '.$customer->fullName().' "'.$tag->name.'".' : 'Would remove "'.$tag->name.'" from '.$customer->fullName().'.';
         }
         if ($automation->action === 'add_tag') {
             $customer->tags()->syncWithoutDetaching([$tag->id]);
@@ -451,11 +635,14 @@ class AutomationEngine
         return 'Removed "'.$tag->name.'" from '.$customer->fullName().'.';
     }
 
-    private function setStatus(Automation $automation, ?Customer $customer): string
+    private function setStatus(Automation $automation, ?Customer $customer, bool $dry = false): string
     {
         $status = CustomerStatus::tryFrom((string) $automation->config('status'));
         if (! $customer || ! $status) {
             throw new SkipRun('No customer, or the status no longer exists.');
+        }
+        if ($dry) {
+            return 'Would mark '.$customer->fullName().' as '.mb_strtolower($status->label()).'.';
         }
         $customer->forceFill(['status' => $status])->save();
 

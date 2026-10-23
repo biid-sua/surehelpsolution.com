@@ -103,6 +103,34 @@
                 ])
             @endif
 
+            @if ($automationRuns->isNotEmpty())
+                <x-ui.card title="Automations" description="Flows this customer is in, newest first.">
+                    <ol class="space-y-4" role="list">
+                        @foreach ($automationRuns as $run)
+                            <li wire:key="arun-{{ $run->id }}">
+                                <div class="flex items-start justify-between gap-2">
+                                    <p class="text-sm font-medium text-ink">{{ $run->automation?->name ?? 'A deleted automation' }}</p>
+                                    <x-ui.badge :tone="['done' => 'success', 'pending' => 'info', 'running' => 'info', 'failed' => 'danger'][$run->status] ?? 'neutral'">{{ $run->status === 'pending' ? 'Waiting' : ucfirst($run->status) }}</x-ui.badge>
+                                </div>
+                                @if ($run->log)
+                                    <ol class="mt-1 space-y-0.5 border-l border-line pl-3 text-xs text-subtle">
+                                        @foreach ($run->log as $entry)
+                                            <li><span class="text-muted">{{ $entry['step'] }}</span> · {{ $entry['text'] }}
+                                                <time class="whitespace-nowrap" datetime="{{ $entry['at'] }}">({{ \Illuminate\Support\Carbon::parse($entry['at'])->setTimezone($timezone)->format('M j, g:i A') }})</time></li>
+                                        @endforeach
+                                    </ol>
+                                @elseif ($run->result)
+                                    <p class="mt-1 text-xs text-subtle">{{ $run->result }}</p>
+                                @endif
+                                @if ($run->status === 'pending')
+                                    <p class="mt-1 text-xs text-subtle">Next step {{ $run->run_at->setTimezone($timezone)->format('M j, g:i A') }}.</p>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ol>
+                </x-ui.card>
+            @endif
+
             @if ($customer->notes)
                 <x-ui.card title="About this customer">
                     <p class="whitespace-pre-line text-sm text-ink">{{ $customer->notes }}</p>

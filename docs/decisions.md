@@ -1272,3 +1272,50 @@ history. Existing automations keep working unchanged.
 **Why:** most follow-ups a business wants are "when X, wait, then do Y". Covering the common X's and Y's
 natively, with consent and re-checks built in, means clients don't need n8n or Zapier for them. Multi-step
 flows with branches are step 2.
+
+## D81 — Automations 2.0, step 2: flows, a visual builder, test runs and a customer timeline (2026-10-23)
+**Decision:** an automation can run a **flow**: a list of steps, stored as JSON on `automations.steps`.
+- **Steps.** There are three kinds:
+  - **Action:** any of the D80 actions.
+  - **Wait:** 1 minute to 30 days.
+  - **If / otherwise:** up to five conditions with a "yes" path and an "otherwise" path.
+  - A flow has at most 15 steps. An If can't contain another If, so flows are at most two levels deep.
+- **Running.** Each run stores a `cursor` (where it's up to, such as `[2, "then", 0]`) and a `log` (what
+  each step did).
+  - A wait sets the run's `run_at` and stops. The every-minute `automations:run` picks it up again from
+    the cursor, so a flow survives deploys and restarts.
+  - Before every action, the trigger and the "Only if" conditions are checked again. If they no longer
+    hold (the job was cancelled, or the automation was switched off), the flow is cancelled.
+  - A step that can't apply (no consent, no email) is logged as skipped and the flow carries on.
+  - Errors retry from the same step, so finished steps are never repeated.
+  - A run is *done* if any action was done.
+- **New conditions for If steps:** "a reply from them came in" and "a new booking was made". Both count
+  from when the flow started. They aren't offered in "Only if", where "since" has no meaning.
+- **Compatibility.** An automation saved before flows has no steps and runs as a one-step flow, with the
+  same results as before. A flow cut back to one action is stored that way again. The first action is
+  always copied to `action` / `action_config`, so lists and older code keep working. If a flow is edited
+  while runs are under way, they continue from the same step position. A position that no longer exists
+  ends the run.
+- **Builder.** *Business › Automations* shows the flow as a list of cards:
+  - add an action, a wait or an If;
+  - move steps up and down, or remove them;
+  - an If shows its two paths side by side.
+  - Every action is checked the same way as before: required fields, the review link, and the guards on
+    internal triggers.
+- **Test run.** It picks the most recent record the trigger could be about (optionally for one customer):
+  for appointment triggers, one in the matching state; for "coming up", the next booking.
+  - It then walks the unsaved form against that record and shows each step: "Would email …", "Would be
+    skipped: they haven't agreed to texts", and the pretend times of the waits.
+  - Ifs are decided on today's data.
+  - Nothing is sent, saved or changed. Every action has a dry mode that returns after its checks.
+- **Customer timeline.** Runs now record `customer_id`. A customer's page shows an *Automations* card
+  with their last 10 flows: each step, when it ran, and when the next one is due.
+- **Recipes:** two flows are added:
+  - **Review request with a text reminder:** email, wait 3 days, then a text if they haven't replied.
+  - **New lead: call, then follow up if they don't book:** a task, wait 2 days, then either an email and
+    a team note, or "customer" status if they booked.
+
+**Why:** real follow-up is a sequence ("thank them, wait, nudge if nothing happened"), not a single
+message. A list with one level of branching covers almost every small-business case and stays easy to
+read on a phone. A drag-and-drop canvas would add a lot of UI for little gain. The test run lets owners
+trust a flow before it reaches a customer.

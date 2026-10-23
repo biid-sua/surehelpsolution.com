@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToOrganization;
+use App\Services\Automation\Flow;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -14,6 +15,7 @@ use Illuminate\Support\Str;
  *
  * @property array<string, mixed>|null $conditions
  * @property array<string, mixed>|null $action_config
+ * @property list<array<string, mixed>>|null $steps a flow (D81): wait, action and branch steps; null runs the single action
  */
 class Automation extends Model
 {
@@ -74,6 +76,9 @@ class Automation extends Model
         'has_phone' => ['label' => 'Customer phone', 'ops' => ['yes' => 'is known', 'no' => 'isn\'t known'], 'value' => null],
         'call_outcome' => ['label' => 'Call outcome', 'ops' => ['is' => 'is', 'not' => 'isn\'t'], 'value' => 'outcome'],
         'business_hours' => ['label' => 'It happened', 'ops' => ['open' => 'while you\'re open', 'closed' => 'while you\'re closed'], 'value' => null],
+        // Only in a flow's "If" step (D81): "since" is when the flow started.
+        'replied' => ['label' => 'A reply from them', 'ops' => ['yes' => 'came in since the flow started', 'no' => 'hasn\'t come in yet'], 'value' => null, 'branch_only' => true],
+        'booked_since' => ['label' => 'A new booking', 'ops' => ['yes' => 'was made since the flow started', 'no' => 'hasn\'t been made yet'], 'value' => null, 'branch_only' => true],
     ];
 
     /** Placeholders the email action fills in. */
@@ -85,6 +90,26 @@ class Automation extends Model
         return $this->trigger === 'appointment_upcoming';
     }
 
+    /**
+     * The flow to run. An automation saved before flows is one action step.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function flow(): array
+    {
+        return $this->steps ?: [['type' => 'action', 'action' => $this->action, 'config' => $this->action_config ?? []]];
+    }
+
+    public function isFlow(): bool
+    {
+        return ! empty($this->steps);
+    }
+
+    public function stepCount(): int
+    {
+        return iterator_count(Flow::walk($this->flow()));
+    }
+
     /** @return list<array{field: string, op: string, value?: string}> */
     public function rules(): array
     {
@@ -93,11 +118,16 @@ class Automation extends Model
 
     public const MAX_DELAY_MINUTES = 60 * 24 * 30;
 
-    protected $fillable = ['organization_id', 'name', 'trigger', 'conditions', 'delay_minutes', 'action', 'action_config', 'is_active', 'created_by_user_id'];
+    protected $fillable = ['organization_id', 'name', 'trigger', 'conditions', 'delay_minutes', 'action', 'action_config', 'steps', 'is_active', 'created_by_user_id'];
+
+    /** Limits for a flow (D81). */
+    public const MAX_STEPS = 15;
+
+    public const MAX_DEPTH = 2;
 
     protected function casts(): array
     {
-        return ['conditions' => 'array', 'action_config' => 'array', 'is_active' => 'boolean', 'delay_minutes' => 'integer'];
+        return ['conditions' => 'array', 'action_config' => 'array', 'steps' => 'array', 'is_active' => 'boolean', 'delay_minutes' => 'integer'];
     }
 
     protected static function booted(): void
