@@ -24,8 +24,9 @@ return new class extends Migration
             $table->string('token', 40)->unique();
             $table->string('channel', 10);                       // sms | email
             $table->string('review_url', 500)->nullable();
-            $table->timestamp('sent_at');
-            $table->timestamp('expires_at');
+            // dateTime, not timestamp: on MariaDB a NOT NULL timestamp gets ON UPDATE CURRENT_TIMESTAMP or an invalid zero default.
+            $table->dateTime('sent_at');
+            $table->dateTime('expires_at');
             $table->unsignedTinyInteger('score')->nullable();   // 1–5
             $table->string('answered_by', 10)->nullable();      // link | text
             $table->timestamp('answered_at')->nullable();

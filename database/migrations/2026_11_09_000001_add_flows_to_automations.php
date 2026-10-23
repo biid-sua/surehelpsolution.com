@@ -26,8 +26,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('automation_runs', function (Blueprint $table) {
+            // MySQL won't drop an index a foreign key still uses, so the key goes first.
+            $table->dropForeign(['customer_id']);
             $table->dropIndex(['customer_id', 'created_at']);
-            $table->dropConstrainedForeignId('customer_id');
+            $table->dropColumn('customer_id');
             $table->dropColumn(['cursor', 'log']);
         });
         Schema::table('automations', function (Blueprint $table) {

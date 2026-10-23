@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('author_name', 120)->nullable();
             $table->unsignedTinyInteger('rating');              // 1–5
             $table->text('comment')->nullable();
-            $table->timestamp('reviewed_at');
+            $table->dateTime('reviewed_at'); // dateTime: a NOT NULL timestamp gets ON UPDATE CURRENT_TIMESTAMP on MariaDB
             $table->text('reply')->nullable();                  // as published
             $table->timestamp('replied_at')->nullable();
             $table->foreignId('replied_by_user_id')->nullable()->constrained('users')->nullOnDelete();
