@@ -53,7 +53,7 @@ class SalesAssistant
                     maxTokens: (int) config('sales.ai.max_tokens', 2000),
                 ));
                 foreach ($usage as $k => $v) {
-                    $usage[$k] = $v + (int) ($response->usage[$k] ?? 0);
+                    $usage[$k] = $v + (int) $response->usage[$k];
                 }
                 $steps++;
 
@@ -69,7 +69,7 @@ class SalesAssistant
                 $messages[] = ['role' => 'assistant', 'content' => $response->providerContent];
                 $results = [];
                 foreach ($response->toolCalls as $call) {
-                    $result = $runTool($call['name'], is_array($call['input']) ? $call['input'] : []);
+                    $result = $runTool($call['name'], $call['input']);
                     $results[] = ['type' => 'tool_result', 'tool_use_id' => $call['id'], 'content' => $result['content'], 'is_error' => ! $result['ok']];
                 }
                 $messages[] = ['role' => 'user', 'content' => $results];

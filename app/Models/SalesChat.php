@@ -61,7 +61,7 @@ class SalesChat extends Model
         return $this->belongsTo(User::class, 'staff_user_id');
     }
 
-    /** @param array<string, string> $fields */
+    /** @param array<string, mixed> $fields */
     public function remember(array $fields): void
     {
         $this->lead = array_filter(array_merge($this->lead ?? [], array_filter($fields, fn ($v) => is_string($v) && trim($v) !== '')));

@@ -77,7 +77,7 @@ class SalesChatDesk
                 .'Setup takes about 48 hours.',
             'demo' => $this->offerTimes($chat),
             'trial' => 'You can start a free trial right now at **/start**, it takes about 5 minutes. Want me to book a quick demo first instead?',
-            'person' => $this->handOver($chat, 'The visitor asked for a person.'),
+            default => $this->handOver($chat, 'The visitor asked for a person.'),   // 'person'
         };
         $new[] = $this->post($chat, 'assistant', $reply);
 

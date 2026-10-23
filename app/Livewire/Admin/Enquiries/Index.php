@@ -110,7 +110,7 @@ class Index extends Component
         return view('livewire.admin.enquiries.index', [
             'enquiries' => $enquiries,
             'current' => $current = $this->selected ? ContactSubmission::with(['handler:id,name', 'chat.messages.user:id,name'])->find($this->selected) : null,
-            'transcript' => $current?->chat?->messages ?? collect(),
+            'transcript' => $current?->chat->messages ?? collect(),
             'openCount' => ContactSubmission::whereNull('handled_at')->count(),
             'kinds' => ContactSubmission::INQUIRY_TYPES,
             'sources' => ContactSubmission::SOURCES,
