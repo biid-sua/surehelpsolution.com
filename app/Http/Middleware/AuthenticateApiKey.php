@@ -27,7 +27,7 @@ class AuthenticateApiKey
         $user = $key?->user;
         $organization = $key ? Organization::query()->find($key->organization_id) : null;
         $deny = fn (string $message, int $code) => response()->json(['success' => false, 'message' => $message], $code);
-        if (! $key || ! $user || ! $user->is_active || ! $organization || $user->primaryOrganization()?->id !== $organization->id) {
+        if (! $key || ! $user || ! $user->is_active || ! $organization || $user->activeOrganization($organization->ulid)?->id !== $organization->id) {
             return $deny('Unauthenticated.', 401);
         }
         if (! $request->is('api/v1/client/*')) {

@@ -18,7 +18,7 @@ trait ScopedToOrganization
     public function bootScopedToOrganization(): void
     {
         $user = auth()->user();
-        $organization = $user?->isClient() ? $user->primaryOrganization() : null;
+        $organization = $user?->isClient() ? $user->activeOrganization() : null;
 
         abort_if($organization === null, 403, 'Your account is not linked to a business yet. Please contact support.');
 

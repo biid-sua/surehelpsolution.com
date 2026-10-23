@@ -185,6 +185,22 @@
                     <li><x-ui.empty-state icon="user" title="No members" description="This business has no user accounts." /></li>
                 @endforelse
             </ul>
+            @can('organization.update', $organization)
+                <form wire:submit="addMember" class="space-y-2 border-t border-line px-5 py-4">
+                    <p class="text-sm font-medium text-ink">Add someone from another location</p>
+                    <p class="text-xs text-subtle">For owners with several businesses: they keep one sign-in and switch between them.</p>
+                    <label for="m-email" class="sr-only">Their email</label>
+                    <input id="m-email" type="email" wire:model="memberEmail" class="sh-input" placeholder="owner@example.com">
+                    @error('memberEmail') <p class="text-sm text-danger">{{ $message }}</p> @enderror
+                    <div class="flex gap-2">
+                        <label for="m-role" class="sr-only">Role</label>
+                        <select id="m-role" wire:model="memberRole" class="sh-input w-auto">
+                            @foreach (['owner', 'manager', 'staff'] as $r)<option value="{{ $r }}">{{ config('authorization.organization_roles.'.$r.'.label') }}</option>@endforeach
+                        </select>
+                        <x-ui.button type="submit" size="sm" variant="secondary">Add</x-ui.button>
+                    </div>
+                </form>
+            @endcan
         </x-ui.card>
         </div>
     </div>

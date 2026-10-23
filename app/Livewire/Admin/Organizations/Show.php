@@ -49,6 +49,11 @@ class Show extends Component
 
     public string $statusReason = '';
 
+    /** Multi-location (D89): someone who already has a business account, added to this one too. */
+    public string $memberEmail = '';
+
+    public string $memberRole = 'owner';
+
     public function mount(Organization $organization): void
     {
         $this->authorize('organization.view', $organization);
@@ -80,6 +85,29 @@ class Show extends Component
         app(Audit::class)->changes('organization.updated', $organization, ['name', 'timezone']);
 
         $this->dispatch('toast', type: 'success', message: 'Business details saved.');
+    }
+
+    /** Add an existing client user to this business, for owners with several locations (D89). */
+    public function addMember(): void
+    {
+        $organization = $this->organization();
+        $this->authorize('organization.update', $organization);
+        $this->validate(['memberEmail' => ['required', 'email'], 'memberRole' => ['required', 'in:owner,manager,staff']], [], ['memberEmail' => 'email']);
+        $user = User::query()->where('email', strtolower(trim($this->memberEmail)))->first();
+        if (! $user || ! $user->isClient()) {
+            $this->addError('memberEmail', 'No business account uses that email. New people are invited from the business\'s Team page.');
+
+            return;
+        }
+        if ($organization->members()->whereKey($user->id)->exists()) {
+            $this->addError('memberEmail', $user->name.' is already part of this business.');
+
+            return;
+        }
+        $organization->members()->attach($user->id, ['role' => $this->memberRole, 'status' => 'active', 'joined_at' => now()]);
+        app(Audit::class)->record('team.member_added', $user, new: ['role' => $this->memberRole], organization: $organization, label: $user->email);
+        $this->reset(['memberEmail', 'memberRole']);
+        $this->dispatch('toast', type: 'success', message: $user->name.' can now switch to '.$organization->name.' from the top bar.');
     }
 
     /** Go live, resume or reactivate (D45). */

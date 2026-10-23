@@ -1514,3 +1514,26 @@ the same knowledge, rules, hours and services the messaging assistant sees.
 
 **Why:** faster, more accurate calls, especially for new agents and businesses with long knowledge
 bases. Typed questions keep it cheap and predictable compared with listening to every call.
+
+## D89 — Multi-location (2026-10-23)
+**Decision:** each location stays its own business account, with its own line, agents, billing and
+data. One person can now belong to several of them and move between them.
+- **Linking.** Staff add an existing business user to another location, under *Admin › Organizations ›
+  [business] › Add someone from another location*, as owner, manager or staff. New people are still
+  invited from a business's Team page.
+- **Switching.**
+  - With more than one business, the top bar shows a switcher. The choice is kept in the session
+    (`current_organization`).
+  - The app sends `X-Organization: <business id>` instead.
+  - `User::activeOrganization()` checks membership on every request, so a stale or forged choice falls
+    back to the first business. Livewire pages, the client API and API keys (pinned to their own
+    business) all use it.
+- **All locations** (`/app/locations`): this month or an earlier one, one row per location the person
+  can see results for, with totals:
+  - calls answered (of all calls), new leads, jobs booked;
+  - reviews and their rating, payments collected;
+  - open tasks and open escalations.
+  A location's name switches to it.
+
+**Why:** franchises and owners with several branches want one sign-in and one view. Keeping locations
+as separate accounts means none of the tenancy, permission or billing rules change.
