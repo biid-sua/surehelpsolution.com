@@ -1464,3 +1464,29 @@ plain words.
 **Why:** small businesses rarely complain before leaving; they just stop using the service. These
 signals show up weeks earlier, while a call can still help. It's deliberately simple and explainable,
 rather than a model nobody can question.
+
+## D87 — API keys and outgoing webhooks (2026-10-23)
+**Decision:** a business can connect SureHelp to its own tools, without us building each integration:
+- **API keys** (`api_keys`, `shk_…`, stored as SHA-256) work on the existing business API
+  (`/api/v1/client/*`, the same one the mobile app uses).
+  - A middleware in front of Sanctum signs the request in as the key's creator, so permissions and
+    tenancy are exactly theirs.
+  - Read-only keys can only `GET`. Keys can't reach any other part of the API.
+  - At most 10 keys per business. They're revoked on the page, and stop working when their creator is
+    deactivated or leaves.
+- **Webhooks** (`webhook_endpoints`, `webhook_deliveries`).
+  - The events are the moments that already start automations (D80), plus `payment.paid` (D85) and
+    `survey.answered` (D84). `AutomationEngine::fire` sends them on, so nothing is missed or
+    duplicated.
+  - Each delivery is queued, signed (Stripe-style `t=…,v1=…` HMAC), limited to 10 seconds and
+    https-only.
+  - Only public addresses are allowed, and the connection is pinned to the checked IP (the same SSRF
+    defence as the website checker).
+  - Retries back off over about 8 hours. The endpoint switches itself off after 20 failures in a row.
+  - The page shows recent deliveries and has a test button.
+  - Payloads use public ids (ulids) and plain fields, never internal ids.
+- Managed by people with `integrations.manage` (owners and managers) under *Business › API & webhooks*.
+  It's open to every plan. Full details are in [api.md](api.md) § 2b.
+
+**Why:** "Can we connect it to n8n / Zapier / our CRM?" comes up with every larger client. A key plus
+webhooks covers almost all of it, and our own automations (D80–D81) remain the no-code option.

@@ -32,6 +32,7 @@ use App\Notifications\CustomerEmail;
 use App\Services\Billing\FeatureAccess;
 use App\Services\Business\BusinessHours;
 use App\Services\Growth\LinkPage;
+use App\Services\Integrations\Webhooks;
 use App\Services\Messages\CustomerMessages;
 use App\Services\Surveys\SurveyDesk;
 use App\Services\Telephony\Texting;
@@ -67,6 +68,14 @@ class AutomationEngine
     /** @return int runs scheduled */
     public function fire(string $trigger, Model $subject): int
     {
+        // The same moments go out as webhooks to the business's own tools (D87).
+        if (isset(Webhooks::FROM_TRIGGERS[$trigger])) {
+            try {
+                app(Webhooks::class)->dispatch(Webhooks::FROM_TRIGGERS[$trigger], $subject);
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
         $type = Automation::SUBJECT_FOR[$trigger] ?? null;
         if (! $type || ! $subject->getAttribute('organization_id')) {
             return 0;

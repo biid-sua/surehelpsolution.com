@@ -67,9 +67,10 @@ _As of 2026-10-21. Detailed tracker: [implementation-plan.md](implementation-pla
 - **Satisfaction surveys (D84):** "How did we do? 1–5" by text or email after jobs or calls. Customers answer with one tap or a text reply. Happy customers are offered the Google review link; unhappy ones create a call-back task and alert the team. Scores appear in Results and on agents' Quality pages.
 - **Deposits and pay-by-text (D85):** businesses connect their own Stripe account (Stripe Connect) and send pay links by text or email. Online bookings can ask for a deposit, and Stripe's webhook marks payments paid or refunded. Included in plans that list `customer_payments`.
 - **Client health score (D86):** each business gets a 0–100 score in the admin console, with plain reasons: fewer calls, overdue invoices, no sign-ins, open escalations, low ratings. There's an "at risk" filter, and a "clients to check" list on the overview.
+- **API keys and webhooks (D87):** businesses create read-only or read-write API keys for the business API, and add signed webhooks for 14 events (bookings, calls, new customers, reviews, surveys, payments…), with retries and a test button. This lets them connect n8n, Zapier or Make.
 - **The mobile app was rebuilt** in its own repo (`biid-sua/SHS_Mobile_App`) for businesses, agents and admins, and merged. Its own README lists the store steps.
 
-611 automated tests pass.
+614 automated tests pass.
 
 ---
 

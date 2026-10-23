@@ -301,6 +301,44 @@ A staff member without the permission gets `403`. Dashboard: `dashboard.view`. A
 
 ---
 
+## 2b. For businesses: API keys and webhooks (D87)
+
+Businesses connect their own tools (n8n, Zapier, Make, a CRM) under **Business › API & webhooks**.
+
+### API keys
+- Create a key there: read-only, or "can add and change things". It's shown **once**; only a hash is
+  stored.
+- Send `Authorization: Bearer shk_…` to any `/api/v1/client/…` endpoint above, for example
+  `GET /api/v1/client/customers`, `POST /api/v1/client/customers` or `GET /api/v1/client/appointments`.
+- A key acts as the person who made it, with their permissions, for their business.
+- It doesn't expire, but it stops working if it's revoked, or if that person is deactivated or leaves.
+- Read-only keys get `403` with `"This API key is read-only."` on anything but `GET`/`HEAD`.
+- Other paths (account, devices, admin, agent) answer `403` to API keys.
+
+### Webhooks
+- Add an `https://` address and choose events. Private-network addresses are refused, at setup and on
+  every delivery.
+- Events:
+  - `appointment.booked`, `appointment.rescheduled`, `appointment.completed`, `appointment.no_show`,
+    `appointment.cancelled`
+  - `call.logged`, `call.missed`, `conversation.started`
+  - `customer.created`, `escalation.raised`, `task.overdue`
+  - `review.received`, `survey.answered`, `payment.paid`
+- Each event is a `POST` with JSON:
+  ```json
+  { "id": "evt_01…", "event": "customer.created", "created_at": "2026-10-12T15:00:00+00:00",
+    "organization": { "id": "01…", "name": "Rivera Plumbing" },
+    "data": { "type": "customer", "id": "01…", "name": "Ana Lopez", "phone": "+15125550147", "email": null, "status": "lead" } }
+  ```
+- Headers: `X-SureHelp-Event`, `X-SureHelp-Delivery` (unique, for de-duplicating) and
+  `X-SureHelp-Signature: t=<unix seconds>,v1=<hex>`.
+  - `v1` is HMAC-SHA256 of `"<t>.<raw body>"` with the endpoint's signing secret.
+  - Reject old timestamps (over 5 minutes) to prevent replays.
+- Answer any `2xx` within 10 seconds. Otherwise we retry after 1 minute, 5 minutes, 30 minutes,
+  2 hours and 6 hours.
+- After 20 failures in a row the webhook is switched off, with the reason shown on the page.
+- *Send a test* posts a `ping` event straight away.
+
 ## 3. Changelog
 
 | Date | Change |

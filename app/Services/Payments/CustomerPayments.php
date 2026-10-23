@@ -18,6 +18,7 @@ use App\Notifications\CustomerPaid;
 use App\Services\Billing\FeatureAccess;
 use App\Services\Billing\Stripe\StripeApi;
 use App\Services\Business\Branding;
+use App\Services\Integrations\Webhooks;
 use App\Services\Telephony\Texting;
 use App\Support\Audit\Audit;
 use App\Support\Money;
@@ -237,6 +238,7 @@ class CustomerPayments
             $this->timeline->handle($request->customer, TimelineEventType::NoteAdded, 'Paid '.$request->amount(), $request->description, $request->appointment, ['payment' => $request->ulid]);
         }
         $this->notify->handle($organization, new CustomerPaid($request), 'payments.view');
+        app(Webhooks::class)->dispatch('payment.paid', $request);
         $this->audit->record('payments.paid', $request, new: ['amount' => $request->amount()], organization: $organization, label: $request->description);
     }
 

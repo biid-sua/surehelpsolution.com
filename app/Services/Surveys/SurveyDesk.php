@@ -11,6 +11,7 @@ use App\Models\Organization;
 use App\Models\Survey;
 use App\Models\Task;
 use App\Notifications\CustomerUnhappy;
+use App\Services\Integrations\Webhooks;
 use Carbon\CarbonInterface;
 
 /**
@@ -44,6 +45,9 @@ class SurveyDesk
         }
         if ($score < Survey::HAPPY && ! $survey->task_id) {
             $this->escalate($survey);
+        }
+        if ($first) {
+            app(Webhooks::class)->dispatch('survey.answered', $survey);
         }
 
         return true;

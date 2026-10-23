@@ -3,6 +3,7 @@
 use App\Exceptions\ApiExceptionRenderer;
 use App\Exceptions\AuthorizationFailureLogger;
 use App\Http\Middleware\AccountGate;
+use App\Http\Middleware\AuthenticateApiKey;
 use App\Http\Middleware\EnsureApiUserIsActive;
 use App\Http\Middleware\ForcePasswordChange;
 use App\Http\Middleware\Idempotent;
@@ -49,6 +50,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->api(prepend: [
             EnsureFrontendRequestsAreStateful::class,
+            AuthenticateApiKey::class,   // business API keys (D87)
         ]);
         // Sanctum treats requests from our own site as stateful and checks the CSRF token. The public
         // chats are sessionless (a visitor token instead), so they're left out (D78).
