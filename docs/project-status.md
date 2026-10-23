@@ -62,9 +62,10 @@ _As of 2026-10-21. Detailed tracker: [implementation-plan.md](implementation-pla
   - Flows of up to 15 steps: actions, waits, and an "if / otherwise" (for example, "if they haven't replied").
   - A visual builder, and a test run that shows what would happen without sending anything.
   - An *Automations* card on each customer's page.
+- **White-label (D82):** *Business › Branding* sets the business's own colour and email sender name. SureHelp's name is removed from customer emails and pages, and the portal can show the business's logo and colour. Included in plans that list `white_label`.
 - **The mobile app was rebuilt** in its own repo (`biid-sua/SHS_Mobile_App`) for businesses, agents and admins, and merged. Its own README lists the store steps.
 
-594 automated tests pass.
+597 automated tests pass.
 
 ---
 

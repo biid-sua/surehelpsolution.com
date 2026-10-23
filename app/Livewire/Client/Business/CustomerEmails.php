@@ -131,7 +131,7 @@ class CustomerEmails extends Component
         $this->authorize('settings.manage', $this->organization());
         $values = $this->sampleValues($messages);
         Notification::route('mail', auth()->user()->email)->notify(new CustomerEmail(
-            '[Test] '.$messages->render($this->draft['subject'], $values), $messages->render($this->draft['body'], $values), $values['business'],
+            '[Test] '.$messages->render($this->draft['subject'], $values), $messages->render($this->draft['body'], $values), $values['business'], organizationId: $this->organization()->id,
         ));
         $this->dispatch('toast', type: 'success', message: 'Test sent to '.auth()->user()->email.'.');
     }

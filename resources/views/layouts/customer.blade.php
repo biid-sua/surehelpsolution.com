@@ -1,6 +1,7 @@
 @php
     // Pages a business's customers open from their emails: the business's name first, no SureHelp account needed.
     $title ??= null;
+    $brand ??= null;   // the business's look (D82)
 @endphp
 <!DOCTYPE html>
 <html lang="en" class="h-full" {!! app(\App\Support\Ui\Themes::class)->htmlAttributes(null) !!}>
@@ -14,12 +15,15 @@
     @include('partials.theme-boot')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
+    @if ($brand && $brand['white_label'])<style>{!! \App\Services\Business\Branding::shades($brand['color']) !!}</style>@endif
 </head>
 <body class="h-full">
     <main class="flex min-h-full items-start justify-center px-4 py-10 sm:items-center">
         <div class="w-full max-w-lg">
             {{ $slot }}
-            <p class="mt-6 text-center text-xs text-subtle">Bookings handled by SureHelp Solutions</p>
+            @unless ($brand['white_label'] ?? false)
+                <p class="mt-6 text-center text-xs text-subtle">Bookings handled by SureHelp Solutions</p>
+            @endunless
         </div>
     </main>
     <x-ui.toasts />

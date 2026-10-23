@@ -17,6 +17,7 @@ use App\Services\Billing\FeatureAccess;
 use App\Services\Billing\Gateways\PaymentGateway;
 use App\Services\Billing\Gateways\PayoneerGateway;
 use App\Services\Billing\Gateways\StripeGateway;
+use App\Services\Business\Branding;
 use App\Services\Calls\CallOutcomes;
 use App\Services\Rules\BusinessRules;
 use App\Services\Telephony\FakeProvider;
@@ -52,6 +53,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(Entitlements::class);
         $this->app->scoped(Themes::class);
         $this->app->scoped(FeatureAccess::class);
+        $this->app->scoped(Branding::class);
         // AI vendor behind one interface (spec §33, D38).
         $this->app->singleton(AiProvider::class, ClaudeProvider::class);
         // Telephony vendor behind one interface (D10, D60).

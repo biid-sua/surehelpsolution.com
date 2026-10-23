@@ -130,7 +130,7 @@ class CustomerMessages
 
         Notification::route('mail', $appointment->customer->email)
             ->notify(new CustomerEmail($subject, $body, $values['business'], $replyTo,
-                in_array($key, self::WITH_SELF_SERVICE, true) ? $this->selfService->link($appointment) : null));
+                in_array($key, self::WITH_SELF_SERVICE, true) ? $this->selfService->link($appointment) : null, organizationId: $appointment->organization_id));
 
         $this->timeline->handle($appointment->customer, TimelineEventType::EmailSent, 'Email sent: '.config("customer_messages.templates.$key.label"),
             $subject, $appointment, ['template' => $key, 'to' => $appointment->customer->email]);

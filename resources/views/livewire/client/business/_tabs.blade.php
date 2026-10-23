@@ -10,6 +10,7 @@
         'app.business.phone' => 'Phone line',
         'app.business.emails' => 'Customer emails',
         'app.business.automations' => 'Automations',
+        'app.business.branding' => 'Branding',
         'app.business.calendars' => 'Calendar sync',
     ];
 @endphp

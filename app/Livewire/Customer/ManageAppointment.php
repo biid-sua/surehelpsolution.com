@@ -9,6 +9,7 @@ use App\Exceptions\SlotUnavailable;
 use App\Models\Appointment;
 use App\Models\BusinessProfile;
 use App\Services\Appointments\CustomerSelfService;
+use App\Services\Business\Branding;
 use App\Services\Scheduling\Availability;
 use App\Support\Phone;
 use Carbon\CarbonImmutable;
@@ -141,6 +142,7 @@ class ManageAppointment extends Component
             'deadline' => $selfService->deadline($appointment)?->setTimezone($timezone),
             'slots' => $slots,
             'today' => now($timezone)->toDateString(),
-        ])->title('Your appointment with '.($profile?->display_name ?: $organization->name));
+        ])->title('Your appointment with '.($profile?->display_name ?: $organization->name))
+            ->layoutData(['brand' => app(Branding::class)->for($organization)]);
     }
 }

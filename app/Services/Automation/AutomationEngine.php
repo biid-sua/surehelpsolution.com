@@ -528,7 +528,7 @@ class AutomationEngine
         }
         $replyTo = BusinessProfile::withoutGlobalScopes()->where('organization_id', $organization->id)->value('email') ?: $organization->owner?->email;
 
-        Notification::route('mail', $customer->email)->notify(new CustomerEmail($subjectLine, $body, $values['business'], $replyTo));
+        Notification::route('mail', $customer->email)->notify(new CustomerEmail($subjectLine, $body, $values['business'], $replyTo, organizationId: $organization->id));
         $this->timeline->handle($customer, TimelineEventType::EmailSent, 'Email sent: '.$automation->name, $subjectLine, $subject instanceof Appointment ? $subject : null,
             ['automation' => $automation->ulid, 'to' => $customer->email]);
 
@@ -608,7 +608,7 @@ class AutomationEngine
         if ($dry) {
             return 'Would email '.$to.': "'.$subjectLine.'".';
         }
-        Notification::route('mail', $to)->notify(new CustomerEmail($subjectLine, $body, $values['business'], null));
+        Notification::route('mail', $to)->notify(new CustomerEmail($subjectLine, $body, $values['business'], null, organizationId: $organization->id));
 
         return 'Emailed '.$to.'.';
     }

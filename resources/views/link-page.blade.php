@@ -10,6 +10,7 @@
     @if ($page['logo'])<meta property="og:image" content="{{ $page['logo'] }}">@endif
     @include('partials.theme-boot')
     @vite(['resources/css/app.css'])
+    @if ($brand['white_label'])<style>{!! \App\Services\Business\Branding::shades($brand['color']) !!}</style>@endif
 </head>
 <body class="h-full">
     <main class="flex min-h-full justify-center px-4 py-12">
@@ -34,7 +35,9 @@
                 @endforeach
             </nav>
 
-            <p class="mt-10 text-xs text-subtle">Bookings and messages handled by SureHelp Solutions</p>
+            @unless ($brand['white_label'])
+                <p class="mt-10 text-xs text-subtle">Bookings and messages handled by SureHelp Solutions</p>
+            @endunless
         </div>
     </main>
     @if ($page['widget'])

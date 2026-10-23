@@ -1319,3 +1319,25 @@ flows with branches are step 2.
 message. A list with one level of branching covers almost every small-business case and stays easy to
 read on a phone. A drag-and-drop canvas would add a lot of UI for little gain. The test run lets owners
 trust a flow before it reaches a customer.
+
+## D82 — White-label (2026-10-23)
+**Decision:** the Growth plan's "white-label options" are now real, as a plan feature `white_label` (closed
+by default, like the SEO service).
+- **Every business, on any plan:** customer emails now use a clean layout with the business's logo (or
+  name) at the top. The footer reads "{business} · sent with SureHelp Solutions".
+- **With white-label** (*Business › Branding*):
+  - **Brand colour:** emails, the self-service appointment page, the link page and, optionally, the
+    website chat.
+  - **Email sender name:** the "From" name. Replies still go to the business email.
+  - No SureHelp lines on customer emails, the appointment page or the link page.
+  - **The business's own portal** shows its logo, name and colour (in the sidebar, the page title and the
+    brand shades), unless the owner turns that off. SureHelp agents and staff always see the SureHelp
+    look.
+- **How colours work:** one colour is turned into the portal's brand shades with CSS `color-mix()`. The
+  button text in emails is black or white, whichever reads better.
+- **Where it lives:** `App\Services\Business\Branding` (memoised per request) is the one place that
+  decides how a business looks. `CustomerEmail` takes the organization and uses it.
+
+**Why:** the pricing page promised it, and businesses that resell or are particular about their image
+pay for it. The sending address stays SureHelp's verified domain, so emails keep reaching inboxes.
+Custom sending domains can follow if clients ask.
