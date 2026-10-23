@@ -147,7 +147,7 @@ class Webhooks
     public function payload(Model $subject): array
     {
         $customer = fn (?Customer $c) => $c ? ['id' => $c->ulid, 'first_name' => $c->first_name, 'last_name' => $c->last_name, 'name' => $c->fullName(),
-            'phone' => $c->phone_e164, 'email' => $c->email, 'status' => $c->status->value] : null;
+            'phone' => $c->phone_e164, 'email' => $c->email, 'status' => $c->getAttribute('status')?->value] : null;
         $iso = fn ($d) => $d?->toIso8601String();
 
         return match (true) {
