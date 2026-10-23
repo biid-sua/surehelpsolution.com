@@ -33,4 +33,9 @@ return [
         'knowledge_chars' => 24000,
     ],
 
+    // AI help for agents during calls (D88): answers to read out and the call form filled from notes.
+    // A fast model keeps answers quick while the caller waits, e.g. AGENT_ASSIST_MODEL=claude-haiku-5-5.
+    'agent_assist_model' => env('AGENT_ASSIST_MODEL'),
+    'agent_assist_daily' => (int) env('AGENT_ASSIST_DAILY', 300),   // per business
+
 ];

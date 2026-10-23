@@ -5,6 +5,7 @@ namespace App\Livewire\Agent;
 use App\Livewire\Concerns\AgentWorkspaceOnly;
 use App\Models\CallLog;
 use App\Models\QaReview;
+use App\Models\Survey;
 use App\Models\User;
 use App\Services\Quality\QualityReviews;
 use Illuminate\Contracts\View\View;
@@ -183,6 +184,9 @@ class Quality extends Component
 
         if ($tab === 'mine') {
             $data['summary'] = $reviews->summaryFor($user, $since);
+            // What callers said in satisfaction surveys after this agent's calls (D84).
+            $rated = Survey::withoutGlobalScopes()->where('agent_user_id', $user->id)->where('answered_at', '>=', $since)->whereNotNull('score');
+            $data['callerRating'] = ['count' => (clone $rated)->count(), 'average' => ($avg = (clone $rated)->avg('score')) !== null ? round((float) $avg, 1) : null];
             $data['reviews'] = QaReview::query()->completed()->where('agent_user_id', $user->id)
                 ->with(['call:id,call_id,caller_name,created_at', 'organization:id,name'])->latest('reviewed_at')->paginate(15);
         } elseif ($tab === 'queue') {

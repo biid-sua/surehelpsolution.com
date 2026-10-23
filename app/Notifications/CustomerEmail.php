@@ -2,13 +2,17 @@
 
 namespace App\Notifications;
 
+use App\Models\Organization;
+use App\Services\Business\Branding;
+use App\Support\CustomerLocale;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
- * An email to a business's customer, sent in the business's name; replies go to the business.
+ * An email to a business's customer, sent in the business's name; replies go to the business. With the
+ * organization, it uses the business's branded layout (D82).
  */
 class CustomerEmail extends Notification implements ShouldQueue
 {
@@ -23,7 +27,11 @@ class CustomerEmail extends Notification implements ShouldQueue
         public readonly ?string $replyTo = null,
         public readonly ?string $actionUrl = null,
         public readonly string $actionText = 'Change or cancel',
-    ) {}
+        public readonly ?int $organizationId = null,
+    ) {
+        // The business's customers' language (D92): the button and footer, and anything else Laravel translates.
+        $this->locale = $organizationId ? CustomerLocale::forMessages($organizationId) : null;
+    }
 
     /** @return list<string> */
     public function via(object $notifiable): array
@@ -33,8 +41,12 @@ class CustomerEmail extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
+        // The business's own look (D82): its logo always; with white-label, its colour and sender name too.
+        $organization = $this->organizationId ? Organization::query()->find($this->organizationId) : null;
+        $brand = $organization ? app(Branding::class)->for($organization) : null;
+        $fromName = $brand['sender'] ?? $this->fromName;
         $mail = (new MailMessage)
-            ->from((string) config('mail.from.address'), $this->fromName)
+            ->from((string) config('mail.from.address'), $fromName)
             ->subject($this->subject)
             ->greeting(' ')
             ->salutation(' ');
@@ -42,10 +54,13 @@ class CustomerEmail extends Notification implements ShouldQueue
             $mail->line(trim($paragraph));
         }
         if ($this->actionUrl) {
-            $mail->action($this->actionText, $this->actionUrl);
+            $mail->action(__($this->actionText), $this->actionUrl);
         }
         if ($this->replyTo) {
-            $mail->replyTo($this->replyTo, $this->fromName);
+            $mail->replyTo($this->replyTo, $fromName);
+        }
+        if ($brand) {
+            $mail->view(['html' => 'emails.customer', 'text' => 'emails.customer-text'], ['brand' => $brand, 'subjectLine' => $this->subject]);
         }
 
         return $mail;

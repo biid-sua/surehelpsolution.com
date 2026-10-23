@@ -17,6 +17,7 @@ use App\Notifications\PlanChangeRequested;
 use App\Services\Billing\BillingSettings;
 use App\Services\Billing\Entitlements;
 use App\Services\Billing\Gateways\PaymentGateway;
+use App\Services\Billing\Referrals;
 use App\Services\Billing\Stripe\CardPayments;
 use App\Services\Billing\Usage;
 use App\Support\Audit\Audit;
@@ -154,6 +155,8 @@ class Index extends Component
             ),
             'activeAddons' => $active,
             'cardPayments' => app(CardPayments::class)->enabled(),
+            'referral' => config('referrals.enabled', true) && config('signup.enabled')
+                ? ['link' => app(Referrals::class)->link($organization), 'summary' => app(Referrals::class)->summary($organization)] : null,
             'autopayCard' => $organization->fresh()?->autopay_card_label,
         ]);
     }

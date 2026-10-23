@@ -7,6 +7,10 @@
     $navigation = app(\App\Support\Navigation\PortalNavigation::class)->for($user, $portal);
     $organization = app(\App\Support\Tenancy\CurrentOrganization::class)->get();
     $businessLogo = $organization ? \App\Models\BusinessProfile::withoutGlobalScopes()->where('organization_id', $organization->id)->whereNotNull('logo_path')->first()?->logoUrl() : null;
+    // White-label (D82): a business's own portal can carry its logo, name and colour.
+    $brand = $organization && $portal === 'client' ? app(\App\Services\Business\Branding::class)->for($organization) : null;
+    $brand = $brand && $brand['portal'] ? $brand : null;
+    $myBusinesses = $portal === 'client' && $user->isClient() ? $user->activeOrganizations() : collect();
     $portalLabel = ['client' => 'Business portal', 'admin' => 'Admin console', 'agent' => 'Agent workspace'][$portal] ?? '';
     $initials = collect(explode(' ', trim($user->name)))->filter()->take(2)->map(fn ($part) => mb_substr($part, 0, 1))->implode('');
 @endphp
@@ -18,11 +22,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="robots" content="noindex">
-    <title>{{ $title ? $title.' · ' : '' }}SureHelp</title>
+    <title>{{ $title ? $title.' · ' : '' }}{{ $brand['name'] ?? 'SureHelp' }}</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}">
     @include('partials.theme-boot')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
+    @if ($brand && ($css = app(\App\Services\Business\Branding::class)->css($organization)))<style>{!! $css !!}</style>@endif
 </head>
 <body class="h-full">
     <a href="#main" class="sr-only z-50 rounded-lg bg-brand-600 px-4 py-2 text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4">Skip to content</a>
@@ -37,7 +42,12 @@
             :class="{ 'translate-x-0': sidebarOpen }" aria-label="Main navigation">
             <div class="flex h-16 items-center justify-between gap-2 border-b border-line px-5">
                 <a href="{{ $navigation[0]['url'] ?? url('/') }}" class="flex items-center gap-2">
-                    <img src="{{ asset('assets/img/logo.png') }}" alt="SureHelp Solutions" class="sh-logo-on-dark h-8 w-auto"><img src="{{ asset('assets/img/logo-on-light.png') }}" alt="SureHelp Solutions" class="sh-logo-on-light h-8 w-auto">
+                    @if ($brand)
+                        @if ($brand['logo'])<img src="{{ $brand['logo'] }}" alt="" class="size-8 rounded-lg bg-white object-contain p-0.5">@endif
+                        <span class="max-w-[10rem] truncate text-base font-semibold text-ink">{{ $brand['name'] }}</span>
+                    @else
+                        <img src="{{ asset('assets/img/logo.png') }}" alt="SureHelp Solutions" class="sh-logo-on-dark h-8 w-auto"><img src="{{ asset('assets/img/logo-on-light.png') }}" alt="SureHelp Solutions" class="sh-logo-on-light h-8 w-auto">
+                    @endif
                 </a>
                 <button type="button" class="rounded-lg p-1.5 text-muted hover:text-ink lg:hidden" x-on:click="sidebarOpen = false" aria-label="Close navigation">
                     <x-ui.icon name="x" />
@@ -115,7 +125,27 @@
                             <input id="app-top-search" name="q" type="search" value="{{ request()->routeIs('app.search') ? request('q') : '' }}" class="sh-input py-1.5 pl-9 text-sm" placeholder="Search customers, calls…" autocomplete="off">
                         </form>
                     @endif
-                    @if ($organization)
+                    @if ($organization && $portal === 'client' && $myBusinesses->count() > 1)
+                        {{-- Multi-location (D89): switch business, or see them all. --}}
+                        <div class="relative inline-block" x-data="{ open: false }" x-on:click.outside="open = false">
+                            <button type="button" class="flex items-center gap-1 text-left" x-on:click="open = !open" :aria-expanded="open.toString()" aria-haspopup="true">
+                                <span class="truncate text-sm font-semibold text-ink">{{ $organization->name }}</span>
+                                <x-ui.icon name="chevron-down" class="size-4 text-subtle" />
+                            </button>
+                            <p class="truncate text-xs text-subtle">{{ $myBusinesses->count() }} locations</p>
+                            <div x-show="open" x-cloak x-transition class="absolute left-0 z-30 mt-2 w-72 rounded-xl border border-line bg-surface p-1 shadow-lg">
+                                @foreach ($myBusinesses as $b)
+                                    <form method="POST" action="{{ route('app.switch', $b->ulid) }}">
+                                        @csrf
+                                        <button type="submit" @class(['flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-surface-2', 'font-semibold text-ink' => $b->id === $organization->id, 'text-muted' => $b->id !== $organization->id])>
+                                            <span class="flex-1 truncate">{{ $b->name }}</span>@if ($b->id === $organization->id)<x-ui.icon name="check-circle" class="size-4 text-brand-300" />@endif
+                                        </button>
+                                    </form>
+                                @endforeach
+                                <a href="{{ route('app.locations') }}" class="mt-1 block rounded-lg border-t border-line px-3 py-2 text-sm font-medium text-brand-300 hover:bg-surface-2">All locations overview</a>
+                            </div>
+                        </div>
+                    @elseif ($organization)
                         <p class="truncate text-sm font-semibold text-ink">{{ $organization->name }}</p>
                         <p class="truncate text-xs text-subtle">{{ $organization->timezone ?? 'Timezone not set yet' }}</p>
                     @endif

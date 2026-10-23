@@ -62,6 +62,7 @@ use App\Models\Organization;
 use App\Models\PhoneNumber;
 use App\Models\Plan;
 use App\Models\QaReview;
+use App\Models\Review;
 use App\Models\SearchConsoleConnection;
 use App\Models\SeoDailyMetric;
 use App\Models\SeoTask;
@@ -220,6 +221,7 @@ class DemoSeeder extends Seeder
             $this->travel($this->now);
             $this->finishCustomers();
             $this->social();
+            $this->reviews();
             $this->website();
             $this->seo();
             $this->calendar();
@@ -402,7 +404,7 @@ class DemoSeeder extends Seeder
         $this->plans['pro'] = Plan::create([
             'slug' => 'pro', 'name' => 'Pro', 'description' => 'Everything, for busy service businesses: social publishing and website tools included.',
             'price_cents' => 49900, 'interval' => 'month', 'trial_days' => 14, 'sort_order' => 3,
-            'features' => ['customer_emails', 'calendar_sync', 'ai_assistant', 'social_publishing', 'website_tools'],
+            'features' => ['customer_emails', 'calendar_sync', 'ai_assistant', 'social_publishing', 'website_tools', 'white_label', 'customer_payments'],
             'limits' => ['calls' => 600, 'extra_call_cents' => 100, 'team_members' => 15, 'calendars' => 5],
         ]);
 
@@ -423,6 +425,8 @@ class DemoSeeder extends Seeder
             'social_publishing' => FeatureAccess::PLAN,
             'website_tools' => FeatureAccess::PLAN,
             'seo_service' => FeatureAccess::PLAN,
+            'white_label' => FeatureAccess::PLAN,
+            'customer_payments' => FeatureAccess::PLAN,
         ]);
     }
 
@@ -2050,6 +2054,44 @@ class DemoSeeder extends Seeder
             ['in_review', 10, 'Holiday hours: closed Thanksgiving Day, emergency line open 24/7 as always.', [$fb, $gbp, $li], null, null],
             ['draft', null, 'Idea: before/after of the Allandale bathroom repipe — need photos from Marcus.', [], null, null],
         ];
+    }
+
+    /** Google reviews over the last year (D83): mostly happy, a few to answer. */
+    private function reviews(): void
+    {
+        $account = $this->accounts['google'] ?? null;
+        if (! $account) {
+            return;
+        }
+        $names = ['Maria G.', 'Tom Becker', 'Priya Nair', 'Jason Lee', 'Carla Ruiz', 'Mike O\'Neil', 'Sandra Kim', 'Luis Ortega', 'Emily Chen', 'David Park', 'Rachel Adams', 'Omar Haddad'];
+        $good = ['Fixed our water heater the same day. Friendly and on time.', 'Great communication and a fair price. Will use again.', 'The tech explained everything and cleaned up after.',
+            'Booked online at night and they came first thing. Excellent!', 'Answered on the first ring and sent someone within two hours.', 'Honest advice, didn\'t try to upsell us.'];
+        $mixed = ['Good work but they arrived an hour late.', 'Job done fine, a bit pricey.'];
+        $bad = ['Waited all morning and nobody called to say they were running late.'];
+        $replies = ['Thank you so much! We\'re glad we could help. Rivera Plumbing', 'Thanks for choosing us, and for the kind words! Rivera Plumbing'];
+        mt_srand(83);
+        $total = 0;
+        $sum = 0;
+        for ($i = 0; $i < 42; $i++) {
+            $days = (int) round(365 * ($i / 42) ** 1.3) + mt_rand(0, 3);
+            $roll = mt_rand(1, 100);
+            [$rating, $comment] = match (true) {
+                $roll <= 4 => [1, $bad[0]],
+                $roll <= 12 => [3, $mixed[mt_rand(0, 1)]],
+                $roll <= 30 => [4, $good[mt_rand(0, 5)]],
+                default => [5, $good[mt_rand(0, 5)]],
+            };
+            $at = $this->now->subDays($days)->setTime(mt_rand(8, 20), mt_rand(0, 59));
+            $waiting = $days <= 6;
+            Review::create(['organization_id' => $this->rivera->id, 'social_account_id' => $account->id, 'source' => 'google',
+                'external_id' => $account->external_id.'/reviews/demo'.$i, 'author_name' => $names[$i % count($names)], 'rating' => $rating, 'comment' => $comment,
+                'reviewed_at' => $at, 'reply' => $waiting ? null : $replies[$i % 2], 'replied_at' => $waiting ? null : $at->addHours(mt_rand(2, 30)),
+                'replied_by_user_id' => $waiting ? null : $this->owner->id, 'status' => $waiting ? Review::NEW : Review::REPLIED]);
+            $total++;
+            $sum += $rating;
+        }
+        $account->forceFill(['meta' => array_merge($account->meta ?? [], ['reviews_synced_at' => $this->now->toIso8601String(),
+            'rating' => round($sum / $total, 1), 'review_count' => $total + 64])])->save();
     }
 
     private function social(): void

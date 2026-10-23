@@ -117,10 +117,10 @@ class CustomerEmails extends Component
         $audit->changes('message_template.updated', $template, ['is_active']);
     }
 
-    public function restoreDefault(Audit $audit): void
+    public function restoreDefault(Audit $audit, CustomerMessages $messages): void
     {
         $this->authorize('settings.manage', $this->organization());
-        $default = config('customer_messages.templates.'.$this->editing);
+        $default = $messages->defaults($this->organization(), (string) $this->editing);
         $this->draft['subject'] = $default['subject'];
         $this->draft['body'] = $default['body'];
         $this->draft['sms'] = (string) ($default['sms'] ?? '');
@@ -131,7 +131,7 @@ class CustomerEmails extends Component
         $this->authorize('settings.manage', $this->organization());
         $values = $this->sampleValues($messages);
         Notification::route('mail', auth()->user()->email)->notify(new CustomerEmail(
-            '[Test] '.$messages->render($this->draft['subject'], $values), $messages->render($this->draft['body'], $values), $values['business'],
+            '[Test] '.$messages->render($this->draft['subject'], $values), $messages->render($this->draft['body'], $values), $values['business'], organizationId: $this->organization()->id,
         ));
         $this->dispatch('toast', type: 'success', message: 'Test sent to '.auth()->user()->email.'.');
     }

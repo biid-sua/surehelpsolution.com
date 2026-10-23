@@ -62,6 +62,26 @@
             hint="{{ number_format($s['social_messages']) }} Facebook and Instagram conversations" />
     </div>
 
+    @if ($reviews)
+        {{-- Reputation (D83) --}}
+        <h2 class="mt-8 mb-3 text-base font-semibold text-ink">Reviews</h2>
+        <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <x-ui.stat label="New Google reviews" icon="star" :value="number_format($reviews['count'])" hint="{{ $reviews['average'] === null ? 'none this month' : 'averaging '.number_format($reviews['average'], 1).' stars' }}" />
+            <x-ui.stat label="Replied to" icon="chat" :value="number_format($reviews['replied'])" hint="of this month's reviews" />
+            <x-ui.stat label="Google rating now" icon="trend-up" :value="$reviews['rating'] === null ? '—' : number_format($reviews['rating'], 1)" hint="across all your reviews" />
+        </div>
+    @endif
+
+    @if ($surveys['sent'] > 0)
+        {{-- Satisfaction surveys (D84) --}}
+        <h2 class="mt-8 mb-3 text-base font-semibold text-ink">Customer satisfaction</h2>
+        <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <x-ui.stat label="Average rating" icon="star" :value="$surveys['average'] === null ? '—' : number_format($surveys['average'], 1).' / 5'" hint="{{ number_format($surveys['answered']) }} of {{ number_format($surveys['sent']) }} surveys answered" />
+            <x-ui.stat label="Happy customers" icon="check-circle" :value="$surveys['happy'] === null ? '—' : $surveys['happy'].'%'" hint="gave 4 or 5" />
+            <x-ui.stat label="Went on to review" icon="trend-up" :value="number_format($surveys['review_clicks'])" hint="opened your Google review link" />
+        </div>
+    @endif
+
     <div class="mt-6 grid gap-6 lg:grid-cols-2">
         @foreach ([['New customers by how they first got in touch', $leadSources, $s['leads'], $s['leads_total']], ['Bookings by who made them', $bookingSources, $s['bookings'], $s['bookings_total']]] as [$title, $labels, $counts, $sum])
             <x-ui.card :title="$title" :padding="false">

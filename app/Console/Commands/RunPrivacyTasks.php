@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\DataExport;
 use App\Models\Organization;
+use App\Models\SalesChat;
 use App\Services\Privacy\AccountClosure;
 use App\Services\Privacy\Retention;
 use Illuminate\Console\Command;
@@ -11,7 +12,8 @@ use Illuminate\Support\Facades\Storage;
 
 /**
  * Daily data housekeeping (spec §56, task.md CMP-05, CMP-07): each business's retention period,
- * expired data exports, and accounts whose closure date has come.
+ * expired data exports, accounts whose closure date has come, and old website chats that never
+ * became a lead (D78).
  */
 class RunPrivacyTasks extends Command
 {
@@ -46,6 +48,13 @@ class RunPrivacyTasks extends Command
                 $export->forceFill(['status' => DataExport::EXPIRED, 'path' => null])->save();
                 $expired++;
             });
+
+        // Website sales chats that never became a lead (D78).
+        $chats = SalesChat::query()->whereNull('contact_submission_id')
+            ->where('last_message_at', '<', now()->subDays((int) config('sales.retention_days', 90)))->delete();
+        if ($chats) {
+            $deleted['website chats'] = $chats;
+        }
 
         $this->info("Closed {$closed} ".str('account')->plural($closed).'; expired '.$expired.' '.str('export')->plural($expired).'; retention deleted: '
             .($deleted->filter()->isEmpty() ? 'nothing' : $deleted->filter()->map(fn ($n, $k) => "$n $k")->implode(', ')).'.');

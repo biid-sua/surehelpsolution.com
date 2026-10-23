@@ -7,10 +7,12 @@ use App\Enums\EscalationStatus;
 use App\Enums\EscalationType;
 use App\Models\Concerns\BelongsToOrganization;
 use App\Models\Concerns\StoresUtc;
+use App\Services\Automation\AutomationEngine;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -56,6 +58,8 @@ class Escalation extends Model
         static::creating(function (Escalation $escalation) {
             $escalation->ulid ??= (string) Str::ulid();
         });
+        // Automations (D80).
+        static::created(fn (Escalation $escalation) => DB::afterCommit(fn () => app(AutomationEngine::class)->fire('escalation_raised', $escalation)));
     }
 
     /** @return BelongsTo<Customer, $this> */

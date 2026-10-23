@@ -10,7 +10,9 @@
         'app.business.phone' => 'Phone line',
         'app.business.emails' => 'Customer emails',
         'app.business.automations' => 'Automations',
+        'app.business.branding' => 'Branding',
         'app.business.calendars' => 'Calendar sync',
+        'app.business.integrations' => 'API & webhooks',
     ];
 @endphp
 <nav class="mb-6 flex gap-1 overflow-x-auto border-b border-line" aria-label="Business settings">

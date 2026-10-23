@@ -52,9 +52,30 @@ _As of 2026-10-21. Detailed tracker: [implementation-plan.md](implementation-pla
 - **Content-Security-Policy (D67)** on every page.
 - **The API for the new mobile app (D70–D74, D76):** capabilities, the notification centre, settings, account closure, call details, Results, inbox actions, customers, social, billing, team, agents' requests, reviews and availability, search, app links, an update check and a generated OpenAPI description.
 - **Dashboard with the calendar first (D77, replacing D75 on the website):** business users land on the dashboard, which opens on the calendar. Each person can show, hide and reorder the dashboard's sections.
+- **Website sales chat (D78):** an AI assistant on SureHelp's own site answers questions, captures leads (scored hot / warm / cold) and books demo calls with the team, with a person able to take over from Admin › Website enquiries. Buttons and forms cost no AI tokens, and daily caps keep the cost small.
+- **Go-live readiness (D79):** `php artisan launch:check` and *Admin › System status* show what's ready, what to fix and which features are still off, with the addresses to register. The order is in [go-live.md](go-live.md).
+- **Automations 2.0, step 1 (D80):**
+  - 13 triggers: bookings, coming-up, moves, no-shows, calls, missed calls, first messages, inactive customers, escalations and overdue tasks.
+  - New actions: texts, emailing anyone, tags and status.
+  - Conditions, and 10 recipes.
+- **Automations 2.0, step 2 (D81):**
+  - Flows of up to 15 steps: actions, waits, and an "if / otherwise" (for example, "if they haven't replied").
+  - A visual builder, and a test run that shows what would happen without sending anything.
+  - An *Automations* card on each customer's page.
+- **White-label (D82):** *Business › Branding* sets the business's own colour and email sender name. SureHelp's name is removed from customer emails and pages, and the portal can show the business's logo and colour. Included in plans that list `white_label`.
+- **Reviews (D83):** Google reviews come in every hour, with an alert for each new one and a task for low ratings. Owners reply from SureHelp, with an optional AI draft. The page shows the rating over time, and Results shows each month's reviews. There's also a new automation trigger for reviews.
+- **Satisfaction surveys (D84):** "How did we do? 1–5" by text or email after jobs or calls. Customers answer with one tap or a text reply. Happy customers are offered the Google review link; unhappy ones create a call-back task and alert the team. Scores appear in Results and on agents' Quality pages.
+- **Deposits and pay-by-text (D85):** businesses connect their own Stripe account (Stripe Connect) and send pay links by text or email. Online bookings can ask for a deposit, and Stripe's webhook marks payments paid or refunded. Included in plans that list `customer_payments`.
+- **Client health score (D86):** each business gets a 0–100 score in the admin console, with plain reasons: fewer calls, overdue invoices, no sign-ins, open escalations, low ratings. There's an "at risk" filter, and a "clients to check" list on the overview.
+- **API keys and webhooks (D87):** businesses create read-only or read-write API keys for the business API, and add signed webhooks for 14 events (bookings, calls, new customers, reviews, surveys, payments…), with retries and a test button. This lets them connect n8n, Zapier or Make.
+- **AI help for agents (D88):** in the call workspace, *Ask AI* answers the caller's question from the business's own facts, and *Fill the form from my notes* fills the empty call-form fields. There's a daily cap per business.
+- **Multi-location (D89):** one person can belong to several businesses (linked by staff) and switch between them from the top bar or the app. *All locations* compares the month's calls, leads, bookings, reviews and payments, with totals.
+- **Referrals (D90):** each business has a referral link. When a business it referred pays its first invoice, the referrer gets a month of its plan as credit, taken off its next invoices.
+- **Operations (D91):** server errors are emailed to the team (throttled), `/health` serves uptime monitors, and the database is backed up every night with off-server copies optional. *System status* and `launch:check` warn about anything missing.
+- **Spanish for customers (D92):** businesses choose English, Spanish or "match the visitor's browser". It covers booking and appointment pages, the website widget, surveys, payment pages, and the standard emails and texts. The portal and the app remain English for now.
 - **The mobile app was rebuilt** in its own repo (`biid-sua/SHS_Mobile_App`) for businesses, agents and admins, and merged. Its own README lists the store steps.
 
-564 automated tests pass.
+625 automated tests pass.
 
 ---
 

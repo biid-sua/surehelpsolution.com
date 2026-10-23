@@ -161,6 +161,22 @@
             @endforelse
         </x-ui.card>
 
+        @if ($referral)
+            {{-- Referral programme (D90) --}}
+            <x-ui.card title="Refer a business, get a month free" class="lg:col-span-1" description="When a business joins with your link and pays its first invoice, a month of your plan comes off your next invoice.">
+                <div class="flex items-center gap-2" x-data="{ copied: false }">
+                    <label for="ref-link" class="sr-only">Your referral link</label>
+                    <input id="ref-link" type="text" readonly value="{{ $referral['link'] }}" class="sh-input font-mono text-xs" x-on:focus="$el.select()">
+                    <x-ui.button size="sm" variant="secondary" x-on:click="navigator.clipboard.writeText(@js($referral['link'])); copied = true"><span x-show="!copied">Copy</span><span x-show="copied" x-cloak>Copied</span></x-ui.button>
+                </div>
+                <dl class="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
+                    <div><dt class="text-xs text-subtle">Joined</dt><dd class="text-lg font-semibold text-ink">{{ $referral['summary']['signed_up'] }}</dd></div>
+                    <div><dt class="text-xs text-subtle">Rewarded</dt><dd class="text-lg font-semibold text-ink">{{ $referral['summary']['rewarded'] }}</dd></div>
+                    <div><dt class="text-xs text-subtle">Credit left</dt><dd class="text-lg font-semibold text-ink">{{ \App\Support\Money::format($referral['summary']['credit_left']) }}</dd></div>
+                </dl>
+            </x-ui.card>
+        @endif
+
         @if ($plans->isNotEmpty())
             <x-ui.card title="Plans" class="lg:col-span-2">
                 <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

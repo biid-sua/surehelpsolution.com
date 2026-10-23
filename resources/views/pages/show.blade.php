@@ -162,7 +162,7 @@
             <div class="section-content">
                 <p>Tell us about your business and we'll have your calls answered within 48 hours. No setup fees, cancel anytime, and a 30-day money-back guarantee.</p>
                 <div class="page-cta">
-                    <a href="{{ route('home') }}#contact" class="btn btn-primary rounded-pill px-4 py-2">Book a Demo</a>
+                    <a href="{{ route('home') }}#contact" data-sales-chat-open="demo" class="btn btn-primary rounded-pill px-4 py-2">Book a Demo</a>
                     <a href="{{ route('home') }}#pricing" class="btn btn-outline-primary rounded-pill px-4 py-2">View Pricing</a>
                     <a href="tel:+18583213947" class="btn btn-outline-primary rounded-pill px-4 py-2"><i class="fas fa-phone-alt me-2"></i>+1 (858) 321 3947</a>
                 </div>

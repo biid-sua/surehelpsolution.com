@@ -17,6 +17,7 @@ use App\Services\Billing\FeatureAccess;
 use App\Services\Billing\Gateways\PaymentGateway;
 use App\Services\Billing\Gateways\PayoneerGateway;
 use App\Services\Billing\Gateways\StripeGateway;
+use App\Services\Business\Branding;
 use App\Services\Calls\CallOutcomes;
 use App\Services\Rules\BusinessRules;
 use App\Services\Telephony\FakeProvider;
@@ -52,6 +53,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(Entitlements::class);
         $this->app->scoped(Themes::class);
         $this->app->scoped(FeatureAccess::class);
+        $this->app->scoped(Branding::class);
         // AI vendor behind one interface (spec §33, D38).
         $this->app->singleton(AiProvider::class, ClaudeProvider::class);
         // Telephony vendor behind one interface (D10, D60).
@@ -121,6 +123,9 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute(20)->by('chat:'.$request->ip().':'.$request->route('key')),
             Limit::perMinute(300)->by('chat-widget:'.$request->route('key')),
         ]);
+
+        // The website sales chat (D78): per visitor IP; replies, leads and bookings have their own limits in the controller.
+        RateLimiter::for('sales-chat', fn (Request $request) => Limit::perMinute(40)->by('sales-chat:'.$request->ip()));
 
         // Self-serve sign-up (D65): a few attempts per IP an hour.
         RateLimiter::for('signup', fn (Request $request) => Limit::perHour(max(1, (int) config('signup.per_hour', 5)))->by('signup:'.$request->ip()));

@@ -29,6 +29,8 @@ $all = [
     'integrations.view', 'integrations.manage',
     'reports.view',
     'billing.view', 'billing.manage',
+    // A business taking payments from its own customers (D85).
+    'payments.view', 'payments.request', 'payments.manage',
     'subscriptions.view', 'subscriptions.manage',
     'marketing.view', 'marketing.manage',
     'seo.view', 'seo.manage',
@@ -148,6 +150,8 @@ return [
                 'escalations.view', 'escalations.resolve',
                 'knowledge_base.view',
                 'reports.view',
+                'reviews.view',
+                'payments.view', 'payments.request',
                 'support.view', 'support.create',
             ],
         ],

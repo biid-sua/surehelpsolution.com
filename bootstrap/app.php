@@ -3,6 +3,7 @@
 use App\Exceptions\ApiExceptionRenderer;
 use App\Exceptions\AuthorizationFailureLogger;
 use App\Http\Middleware\AccountGate;
+use App\Http\Middleware\AuthenticateApiKey;
 use App\Http\Middleware\EnsureApiUserIsActive;
 use App\Http\Middleware\ForcePasswordChange;
 use App\Http\Middleware\Idempotent;
@@ -13,6 +14,7 @@ use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\SearchIndexing;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SubfolderLivewire;
+use App\Services\System\ErrorAlerts;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -49,7 +51,11 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->api(prepend: [
             EnsureFrontendRequestsAreStateful::class,
+            AuthenticateApiKey::class,   // business API keys (D87)
         ]);
+        // Sanctum treats requests from our own site as stateful and checks the CSRF token. The public
+        // chats are sessionless (a visitor token instead), so they're left out (D78).
+        $middleware->validateCsrfTokens(except: ['api/sales-chat/*', 'api/chat/*']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Order matters: the logger only observes (returns null), the renderer answers /api requests.
@@ -58,6 +64,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // An old or altered appointment link from a customer email (CAL-09): explain, don't just say 403.
         $exceptions->render(fn (InvalidSignatureException $e, $request) => $request->routeIs('appointments.manage')
             ? response()->view('customer.link-expired', status: 403) : null);
+
+        // Server errors are emailed to the team (D91), throttled; logging carries on as normal.
+        $exceptions->report(fn (Throwable $e) => app(ErrorAlerts::class)->handle($e));
 
         // /api always answers in JSON, even when a client forgets the Accept header.
         $exceptions->shouldRenderJsonWhen(fn ($request) => $request->is('api/*') || $request->expectsJson());

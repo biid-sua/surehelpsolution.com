@@ -24,6 +24,7 @@ use App\Models\KnowledgeItem;
 use App\Models\Organization;
 use App\Models\PhoneNumber;
 use App\Models\VoiceCall;
+use App\Services\Ai\AgentAssist;
 use App\Services\Business\BusinessHours;
 use App\Services\Calls\CallOutcomes;
 use App\Services\Rules\BusinessRules;
@@ -34,6 +35,7 @@ use App\Support\Phone;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -71,6 +73,9 @@ class Workspace extends Component
     public string $customerSearch = '';
 
     public string $knowledgeSearch = '';
+
+    /** AI help (D88): the last answer for the agent to read out. */
+    public ?array $aiAnswer = null;
 
     /** @var list<string> */
     public array $suggestions = [];
@@ -180,6 +185,7 @@ class Workspace extends Component
         $this->newCustomer = false;
         $this->customerSearch = '';
         $this->suggestions = [];
+        $this->aiAnswer = null;
         $this->voiceCallId = null;
         $this->resetValidation();
     }
@@ -366,6 +372,67 @@ class Workspace extends Component
             .($booked?->status === AppointmentStatus::Pending ? ' The booking waits for the business to approve it.' : ''));
     }
 
+    /** Ask the business's facts the caller's question (what's typed in the knowledge search). */
+    public function askAi(AgentAssist $assist): void
+    {
+        $organization = $this->organization();
+        $this->authorizeFor($organization);
+        $question = trim($this->knowledgeSearch);
+        if (mb_strlen($question) < 4) {
+            $this->addError('assist', 'Type the caller\'s question first.');
+
+            return;
+        }
+        if (RateLimiter::tooManyAttempts('assist:'.auth()->id(), 30)) {
+            $this->addError('assist', 'Slow down a little: try again in a minute.');
+
+            return;
+        }
+        RateLimiter::hit('assist:'.auth()->id(), 60);
+        try {
+            $this->aiAnswer = $assist->answer($organization, $question) + ['question' => $question];
+            $this->resetErrorBag('assist');
+        } catch (ValidationException $e) {
+            $this->aiAnswer = null;
+            $this->addError('assist', (string) collect($e->errors())->flatten()->first());
+        }
+    }
+
+    /** Fill the empty fields of the call form from the agent's notes. */
+    public function fillFromNotes(AgentAssist $assist): void
+    {
+        $organization = $this->organization();
+        $this->authorizeFor($organization);
+        if (mb_strlen(trim((string) $this->entry['notes'])) < 10) {
+            $this->addError('assist', 'Write a few notes first, then let AI fill the form.');
+
+            return;
+        }
+        if (RateLimiter::tooManyAttempts('assist:'.auth()->id(), 30)) {
+            $this->addError('assist', 'Slow down a little: try again in a minute.');
+
+            return;
+        }
+        RateLimiter::hit('assist:'.auth()->id(), 60);
+        try {
+            $fields = $assist->fill($organization, (string) $this->entry['notes']);
+        } catch (ValidationException $e) {
+            $this->addError('assist', (string) collect($e->errors())->flatten()->first());
+
+            return;
+        }
+        foreach (['name', 'phone', 'email', 'reason', 'outcome'] as $field) {
+            if (blank($this->entry[$field]) && $fields[$field] !== '') {
+                $this->entry[$field] = $fields[$field];
+            }
+        }
+        if ($fields['notes'] !== '') {
+            $this->entry['notes'] = $fields['notes'];
+        }
+        $this->resetErrorBag('assist');
+        $this->dispatch('toast', type: 'success', message: 'Filled in from your notes. Check before saving.');
+    }
+
     public function newCall(): void
     {
         $this->resetCall();
@@ -410,6 +477,7 @@ class Workspace extends Component
             'bookable' => $bookable,
             'slots' => $slots,
             'outcomeMenu' => $outcomes->menu($organization),
+            'assistReady' => app(AgentAssist::class)->blocker($organization) === null,
             'isEscalation' => $outcomes->category($organization, $this->entry['outcome'] ?: null) === OutcomeCategory::Escalated,
             'isCallback' => $outcomes->category($organization, $this->entry['outcome'] ?: null) === OutcomeCategory::Callback,
             'reasons' => CallLog::REASONS,

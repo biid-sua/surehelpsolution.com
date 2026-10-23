@@ -13,6 +13,7 @@ use App\Support\Tenancy\CurrentOrganization;
 use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -278,8 +279,40 @@ class User extends Authenticatable
         return $this->assignmentCache[$id] ??= $this->assignedOrganizations()->whereKey($id)->exists();
     }
 
+    /** Session key for the business a multi-location user is working in (D89). */
+    public const CURRENT_ORGANIZATION = 'current_organization';
+
     /**
-     * The organization a client user works in. Clients have exactly one for now (docs/decisions.md D1).
+     * The business this request acts for (D89): the one the person switched to, when they belong to
+     * several (session on the web, the X-Organization header in the app), otherwise their first.
+     * Always one they're an active member of.
+     */
+    public function activeOrganization(?string $chosen = null): ?Organization
+    {
+        $chosen ??= app()->bound('session.store') ? app('session.store')->get(self::CURRENT_ORGANIZATION) : null;
+        $chosen ??= request()->header('X-Organization');
+        if (is_string($chosen) && $chosen !== '') {
+            $organization = $this->organizations()->wherePivot('status', 'active')->where('organizations.ulid', $chosen)->first();
+            if ($organization) {
+                return $organization;
+            }
+        }
+
+        return $this->primaryOrganization();
+    }
+
+    /**
+     * Every business this person is an active member of (more than one for multi-location owners, D89).
+     *
+     * @return Collection<int, Organization>
+     */
+    public function activeOrganizations(): Collection
+    {
+        return $this->organizations()->wherePivot('status', 'active')->orderBy('organizations.name')->get();
+    }
+
+    /**
+     * The first business a client user belongs to (docs/decisions.md D1). Requests use activeOrganization().
      */
     public function primaryOrganization(): ?Organization
     {

@@ -75,6 +75,18 @@ class Appointment extends Model
             $appointment->ulid ??= (string) Str::ulid();
         });
 
+        // Automations (D80): a new booking, and any "coming up" steps for it. Imports don't count.
+        static::created(function (Appointment $appointment) {
+            if ($appointment->source !== 'import'
+                && in_array($appointment->status, [AppointmentStatus::Pending, AppointmentStatus::Tentative, AppointmentStatus::Confirmed], true)) {
+                DB::afterCommit(function () use ($appointment) {
+                    $engine = app(AutomationEngine::class);
+                    $engine->fire('appointment_booked', $appointment);
+                    $engine->fire('appointment_upcoming', $appointment);
+                });
+            }
+        });
+
         // Connected calendars follow every booking change, once the booking has committed (spec §17).
         static::saved(function (Appointment $appointment) {
             $relevant = $appointment->wasRecentlyCreated || $appointment->wasChanged(['starts_at', 'ends_at', 'status', 'title', 'notes', 'address']);
@@ -93,11 +105,23 @@ class Appointment extends Model
                 SendAppointmentEmail::dispatch($appointment->id, $email)->afterCommit();
             }
 
-            // Automations (D50): a job just completed or was cancelled.
-            if ($appointment->wasChanged('status')
-                && in_array($appointment->status, [AppointmentStatus::Completed, AppointmentStatus::Cancelled], true)) {
-                $trigger = $appointment->status === AppointmentStatus::Completed ? 'appointment_completed' : 'appointment_cancelled';
+            // Automations (D50, D80): completed, no-show or cancelled; "coming up" steps follow a moved time.
+            $live = in_array($appointment->status, [AppointmentStatus::Pending, AppointmentStatus::Tentative, AppointmentStatus::Confirmed], true);
+            $trigger = $appointment->wasChanged('status') ? match ($appointment->status) {
+                AppointmentStatus::Completed => 'appointment_completed',
+                AppointmentStatus::Cancelled => 'appointment_cancelled',
+                AppointmentStatus::NoShow => 'appointment_no_show',
+                default => null,
+            } : null;
+            if ($trigger) {
                 DB::afterCommit(fn () => app(AutomationEngine::class)->fire($trigger, $appointment));
+            }
+            if ($live && $appointment->wasChanged('starts_at')) {
+                DB::afterCommit(function () use ($appointment) {
+                    $engine = app(AutomationEngine::class);
+                    $engine->fire('appointment_rescheduled', $appointment);
+                    $engine->rescheduled($appointment);
+                });
             }
 
             if ($relevant && CalendarConnection::withoutGlobalScopes()->where('organization_id', $appointment->organization_id)

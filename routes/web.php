@@ -24,20 +24,25 @@ use App\Http\Controllers\Client\CustomerExportController;
 use App\Http\Controllers\Client\DataExportController as ClientDataExportController;
 use App\Http\Controllers\Client\InvoiceController as ClientInvoiceController;
 use App\Http\Controllers\Client\InvoicePaymentController as ClientInvoicePaymentController;
+use App\Http\Controllers\Client\PaymentsConnectController;
 use App\Http\Controllers\Client\ResultsCsvController;
 use App\Http\Controllers\Client\ResultsPdfController;
 use App\Http\Controllers\Client\SearchConsoleController;
 use App\Http\Controllers\Client\SocialOAuthController;
+use App\Http\Controllers\Client\SwitchOrganizationController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\HealthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InboxMediaController;
 use App\Http\Controllers\LinkPageController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PasswordChangeController;
+use App\Http\Controllers\PayController;
 use App\Http\Controllers\RecordingController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\SupportAttachmentController;
+use App\Http\Controllers\SurveyController;
 use App\Livewire\Account\Notifications as AccountNotifications;
 use App\Livewire\Account\Profile as AccountProfile;
 use App\Livewire\Account\Security as AccountSecurity;
@@ -58,6 +63,7 @@ use App\Livewire\Admin\Schedules\Index as AdminSchedules;
 use App\Livewire\Admin\Search as AdminSearch;
 use App\Livewire\Admin\Seo\Index as AdminSeo;
 use App\Livewire\Admin\Support\Index as AdminSupport;
+use App\Livewire\Admin\SystemStatus as AdminSystemStatus;
 use App\Livewire\Admin\Usage\Index as AdminUsage;
 use App\Livewire\Admin\Users\Index as AdminUsers;
 use App\Livewire\Agent\Assignments as AgentAssignments;
@@ -88,9 +94,11 @@ use App\Livewire\Agent\Workspace as AgentWorkspace;
 use App\Livewire\Client\Appointments\Index as AppointmentsIndex;
 use App\Livewire\Client\Billing\Index as ClientBilling;
 use App\Livewire\Client\Business\Automations as BusinessAutomations;
+use App\Livewire\Client\Business\Branding as BusinessBranding;
 use App\Livewire\Client\Business\Calendars as BusinessCalendarsPage;
 use App\Livewire\Client\Business\CustomerEmails as BusinessCustomerEmails;
 use App\Livewire\Client\Business\Hours as BusinessHoursPage;
+use App\Livewire\Client\Business\Integrations as BusinessIntegrations;
 use App\Livewire\Client\Business\Knowledge as BusinessKnowledgePage;
 use App\Livewire\Client\Business\Outcomes as BusinessOutcomesPage;
 use App\Livewire\Client\Business\PhoneLine as BusinessPhoneLinePage;
@@ -109,7 +117,10 @@ use App\Livewire\Client\Escalations\Index as EscalationsIndex;
 use App\Livewire\Client\Inbox\Assistant as InboxAssistant;
 use App\Livewire\Client\Inbox\Channels as InboxChannels;
 use App\Livewire\Client\Inbox\Index as InboxIndex;
+use App\Livewire\Client\Locations as ClientLocations;
+use App\Livewire\Client\Payments as ClientPayments;
 use App\Livewire\Client\Results as ClientResults;
+use App\Livewire\Client\Reviews as ClientReviews;
 use App\Livewire\Client\Search as ClientSearch;
 use App\Livewire\Client\Seo as ClientSeo;
 use App\Livewire\Client\Settings\Notifications as NotificationSettings;
@@ -132,6 +143,20 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])->name('seo.sitemap');
 Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('seo.robots');
 Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:6,10')->name('contact.store');
+// For uptime monitors (D91).
+Route::get('/health', HealthController::class)->middleware('throttle:60,1')->name('health');
+// Payment links (D85): public, by token.
+Route::middleware('throttle:30,1')->prefix('pay/{token}')->name('pay.')->group(function () {
+    Route::get('/', [PayController::class, 'show'])->name('show');
+    Route::post('/', [PayController::class, 'checkout'])->name('checkout');
+});
+// Satisfaction surveys (D84): public, by token.
+Route::middleware('throttle:30,1')->prefix('s/{token}')->name('survey.')->group(function () {
+    Route::get('/', [SurveyController::class, 'show'])->name('show');
+    Route::post('/', [SurveyController::class, 'answer'])->name('answer');
+    Route::post('/feedback', [SurveyController::class, 'feedback'])->name('feedback');
+    Route::get('/review', [SurveyController::class, 'review'])->name('review');
+});
 // Pages behind the site menus: products, solutions, resources, company (config/pages.php).
 Route::get('/{page}', [PageController::class, 'show'])->whereIn('page', array_keys(config('pages')))->name('pages.show');
 
@@ -255,7 +280,8 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/social/posts/new', SocialCompose::class)->middleware('can:social.manage')->name('social.posts.create');
         Route::get('/social/posts/{post}', SocialCompose::class)->name('social.posts.edit');
     });
-    Route::middleware(['can:social.manage', 'feature:social_publishing'])->whereIn('connector', ['meta', 'linkedin', 'google'])->group(function () {
+    // Google Business Profile serves both posts and reviews (D83); the controller checks which.
+    Route::middleware(['can:social.manage', 'feature:social_publishing|reviews'])->whereIn('connector', ['meta', 'linkedin', 'google'])->group(function () {
         Route::get('/social/connect/{connector}', [SocialOAuthController::class, 'redirect'])->name('social.connect');
         Route::get('/social/connect/{connector}/callback', [SocialOAuthController::class, 'callback'])->name('social.connect.callback');
     });
@@ -263,6 +289,11 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/appointments', AppointmentsIndex::class)->name('appointments.index');
         Route::get('/appointments/export', AppointmentExportController::class)->name('appointments.export');
     });
+    Route::post('/switch/{organization}', SwitchOrganizationController::class)->name('switch');
+    Route::get('/locations', ClientLocations::class)->name('locations');
+    Route::get('/payments', ClientPayments::class)->middleware('can:payments.view')->name('payments');
+    Route::get('/payments/connect', PaymentsConnectController::class)->middleware(['can:payments.manage', 'feature:customer_payments'])->name('payments.connect');
+    Route::get('/reviews', ClientReviews::class)->middleware(['can:reviews.view', 'feature:reviews'])->name('reviews');
     Route::get('/escalations', EscalationsIndex::class)->middleware('can:escalations.view')->name('escalations.index');
     Route::middleware('can:customers.view')->group(function () {
         Route::get('/customers', CustomerIndex::class)->name('customers.index');
@@ -280,6 +311,8 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/business/knowledge', BusinessKnowledgePage::class)->middleware('can:knowledge_base.view')->name('business.knowledge');
         Route::get('/business/rules', BusinessRulesPage::class)->name('business.rules');
         Route::get('/business/automations', BusinessAutomations::class)->name('business.automations');
+        Route::get('/business/branding', BusinessBranding::class)->name('business.branding');
+        Route::get('/business/integrations', BusinessIntegrations::class)->middleware('can:integrations.manage')->name('business.integrations');
         Route::get('/business/emails', BusinessCustomerEmails::class)->middleware('feature:customer_emails')->name('business.emails');
         Route::get('/business/calendars', BusinessCalendarsPage::class)->middleware(['can:integrations.view', 'feature:calendar_sync'])->name('business.calendars');
         Route::get('/website', ClientWebsite::class)->middleware(['can:integrations.view', 'feature:website_tools'])->name('website');
@@ -367,6 +400,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth.home', 'force.password
     Route::get('/seo', AdminSeo::class)->middleware('can:seo.manage')->name('seo');
     Route::get('/phone-lines', AdminPhoneLines::class)->middleware('can:settings.view')->name('phone-lines');
     Route::get('/appearance', AdminAppearance::class)->middleware('can:settings.view')->name('appearance');
+    Route::get('/system', AdminSystemStatus::class)->middleware('can:settings.view')->name('system');
     Route::get('/usage', AdminUsage::class)->middleware('can:billing.view')->name('usage');
     Route::get('/escalations', AdminEscalations::class)->middleware('can:escalations.view')->name('escalations');
     Route::get('/billing', AdminBilling::class)->middleware('can:billing.view')->name('billing');

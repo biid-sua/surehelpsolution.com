@@ -5,6 +5,7 @@ namespace App\Livewire\Admin\Organizations;
 use App\Enums\OrganizationStatus;
 use App\Livewire\Concerns\PlatformAdminOnly;
 use App\Models\Organization;
+use App\Services\Admin\ClientHealth;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Layout;
@@ -26,6 +27,10 @@ class Index extends Component
     #[Url(except: '')]
     public string $status = '';
 
+    /** Client health (D86): "", "risk" or "watch". */
+    #[Url(except: '')]
+    public string $health = '';
+
     public function mount(): void
     {
         $this->authorize('organization.view');
@@ -33,13 +38,14 @@ class Index extends Component
 
     public function updated(string $property): void
     {
-        if (in_array($property, ['search', 'status'], true)) {
+        if (in_array($property, ['search', 'status', 'health'], true)) {
             $this->resetPage();
         }
     }
 
-    public function render(): View
+    public function render(ClientHealth $clientHealth): View
     {
+        $health = $clientHealth->all();
         $organizations = Organization::query()
             ->with('owner:id,name,email')
             ->withCount([
@@ -53,12 +59,15 @@ class Index extends Component
             })
             ->when(OrganizationStatus::tryFrom($this->status), fn (Builder $q, OrganizationStatus $status) => $q->where('status', $status))
             ->when($this->status === 'setup', fn (Builder $q) => $q->whereNull('setup_completed_at'))
+            ->when(in_array($this->health, ['risk', 'watch'], true), fn (Builder $q) => $q->whereIn('id',
+                array_keys(array_filter($health, fn (array $h) => $this->health === 'risk' ? $h['band'] === 'risk' : $h['band'] !== 'healthy'))))
             ->orderBy('name')
             ->paginate(20);
 
         return view('livewire.admin.organizations.index', [
             'organizations' => $organizations,
             'statuses' => OrganizationStatus::cases(),
+            'healthScores' => $health,
         ]);
     }
 }

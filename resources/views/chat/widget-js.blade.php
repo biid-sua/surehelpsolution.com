@@ -10,6 +10,10 @@
   var STORE = 'surehelp-chat-' + KEY;
   var token = null, last = '', timer = null, open = false, cfg = null, tab = null;
   try { token = localStorage.getItem(STORE); } catch (e) {}
+  // Spanish for customers (D92): the business chooses English, Spanish, or the visitor's browser.
+  var LANG = 'en';
+  var ES = {"Something went wrong. Please try again.": "Algo salió mal. Inténtalo de nuevo.", "Contact us": "Contáctanos", "Chat with us": "Chatea con nosotros", "Assistant": "Asistente", "Your message": "Tu mensaje", "Type your message…": "Escribe tu mensaje…", "Send": "Enviar", "Message not sent. Please try again.": "No se envió el mensaje. Inténtalo de nuevo.", "Your name": "Tu nombre", "Phone": "Teléfono", "Email (if you prefer)": "Correo electrónico (si lo prefieres)", "Available times": "Horarios disponibles", "Choose a day to see open times.": "Elige un día para ver los horarios libres.", "Request this time": "Solicitar este horario", "Book": "Reservar", "Service": "Servicio", "Day": "Día", "Address for the visit (if any)": "Dirección de la visita (si aplica)", "Anything we should know?": "¿Algo que debamos saber?", "Loading…": "Cargando…", "Pick a time:": "Elige un horario:", "No open times that day. Try another day.": "No hay horarios libres ese día. Prueba otro día.", "Choose a service": "Elige un servicio", "Please pick a time.": "Por favor elige un horario.", "Pay deposit": "Pagar depósito", "Prefer to talk? Call us and a real person will answer.": "¿Prefieres hablar? Llámanos y te atenderá una persona real.", "Leave your details and we'll get back to you.": "Déjanos tus datos y te responderemos.", "How can we help?": "¿Cómo podemos ayudarte?", "Chat": "Chat", "Call": "Llamar", "Message": "Mensaje"};
+  function t(s) { return LANG === 'es' && ES[s] ? ES[s] : s; }
 
   function el(tag, attrs, text) {
     var n = document.createElement(tag);
@@ -18,11 +22,12 @@
     return n;
   }
   function req(method, path, body) {
+    path += (path.indexOf('?') < 0 ? '?' : '&') + 'lang=' + (cfg ? LANG : encodeURIComponent((navigator.language || 'en').slice(0, 2)));
     return fetch(API + '/' + encodeURIComponent(KEY) + path, {
       method: method,
       headers: body ? { 'Content-Type': 'text/plain' } : {},
       body: body ? JSON.stringify(body) : undefined
-    }).then(function (r) { return r.json().then(function (j) { if (!r.ok) { var e = new Error(j.message || 'Something went wrong. Please try again.'); e.data = j; throw e; } return j; }); });
+    }).then(function (r) { return r.json().then(function (j) { if (!r.ok) { var e = new Error(j.message || t('Something went wrong. Please try again.')); e.data = j; throw e; } return j; }); });
   }
   function field(label, input) {
     var w = el('label', { class: 'f' });
@@ -108,7 +113,7 @@
   function add(m) {
     if (m.id && shadow.querySelector && shadow.querySelector('[data-id="' + m.id + '"]')) return;
     var b = el('div', { class: 'm ' + (m.from === 'you' ? 'you' : 'biz'), 'data-id': m.id || '' });
-    if (m.from === 'assistant') b.appendChild(el('span', { class: 'who' }, (cfg && cfg.assistant ? cfg.assistant : 'Assistant') + ' · AI'));
+    if (m.from === 'assistant') b.appendChild(el('span', { class: 'who' }, (cfg && cfg.assistant ? cfg.assistant : t('Assistant')) + ' · AI'));
     b.appendChild(document.createTextNode(m.text || ''));
     list.appendChild(b);
     list.scrollTop = list.scrollHeight;
@@ -125,8 +130,8 @@
     if (!cfg.disclosure) disclosure.style.display = 'none';
     var error = el('div', { class: 'e', role: 'alert' }, '');
     var form = el('form', { class: 'c' });
-    input = el('textarea', { 'aria-label': 'Your message', placeholder: 'Type your message…', maxlength: '2000' });
-    var send = el('button', { class: 's', type: 'submit' }, 'Send');
+    input = el('textarea', { 'aria-label': t('Your message'), placeholder: t('Type your message…'), maxlength: '2000' });
+    var send = el('button', { class: 's', type: 'submit' }, t('Send'));
     form.appendChild(input); form.appendChild(send);
     v.appendChild(list); v.appendChild(disclosure); v.appendChild(error); v.appendChild(form);
     input.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit')); } });
@@ -139,7 +144,7 @@
         input.value = '';
         if (j.token && j.token !== token) { token = j.token; try { localStorage.setItem(STORE, token); } catch (e) {} }
         (j.messages || []).forEach(add);
-      }).catch(function (err) { error.textContent = err.message || 'Message not sent. Please try again.'; })
+      }).catch(function (err) { error.textContent = err.message || t('Message not sent. Please try again.'); })
         .then(function () { send.disabled = false; });
     });
     if (!token) add({ from: 'business', text: cfg.greeting });
@@ -150,9 +155,9 @@
     var name = el('input', { type: 'text', autocomplete: 'name', maxlength: '100', required: 'required' });
     var phone = el('input', { type: 'tel', autocomplete: 'tel', maxlength: '40' });
     var email = el('input', { type: 'email', autocomplete: 'email', maxlength: '150' });
-    form.appendChild(field('Your name', name));
-    form.appendChild(field('Phone', phone));
-    form.appendChild(field('Email (if you prefer)', email));
+    form.appendChild(field(t('Your name'), name));
+    form.appendChild(field(t('Phone'), phone));
+    form.appendChild(field(t('Email (if you prefer)'), email));
     form.appendChild(honeypot());
     return function () { return { name: name.value, phone: phone.value, email: email.value, website: form.querySelector('[name=website]').value }; };
   }
@@ -169,33 +174,33 @@
     var form = el('form');
     var service = el('select', {});
     var date = el('input', { type: 'date' });
-    var grid = el('div', { class: 'g', role: 'group', 'aria-label': 'Available times' });
-    var note = el('p', { class: 'n' }, 'Choose a day to see open times.');
+    var grid = el('div', { class: 'g', role: 'group', 'aria-label': t('Available times') });
+    var note = el('p', { class: 'n' }, t('Choose a day to see open times.'));
     var address = el('input', { type: 'text', autocomplete: 'street-address', maxlength: '255' });
     var notes = el('textarea', { maxlength: '1000', rows: '2' });
     var error = el('div', { class: 'e', role: 'alert' }, '');
-    var submit = el('button', { class: 's', type: 'submit' }, cfg.booking_confirm ? 'Request this time' : 'Book');
+    var submit = el('button', { class: 's', type: 'submit' }, cfg.booking_confirm ? t('Request this time') : t('Book'));
     var chosen = null, loaded = false, seq = 0;
-    var serviceField = field('Service', service);
+    var serviceField = field(t('Service'), service);
     form.appendChild(serviceField);
-    form.appendChild(field('Day', date));
+    form.appendChild(field(t('Day'), date));
     form.appendChild(note); form.appendChild(grid);
     var contact = contactFields(form);
-    form.appendChild(field('Address for the visit (if any)', address));
-    form.appendChild(field('Anything we should know?', notes));
+    form.appendChild(field(t('Address for the visit (if any)'), address));
+    form.appendChild(field(t('Anything we should know?'), notes));
     form.appendChild(error); form.appendChild(submit);
     box.appendChild(form); v.appendChild(box);
 
     function times() {
       grid.textContent = ''; chosen = null;
       if (!date.value) return;
-      note.textContent = 'Loading…';
+      note.textContent = t('Loading…');
       var mine = ++seq;   // only the latest lookup fills the list
       req('GET', '/booking/slots?date=' + encodeURIComponent(date.value) + '&service=' + encodeURIComponent(service.value || ''))
         .then(function (j) {
           if (mine !== seq) return;
           grid.textContent = '';
-          note.textContent = j.times.length ? 'Pick a time:' : 'No open times that day. Try another day.';
+          note.textContent = j.times.length ? t('Pick a time:') : t('No open times that day. Try another day.');
           j.times.forEach(function (t) {
             var b = el('button', { type: 'button', 'aria-pressed': 'false', 'data-value': t.value }, t.label);
             b.addEventListener('click', function () {
@@ -213,7 +218,7 @@
         var today = new Date();
         date.min = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
         if (!j.services.length) { serviceField.style.display = 'none'; }
-        service.appendChild(el('option', { value: '' }, 'Choose a service'));
+        service.appendChild(el('option', { value: '' }, t('Choose a service')));
         j.services.forEach(function (s) { service.appendChild(el('option', { value: String(s.id) }, s.name + ' (' + s.minutes + ' min)')); });
       }).catch(function (e) { note.textContent = e.message; });
     };
@@ -222,11 +227,18 @@
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       error.textContent = '';
-      if (!chosen) { error.textContent = 'Please pick a time.'; return; }
+      if (!chosen) { error.textContent = t('Please pick a time.'); return; }
       var body = contact();
       body.service = service.value; body.starts_at = chosen; body.address = address.value; body.notes = notes.value;
       submit.disabled = true;
-      req('POST', '/booking', body).then(function (j) { done(v, j.message); })
+      req('POST', '/booking', body).then(function (j) {
+          done(v, j.message);
+          // A deposit to pay (D85): a plain link to the business's secure payment page.
+          if (j.pay_url && /^https:\/\//.test(j.pay_url)) {
+            var pay = el('a', { class: 'call', href: j.pay_url, target: '_blank', rel: 'noopener', style: 'margin-top:10px' }, j.pay_label || t('Pay deposit'));
+            v.firstChild.appendChild(pay);
+          }
+        })
         .catch(function (err) { error.textContent = err.message; if (err.data && err.data.times) times(); })
         .then(function () { submit.disabled = false; });
     });
@@ -235,7 +247,7 @@
   // Click to call ------------------------------------------------------------------------------
   function buildCall(v) {
     var box = el('div', { class: 'sc' });
-    box.appendChild(el('p', { class: 'n' }, 'Prefer to talk? Call us and a real person will answer.'));
+    box.appendChild(el('p', { class: 'n' }, t('Prefer to talk? Call us and a real person will answer.')));
     if (/^\+\d{8,15}$/.test(cfg.phone.tel)) box.appendChild(el('a', { class: 'call', href: 'tel:' + cfg.phone.tel }, '📞 ' + cfg.phone.label));
     v.appendChild(box);
   }
@@ -244,12 +256,12 @@
   function buildLead(v) {
     var box = el('div', { class: 'sc' });
     var form = el('form');
-    form.appendChild(el('p', { class: 'n' }, 'Leave your details and we\'ll get back to you.'));
+    form.appendChild(el('p', { class: 'n' }, t('Leave your details and we\'ll get back to you.')));
     var contact = contactFields(form);
     var message = el('textarea', { maxlength: '2000', rows: '4', required: 'required' });
-    form.appendChild(field('How can we help?', message));
+    form.appendChild(field(t('How can we help?'), message));
     var error = el('div', { class: 'e', role: 'alert' }, '');
-    var submit = el('button', { class: 's', type: 'submit' }, 'Send');
+    var submit = el('button', { class: 's', type: 'submit' }, t('Send'));
     form.appendChild(error); form.appendChild(submit);
     box.appendChild(form); v.appendChild(box);
     form.addEventListener('submit', function (e) {
@@ -266,14 +278,16 @@
 
   req('GET', '/config').then(function (c) {
     cfg = c;
+    LANG = c.lang === 'es' ? 'es' : 'en';
     var f = c.features || { chat: true };
-    title.textContent = c.title || 'Chat with us';
+    title.textContent = c.title || t('Chat with us');
+    button.setAttribute('aria-label', t('Contact us')); panel.setAttribute('aria-label', t('Contact us'));
     sub.textContent = c.business || '';
     paint(/^#[0-9a-fA-F]{6}$/.test(c.color || '') ? c.color : '#7C3AED');
-    if (f.chat) buildChat(addView('chat', 'Chat'));
-    if (f.booking) buildBooking(addView('book', 'Book'));
-    if (f.call && c.phone) buildCall(addView('call', 'Call'));
-    if (f.lead) buildLead(addView('lead', 'Message'));
+    if (f.chat) buildChat(addView('chat', t('Chat')));
+    if (f.booking) buildBooking(addView('book', t('Book')));
+    if (f.call && c.phone) buildCall(addView('call', t('Call')));
+    if (f.lead) buildLead(addView('lead', t('Message')));
     var names = Object.keys(views);
     if (!names.length) return;
     if (names.length === 1) tabs.style.display = 'none';

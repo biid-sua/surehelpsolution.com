@@ -4,9 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
- * A message sent through the website's contact form.
+ * A website enquiry: from the contact form, or a lead the sales chat captured (D78), with what the
+ * chat learned, a hot / warm / cold score and a booked demo.
+ *
+ * @property array<string, string>|null $details
  */
 class ContactSubmission extends Model
 {
@@ -18,9 +22,14 @@ class ContactSubmission extends Model
         'enterprise' => 'Enterprise',
     ];
 
+    /** Where it came from: the contact form, or the sales chat (D78). */
+    public const SOURCES = ['form' => 'Contact form', 'chat' => 'Chat'];
+
     protected $casts = [
         'sms_consent' => 'boolean',
         'handled_at' => 'datetime',
+        'details' => 'array',
+        'demo_at' => 'datetime',
     ];
 
     protected $fillable = [
@@ -32,12 +41,23 @@ class ContactSubmission extends Model
         'message',
         'sms_consent',
         'ip_address',
+        'source',
+        'details',
+        'score',
+        'demo_at',
+        'demo_status',
     ];
 
     /** @return BelongsTo<User, $this> */
     public function handler(): BelongsTo
     {
         return $this->belongsTo(User::class, 'handled_by');
+    }
+
+    /** @return HasOne<SalesChat, $this> */
+    public function chat(): HasOne
+    {
+        return $this->hasOne(SalesChat::class);
     }
 
     public function inquiryLabel(): string

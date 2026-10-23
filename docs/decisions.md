@@ -1178,3 +1178,431 @@ Start these early. The code can be built and tested with your own accounts befor
 - **The mobile app is unchanged.** It still opens on its Calendar tab, with the numbers under Overview.
 
 **Why:** one fixed first screen didn't suit every business. Most want their schedule first, while some owners want the numbers first. Putting the calendar inside the dashboard gives both: the schedule at first glance, and the dashboard stays home. The code is in `App\Support\Dashboard\DashboardLayout` and `x-client.calendar-board`.
+
+## D78 — An AI sales chat on SureHelp's own website (2026-10-22)
+**Decision:** the public website gets its own sales assistant. It answers questions, captures leads and
+books demo calls with the SureHelp team. It doesn't reuse a business's Inbox chat, because those leads
+belong to SureHelp, not to a tenant.
+- **Leads.** Leads become website enquiries (source "Chat") with a rule-based hot / warm / cold score, the
+  details the chat learned and the transcript. The team can take over and reply from Admin › Website
+  enquiries.
+- **Demos.** Demo times come from sales hours in `config/sales.php`. Booking takes a row lock, so two
+  visitors can't take the same place. The visitor gets an email invitation with a calendar file.
+- **The AI only reads free text.** Buttons, the time picker and the form never call it. Each call uses:
+  - a cached prompt (plans, facts, FAQ);
+  - the last 12 messages, plus the lead's details as facts;
+  - low effort, a 2,000-token cap and 4 tool rounds.
+- **Caps.** Each chat, each IP and each day has a limit. Without a key, or past the budget, the chat keeps
+  working on buttons, forms and keyword answers. The model is configurable (`SALES_CHAT_MODEL`).
+- **Gentle on visitors.**
+  - The chat only asks for a name and email when booking or for a follow-up.
+  - It never re-asks for something it already knows.
+  - Text consent is only the optional checkbox.
+- **Fix.** The public chat APIs (`api/sales-chat/*`, and `api/chat/*` used on SureHelp-hosted pages) are
+  left out of Sanctum's CSRF check, which counted our own site as a stateful front end.
+
+**Why:** the website's only lead path was a long contact form, and "Book a demo" led to it. A chat that
+answers at once and books a time in a few taps turns more visitors into calls with the team. Keeping the
+AI to free text and caching keeps the cost per lead small. Details are in `docs/sales-chat.md`.
+
+## D79 — Go-live readiness check (2026-10-23)
+**Decision:** `php artisan launch:check` and *Admin › System status* check an installation against what it
+needs to go live. They are not a deploy script; they only check.
+- **Statuses:**
+  - **fail:** must be fixed before launch (production mode, HTTPS, database, migrations, front-end build,
+    storage, cron, queue, real email sending).
+  - **warn:** strongly recommended (secure cookies, log level, CSP enforced, token expiry, agent assignments).
+  - **off:** a feature that stays hidden until its keys are set (AI, calendars, Twilio calls and texts,
+    Stripe, invoice details, plans, Meta, LinkedIn, Google Business Profile, push, store links).
+- **Addresses to register.** `--urls` (and the page) list every redirect and webhook address to paste
+  into each provider, built from the live `APP_URL`.
+- **Test email.** `--mail=` (and a button on the page) sends one.
+- **Scheduler heartbeat.** The scheduler records a heartbeat every minute, so a missing cron entry shows
+  up.
+- **Safety.** No secret values are ever printed. A section that can't be read (for example, the database
+  is down) shows as one failed line instead of an error.
+- **Order.** [go-live.md](go-live.md) gives the order, starting with the approvals that take weeks: A2P
+  10DLC, Google OAuth verification and Business Profile access, Meta App Review, and the store accounts.
+
+**Why:** most of the product is built but waiting on settings and third-party approvals. One place that
+says exactly what's missing turns going live into a checklist instead of guesswork.
+
+## D80 — Automations 2.0, step 1: more triggers, actions and conditions (2026-10-23)
+**Decision:** the automation engine (D50) grows without changing how it runs. An automation is still
+one trigger, a wait and one action, with one run per subject, a re-check before running, retries and
+history. Existing automations keep working unchanged.
+- **Triggers:**
+  - **Appointments:** booked, coming up (the wait counts back from the start time and follows the
+    booking when it moves; a booking made at short notice runs straight away), moved (runs again on each
+    move), completed, no-show, cancelled.
+  - **Calls and messages:** an answered call is logged, a call is missed, and someone messages the
+    business for the first time.
+  - **Customers and work:** a new customer or lead; a customer hasn't been back for N days (checked
+    daily, each customer reached once per automation); an escalation is raised; a task becomes overdue.
+  - Imports never trigger anything.
+- **Actions:**
+  - **Text the customer.** It goes through the business's SureHelp line and lands in the Inbox. Only
+    customers who agreed to texts, and never numbers that texted STOP. For missed calls, logged calls and
+    first messages (they got in touch), the business may untick the consent requirement.
+  - **Email someone else**, for example the owner or a bookkeeper.
+  - **Add or remove a tag**, and **change the customer's status**.
+  - These join the existing email, task and team notification actions.
+- **Conditions:** up to five checks that all must hold, checked when it happens and again before it
+  runs:
+  - customer tag (has / doesn't have)
+  - customer status
+  - first visit or not
+  - email known
+  - phone known
+  - call outcome
+  - while open or closed
+- **Guards:** an overdue task can't create another task, and escalations and tasks can't email or text
+  the customer.
+- **Recipes:**
+  - Text review request
+  - Missed appointment: offer a new time
+  - How to prepare, 2 days before
+  - Welcome first-time customers
+  - Missed call after hours: call back first thing
+  - Win back customers after 6 months
+  - Email the owner about escalations
+- **Placeholders.** `{booking_link}` (the business's link page, when live) and `{reason}` (the call reason,
+  escalation reason or task title) are added.
+
+**Why:** most follow-ups a business wants are "when X, wait, then do Y". Covering the common X's and Y's
+natively, with consent and re-checks built in, means clients don't need n8n or Zapier for them. Multi-step
+flows with branches are step 2.
+
+## D81 — Automations 2.0, step 2: flows, a visual builder, test runs and a customer timeline (2026-10-23)
+**Decision:** an automation can run a **flow**: a list of steps, stored as JSON on `automations.steps`.
+- **Steps.** There are three kinds:
+  - **Action:** any of the D80 actions.
+  - **Wait:** 1 minute to 30 days.
+  - **If / otherwise:** up to five conditions with a "yes" path and an "otherwise" path.
+  - A flow has at most 15 steps. An If can't contain another If, so flows are at most two levels deep.
+- **Running.** Each run stores a `cursor` (where it's up to, such as `[2, "then", 0]`) and a `log` (what
+  each step did).
+  - A wait sets the run's `run_at` and stops. The every-minute `automations:run` picks it up again from
+    the cursor, so a flow survives deploys and restarts.
+  - Before every action, the trigger and the "Only if" conditions are checked again. If they no longer
+    hold (the job was cancelled, or the automation was switched off), the flow is cancelled.
+  - A step that can't apply (no consent, no email) is logged as skipped and the flow carries on.
+  - Errors retry from the same step, so finished steps are never repeated.
+  - A run is *done* if any action was done.
+- **New conditions for If steps:** "a reply from them came in" and "a new booking was made". Both count
+  from when the flow started. They aren't offered in "Only if", where "since" has no meaning.
+- **Compatibility.** An automation saved before flows has no steps and runs as a one-step flow, with the
+  same results as before. A flow cut back to one action is stored that way again. The first action is
+  always copied to `action` / `action_config`, so lists and older code keep working. If a flow is edited
+  while runs are under way, they continue from the same step position. A position that no longer exists
+  ends the run.
+- **Builder.** *Business › Automations* shows the flow as a list of cards:
+  - add an action, a wait or an If;
+  - move steps up and down, or remove them;
+  - an If shows its two paths side by side.
+  - Every action is checked the same way as before: required fields, the review link, and the guards on
+    internal triggers.
+- **Test run.** It picks the most recent record the trigger could be about (optionally for one customer):
+  for appointment triggers, one in the matching state; for "coming up", the next booking.
+  - It then walks the unsaved form against that record and shows each step: "Would email …", "Would be
+    skipped: they haven't agreed to texts", and the pretend times of the waits.
+  - Ifs are decided on today's data.
+  - Nothing is sent, saved or changed. Every action has a dry mode that returns after its checks.
+- **Customer timeline.** Runs now record `customer_id`. A customer's page shows an *Automations* card
+  with their last 10 flows: each step, when it ran, and when the next one is due.
+- **Recipes:** two flows are added:
+  - **Review request with a text reminder:** email, wait 3 days, then a text if they haven't replied.
+  - **New lead: call, then follow up if they don't book:** a task, wait 2 days, then either an email and
+    a team note, or "customer" status if they booked.
+
+**Why:** real follow-up is a sequence ("thank them, wait, nudge if nothing happened"), not a single
+message. A list with one level of branching covers almost every small-business case and stays easy to
+read on a phone. A drag-and-drop canvas would add a lot of UI for little gain. The test run lets owners
+trust a flow before it reaches a customer.
+
+## D82 — White-label (2026-10-23)
+**Decision:** the Growth plan's "white-label options" are now real, as a plan feature `white_label` (closed
+by default, like the SEO service).
+- **Every business, on any plan:** customer emails now use a clean layout with the business's logo (or
+  name) at the top. The footer reads "{business} · sent with SureHelp Solutions".
+- **With white-label** (*Business › Branding*):
+  - **Brand colour:** emails, the self-service appointment page, the link page and, optionally, the
+    website chat.
+  - **Email sender name:** the "From" name. Replies still go to the business email.
+  - No SureHelp lines on customer emails, the appointment page or the link page.
+  - **The business's own portal** shows its logo, name and colour (in the sidebar, the page title and the
+    brand shades), unless the owner turns that off. SureHelp agents and staff always see the SureHelp
+    look.
+- **How colours work:** one colour is turned into the portal's brand shades with CSS `color-mix()`. The
+  button text in emails is black or white, whichever reads better.
+- **Where it lives:** `App\Services\Business\Branding` (memoised per request) is the one place that
+  decides how a business looks. `CustomerEmail` takes the organization and uses it.
+
+**Why:** the pricing page promised it, and businesses that resell or are particular about their image
+pay for it. The sending address stays SureHelp's verified domain, so emails keep reaching inboxes.
+Custom sending domains can follow if clients ask.
+
+## D83 — Reviews and reputation (2026-10-23)
+**Decision:** a business's Google reviews come into SureHelp through its Business Profile connection, and
+it can answer them from SureHelp. It's a feature, `reviews`, open to every plan.
+- **Sync.** `reviews:sync` runs every hour. *Check now* is on the page, at most once per two minutes.
+  - It reads the newest 50 reviews per location through the Business Profile API v4.
+  - The first time, it imports up to 200 quietly, for the history. Unanswered reviews older than 30 days
+    are marked "no reply needed", so old work doesn't pile up.
+  - Replies made on Google directly are picked up too.
+- **New reviews:**
+  - A notification ("New Google review", which people can switch off).
+  - For 1–2 stars, a high-priority task to reply within a day.
+  - A new automation trigger, *A new Google review arrives*, with a star-rating condition (1–2, 3, 4–5).
+    Review automations can notify the team, create tasks or email someone else, but never message the
+    "customer": reviewers aren't matched to customers.
+- **Replies.** *Reviews* (in the client navigation) lists reviews by "waiting", "all" and "1–3 stars".
+  - Replies are posted to Google with `PUT …/reviews/{id}/reply`, and can be updated later.
+  - **AI drafts** are made only when someone presses *Draft with AI*: one small call (low effort,
+    600 tokens at most), recorded in `ai_runs` as `review`. There are at most 100 drafts per business a
+    month (`REVIEWS_AI_MONTHLY_DRAFTS`), and an optional cheaper model (`REVIEWS_AI_MODEL`).
+  - The instructions keep replies short, use the reviewer's language, never argue, and never mention
+    private details. Medical and legal practices rely on that.
+- **Numbers.**
+  - The page shows the Google rating and count, the last 30 days, how many are waiting, the reply rate
+    over 12 months, and a month-by-month rating chart (with a table for screen readers).
+  - *Results* gets a Reviews row for the chosen month.
+- **Connecting.** The Google connection is allowed for businesses with social publishing or reviews.
+  Facebook and LinkedIn stay with social publishing. Connecting from *Reviews* comes back to *Reviews*.
+- **Who.** Owners and managers can reply; staff can read.
+
+**Why:** reviews are the most visible proof of a local business's quality, and answering them quickly
+helps its ranking. Doing it next to the calls and bookings, with a task for bad ones, means it actually
+gets done. Asking happy customers for a review is in the after-call survey (D84).
+
+## D84 — Satisfaction surveys and asking happy customers for reviews (2026-10-23)
+**Decision:** a new automation action, **Ask for a rating (1–5)**, sends "How did we do?" by text or
+email. Two recipes use it: *after each job* (2 hours after an appointment is completed) and *after we
+answer a call* (30 minutes after it's logged).
+- **Answering.**
+  - From the link (`/s/{token}`, 7 days), or by replying to the text with a number ("5", "4 stars").
+  - The email's button opens the page. Opening the page never records anything, because email link
+    scanners open links too; a vote is always a POST.
+  - Each customer is asked at most once every 14 days. Consent rules are the same as for other texts and
+    emails.
+- **Happy (4–5):** the business's Google review link is offered (by reply text, or on the page), and
+  clicks are counted. This is the "ask for a review only after a good job" the roadmap asked for.
+- **Unhappy (1–3):**
+  - A high-priority call-back task due in 4 hours, and an *Unhappy customer* notification.
+  - The page asks what could have been better. The answer is added to the task and the customer's
+    timeline, and only the business sees it.
+- **Who answered the call.** Surveys after calls record the agent. The agent's *Quality* page shows their
+  caller rating for the last 30 days, next to the QA score.
+- **Results** gets a *Customer satisfaction* row: average rating, share of happy customers, and how many
+  went on to open the review link.
+- Text replies that are survey answers are thanked automatically. They don't wake the AI assistant or
+  notify the team.
+- The test run (D81) shows the survey message without creating a survey.
+
+**Why:** a private rating first catches problems before they become public reviews, and steers the
+happy majority to Google, which lifts the rating fairly. Google's policies allow asking every customer
+for a review; we only choose *when* to show the link, and every customer can still review the business
+on Google themselves.
+
+## D85 — Deposits and pay-by-text (Stripe Connect) (2026-10-23)
+**Decision:** businesses take card payments from their own customers through **Stripe Connect with
+Standard accounts**. Each business has its own Stripe account and dashboard. Customers pay on Stripe
+Checkout, and the money goes straight to the business. SureHelp never holds the funds and never sees
+card details. It's a plan feature, `customer_payments`, closed by default.
+- **Connecting.** *Payments › Connect Stripe*:
+  - creates the account (`type=standard`, named after the business) and sends the owner to Stripe's
+    onboarding;
+  - when they come back, and on `account.updated`, it checks `charges_enabled`.
+- **Pay-by-text.** *Request a payment* (on Payments, or from a customer's page): customer, amount and
+  what it's for.
+  - The link is sent by text, email or both. Payment messages are transactional, so they don't need
+    marketing consent, but numbers that texted STOP are never texted.
+  - The link (`/pay/{token}`) shows the business, the amount and a *Pay* button. That button creates a
+    Checkout session on the business's account (`Stripe-Account` header), re-created after 23 hours if
+    unused.
+  - Open requests can be copied, sent again or cancelled. Cancelling also expires the Checkout session.
+- **Deposits.** With *Ask for a deposit* on, a booking from the website or link page:
+  - gets a deposit request (emailed and texted);
+  - shows a *Pay $X deposit* button straight after booking, in the widget.
+  - The booking is never held back or lost because of the deposit. The business sees who paid.
+- **Confirmation.**
+  - A separate **Connect webhook** (`/api/webhooks/stripe/connect`, `STRIPE_CONNECT_WEBHOOK_SECRET`)
+    marks requests paid on `checkout.session.completed`, but only if the event's account and amount
+    match ours.
+  - `charge.refunded` marks them refunded.
+  - Events are de-duplicated by id.
+  - The team gets a *Customer payment received* notification, and the customer's timeline records it.
+- **Fee.** Optional `STRIPE_CONNECT_FEE_PERCENT` (0 by default, capped at 20%) is added as Stripe's
+  `application_fee_amount`.
+- **Who.** Owners and managers connect, change deposit settings and cancel. Staff can view and send
+  requests.
+
+**Why:** deposits cut no-shows and getting paid on the spot shortens the wait for money. Both are
+strong reasons to upgrade. Standard accounts leave refunds, disputes, payouts and tax with the
+business's own Stripe dashboard, so SureHelp isn't a payment facilitator.
+
+## D86 — Client health score (2026-10-23)
+**Decision:** every active, set-up business gets a health score from 0 to 100, so SureHelp's team can
+step in before a client cancels. It starts at 100 and loses points for each warning sign:
+- **Calls:** no calls in 30 days after 10 or more the month before (−35); calls down 50% or more (−25);
+  calls down 25–50% (−10). Only for businesses older than 60 days.
+- **Overdue invoices:** any overdue invoice (−15), or −30 when more than 14 days late.
+- **Sign-ins:** nobody on the team has signed in for 30 days, or ever (−20); not for 14–30 days (−10).
+  Only after the first two weeks.
+- **Escalations:** 3 or more open for over 2 days (−10).
+- **Ratings:** satisfaction surveys (D84) averaging under 3.5 over 30 days, with at least 3 answers (−10).
+
+75 and above is *healthy*, 50–74 *watch*, below 50 *at risk*. Each lost point comes with a reason in
+plain words.
+- **Organizations** has a Health column (score, band, first reason) and a filter for "at risk" and
+  "at risk or to watch".
+- **Overview** lists the five businesses most worth a call.
+- **A business's page** shows the score and every reason when it isn't healthy.
+- It's worked out for all businesses in a handful of grouped queries (`App\Services\Admin\ClientHealth`)
+  and cached for 10 minutes.
+
+**Why:** small businesses rarely complain before leaving; they just stop using the service. These
+signals show up weeks earlier, while a call can still help. It's deliberately simple and explainable,
+rather than a model nobody can question.
+
+## D87 — API keys and outgoing webhooks (2026-10-23)
+**Decision:** a business can connect SureHelp to its own tools, without us building each integration:
+- **API keys** (`api_keys`, `shk_…`, stored as SHA-256) work on the existing business API
+  (`/api/v1/client/*`, the same one the mobile app uses).
+  - A middleware in front of Sanctum signs the request in as the key's creator, so permissions and
+    tenancy are exactly theirs.
+  - Read-only keys can only `GET`. Keys can't reach any other part of the API.
+  - At most 10 keys per business. They're revoked on the page, and stop working when their creator is
+    deactivated or leaves.
+- **Webhooks** (`webhook_endpoints`, `webhook_deliveries`).
+  - The events are the moments that already start automations (D80), plus `payment.paid` (D85) and
+    `survey.answered` (D84). `AutomationEngine::fire` sends them on, so nothing is missed or
+    duplicated.
+  - Each delivery is queued, signed (Stripe-style `t=…,v1=…` HMAC), limited to 10 seconds and
+    https-only.
+  - Only public addresses are allowed, and the connection is pinned to the checked IP (the same SSRF
+    defence as the website checker).
+  - Retries back off over about 8 hours. The endpoint switches itself off after 20 failures in a row.
+  - The page shows recent deliveries and has a test button.
+  - Payloads use public ids (ulids) and plain fields, never internal ids.
+- Managed by people with `integrations.manage` (owners and managers) under *Business › API & webhooks*.
+  It's open to every plan. Full details are in [api.md](api.md) § 2b.
+
+**Why:** "Can we connect it to n8n / Zapier / our CRM?" comes up with every larger client. A key plus
+webhooks covers almost all of it, and our own automations (D80–D81) remain the no-code option.
+
+## D88 — AI help for agents during calls (2026-10-23)
+**Decision:** the agent's call workspace gets two AI helpers. Both use the business's own briefing,
+the same knowledge, rules, hours and services the messaging assistant sees.
+- **Ask AI.** The agent types the caller's question in the knowledge box and presses *Ask AI* (or
+  Enter).
+  - The answer is 1–3 sentences to read out, using only the business's facts.
+  - When the facts don't cover it, the answer is marked "not in the business notes" and says what to
+    do instead: take a message or offer a call back. It never invents prices, times or policies.
+- **Fill the form from my notes.** The agent types quick notes during the call. AI fills in only the
+  empty fields: name, phone, email, reason, and an outcome from the business's own outcome list. It
+  also tidies the notes into a short summary.
+  - What the agent typed is never overwritten. The agent checks everything before saving, as before.
+- **Cost.** Each use is one small, low-effort call (700 tokens at most), recorded in `ai_runs` as
+  `assist`.
+  - At most 300 per business per day (`AGENT_ASSIST_DAILY`) and 30 per agent per minute.
+  - `AGENT_ASSIST_MODEL` (for example Haiku) keeps answers fast while the caller waits.
+  - The briefing is the messaging assistant's, so the provider's prompt cache is shared when the
+    model is the same.
+- There's no live transcription yet: suggestions work from what the agent types. Live speech-to-text
+  during calls (Twilio Media Streams) would be the next step, and costs per minute.
+
+**Why:** faster, more accurate calls, especially for new agents and businesses with long knowledge
+bases. Typed questions keep it cheap and predictable compared with listening to every call.
+
+## D89 — Multi-location (2026-10-23)
+**Decision:** each location stays its own business account, with its own line, agents, billing and
+data. One person can now belong to several of them and move between them.
+- **Linking.** Staff add an existing business user to another location, under *Admin › Organizations ›
+  [business] › Add someone from another location*, as owner, manager or staff. New people are still
+  invited from a business's Team page.
+- **Switching.**
+  - With more than one business, the top bar shows a switcher. The choice is kept in the session
+    (`current_organization`).
+  - The app sends `X-Organization: <business id>` instead.
+  - `User::activeOrganization()` checks membership on every request, so a stale or forged choice falls
+    back to the first business. Livewire pages, the client API and API keys (pinned to their own
+    business) all use it.
+- **All locations** (`/app/locations`): this month or an earlier one, one row per location the person
+  can see results for, with totals:
+  - calls answered (of all calls), new leads, jobs booked;
+  - reviews and their rating, payments collected;
+  - open tasks and open escalations.
+  A location's name switches to it.
+
+**Why:** franchises and owners with several branches want one sign-in and one view. Keeping locations
+as separate accounts means none of the tenancy, permission or billing rules change.
+
+## D90 — Referral programme (2026-10-23)
+**Decision:** every business has a referral link (`/start?ref=CODE`) on its *Billing* page, with how
+many businesses joined, how many were rewarded, and the credit left.
+- **Signing up.** The code is remembered for the visit and recorded on sign-up (`referrals`).
+  Unknown codes and a business's own code are ignored.
+- **The reward.** When the referred business pays its first invoice (any payment method, through
+  `RecordPayment`), the referrer gets **one month of its current plan price** as a `billing_credits`
+  entry, and a notification.
+  - At most 12 rewards a year (`REFERRALS_MAX_PER_YEAR`), never twice for the same business.
+- **Using it.** Credits come off subscription invoices automatically, oldest first, as a negative
+  "Credit · Referral: …" line.
+  - An invoice that becomes $0 is marked paid straight away and not charged.
+  - One-off invoices aren't touched.
+- `REFERRALS_ENABLED=false` turns it off. The link is hidden when online sign-up is off.
+
+**Why:** happy local businesses know other local businesses. A free month is easy to explain, costs
+nothing until the new business has paid, and needs no payouts or tax paperwork, because it's a credit,
+not cash.
+
+## D91 — Operations basics: error alerts, health check, backups (2026-10-23)
+**Decision:** the essentials for running in production, without another paid service.
+- **Error alerts.** Every reported exception is emailed to `OPS_ALERT_EMAIL`.
+  - The same error (class, file and line) at most once per 15 minutes, and at most 20 emails an hour.
+  - Each email has the class, the message, where it happened, the request path, the user id and 8
+    lines of trace. No request data or personal data.
+  - Sent straight away rather than queued, because the queue may be what's broken. A failing alert is
+    swallowed, never thrown.
+  - Sentry or Bugsnag can replace it later.
+- **`/health`** for uptime monitors. It checks the database, the cache, the scheduler heartbeat (within
+  5 minutes), the queue (nothing waiting over 10 minutes) and free disk space (over 500 MB).
+  - It answers 200 or 503. Only `{"status": …}` is shown, unless the request carries `HEALTH_TOKEN`.
+  - A backup older than 2 days is reported, but doesn't fail the check.
+- **Backups.** `backup:database` runs nightly at 03:15:
+  - `mysqldump --single-transaction`, streamed into gzip (the password goes in `MYSQL_PWD`, never on
+    the command line), or a copy of the SQLite file;
+  - saved as `storage/app/backups/db-*.sql.gz` (mode 0600), and copied to `BACKUP_DISK` when that isn't
+    local;
+  - pruned after `BACKUP_KEEP_DAYS`.
+  - `launch:check` and *System status* warn about a missing backup or a missing alert address.
+
+**Why:** before a real launch, someone must hear about errors and outages before customers do, and
+there must be a backup that's known to be recent.
+
+## D92 — Spanish for a business's customers (2026-10-23)
+**Decision:** each business chooses the language its customers see, under *Business › Branding ›
+Language your customers see*, on any plan: **English**, **Spanish**, or **match each visitor's
+browser**.
+- **Covered:**
+  - the self-service appointment page, with dates in Spanish;
+  - the link page and its buttons;
+  - the website chat, booking and contact widget, including server messages and time labels;
+  - the satisfaction survey and payment pages;
+  - the standard confirmation, reminder, change and cancellation emails and texts (Spanish defaults
+    in `customer_messages.templates_es`);
+  - the branded email layout's button and footer;
+  - payment-request and deposit messages, and survey replies.
+- **"Match each visitor"** uses the widget's browser language or the page's `Accept-Language`.
+  Emails and texts stay English, because there's no browser to ask.
+- Text a business writes itself (custom templates, automations, recipes, the widget title and
+  greeting) is sent exactly as written.
+- Strings live in `lang/es.json`. `App\Support\CustomerLocale` resolves the language and sets it per
+  request. `CustomerEmail` carries a locale.
+- **Not covered yet:** the business portal and the mobile app, which stay English. The app's strings
+  are already in ARB files, so Spanish there is a translation file in the app repository.
+
+**Why:** many of our clients' customers prefer Spanish, and they're the ones who see these pages and
+messages. Translating the customer-facing surface first gives most of the benefit for a fraction of
+the work of translating the whole portal.

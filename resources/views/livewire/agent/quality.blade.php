@@ -14,10 +14,11 @@
     @endif
 
     @if ($current === 'mine')
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <x-ui.stat label="Average score (30 days)" icon="trend-up" :value="$summary['average'] === null ? '—' : $summary['average'].'%'" :hint="'Pass mark '.$passScore.'%'" />
             <x-ui.stat label="Passed" icon="check-circle" :value="$summary['pass_rate'] === null ? '—' : $summary['pass_rate'].'%'" />
             <x-ui.stat label="Calls reviewed" icon="phone" :value="number_format($summary['count'])" />
+            <x-ui.stat label="Caller rating (30 days)" icon="star" :value="$callerRating['average'] === null ? '—' : number_format($callerRating['average'], 1).' / 5'" :hint="number_format($callerRating['count']).' survey answers'" />
         </div>
 
         <x-ui.card class="mt-6" :padding="false" title="Your reviewed calls">

@@ -23,7 +23,7 @@ class CapabilitiesController extends Controller
     public function __invoke(Request $request, FeatureAccess $features, Entitlements $entitlements): JsonResponse
     {
         $user = $request->user();
-        $organization = $user->isClient() ? $user->primaryOrganization() : null;
+        $organization = $user->isClient() ? $user->activeOrganization() : null;
 
         $permissions = array_values(array_filter((array) config('authorization.permissions', []),
             fn (string $p) => $user->hasPermissionIn($p, $organization)));

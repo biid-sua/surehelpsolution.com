@@ -4,6 +4,8 @@ Current host: cPanel (PHP 8.3), deployed by uploading files. Target hosting: [de
 
 PHP extensions: besides Laravel's defaults, `zip` is required (business data exports). Composer refuses to install without it; on cPanel enable it under *Select PHP Version › Extensions*.
 
+**Going live with everything since 4 October:** follow [go-live.md](go-live.md). Run `php artisan launch:check` after every deploy (D79).
+
 ## Every release
 
 1. **Back up the database** (cPanel → phpMyAdmin → Export, or `mysqldump --single-transaction`).

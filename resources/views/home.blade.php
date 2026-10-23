@@ -1528,7 +1528,7 @@
                 <!--    Start Free Trial-->
                 <!--    <i class="fas fa-arrow-right"></i>-->
                 <!--</a>-->
-                <a href="/#contact" class="btn btn-secondary">
+                <a href="/#contact" data-sales-chat-open="demo" class="btn btn-secondary">
                     Book a Demo
                     <i class="fas fa-play"></i>
                 </a>
@@ -1912,7 +1912,7 @@
             <div class="cta-buttons">
                 <a href="#contact" class="cta-button primary"><span>Start Your Free Setup</span><i class="fas fa-arrow-right"></i></a>
                 <span class="cta-divider">or</span>
-                <a href="#contact" class="cta-button secondary"><span>Book a Demo</span><i class="fas fa-calendar-alt"></i></a>
+                <a href="#contact" data-sales-chat-open="demo" class="cta-button secondary"><span>Book a Demo</span><i class="fas fa-calendar-alt"></i></a>
             </div>
         </div>
     </div>
@@ -1977,7 +1977,7 @@
             <div class="cta-buttons">
                 <a href="#contact" class="cta-button primary"><span>Start Your Free Setup</span><i class="fas fa-arrow-right"></i></a>
                 <span class="cta-divider">or</span>
-                <a href="#contact" class="cta-button secondary"><span>Book a Demo Now</span><i class="fas fa-calendar-alt"></i></a>
+                <a href="#contact" data-sales-chat-open="demo" class="cta-button secondary"><span>Book a Demo Now</span><i class="fas fa-calendar-alt"></i></a>
             </div>
         </div>
     </div>

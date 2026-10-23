@@ -1,5 +1,5 @@
 <div>
-    <x-ui.page-header title="Website enquiries" description="Messages sent through the contact form on the website. Each one is also emailed to your inbox." />
+    <x-ui.page-header title="Website enquiries" description="Leads from the contact form and the website chat. Each one is also emailed to your inbox." />
 
     <div class="mb-4 flex flex-wrap items-end gap-3">
         <div class="flex flex-wrap gap-2" role="group" aria-label="Show">
@@ -11,10 +11,19 @@
                 ]) aria-pressed="{{ $show === $value ? 'true' : 'false' }}">{{ $label }}</button>
             @endforeach
         </div>
-        <div class="ml-auto grid w-full gap-3 sm:w-auto sm:grid-cols-[16rem_12rem]">
+        <div class="ml-auto grid w-full gap-3 sm:w-auto sm:grid-cols-[16rem_10rem_10rem]">
             <div>
                 <label for="enq-search" class="sh-label">Search</label>
                 <input id="enq-search" type="search" wire:model.live.debounce.350ms="search" class="sh-input" placeholder="Name, email, company…" autocomplete="off">
+            </div>
+            <div>
+                <label for="enq-source" class="sh-label">From</label>
+                <select id="enq-source" wire:model.live="source" class="sh-input">
+                    <option value="">Anywhere</option>
+                    @foreach ($sources as $value => $label)
+                        <option value="{{ $value }}">{{ $label }}</option>
+                    @endforeach
+                </select>
             </div>
             <div>
                 <label for="enq-kind" class="sh-label">Type</label>
@@ -49,6 +58,9 @@
                                     </span>
                                     <span class="mt-1 flex items-center gap-2">
                                         <x-ui.badge :tone="$enquiry->inquiry_type === 'support' ? 'warning' : 'brand'">{{ $enquiry->inquiryLabel() }}</x-ui.badge>
+                                        @if ($enquiry->source === 'chat')<x-ui.badge>Chat</x-ui.badge>@endif
+                                        @if ($enquiry->score)<x-ui.badge :tone="['hot' => 'danger', 'warm' => 'warning', 'cold' => 'neutral'][$enquiry->score] ?? 'neutral'">{{ ucfirst($enquiry->score) }}</x-ui.badge>@endif
+                                        @if ($enquiry->demo_status === 'booked' && $enquiry->demo_at)<x-ui.badge tone="success">Demo {{ $enquiry->demo_at->setTimezone(config('sales.demos.timezone'))->format('M j, g:i A') }}</x-ui.badge>@endif
                                         @if ($enquiry->handled_at)<x-ui.badge tone="success">Handled</x-ui.badge>@endif
                                     </span>
                                     <span class="mt-1 line-clamp-2 block text-sm text-muted">{{ $enquiry->message }}</span>
@@ -69,8 +81,49 @@
                         <dt class="text-subtle">Phone</dt><dd>@if ($current->phone)<a href="tel:{{ $current->phone }}" class="text-brand-300 hover:underline">{{ $current->phone }}</a>@else<span class="text-subtle">—</span>@endif</dd>
                         <dt class="text-subtle">Company</dt><dd class="text-ink">{{ $current->company ?: '—' }}</dd>
                         <dt class="text-subtle">SMS consent</dt><dd class="text-ink">{{ $current->sms_consent ? 'Yes' : 'No' }}</dd>
+                        @if ($current->score)<dt class="text-subtle">Score</dt><dd class="text-ink">{{ ucfirst($current->score) }}</dd>@endif
+                        @if ($current->demo_status === 'booked' && $current->demo_at)
+                            <dt class="text-subtle">Demo</dt><dd class="font-medium text-ink">{{ $current->demo_at->setTimezone(config('sales.demos.timezone'))->format('D, M j, g:i A T') }}</dd>
+                        @endif
+                        @foreach (['industry' => 'Industry', 'team_size' => 'Team size', 'monthly_calls' => 'Calls a month', 'current_solution' => 'Uses today', 'needs' => 'Needs', 'timeline' => 'Start', 'plan' => 'Plan'] as $key => $label)
+                            @if (filled($current->details[$key] ?? null))<dt class="text-subtle">{{ $label }}</dt><dd class="text-ink">{{ $current->details[$key] }}</dd>@endif
+                        @endforeach
+                        @if ($current->chat?->utm)<dt class="text-subtle">Campaign</dt><dd class="text-ink">{{ collect($current->chat->utm)->map(fn ($v, $k) => "$k: $v")->implode(' · ') }}</dd>@endif
                     </dl>
                     <p class="mt-4 whitespace-pre-line rounded-xl bg-surface-2 p-4 text-sm text-ink ring-1 ring-line">{{ $current->message }}</p>
+                    @if ($current->chat)
+                        <div class="mt-5">
+                            <div class="mb-2 flex items-center justify-between gap-2">
+                                <h3 class="text-sm font-semibold text-ink">Chat</h3>
+                                @if ($current->chat->staff_user_id && $canManage)
+                                    <button type="button" wire:click="handBack" class="text-xs text-muted underline underline-offset-2 hover:text-ink">Let the assistant answer again</button>
+                                @elseif ($current->chat->needs_human)
+                                    <x-ui.badge tone="warning">Waiting for the team</x-ui.badge>
+                                @endif
+                            </div>
+                            <div class="max-h-80 space-y-2 overflow-y-auto rounded-xl bg-surface-2 p-3 ring-1 ring-line" wire:poll.10s>
+                                @foreach ($transcript as $line)
+                                    <div wire:key="line-{{ $line->id }}" @class(['flex', 'justify-end' => $line->author !== 'visitor'])>
+                                        <p @class([
+                                            'max-w-[85%] whitespace-pre-line rounded-2xl px-3 py-2 text-sm',
+                                            'bg-surface text-ink ring-1 ring-line' => $line->author === 'visitor',
+                                            'bg-brand-600/20 text-ink' => $line->author === 'assistant',
+                                            'bg-emerald-500/20 text-ink' => $line->author === 'team',
+                                        ])><span class="mb-0.5 block text-[11px] font-medium text-subtle">{{ ['visitor' => 'Visitor', 'assistant' => config('sales.assistant').($line->by_ai ? ' (AI)' : ''), 'team' => $line->user?->name ?? 'Team'][$line->author] ?? '' }} · {{ $line->created_at->format('g:i A') }}</span>{{ $line->body }}</p>
+                                    </div>
+                                @endforeach
+                            </div>
+                            @if ($canManage)
+                                <form wire:submit="sendReply" class="mt-2 flex gap-2">
+                                    <label for="enq-reply" class="sr-only">Reply in the chat</label>
+                                    <input id="enq-reply" type="text" wire:model="reply" maxlength="2000" class="sh-input flex-1" placeholder="Reply in the chat…" autocomplete="off">
+                                    <x-ui.button type="submit" size="sm">Send</x-ui.button>
+                                </form>
+                                @error('reply')<p class="mt-1 text-xs text-red-300">{{ $message }}</p>@enderror
+                                <p class="mt-1 text-xs text-subtle">The visitor sees it at once, or gets it by email if they've left. The assistant stops answering until you hand the chat back.</p>
+                            @endif
+                        </div>
+                    @endif
                     @if ($current->handled_at)
                         <p class="mt-3 text-xs text-subtle">Handled {{ $current->handled_at->diffForHumans() }}{{ $current->handler ? ' by '.$current->handler->name : '' }}.</p>
                     @endif

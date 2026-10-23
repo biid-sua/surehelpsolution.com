@@ -8,8 +8,10 @@ use App\Actions\Customers\UpdateCustomer;
 use App\Enums\CustomerStatus;
 use App\Enums\TimelineEventType;
 use App\Livewire\Concerns\ScopedToOrganization;
+use App\Models\AutomationRun;
 use App\Models\Customer;
 use App\Models\Tag;
+use App\Services\Payments\CustomerPayments;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
@@ -152,6 +154,10 @@ class Show extends Component
                 : null,
             'canBook' => auth()->user()->can('appointments.create', $organization),
             'timezone' => $organization->timezoneOrDefault(),
+            'canRequestPayment' => auth()->user()->can('payments.request', $organization) && app(CustomerPayments::class)->ready($organization),
+            // Automations 2.0 (D81): each flow this customer is in, and what each step did.
+            'automationRuns' => AutomationRun::query()->forOrganization($organization)->where('customer_id', $customer->id)
+                ->with('automation:id,name')->latest('id')->limit(10)->get(),
         ])->title($customer->fullName());
     }
 }

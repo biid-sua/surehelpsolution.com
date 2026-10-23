@@ -157,7 +157,7 @@ class AuthController extends Controller
     {
         try {
             $user = $request->user();
-            $organization = $user->isClient() ? $user->primaryOrganization() : null;
+            $organization = $user->isClient() ? $user->activeOrganization() : null;
 
             return response()->json([
                 'success' => true,

@@ -13,6 +13,7 @@ use App\Models\Message;
 use App\Services\Ai\Contracts\AiProvider;
 use App\Services\Billing\FeatureAccess;
 use App\Services\Metrics\WebsiteViews;
+use App\Support\CustomerLocale;
 use App\Support\Phone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -67,11 +68,12 @@ class WidgetController extends Controller
             'phone' => $phone ? ['tel' => $phone, 'label' => Phone::display($phone)] : null,
             'booking_confirm' => $widget->offers('booking') ? $widget->bookings_need_confirmation : null,
             'business' => $business,
-            'title' => $widget->title,
-            'greeting' => $widget->greeting ?: "Hi! How can we help? We'll reply right here.",
+            'lang' => app()->getLocale() === 'es' ? 'es' : 'en',
+            'title' => $widget->title === 'Chat with us' ? __('Chat with us') : $widget->title,
+            'greeting' => $widget->greeting ?: __('Hi! How can we help? We\'ll reply right here.'),
             'color' => $widget->color,
             'assistant' => $aiOn ? $assistant->name : null,
-            'disclosure' => $aiOn ? "You're chatting with {$assistant->name}, {$business}'s AI assistant. Ask for a person any time." : null,
+            'disclosure' => $aiOn ? __('You\'re chatting with :assistant, :business\'s AI assistant. Ask for a person any time.', ['assistant' => $assistant->name, 'business' => $business]) : null,
         ]), $request, $widget);
     }
 
@@ -83,7 +85,7 @@ class WidgetController extends Controller
 
         $body = trim((string) ($data['body'] ?? ''));
         if ($body === '' || mb_strlen($body) > 2000) {
-            return $this->cors(response()->json(['message' => 'Write a message of up to 2,000 characters.'], 422), $request, $widget);
+            return $this->cors(response()->json(['message' => __('Write a message of up to 2,000 characters.')], 422), $request, $widget);
         }
         $email = filter_var($data['email'] ?? null, FILTER_VALIDATE_EMAIL) ?: null;
 
@@ -149,6 +151,7 @@ class WidgetController extends Controller
     {
         $widget = $this->widget($key);
         abort_unless($widget->allowsOrigin(ChatWidget::pageOrigin($request)), 403, 'This website may not use this chat.');
+        CustomerLocale::apply($widget->organization, (string) $request->query('lang'));   // D92
 
         return $widget;
     }

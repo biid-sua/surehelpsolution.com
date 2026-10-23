@@ -44,18 +44,18 @@ class LinkPage
 
         $buttons = [];
         if ($widget && $tools && $widget->offers('booking')) {
-            $buttons[] = ['label' => 'Book online', 'href' => '#surehelp-book', 'kind' => 'primary'];
+            $buttons[] = ['label' => __('Book online'), 'href' => '#surehelp-book', 'kind' => 'primary'];
         }
         if ($phone) {
-            $buttons[] = ['label' => 'Call '.Phone::display($phone), 'href' => 'tel:'.$phone, 'kind' => 'phone'];
+            $buttons[] = ['label' => __('Call :phone', ['phone' => Phone::display($phone)]), 'href' => 'tel:'.$phone, 'kind' => 'phone'];
         }
         if ($widget && $tools && $widget->offers('lead')) {
-            $buttons[] = ['label' => 'Send us a message', 'href' => '#surehelp-lead', 'kind' => 'link'];
+            $buttons[] = ['label' => __('Send us a message'), 'href' => '#surehelp-lead', 'kind' => 'link'];
         } elseif ($widget && $widget->offers('chat')) {
-            $buttons[] = ['label' => 'Chat with us', 'href' => '#surehelp-chat', 'kind' => 'link'];
+            $buttons[] = ['label' => __('Chat with us'), 'href' => '#surehelp-chat', 'kind' => 'link'];
         }
         if ($profile?->website) {
-            $buttons[] = ['label' => 'Visit our website', 'href' => $profile->website, 'kind' => 'link'];
+            $buttons[] = ['label' => __('Visit our website'), 'href' => $profile->website, 'kind' => 'link'];
         }
         foreach (array_slice((array) $profile?->link_page_links, 0, self::MAX_LINKS) as $link) {
             if (filled($link['label'] ?? null) && filled($link['url'] ?? null)) {

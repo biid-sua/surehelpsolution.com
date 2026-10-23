@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Organization;
 use App\Support\Tenancy\CurrentOrganization;
 use Closure;
 use Illuminate\Http\Request;
@@ -20,7 +21,9 @@ class ResolveOrganization
         $user = $request->user();
 
         if ($user && $user->isClient()) {
-            $organization = $user->primaryOrganization();
+            // An API key works for its own business (D87); people for the one they switched to (D89).
+            $key = $request->attributes->get('api_key');
+            $organization = $user->activeOrganization($key?->organization_id ? (string) Organization::query()->whereKey($key->organization_id)->value('ulid') : null);
 
             if (! $organization) {
                 $message = 'Your account is not linked to a business yet. Please contact support.';

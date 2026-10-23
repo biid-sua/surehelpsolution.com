@@ -9,7 +9,9 @@ use App\Exceptions\SlotUnavailable;
 use App\Models\Appointment;
 use App\Models\BusinessProfile;
 use App\Services\Appointments\CustomerSelfService;
+use App\Services\Business\Branding;
 use App\Services\Scheduling\Availability;
+use App\Support\CustomerLocale;
 use App\Support\Phone;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
@@ -46,6 +48,14 @@ class ManageAppointment extends Component
         $this->appointment(); // 404 if it doesn't exist
     }
 
+    /** The customer's language (D92), on every request. */
+    public function booted(): void
+    {
+        if (isset($this->ulid) && ($organization = Appointment::withoutGlobalScopes()->where('ulid', $this->ulid)->value('organization_id'))) {
+            CustomerLocale::apply((int) $organization);
+        }
+    }
+
     private function appointment(): Appointment
     {
         return Appointment::withoutGlobalScopes()->where('ulid', $this->ulid)->with(['organization', 'service', 'customer'])->firstOrFail();
@@ -69,12 +79,12 @@ class ManageAppointment extends Component
         if (! $appointment = $this->guard($selfService)) {
             return;
         }
-        $this->validate(['date' => ['required', 'date_format:Y-m-d'], 'time' => ['required', 'date_format:H:i']], ['time.required' => 'Pick a time.']);
+        $this->validate(['date' => ['required', 'date_format:Y-m-d'], 'time' => ['required', 'date_format:H:i']], ['time.required' => __('Pick a time.')]);
 
         try {
             $reschedule->handle($appointment, CarbonImmutable::parse($this->date.' '.$this->time, $appointment->organization->timezoneOrDefault()), null, null, true);
         } catch (SlotUnavailable $e) {
-            $this->addError('time', 'That time was just taken. Please pick another.');
+            $this->addError('time', __('That time was just taken. Please pick another.'));
 
             return;
         } catch (ValidationException $e) {
@@ -84,7 +94,7 @@ class ManageAppointment extends Component
         }
 
         $this->mode = '';
-        $this->dispatch('toast', type: 'success', message: 'Your appointment has moved. We\'ve emailed you the new time.');
+        $this->dispatch('toast', type: 'success', message: __('Your appointment has moved. We\'ve emailed you the new time.'));
     }
 
     public function cancel(ChangeAppointmentStatus $change, CustomerSelfService $selfService): void
@@ -141,6 +151,7 @@ class ManageAppointment extends Component
             'deadline' => $selfService->deadline($appointment)?->setTimezone($timezone),
             'slots' => $slots,
             'today' => now($timezone)->toDateString(),
-        ])->title('Your appointment with '.($profile?->display_name ?: $organization->name));
+        ])->title(__('Your appointment with :business', ['business' => $profile?->display_name ?: $organization->name]))
+            ->layoutData(['brand' => app(Branding::class)->for($organization)]);
     }
 }

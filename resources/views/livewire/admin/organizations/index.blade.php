@@ -1,7 +1,7 @@
 <div>
     <x-ui.page-header title="Organizations" description="Client businesses on the platform. A business is created automatically when you add a client user." />
 
-    <div class="mb-4 grid gap-3 sm:grid-cols-[1fr_14rem] sm:items-end">
+    <div class="mb-4 grid gap-3 sm:grid-cols-[1fr_14rem_12rem] sm:items-end">
         <div>
             <label for="org-search" class="sh-label">Search</label>
             <div class="relative">
@@ -19,12 +19,20 @@
                 @endforeach
             </select>
         </div>
+        <div>
+            <label for="org-health" class="sh-label">Health</label>
+            <select id="org-health" wire:model.live="health" class="sh-input">
+                <option value="">Any</option>
+                <option value="risk">At risk</option>
+                <option value="watch">At risk or to watch</option>
+            </select>
+        </div>
     </div>
 
     <x-ui.card :padding="false">
         @if ($organizations->isEmpty())
             <x-ui.empty-state icon="building" title="No businesses found"
-                description="{{ $search !== '' || $status !== '' ? 'Try a different search or status.' : 'Add a business owner under Users to create the first business.' }}" />
+                description="{{ $search !== '' || $status !== '' || $health !== '' ? 'Try a different search or status.' : 'Add a business owner under Users to create the first business.' }}" />
         @else
             <x-ui.table>
                 <thead>
@@ -33,6 +41,7 @@
                         <th scope="col">Owner</th>
                         <th scope="col">Status</th>
                         <th scope="col">Setup</th>
+                        <th scope="col">Health</th>
                         <th scope="col" class="text-right">Agents</th>
                         <th scope="col" class="text-right">Calls (30d)</th>
                         <th scope="col" class="hidden text-right md:table-cell">Since</th>
@@ -64,6 +73,14 @@
                                 @else
                                     @php $c = app(\App\Services\Setup\SetupProgress::class)->count($organization); @endphp
                                     <x-ui.badge :tone="$c['done'] === 0 ? 'danger' : 'warning'">{{ $c['done'] }}/{{ $c['total'] }} steps</x-ui.badge>
+                                @endif
+                            </td>
+                            <td>
+                                @if ($h = $healthScores[$organization->id] ?? null)
+                                    <x-ui.badge :tone="\App\Services\Admin\ClientHealth::tone($h['band'])" :title="implode('; ', $h['reasons']) ?: 'No warning signs'">{{ $h['score'] }} · {{ \App\Services\Admin\ClientHealth::label($h['band']) }}</x-ui.badge>
+                                    @if ($h['reasons'])<p class="mt-1 max-w-[14rem] truncate text-xs text-subtle">{{ $h['reasons'][0] }}</p>@endif
+                                @else
+                                    <span class="text-xs text-subtle">—</span>
                                 @endif
                             </td>
                             <td class="text-right tabular-nums text-muted">{{ $organization->agents_count }}</td>

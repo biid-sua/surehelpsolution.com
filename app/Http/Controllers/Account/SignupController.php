@@ -25,6 +25,10 @@ class SignupController extends Controller
     {
         $plans = $this->plans();
         $wanted = (string) $request->query('plan', '');
+        // A referral link (D90): remembered for this visit, whichever page they sign up from.
+        if (preg_match('/^[A-Za-z0-9]{6,12}$/', (string) $request->query('ref')) === 1) {
+            $request->session()->put('referral', strtoupper((string) $request->query('ref')));
+        }
         $preselected = $plans->contains('slug', $wanted) ? $wanted : $plans->first()?->slug;
 
         return view('auth.signup', [
@@ -66,6 +70,7 @@ class SignupController extends Controller
             'email' => $data['email'],
             'phone' => $data['phone'] ?? null,
             'password' => $data['password'],
+            'ref' => $request->session()->pull('referral'),
         ], $plan, $request);
 
         $signIn->complete($user, $request, 'signup');

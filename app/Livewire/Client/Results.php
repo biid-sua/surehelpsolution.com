@@ -4,11 +4,16 @@ namespace App\Livewire\Client;
 
 use App\Livewire\Concerns\ScopedToOrganization;
 use App\Models\CallLog;
+use App\Models\Organization;
+use App\Models\Review;
 use App\Services\Metrics\ResultsReport;
 use App\Services\Metrics\SourceReport;
+use App\Services\Reviews\ReviewDesk;
+use App\Services\Surveys\SurveyDesk;
 use App\Support\Audit\Audit;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
@@ -75,6 +80,29 @@ class Results extends Component
             'bookingSources' => SourceReport::BOOKING_SOURCES,
             'isCurrent' => $period['key'] === CarbonImmutable::now($organization->timezoneOrDefault())->format('Y-m'),
             'canEditValue' => auth()->user()->can('organization.update', $organization),
+            'reviews' => $this->reviews($organization, $period['start'], $period['end']),
+            'surveys' => app(SurveyDesk::class)->summary($organization, CarbonImmutable::instance($period['start'])->utc(), CarbonImmutable::instance($period['end'])->utc()),
         ]);
+    }
+
+    /**
+     * Google reviews left in the month (D83), or null when none are connected or ever came in.
+     *
+     * @return array{count: int, average: ?float, replied: int, rating: ?float}|null
+     */
+    private function reviews(Organization $organization, CarbonInterface $start, CarbonInterface $end): ?array
+    {
+        if (! auth()->user()->can('reviews.view', $organization) || ! Review::query()->forOrganization($organization)->exists()) {
+            return null;
+        }
+        $month = Review::query()->forOrganization($organization)->whereBetween('reviewed_at', [CarbonImmutable::instance($start)->utc(), CarbonImmutable::instance($end)->utc()]);
+        $summary = app(ReviewDesk::class)->summary($organization, 1);
+
+        return [
+            'count' => (clone $month)->count(),
+            'average' => ($avg = (clone $month)->avg('rating')) !== null ? round((float) $avg, 1) : null,
+            'replied' => (clone $month)->whereNotNull('replied_at')->count(),
+            'rating' => $summary['google_average'] ?? $summary['average'],
+        ];
     }
 }

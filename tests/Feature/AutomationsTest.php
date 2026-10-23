@@ -64,8 +64,8 @@ class AutomationsTest extends TestCase
         [$owner, $org] = $this->business();
         $this->actingAs($owner);
         Livewire::test(Automations::class)->call('start', 'review')
-            ->call('save')->assertHasErrors('form.review_url')
-            ->set('form.review_url', 'https://g.page/r/rivera/review')->call('save')->assertHasNoErrors();
+            ->call('save')->assertHasErrors('form.steps.0.review_url')
+            ->set('form.steps.0.review_url', 'https://g.page/r/rivera/review')->call('save')->assertHasNoErrors();
         $automation = Automation::query()->sole();
         $this->assertSame(120, $automation->delay_minutes);
 

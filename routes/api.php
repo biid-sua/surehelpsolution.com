@@ -36,9 +36,11 @@ use App\Http\Controllers\Api\TrainingController;
 use App\Http\Controllers\Chat\SiteToolsController;
 use App\Http\Controllers\Chat\WidgetController;
 use App\Http\Controllers\CspReportController;
+use App\Http\Controllers\SalesChatController;
 use App\Http\Controllers\Webhooks\CalendarWebhookController;
 use App\Http\Controllers\Webhooks\MetaWebhookController;
 use App\Http\Controllers\Webhooks\SmsWebhookController;
+use App\Http\Controllers\Webhooks\StripeConnectWebhookController;
 use App\Http\Controllers\Webhooks\StripeWebhookController;
 use App\Http\Controllers\Webhooks\VoiceWebhookController;
 use App\Http\Middleware\VerifyTelephonyWebhook;
@@ -57,6 +59,15 @@ Route::prefix('chat/{key}')->middleware('throttle:chat')->where(['key' => 'shw_[
     Route::post('/booking', [SiteToolsController::class, 'book']);
     Route::post('/lead', [SiteToolsController::class, 'lead']);
     Route::options('/{any?}', [WidgetController::class, 'options'])->where('any', '.*');
+});
+
+// SureHelp's own sales chat on the website (D78): same origin only, checked in the controller.
+Route::prefix('sales-chat')->middleware('throttle:sales-chat')->controller(SalesChatController::class)->group(function () {
+    Route::post('/start', 'start')->name('sales-chat.start');
+    Route::post('/messages', 'send')->name('sales-chat.send');
+    Route::get('/messages', 'poll')->name('sales-chat.poll');
+    Route::post('/lead', 'lead')->name('sales-chat.lead');
+    Route::post('/book', 'book')->name('sales-chat.book');
 });
 
 // Messenger and Instagram messages (signed by Meta with the app secret, D37).
@@ -97,6 +108,7 @@ Route::prefix('webhooks/sms')->name('webhooks.sms.')->middleware([VerifyTelephon
 Route::post('/csp-report', CspReportController::class)->middleware('throttle:60,1')->name('csp.report');
 
 Route::post('/webhooks/stripe', StripeWebhookController::class)->middleware('throttle:600,1')->name('webhooks.stripe');
+Route::post('/webhooks/stripe/connect', StripeConnectWebhookController::class)->middleware('throttle:600,1')->name('webhooks.stripe-connect');
 
 Route::prefix('v1')->middleware('throttle:api')->group(function () {
     // Authentication routes

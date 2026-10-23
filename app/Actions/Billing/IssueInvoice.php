@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Notifications\InvoiceIssued;
 use App\Services\Billing\BillingSettings;
 use App\Services\Billing\InvoiceNumbers;
+use App\Services\Billing\Referrals;
 use App\Support\Audit\Audit;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -50,11 +51,10 @@ class IssueInvoice
         $end = CarbonImmutable::parse($subscription->current_period_end->toDateString());
         $label = self::periodLabel($start, $end);
 
+        $lines = [['description' => "{$plan->name} plan · {$label}", 'quantity' => 1, 'unit_cents' => $subscription->price_cents], ...$extraLines];
+
         try {
-            return $this->issue($subscription->organization, [
-                ['description' => "{$plan->name} plan · {$label}", 'quantity' => 1, 'unit_cents' => $subscription->price_cents],
-                ...$extraLines,
-            ], $subscription->currency, $actor, [
+            return $this->issue($subscription->organization, $lines, $subscription->currency, $actor, [
                 'subscription_id' => $subscription->id,
                 'period_start' => $start->toDateString(),
                 'period_end' => $end->toDateString(),
@@ -83,11 +83,18 @@ class IssueInvoice
             throw ValidationException::withMessages(['items' => ['An invoice needs at least one line and a total above zero.']]);
         }
 
-        $invoice = DB::transaction(function () use ($organization, $items, $currency, $extra, $notes, $total) {
+        $invoice = DB::transaction(function () use ($organization, $items, $currency, $extra, $notes, &$total) {
+            // Credits (D90, referral rewards) come off subscription invoices.
+            if (isset($extra['subscription_id'])) {
+                $items = [...$items, ...app(Referrals::class)->apply($organization, $total)];
+                $total = array_sum(array_map(fn (array $i) => $i['quantity'] * $i['unit_cents'], $items));
+            }
+            $free = $total === 0;
             $invoice = Invoice::create($extra + [
                 'number' => $this->numbers->next(),
                 'organization_id' => $organization->id,
-                'status' => InvoiceStatus::Open,
+                'status' => $free ? InvoiceStatus::Paid : InvoiceStatus::Open,
+                'paid_at' => $free ? now() : null,
                 'currency' => $currency,
                 'subtotal_cents' => $total,
                 'total_cents' => $total,
@@ -107,7 +114,7 @@ class IssueInvoice
         $this->audit->record('invoice.issued', $invoice, new: ['number' => $invoice->number, 'total_cents' => $total, 'currency' => $currency],
             organization: $organization, actor: $actor, label: $invoice->number);
         $this->notify->handle($organization, new InvoiceIssued($invoice), 'billing.view');
-        if ($organization->autopay_payment_method) {
+        if ($organization->autopay_payment_method && $invoice->status === InvoiceStatus::Open) {
             ChargeInvoice::dispatch($invoice->id)->afterCommit(); // automatic payments (D64)
         }
 

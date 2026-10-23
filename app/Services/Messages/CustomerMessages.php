@@ -13,6 +13,7 @@ use App\Notifications\CustomerEmail;
 use App\Services\Appointments\CustomerSelfService;
 use App\Services\Billing\FeatureAccess;
 use App\Services\Telephony\Texting;
+use App\Support\CustomerLocale;
 use App\Support\Phone;
 use Illuminate\Support\Facades\Notification;
 
@@ -34,7 +35,7 @@ class CustomerMessages
     /** @return array{subject: string, body: string, sms: string, is_active: bool, lead_hours: int|null, custom: bool} */
     public function template(Organization $organization, string $key): array
     {
-        $default = config("customer_messages.templates.$key") ?? throw new \InvalidArgumentException("Unknown message [$key].");
+        $default = $this->defaults($organization, $key);
         $saved = MessageTemplate::query()->forOrganization($organization)->where('key', $key)->first();
 
         return [
@@ -47,6 +48,18 @@ class CustomerMessages
         ];
     }
 
+    /**
+     * The standard wording, in the language the business's customers see (D92).
+     *
+     * @return array<string, mixed>
+     */
+    public function defaults(Organization $organization, string $key): array
+    {
+        $default = config("customer_messages.templates.$key") ?? throw new \InvalidArgumentException("Unknown message [$key].");
+
+        return CustomerLocale::forMessages($organization) === 'es' ? array_merge($default, (array) config("customer_messages.templates_es.$key", [])) : $default;
+    }
+
     /** @return array<string, string> placeholder => value for one appointment */
     public function values(Appointment $appointment): array
     {
@@ -54,12 +67,13 @@ class CustomerMessages
         $timezone = $appointment->timezone ?: $organization->timezoneOrDefault();
         $starts = $appointment->starts_at->setTimezone($timezone);
         $profile = BusinessProfile::query()->forOrganization($organization)->first();
+        $spanish = CustomerLocale::forMessages($organization) === 'es';
 
         return [
-            'first_name' => $appointment->customer?->first_name ?: 'there',
+            'first_name' => $appointment->customer?->first_name ?: ($spanish ? 'cliente' : 'there'),
             'business' => $profile?->display_name ?: $organization->name,
             'service' => $appointment->service?->name ?: $appointment->title,
-            'date' => $starts->format('l, F j'),
+            'date' => $spanish ? $starts->locale('es')->translatedFormat('l j \d\e F') : $starts->format('l, F j'),
             'time' => $starts->format('g:i A'),
             'address' => (string) $appointment->address,
             'phone' => $profile?->phone ? (Phone::display(Phone::normalize($profile->phone)) ?? $profile->phone) : '',
@@ -130,7 +144,7 @@ class CustomerMessages
 
         Notification::route('mail', $appointment->customer->email)
             ->notify(new CustomerEmail($subject, $body, $values['business'], $replyTo,
-                in_array($key, self::WITH_SELF_SERVICE, true) ? $this->selfService->link($appointment) : null));
+                in_array($key, self::WITH_SELF_SERVICE, true) ? $this->selfService->link($appointment) : null, organizationId: $appointment->organization_id));
 
         $this->timeline->handle($appointment->customer, TimelineEventType::EmailSent, 'Email sent: '.config("customer_messages.templates.$key.label"),
             $subject, $appointment, ['template' => $key, 'to' => $appointment->customer->email]);
