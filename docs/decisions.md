@@ -1374,3 +1374,32 @@ it can answer them from SureHelp. It's a feature, `reviews`, open to every plan.
 **Why:** reviews are the most visible proof of a local business's quality, and answering them quickly
 helps its ranking. Doing it next to the calls and bookings, with a task for bad ones, means it actually
 gets done. Asking happy customers for a review is in the after-call survey (D84).
+
+## D84 — Satisfaction surveys and asking happy customers for reviews (2026-10-23)
+**Decision:** a new automation action, **Ask for a rating (1–5)**, sends "How did we do?" by text or
+email. Two recipes use it: *after each job* (2 hours after an appointment is completed) and *after we
+answer a call* (30 minutes after it's logged).
+- **Answering.**
+  - From the link (`/s/{token}`, 7 days), or by replying to the text with a number ("5", "4 stars").
+  - The email's button opens the page. Opening the page never records anything, because email link
+    scanners open links too; a vote is always a POST.
+  - Each customer is asked at most once every 14 days. Consent rules are the same as for other texts and
+    emails.
+- **Happy (4–5):** the business's Google review link is offered (by reply text, or on the page), and
+  clicks are counted. This is the "ask for a review only after a good job" the roadmap asked for.
+- **Unhappy (1–3):**
+  - A high-priority call-back task due in 4 hours, and an *Unhappy customer* notification.
+  - The page asks what could have been better. The answer is added to the task and the customer's
+    timeline, and only the business sees it.
+- **Who answered the call.** Surveys after calls record the agent. The agent's *Quality* page shows their
+  caller rating for the last 30 days, next to the QA score.
+- **Results** gets a *Customer satisfaction* row: average rating, share of happy customers, and how many
+  went on to open the review link.
+- Text replies that are survey answers are thanked automatically. They don't wake the AI assistant or
+  notify the team.
+- The test run (D81) shows the survey message without creating a survey.
+
+**Why:** a private rating first catches problems before they become public reviews, and steers the
+happy majority to Google, which lifts the rating fairly. Google's policies allow asking every customer
+for a review; we only choose *when* to show the link, and every customer can still review the business
+on Google themselves.

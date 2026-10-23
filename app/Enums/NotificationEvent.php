@@ -38,13 +38,14 @@ enum NotificationEvent: string
     case SupportUpdate = 'support.update';
     case AutomationNotice = 'automation.notice';
     case ReviewReceived = 'review.received';
+    case CustomerUnhappy = 'survey.low';
 
     /**
      * @return list<self>
      */
     public static function available(): array
     {
-        return [self::CallLogged, self::CallMissed, self::FollowUpCreated, self::FollowUpOverdue, self::TaskAssigned, self::EscalationCreated, self::AppointmentCreated, self::AppointmentUpdated, self::AppointmentCancelled, self::IntegrationDisconnected, self::InvoiceIssued, self::PaymentReceived, self::PaymentFailed, self::UsageAlert, self::MonthlyReport, self::SocialApprovalRequested, self::SocialPostFailed, self::SocialAccountDisconnected, self::MessageReceived, self::AssignmentStarted, self::AssignmentChanged, self::TrainingAssigned, self::TrainingDue, self::TrainingCompleted, self::CertificationExpiring, self::SupportUpdate, self::AutomationNotice, self::ReviewReceived];
+        return [self::CallLogged, self::CallMissed, self::FollowUpCreated, self::FollowUpOverdue, self::TaskAssigned, self::EscalationCreated, self::AppointmentCreated, self::AppointmentUpdated, self::AppointmentCancelled, self::IntegrationDisconnected, self::InvoiceIssued, self::PaymentReceived, self::PaymentFailed, self::UsageAlert, self::MonthlyReport, self::SocialApprovalRequested, self::SocialPostFailed, self::SocialAccountDisconnected, self::MessageReceived, self::AssignmentStarted, self::AssignmentChanged, self::TrainingAssigned, self::TrainingDue, self::TrainingCompleted, self::CertificationExpiring, self::SupportUpdate, self::AutomationNotice, self::ReviewReceived, self::CustomerUnhappy];
     }
 
     public function isAvailable(): bool
@@ -85,6 +86,7 @@ enum NotificationEvent: string
             self::SupportUpdate => 'Support requests',
             self::AutomationNotice => 'Automation messages',
             self::ReviewReceived => 'New Google review',
+            self::CustomerUnhappy => 'Unhappy customer',
         };
     }
 
@@ -119,6 +121,7 @@ enum NotificationEvent: string
             self::SupportUpdate => 'Replies and status changes on support requests you can see.',
             self::AutomationNotice => 'Messages your business\'s automations send to the team.',
             self::ReviewReceived => 'Someone reviewed your business on Google.',
+            self::CustomerUnhappy => 'A customer gave 1 to 3 stars in a satisfaction survey.',
             default => '',
         };
     }
@@ -156,6 +159,7 @@ enum NotificationEvent: string
             self::SupportUpdate => 'support.view',
             self::AutomationNotice => 'customers.view',
             self::ReviewReceived => 'reviews.view',
+            self::CustomerUnhappy => 'customers.view',
             default => null,
         };
     }

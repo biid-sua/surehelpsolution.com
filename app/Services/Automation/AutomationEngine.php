@@ -23,6 +23,7 @@ use App\Models\Escalation;
 use App\Models\Message;
 use App\Models\Organization;
 use App\Models\Review;
+use App\Models\Survey;
 use App\Models\Tag;
 use App\Models\Task;
 use App\Models\VoiceCall;
@@ -32,6 +33,7 @@ use App\Services\Billing\FeatureAccess;
 use App\Services\Business\BusinessHours;
 use App\Services\Growth\LinkPage;
 use App\Services\Messages\CustomerMessages;
+use App\Services\Surveys\SurveyDesk;
 use App\Services\Telephony\Texting;
 use App\Support\Phone;
 use Carbon\CarbonInterface;
@@ -511,11 +513,12 @@ class AutomationEngine
             'email_address' => $this->emailAddress($automation, $organization, $subject, $customer, $dry),
             'add_tag', 'remove_tag' => $this->tag($automation, $organization, $customer, $dry),
             'set_status' => $this->setStatus($automation, $customer, $dry),
+            'send_survey' => $this->sendSurvey($automation, $organization, $subject, $customer, $dry),
             default => throw new SkipRun('Unknown action.'),
         };
     }
 
-    private function sendEmail(Automation $automation, Organization $organization, Model $subject, ?Customer $customer, bool $dry = false): string
+    private function sendEmail(Automation $automation, Organization $organization, Model $subject, ?Customer $customer, bool $dry = false, ?string $actionUrl = null, string $actionText = 'Change or cancel'): string
     {
         if (! $this->features->allows($organization, 'customer_emails')) {
             throw new SkipRun('Customer emails aren\'t in the business\'s plan.');
@@ -535,7 +538,7 @@ class AutomationEngine
         }
         $replyTo = BusinessProfile::withoutGlobalScopes()->where('organization_id', $organization->id)->value('email') ?: $organization->owner?->email;
 
-        Notification::route('mail', $customer->email)->notify(new CustomerEmail($subjectLine, $body, $values['business'], $replyTo, organizationId: $organization->id));
+        Notification::route('mail', $customer->email)->notify(new CustomerEmail($subjectLine, $body, $values['business'], $replyTo, $actionUrl, $actionText, organizationId: $organization->id));
         $this->timeline->handle($customer, TimelineEventType::EmailSent, 'Email sent: '.$automation->name, $subjectLine, $subject instanceof Appointment ? $subject : null,
             ['automation' => $automation->ulid, 'to' => $customer->email]);
 
@@ -600,6 +603,43 @@ class AutomationEngine
         }
 
         return 'Texted '.Phone::display($phone).'.';
+    }
+
+    /**
+     * "How did we do? 1–5" (D84), by text or email, at most once every two weeks per customer. The link
+     * is added where the message says {survey_link}.
+     */
+    private function sendSurvey(Automation $automation, Organization $organization, Model $subject, ?Customer $customer, bool $dry = false): string
+    {
+        if (! $customer) {
+            throw new SkipRun('No customer to ask.');
+        }
+        if (Survey::withoutGlobalScopes()->where('customer_id', $customer->id)->where('sent_at', '>', now()->subDays(SurveyDesk::QUIET_DAYS))->exists()) {
+            throw new SkipRun('They were asked for a rating in the last '.SurveyDesk::QUIET_DAYS.' days.');
+        }
+        $email = $automation->config('channel', 'text') === 'email';
+        $survey = $dry ? null : Survey::create([
+            'organization_id' => $organization->id, 'customer_id' => $customer->id, 'automation_id' => $automation->id,
+            'subject_type' => array_search($subject::class, AutomationRun::SUBJECTS, true) ?: null, 'subject_id' => $subject->getKey(),
+            'agent_user_id' => $subject instanceof CallLog ? $subject->user_id : null,
+            'channel' => $email ? 'email' : 'sms', 'review_url' => $automation->config('review_url') ?: null,
+            'sent_at' => now(), 'expires_at' => now()->addDays(SurveyDesk::OPEN_DAYS),
+        ]);
+        $link = $survey?->link() ?? route('survey.show', str_repeat('x', 32));
+        $copy = clone $automation;
+        $config = $automation->action_config ?? [];
+        $copy->action_config = ['text' => str_replace('{survey_link}', $link, (string) ($config['text'] ?? '')),
+            'body' => str_replace('{survey_link}', $link, (string) ($config['body'] ?? ''))] + $config;
+
+        try {
+            $result = $email ? $this->sendEmail($copy, $organization, $subject, $customer, $dry, $link, 'Rate your experience')
+                : $this->sendText($copy, $organization, $subject, $customer, $dry);
+        } catch (\Throwable $e) {
+            $survey?->delete();
+            throw $e;
+        }
+
+        return $dry ? $result : 'Asked for a rating. '.$result;
     }
 
     private function emailAddress(Automation $automation, Organization $organization, Model $subject, ?Customer $customer, bool $dry = false): string

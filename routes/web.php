@@ -38,6 +38,7 @@ use App\Http\Controllers\PasswordChangeController;
 use App\Http\Controllers\RecordingController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\SupportAttachmentController;
+use App\Http\Controllers\SurveyController;
 use App\Livewire\Account\Notifications as AccountNotifications;
 use App\Livewire\Account\Profile as AccountProfile;
 use App\Livewire\Account\Security as AccountSecurity;
@@ -135,6 +136,13 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])->name('seo.sitemap');
 Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('seo.robots');
 Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:6,10')->name('contact.store');
+// Satisfaction surveys (D84): public, by token.
+Route::middleware('throttle:30,1')->prefix('s/{token}')->name('survey.')->group(function () {
+    Route::get('/', [SurveyController::class, 'show'])->name('show');
+    Route::post('/', [SurveyController::class, 'answer'])->name('answer');
+    Route::post('/feedback', [SurveyController::class, 'feedback'])->name('feedback');
+    Route::get('/review', [SurveyController::class, 'review'])->name('review');
+});
 // Pages behind the site menus: products, solutions, resources, company (config/pages.php).
 Route::get('/{page}', [PageController::class, 'show'])->whereIn('page', array_keys(config('pages')))->name('pages.show');
 

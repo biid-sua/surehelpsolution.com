@@ -67,6 +67,7 @@ class Automation extends Model
         'add_tag' => 'Add a tag to the customer',
         'remove_tag' => 'Remove a tag from the customer',
         'set_status' => 'Change the customer\'s status',
+        'send_survey' => 'Ask for a rating (1–5)',
     ];
 
     /** Optional checks, all of which must hold (D80): field => [label, operators, value kind]. */

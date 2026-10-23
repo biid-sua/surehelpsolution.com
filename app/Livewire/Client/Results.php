@@ -9,6 +9,7 @@ use App\Models\Review;
 use App\Services\Metrics\ResultsReport;
 use App\Services\Metrics\SourceReport;
 use App\Services\Reviews\ReviewDesk;
+use App\Services\Surveys\SurveyDesk;
 use App\Support\Audit\Audit;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
@@ -80,6 +81,7 @@ class Results extends Component
             'isCurrent' => $period['key'] === CarbonImmutable::now($organization->timezoneOrDefault())->format('Y-m'),
             'canEditValue' => auth()->user()->can('organization.update', $organization),
             'reviews' => $this->reviews($organization, $period['start'], $period['end']),
+            'surveys' => app(SurveyDesk::class)->summary($organization, CarbonImmutable::instance($period['start'])->utc(), CarbonImmutable::instance($period['end'])->utc()),
         ]);
     }
 

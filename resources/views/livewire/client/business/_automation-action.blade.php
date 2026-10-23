@@ -56,6 +56,46 @@
     @else
         <p class="rounded-lg bg-surface-2 p-3 text-xs text-subtle">Sent only to customers who agreed to texts, never to numbers that texted STOP. Every text appears in the Inbox, so replies continue there.</p>
     @endif
+@elseif ($action === 'send_survey')
+    <div>
+        <label for="{{ $idp }}-channel" class="sh-label">Send by</label>
+        <select id="{{ $idp }}-channel" wire:model.live="{{ $m }}.channel" class="sh-input w-auto">
+            <option value="text">Text message</option>
+            <option value="email">Email</option>
+        </select>
+    </div>
+    @if (($step['channel'] ?? 'text') === 'email')
+        <div>
+            <label for="{{ $idp }}-ssubject" class="sh-label">Email subject</label>
+            <input id="{{ $idp }}-ssubject" type="text" wire:model="{{ $m }}.subject" class="sh-input" placeholder="How did we do, {first_name}?">
+            @error($m.'.subject') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror
+        </div>
+        <div>
+            <label for="{{ $idp }}-sbody" class="sh-label">Email</label>
+            <textarea id="{{ $idp }}-sbody" wire:model="{{ $m }}.body" rows="5" class="sh-input text-sm" placeholder="Hi {first_name}, thanks for choosing {business}. How did we do? {survey_link}"></textarea>
+            @error($m.'.body') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror
+        </div>
+    @else
+        @unless ($texting)
+            <x-ui.alert tone="warning">Texting isn't switched on for your business yet. Until then, this step is skipped and shown in the history.</x-ui.alert>
+        @endunless
+        <div>
+            <label for="{{ $idp }}-stext" class="sh-label">Text message</label>
+            <textarea id="{{ $idp }}-stext" wire:model="{{ $m }}.text" rows="3" maxlength="480" class="sh-input text-sm"></textarea>
+            <p class="mt-1 text-xs text-subtle">Customers can tap the link or simply reply with a number from 1 to 5.</p>
+            @error($m.'.text') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror
+        </div>
+    @endif
+    <p class="text-xs text-subtle">Put <code class="rounded bg-surface-2 px-1">{survey_link}</code> where the rating link goes. Each customer is asked at most once every two weeks. A score of 1 to 3 creates a call-back task and tells your team.</p>
+    <div>
+        <label for="{{ $idp }}-sreview" class="sh-label">Google review link (offered to customers who give 4 or 5)</label>
+        <input id="{{ $idp }}-sreview" type="url" wire:model="{{ $m }}.review_url" class="sh-input" placeholder="https://g.page/r/…/review">
+        @error($m.'.review_url') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror
+    </div>
+    <label class="flex items-start gap-3 rounded-lg bg-surface-2 p-3 text-sm">
+        <input type="checkbox" wire:model="{{ $m }}.consent_only" class="mt-0.5 size-4 rounded border-line-strong bg-surface-2 text-brand-500">
+        <span><span class="font-medium text-ink">Only customers who agreed to {{ ($step['channel'] ?? 'text') === 'email' ? 'emails' : 'texts' }}</span></span>
+    </label>
 @elseif ($action === 'email_address')
     <div>
         <label for="{{ $idp }}-to" class="sh-label">Email to</label>

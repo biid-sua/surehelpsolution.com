@@ -12,9 +12,13 @@ use App\Models\AiAssistant;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\Organization;
+use App\Models\Survey;
 use App\Notifications\InboxMessageReceived;
 use App\Services\Ai\Contracts\AiProvider;
 use App\Services\Automation\AutomationEngine;
+use App\Services\Business\Branding;
+use App\Services\Surveys\SurveyDesk;
+use App\Services\Telephony\Texting;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -91,6 +95,9 @@ class ReceiveMessage
         }
 
         $this->linkCustomer($organization, $conversation, $data, $isNew);
+        if ($channel === InboxChannel::Sms && $body !== null && $this->surveyReply($organization, $conversation, $body)) {
+            return $message; // a rating for a survey (D84): recorded and thanked, nothing for the AI or the team
+        }
         if ($isNew) {
             // Automations (D80): someone got in touch for the first time.
             app(AutomationEngine::class)->fire('conversation_started', $conversation->refresh());
@@ -98,6 +105,27 @@ class ReceiveMessage
         $this->route($organization, $conversation, $message);
 
         return $message;
+    }
+
+    /** "4" in reply to a satisfaction survey text (D84). */
+    private function surveyReply(Organization $organization, Conversation $conversation, string $body): bool
+    {
+        if (! $conversation->customer_id || preg_match('/^\s*([1-5])\s*(stars?|\/\s*5|out of 5)?\s*[.!]*\s*$/i', $body, $m) !== 1) {
+            return false;
+        }
+        $survey = Survey::withoutGlobalScopes()->where('organization_id', $organization->id)->where('customer_id', $conversation->customer_id)
+            ->where('channel', 'sms')->whereNull('answered_at')->where('expires_at', '>', now())->latest('sent_at')->first();
+        if (! $survey || ! app(SurveyDesk::class)->answer($survey, (int) $m[1], 'text')) {
+            return false;
+        }
+        $business = app(Branding::class)->for($organization)['name'];
+        $reply = $survey->score >= Survey::HAPPY
+            ? ($survey->review_url ? 'Thank you! Would you share that in a quick Google review? '.route('survey.review', $survey->token) : 'Thank you! We\'re glad we could help.')
+            : 'Thank you for telling us. We\'re sorry it wasn\'t better: someone from '.$business.' will be in touch.';
+        app(Texting::class)->sendAutomatic($organization, $conversation->external_thread_id, $reply, 'survey');
+        $conversation->forceFill(['unread_count' => max(0, $conversation->unread_count - 1)])->save();
+
+        return true;
     }
 
     /**

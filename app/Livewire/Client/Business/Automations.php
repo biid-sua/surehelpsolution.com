@@ -98,6 +98,19 @@ class Automations extends Component
             'trigger' => 'escalation_raised', 'delay' => 0, 'unit' => 'minutes', 'action' => 'email_address',
             'config' => ['to' => '', 'subject' => 'Escalation: {reason}', 'body' => "{customer} needs you: {reason}.\n\nOpen SureHelp to see the call and respond."],
         ],
+        // Satisfaction surveys (D84): happy customers are offered the review link, unhappy ones reach you first.
+        'survey_job' => [
+            'name' => 'How did we do? After each job',
+            'trigger' => 'appointment_completed', 'delay' => 2, 'unit' => 'hours', 'action' => 'send_survey',
+            'config' => ['channel' => 'text', 'consent_only' => true, 'review_url' => '',
+                'text' => 'Hi {first_name}, thanks for choosing {business}! How did we do? Tap to rate us 1-5: {survey_link} (or just reply with a number)'],
+        ],
+        'survey_call' => [
+            'name' => 'Rate the call, after we answer',
+            'trigger' => 'call_logged', 'delay' => 30, 'unit' => 'minutes', 'action' => 'send_survey',
+            'config' => ['channel' => 'text', 'consent_only' => true, 'review_url' => '',
+                'text' => 'Hi {first_name}, thanks for calling {business}. How was your call? Reply 1-5, or tap: {survey_link}'],
+        ],
         // Flows (D81): several steps, with waits and an if / otherwise.
         'review_chase' => [
             'name' => 'Review request with a text reminder',
@@ -199,7 +212,7 @@ class Automations extends Component
     private function blankConfig(): array
     {
         return ['subject' => '', 'body' => '', 'consent_only' => true, 'review_url' => '', 'title' => '', 'due_hours' => '24', 'message' => '',
-            'text' => '', 'to' => '', 'tag_id' => '', 'status' => ''];
+            'text' => '', 'to' => '', 'tag_id' => '', 'status' => '', 'channel' => 'text'];
     }
 
     /** @return array<string, mixed> */
@@ -570,17 +583,20 @@ class Automations extends Component
     {
         $organization = $this->organization();
         $action = (string) ($step['action'] ?? '');
+        $surveyByEmail = $action === 'send_survey' && ($step['channel'] ?? 'text') === 'email';
+        $emails = in_array($action, ['send_email', 'email_address'], true) || $surveyByEmail;
         $validator = Validator::make($step, [
             'action' => ['required', Rule::in(array_keys(Automation::ACTIONS))],
-            'subject' => [Rule::requiredIf(in_array($action, ['send_email', 'email_address'], true)), 'nullable', 'string', 'max:200'],
-            'body' => [Rule::requiredIf(in_array($action, ['send_email', 'email_address'], true)), 'nullable', 'string', 'max:5000'],
+            'channel' => [Rule::requiredIf($action === 'send_survey'), 'nullable', Rule::in(['text', 'email'])],
+            'subject' => [Rule::requiredIf($emails), 'nullable', 'string', 'max:200'],
+            'body' => [Rule::requiredIf($emails), 'nullable', 'string', 'max:5000'],
             'consent_only' => ['boolean'],
             'review_url' => [Rule::requiredIf(($action === 'send_email' && str_contains((string) ($step['body'] ?? ''), '{review_link}'))
                 || ($action === 'send_text' && str_contains((string) ($step['text'] ?? ''), '{review_link}'))), 'nullable', 'url:https', 'max:500'],
             'title' => [Rule::requiredIf($action === 'create_task'), 'nullable', 'string', 'max:200'],
             'due_hours' => [Rule::requiredIf($action === 'create_task'), 'nullable', 'integer', 'min:0', 'max:720'],
             'message' => [Rule::requiredIf($action === 'notify_team'), 'nullable', 'string', 'max:500'],
-            'text' => [Rule::requiredIf($action === 'send_text'), 'nullable', 'string', 'max:480'],
+            'text' => [Rule::requiredIf($action === 'send_text' || ($action === 'send_survey' && ! $surveyByEmail)), 'nullable', 'string', 'max:480'],
             'to' => [Rule::requiredIf($action === 'email_address'), 'nullable', 'email', 'max:190'],
             'tag_id' => [Rule::requiredIf(in_array($action, ['add_tag', 'remove_tag'], true)), 'nullable', 'integer',
                 Rule::exists('tags', 'id')->where('organization_id', $organization->id)],
@@ -598,7 +614,12 @@ class Automations extends Component
 
             return null;
         }
-        if (in_array($action, ['send_email', 'send_text'], true) && in_array($trigger, ['task_overdue', 'escalation_raised', 'review_received'], true)) {
+        if ($action === 'send_survey' && ! str_contains((string) ($surveyByEmail ? $step['body'] : $step['text']), '{survey_link}')) {
+            $this->addError($at.'.'.($surveyByEmail ? 'body' : 'text'), 'Put {survey_link} where the rating link should go.');
+
+            return null;
+        }
+        if (in_array($action, ['send_email', 'send_text', 'send_survey'], true) && in_array($trigger, ['task_overdue', 'escalation_raised', 'review_received'], true)) {
             $this->addError($at.'.action', 'Tell your team about this one; customers shouldn\'t hear about internal tasks.');
 
             return null;
@@ -611,6 +632,8 @@ class Automations extends Component
             'email_address' => ['to' => trim((string) $step['to']), 'subject' => trim((string) $step['subject']), 'body' => trim((string) $step['body'])],
             'add_tag', 'remove_tag' => ['tag_id' => (int) $step['tag_id']],
             'set_status' => ['status' => (string) $step['status']],
+            'send_survey' => ['channel' => $surveyByEmail ? 'email' : 'text', 'consent_only' => (bool) ($step['consent_only'] ?? true), 'review_url' => trim((string) ($step['review_url'] ?? ''))]
+                + ($surveyByEmail ? ['subject' => trim((string) $step['subject']), 'body' => trim((string) $step['body'])] : ['text' => trim((string) $step['text'])]),
             default => ['message' => trim((string) $step['message'])],
         };
     }
