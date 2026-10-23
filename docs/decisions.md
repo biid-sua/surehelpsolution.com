@@ -1556,3 +1556,27 @@ many businesses joined, how many were rewarded, and the credit left.
 **Why:** happy local businesses know other local businesses. A free month is easy to explain, costs
 nothing until the new business has paid, and needs no payouts or tax paperwork, because it's a credit,
 not cash.
+
+## D91 — Operations basics: error alerts, health check, backups (2026-10-23)
+**Decision:** the essentials for running in production, without another paid service.
+- **Error alerts.** Every reported exception is emailed to `OPS_ALERT_EMAIL`.
+  - The same error (class, file and line) at most once per 15 minutes, and at most 20 emails an hour.
+  - Each email has the class, the message, where it happened, the request path, the user id and 8
+    lines of trace. No request data or personal data.
+  - Sent straight away rather than queued, because the queue may be what's broken. A failing alert is
+    swallowed, never thrown.
+  - Sentry or Bugsnag can replace it later.
+- **`/health`** for uptime monitors. It checks the database, the cache, the scheduler heartbeat (within
+  5 minutes), the queue (nothing waiting over 10 minutes) and free disk space (over 500 MB).
+  - It answers 200 or 503. Only `{"status": …}` is shown, unless the request carries `HEALTH_TOKEN`.
+  - A backup older than 2 days is reported, but doesn't fail the check.
+- **Backups.** `backup:database` runs nightly at 03:15:
+  - `mysqldump --single-transaction`, streamed into gzip (the password goes in `MYSQL_PWD`, never on
+    the command line), or a copy of the SQLite file;
+  - saved as `storage/app/backups/db-*.sql.gz` (mode 0600), and copied to `BACKUP_DISK` when that isn't
+    local;
+  - pruned after `BACKUP_KEEP_DAYS`.
+  - `launch:check` and *System status* warn about a missing backup or a missing alert address.
+
+**Why:** before a real launch, someone must hear about errors and outages before customers do, and
+there must be a backup that's known to be recent.

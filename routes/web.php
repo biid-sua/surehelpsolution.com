@@ -31,6 +31,7 @@ use App\Http\Controllers\Client\SearchConsoleController;
 use App\Http\Controllers\Client\SocialOAuthController;
 use App\Http\Controllers\Client\SwitchOrganizationController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\HealthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InboxMediaController;
 use App\Http\Controllers\LinkPageController;
@@ -142,6 +143,8 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])->name('seo.sitemap');
 Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('seo.robots');
 Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:6,10')->name('contact.store');
+// For uptime monitors (D91).
+Route::get('/health', HealthController::class)->middleware('throttle:60,1')->name('health');
 // Payment links (D85): public, by token.
 Route::middleware('throttle:30,1')->prefix('pay/{token}')->name('pay.')->group(function () {
     Route::get('/', [PayController::class, 'show'])->name('show');

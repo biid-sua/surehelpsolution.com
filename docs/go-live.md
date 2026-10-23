@@ -102,6 +102,18 @@ Follow [deployment.md](deployment.md) › Every release:
 7. Finally, `php artisan launch:check` should show no ✗ items, and *System status* should show the
    scheduler as running.
 
+## Operations (D91)
+
+- **Error alerts:** set `OPS_ALERT_EMAIL`. Each server error is emailed, the same one at most every
+  15 minutes and at most 20 an hour, with no personal data.
+- **Uptime:** point an uptime monitor (UptimeRobot, Better Stack…) at `https://<your site>/health`.
+  - It answers 200, or 503 when the database, cache, scheduler, queue or disk space has a problem.
+  - Set `HEALTH_TOKEN` to see each check at `/health?token=…`.
+- **Backups:** `php artisan backup:database` runs every night at 03:15. It keeps 14 days in
+  `storage/app/backups`.
+  - Set `BACKUP_DISK=s3` (with the AWS settings) for a copy off the server.
+  - Restore a copy on a test database once, to be sure it works.
+
 ## After launch
 
 - Watch *Admin › System status* daily for the first week (failed jobs, the scheduler).

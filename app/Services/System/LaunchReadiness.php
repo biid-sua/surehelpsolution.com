@@ -152,6 +152,10 @@ class LaunchReadiness
                 'Add the cron entry: * * * * * cd /path/to/app && php artisan schedule:run >> /dev/null 2>&1'),
             $this->check($g, 'Queue is being worked', $stuck === 0, $stuck === null ? 'queue is not the database' : ($stuck === 0 ? 'no waiting jobs older than 10 minutes' : $stuck.' jobs waiting over 10 minutes'),
                 'The scheduler runs queue:work every minute; check the cron entry and storage/logs.'),
+            $this->check($g, 'Nightly database backup', ($last = Cache::get('backup:last')) && now()->timestamp - (int) $last < 2 * 86400,
+                ($last ?? null) ? 'last one '.now()->subSeconds(now()->timestamp - (int) $last)->diffForHumans() : 'none yet',
+                'Runs at 03:15 with the scheduler. Run php artisan backup:database once to check it works, and set BACKUP_DISK=s3 for an off-server copy.', self::WARN),
+            $this->check($g, 'Error alerts by email', filled(config('ops.alert_email')), 'OPS_ALERT_EMAIL', 'Set OPS_ALERT_EMAIL so server errors reach you, and point an uptime monitor at /health.', self::WARN),
             $this->check($g, 'No failed jobs today', $failed === 0, $failed.' in the last 24 hours', 'See php artisan queue:failed, fix the cause, then php artisan queue:retry all.', self::WARN),
         ];
     }
