@@ -1,6 +1,6 @@
 {{-- A business's link-in-bio page (D69): public, phone-first, no SureHelp branding beyond a footnote. --}}
 <!DOCTYPE html>
-<html lang="en" class="h-full" {!! app(\App\Support\Ui\Themes::class)->htmlAttributes(null) !!}>
+<html lang="{{ app()->getLocale() }}" class="h-full" {!! app(\App\Support\Ui\Themes::class)->htmlAttributes(null) !!}>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -24,7 +24,7 @@
             @if ($page['area'])<p class="mt-1 text-sm text-muted">{{ $page['area'] }}</p>@endif
             @if ($page['about'])<p class="mx-auto mt-3 max-w-sm text-sm text-muted">{{ \Illuminate\Support\Str::limit($page['about'], 280) }}</p>@endif
 
-            <nav class="mt-8 space-y-3" aria-label="Links">
+            <nav class="mt-8 space-y-3" aria-label="{{ __('Links') }}">
                 @foreach ($page['buttons'] as $button)
                     <a href="{{ $button['href'] }}" @if (str_starts_with($button['href'], 'http')) rel="noopener" @endif
                         @class([
@@ -36,7 +36,7 @@
             </nav>
 
             @unless ($brand['white_label'])
-                <p class="mt-10 text-xs text-subtle">Bookings and messages handled by SureHelp Solutions</p>
+                <p class="mt-10 text-xs text-subtle">{{ __('Bookings and messages handled by SureHelp Solutions') }}</p>
             @endunless
         </div>
     </main>

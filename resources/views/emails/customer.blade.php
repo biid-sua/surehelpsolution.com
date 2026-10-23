@@ -1,7 +1,7 @@
 {{-- A customer email in the business's own look (D82). Data: $brand, $subjectLine, $introLines, $actionText, $actionUrl, $outroLines. --}}
 @php($text = \App\Services\Business\Branding::textOn($brand['color']))
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -34,7 +34,7 @@
             @endforeach
         </td></tr>
         <tr><td style="padding:16px 32px 28px;border-top:1px solid #ececf1;font-size:12px;color:#8a8fa3;text-align:center;">
-            {{ $brand['name'] }}@unless ($brand['white_label']) · sent with SureHelp Solutions @endunless
+            {{ $brand['name'] }}@unless ($brand['white_label']) · {{ __('sent with SureHelp Solutions') }} @endunless
         </td></tr>
     </table>
 </td></tr>

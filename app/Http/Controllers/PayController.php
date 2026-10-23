@@ -7,6 +7,7 @@ use App\Models\Organization;
 use App\Models\PaymentRequest;
 use App\Services\Business\Branding;
 use App\Services\Payments\CustomerPayments;
+use App\Support\CustomerLocale;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,6 +20,7 @@ class PayController extends Controller
     public function show(Request $request, string $token, Branding $branding): View
     {
         $payment = $this->find($token);
+        CustomerLocale::apply($payment->organization_id);   // D92
 
         return view('pay.show', [
             'payment' => $payment,

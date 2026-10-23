@@ -23,7 +23,7 @@ class BusinessProfile extends Model
     protected $fillable = [
         'organization_id', 'display_name', 'legal_name', 'logo_path', 'description', 'business_type', 'industry',
         'website', 'phone', 'email', 'service_area', 'emergency_available', 'emergency_instructions',
-        'closed_from', 'closed_until', 'closure_message', 'social_approval', 'brand_voice', 'link_page_enabled', 'link_page_links', 'brand_color', 'email_sender_name', 'brand_portal',
+        'closed_from', 'closed_until', 'closure_message', 'social_approval', 'brand_voice', 'link_page_enabled', 'link_page_links', 'brand_color', 'email_sender_name', 'brand_portal', 'customer_locale',
     ];
 
     /** Away (vacation mode) on this date: from closed_from (or straight away) up to and including closed_until. */

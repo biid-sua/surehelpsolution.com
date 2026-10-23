@@ -72,9 +72,10 @@ _As of 2026-10-21. Detailed tracker: [implementation-plan.md](implementation-pla
 - **Multi-location (D89):** one person can belong to several businesses (linked by staff) and switch between them from the top bar or the app. *All locations* compares the month's calls, leads, bookings, reviews and payments, with totals.
 - **Referrals (D90):** each business has a referral link. When a business it referred pays its first invoice, the referrer gets a month of its plan as credit, taken off its next invoices.
 - **Operations (D91):** server errors are emailed to the team (throttled), `/health` serves uptime monitors, and the database is backed up every night with off-server copies optional. *System status* and `launch:check` warn about anything missing.
+- **Spanish for customers (D92):** businesses choose English, Spanish or "match the visitor's browser". It covers booking and appointment pages, the website widget, surveys, payment pages, and the standard emails and texts. The portal and the app remain English for now.
 - **The mobile app was rebuilt** in its own repo (`biid-sua/SHS_Mobile_App`) for businesses, agents and admins, and merged. Its own README lists the store steps.
 
-623 automated tests pass.
+625 automated tests pass.
 
 ---
 

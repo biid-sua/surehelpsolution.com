@@ -124,7 +124,7 @@ class SurveysTest extends TestCase
         $this->assertNull($survey->fresh()->score);
 
         $this->post(route('survey.answer', $survey->token), ['score' => 2])->assertRedirect(route('survey.show', $survey->token));
-        $this->get(route('survey.show', $survey->token))->assertSee('We\'re sorry it wasn\'t better', false);
+        $this->get(route('survey.show', $survey->token))->assertSee('We\'re sorry it wasn\'t better');
         $task = Task::query()->sole();
         $this->assertSame('Call Bo Diaz: rated us 2 out of 5', $task->title);
         Notification::assertSentTo($this->owner, CustomerUnhappy::class);

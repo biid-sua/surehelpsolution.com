@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\Organization;
 use App\Services\Business\Branding;
+use App\Support\CustomerLocale;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -27,7 +28,10 @@ class CustomerEmail extends Notification implements ShouldQueue
         public readonly ?string $actionUrl = null,
         public readonly string $actionText = 'Change or cancel',
         public readonly ?int $organizationId = null,
-    ) {}
+    ) {
+        // The business's customers' language (D92): the button and footer, and anything else Laravel translates.
+        $this->locale = $organizationId ? CustomerLocale::forMessages($organizationId) : null;
+    }
 
     /** @return list<string> */
     public function via(object $notifiable): array
@@ -50,7 +54,7 @@ class CustomerEmail extends Notification implements ShouldQueue
             $mail->line(trim($paragraph));
         }
         if ($this->actionUrl) {
-            $mail->action($this->actionText, $this->actionUrl);
+            $mail->action(__($this->actionText), $this->actionUrl);
         }
         if ($this->replyTo) {
             $mail->replyTo($this->replyTo, $fromName);

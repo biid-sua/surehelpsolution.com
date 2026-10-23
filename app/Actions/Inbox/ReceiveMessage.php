@@ -19,6 +19,7 @@ use App\Services\Automation\AutomationEngine;
 use App\Services\Business\Branding;
 use App\Services\Surveys\SurveyDesk;
 use App\Services\Telephony\Texting;
+use App\Support\CustomerLocale;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -119,9 +120,10 @@ class ReceiveMessage
             return false;
         }
         $business = app(Branding::class)->for($organization)['name'];
+        $l = CustomerLocale::forMessages($organization);   // D92
         $reply = $survey->score >= Survey::HAPPY
-            ? ($survey->review_url ? 'Thank you! Would you share that in a quick Google review? '.route('survey.review', $survey->token) : 'Thank you! We\'re glad we could help.')
-            : 'Thank you for telling us. We\'re sorry it wasn\'t better: someone from '.$business.' will be in touch.';
+            ? ($survey->review_url ? __('Thank you! Would you share that in a quick Google review?', [], $l).' '.route('survey.review', $survey->token) : __('Thank you! We\'re glad we could help.', [], $l))
+            : __('Thank you for telling us. We\'re sorry it wasn\'t better: someone from :business will be in touch.', ['business' => $business], $l);
         app(Texting::class)->sendAutomatic($organization, $conversation->external_thread_id, $reply, 'survey');
         $conversation->forceFill(['unread_count' => max(0, $conversation->unread_count - 1)])->save();
 

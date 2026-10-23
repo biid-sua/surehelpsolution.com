@@ -4,14 +4,14 @@
     $brand ??= null;   // the business's look (D82)
 @endphp
 <!DOCTYPE html>
-<html lang="en" class="h-full" {!! app(\App\Support\Ui\Themes::class)->htmlAttributes(null) !!}>
+<html lang="{{ app()->getLocale() }}" class="h-full" {!! app(\App\Support\Ui\Themes::class)->htmlAttributes(null) !!}>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="robots" content="noindex">
     <meta name="referrer" content="no-referrer">
-    <title>{{ $title ?? 'Your appointment' }}</title>
+    <title>{{ $title ?? __('Your appointment') }}</title>
     @include('partials.theme-boot')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
@@ -22,7 +22,7 @@
         <div class="w-full max-w-lg">
             {{ $slot }}
             @unless ($brand['white_label'] ?? false)
-                <p class="mt-6 text-center text-xs text-subtle">Bookings handled by SureHelp Solutions</p>
+                <p class="mt-6 text-center text-xs text-subtle">{{ __('Bookings handled by SureHelp Solutions') }}</p>
             @endunless
         </div>
     </main>

@@ -1580,3 +1580,29 @@ not cash.
 
 **Why:** before a real launch, someone must hear about errors and outages before customers do, and
 there must be a backup that's known to be recent.
+
+## D92 — Spanish for a business's customers (2026-10-23)
+**Decision:** each business chooses the language its customers see, under *Business › Branding ›
+Language your customers see*, on any plan: **English**, **Spanish**, or **match each visitor's
+browser**.
+- **Covered:**
+  - the self-service appointment page, with dates in Spanish;
+  - the link page and its buttons;
+  - the website chat, booking and contact widget, including server messages and time labels;
+  - the satisfaction survey and payment pages;
+  - the standard confirmation, reminder, change and cancellation emails and texts (Spanish defaults
+    in `customer_messages.templates_es`);
+  - the branded email layout's button and footer;
+  - payment-request and deposit messages, and survey replies.
+- **"Match each visitor"** uses the widget's browser language or the page's `Accept-Language`.
+  Emails and texts stay English, because there's no browser to ask.
+- Text a business writes itself (custom templates, automations, recipes, the widget title and
+  greeting) is sent exactly as written.
+- Strings live in `lang/es.json`. `App\Support\CustomerLocale` resolves the language and sets it per
+  request. `CustomerEmail` carries a locale.
+- **Not covered yet:** the business portal and the mobile app, which stay English. The app's strings
+  are already in ARB files, so Spanish there is a translation file in the app repository.
+
+**Why:** many of our clients' customers prefer Spanish, and they're the ones who see these pages and
+messages. Translating the customer-facing surface first gives most of the benefit for a fraction of
+the work of translating the whole portal.

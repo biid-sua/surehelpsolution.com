@@ -6,6 +6,7 @@ use App\Models\Organization;
 use App\Models\Survey;
 use App\Services\Business\Branding;
 use App\Services\Surveys\SurveyDesk;
+use App\Support\CustomerLocale;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,6 +20,7 @@ class SurveyController extends Controller
     public function show(Request $request, string $token, Branding $branding): View
     {
         $survey = $this->find($token);
+        CustomerLocale::apply($survey->organization_id);   // D92
         $preset = (int) $request->query('score');
 
         return view('survey.show', [

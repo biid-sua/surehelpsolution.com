@@ -8,6 +8,7 @@ use App\Models\ChatWidget;
 use App\Services\Billing\FeatureAccess;
 use App\Services\Business\Branding as Brand;
 use App\Support\Audit\Audit;
+use App\Support\CustomerLocale;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -31,6 +32,9 @@ class Branding extends Component
 
     public bool $chat = true;
 
+    /** The language customers see (D92): en, es or auto. Any plan. */
+    public string $locale = 'en';
+
     public function mount(): void
     {
         $this->authorize('organization.view', $this->organization());
@@ -38,6 +42,18 @@ class Branding extends Component
         $this->color = Brand::isColor($profile?->brand_color) ? (string) $profile->brand_color : Brand::DEFAULT_COLOR;
         $this->sender = (string) $profile?->email_sender_name;
         $this->portal = $profile === null || $profile->brand_portal;
+        $this->locale = CustomerLocale::setting($this->organization());
+    }
+
+    public function saveLanguage(Audit $audit): void
+    {
+        $organization = $this->organization();
+        $this->authorize('settings.manage', $organization);
+        $this->validate(['locale' => ['required', 'in:'.implode(',', array_keys(CustomerLocale::CHOICES))]]);
+        $profile = BusinessProfile::firstOrCreate(['organization_id' => $organization->id]);
+        $profile->update(['customer_locale' => $this->locale]);
+        $audit->changes('business_profile.updated', $profile, ['customer_locale']);
+        $this->dispatch('toast', type: 'success', message: 'Saved. Your customers now see '.mb_strtolower(CustomerLocale::CHOICES[$this->locale]).'.');
     }
 
     public function save(Audit $audit, FeatureAccess $features, Brand $brand): void
@@ -74,6 +90,7 @@ class Branding extends Component
             'brand' => $brand->for($organization),
             'previewColor' => Brand::isColor($this->color) ? $this->color : Brand::DEFAULT_COLOR,
             'canManage' => auth()->user()->can('settings.manage', $organization),
+            'locales' => CustomerLocale::CHOICES,
         ]);
     }
 }

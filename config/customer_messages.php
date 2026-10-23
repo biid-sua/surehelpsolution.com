@@ -54,4 +54,28 @@ return [
         ],
     ],
 
+    // Spanish defaults (D92), for businesses whose customers see Spanish. Same placeholders.
+    'templates_es' => [
+        'appointment_confirmed' => [
+            'subject' => 'Tu cita con {business} está confirmada',
+            'body' => "Hola {first_name},\n\nTu cita para {service} quedó reservada para el {date} a las {time}.\nDirección: {address}\n\n¿Necesitas cambiarla? Llámanos al {phone}.\n\nGracias,\n{business}",
+            'sms' => '{business}: tu cita de {service} quedó reservada para el {date} a las {time}. Responde aquí o llama al {phone} para cambiarla.',
+        ],
+        'appointment_reminder' => [
+            'subject' => 'Recordatorio: {service} el {date} a las {time}',
+            'body' => "Hola {first_name},\n\nTe recordamos tu cita para {service} el {date} a las {time}.\nDirección: {address}\n\nSi no puedes asistir, llámanos al {phone}.\n\n{business}",
+            'sms' => '{business}: recordatorio de tu cita de {service} el {date} a las {time}. Responde aquí si no puedes asistir.',
+        ],
+        'appointment_changed' => [
+            'subject' => 'Tu cita con {business} cambió de horario',
+            'body' => "Hola {first_name},\n\nTu cita para {service} ahora es el {date} a las {time}.\n\n¿Preguntas? Llámanos al {phone}.\n\n{business}",
+            'sms' => '{business}: tu cita de {service} cambió al {date} a las {time}. Responde aquí si tienes preguntas.',
+        ],
+        'appointment_cancelled' => [
+            'subject' => 'Tu cita con {business} fue cancelada',
+            'body' => "Hola {first_name},\n\nTu cita para {service} del {date} a las {time} fue cancelada.\n\nPara reservar otro horario, llámanos al {phone}.\n\n{business}",
+            'sms' => '{business}: tu cita de {service} del {date} a las {time} fue cancelada. Responde aquí para reservar otro horario.',
+        ],
+    ],
+
 ];

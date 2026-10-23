@@ -21,6 +21,7 @@ use App\Services\Business\Branding;
 use App\Services\Integrations\Webhooks;
 use App\Services\Telephony\Texting;
 use App\Support\Audit\Audit;
+use App\Support\CustomerLocale;
 use App\Support\Money;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\Notification;
@@ -151,10 +152,13 @@ class CustomerPayments
         if (! $customer) {
             return $sent;
         }
-        $what = $request->kind === 'deposit' ? 'a deposit of '.$request->amount() : 'a payment of '.$request->amount();
+        $l = CustomerLocale::forMessages($organization);   // D92
+        $what = $request->kind === 'deposit' ? __('a deposit of :amount', ['amount' => $request->amount()], $l) : __('a payment of :amount', ['amount' => $request->amount()], $l);
+        $first = $customer->first_name ?: __('there', [], $l);
 
         if (in_array('sms', $channels, true) && $customer->phone_e164 && $this->texting->enabled() && $this->texting->lineFor($organization)) {
-            $text = 'Hi '.($customer->first_name ?: 'there').', '.$business.' has sent you a request for '.$what.' ('.$request->description.'). Pay securely: '.$request->link();
+            $text = __('Hi :name, :business has sent you a request for :what (:description). Pay securely: :link',
+                ['name' => $first, 'business' => $business, 'what' => $what, 'description' => $request->description, 'link' => $request->link()], $l);
             $message = $this->texting->sendAutomatic($organization, $customer->phone_e164, $text, 'payment');
             if ($message && $message->status !== 'failed') {
                 $sent[] = 'sms';
@@ -163,10 +167,10 @@ class CustomerPayments
         if (in_array('email', $channels, true) && filter_var($customer->email, FILTER_VALIDATE_EMAIL) !== false) {
             $replyTo = BusinessProfile::withoutGlobalScopes()->where('organization_id', $organization->id)->value('email');
             Notification::route('mail', $customer->email)->notify(new CustomerEmail(
-                ($request->kind === 'deposit' ? 'Your deposit for ' : 'Payment request from ').$business,
-                'Hi '.($customer->first_name ?: 'there').",\n\n".$business.' has sent you a request for '.$what.":\n".$request->description
-                    ."\n\nYou can pay securely by card with the button below. The payment goes straight to ".$business.'.',
-                $business, $replyTo ?: null, $request->link(), 'Pay '.$request->amount(), organizationId: $organization->id,
+                $request->kind === 'deposit' ? __('Your deposit for :business', ['business' => $business], $l) : __('Payment request from :business', ['business' => $business], $l),
+                __('Hi :name,', ['name' => $first], $l)."\n\n".__(':business has sent you a request for :what:', ['business' => $business, 'what' => $what], $l)."\n".$request->description
+                    ."\n\n".__('You can pay securely by card with the button below. The payment goes straight to :business.', ['business' => $business], $l),
+                $business, $replyTo ?: null, $request->link(), __('Pay :amount', ['amount' => $request->amount()], $l), organizationId: $organization->id,
             ));
             $sent[] = 'email';
         }
@@ -282,10 +286,11 @@ class CustomerPayments
         if (! $customer || ! $account?->deposit_enabled || $account->deposit_cents < 100 || ! $this->ready($organization)) {
             return null;
         }
-        $when = $appointment->starts_at->setTimezone($organization->timezoneOrDefault())->format('D, M j');
+        $l = CustomerLocale::forMessages($organization);
+        $when = $appointment->starts_at->setTimezone($organization->timezoneOrDefault())->locale($l)->translatedFormat('D, M j');
         $request = $this->request($organization, [
             'kind' => 'deposit', 'amount_cents' => $account->deposit_cents, 'customer_id' => $customer->id, 'appointment_id' => $appointment->id,
-            'description' => 'Deposit for '.($appointment->title ?: 'your appointment').' on '.$when,
+            'description' => __('Deposit for :what on :when', ['what' => $appointment->title ?: __('your appointment', [], $l), 'when' => $when], $l),
         ]);
         $this->send($request, ['email', 'sms']);
 

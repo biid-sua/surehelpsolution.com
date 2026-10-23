@@ -66,5 +66,17 @@
                 </div>
             </div>
         </x-ui.card>
+        <x-ui.card class="lg:col-span-2" title="Language your customers see" description="Booking and appointment pages, the website chat and booking, surveys, payment pages, and the standard emails and texts. Any plan.">
+            <form wire:submit="saveLanguage" class="flex flex-wrap items-end gap-3">
+                <fieldset @disabled(! $canManage) class="flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink">
+                    <legend class="sr-only">Language</legend>
+                    @foreach ($locales as $k => $label)
+                        <label class="flex items-center gap-2"><input type="radio" value="{{ $k }}" wire:model="locale" class="size-4 border-line-strong bg-surface-2 text-brand-500"> {{ $label }}</label>
+                    @endforeach
+                </fieldset>
+                @if ($canManage)<x-ui.button type="submit" size="sm" variant="secondary">Save language</x-ui.button>@endif
+            </form>
+            <p class="mt-2 text-xs text-subtle">Emails and texts you've written yourself are sent as you wrote them. "Match each visitor" sends standard emails and texts in English.</p>
+        </x-ui.card>
     </div>
 </div>
