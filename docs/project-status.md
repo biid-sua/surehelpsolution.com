@@ -54,9 +54,13 @@ _As of 2026-10-21. Detailed tracker: [implementation-plan.md](implementation-pla
 - **Dashboard with the calendar first (D77, replacing D75 on the website):** business users land on the dashboard, which opens on the calendar. Each person can show, hide and reorder the dashboard's sections.
 - **Website sales chat (D78):** an AI assistant on SureHelp's own site answers questions, captures leads (scored hot / warm / cold) and books demo calls with the team, with a person able to take over from Admin › Website enquiries. Buttons and forms cost no AI tokens, and daily caps keep the cost small.
 - **Go-live readiness (D79):** `php artisan launch:check` and *Admin › System status* show what's ready, what to fix and which features are still off, with the addresses to register. The order is in [go-live.md](go-live.md).
+- **Automations 2.0, step 1 (D80):**
+  - 13 triggers: bookings, coming-up, moves, no-shows, calls, missed calls, first messages, inactive customers, escalations and overdue tasks.
+  - New actions: texts, emailing anyone, tags and status.
+  - Conditions, and 10 recipes.
 - **The mobile app was rebuilt** in its own repo (`biid-sua/SHS_Mobile_App`) for businesses, agents and admins, and merged. Its own README lists the store steps.
 
-575 automated tests pass.
+584 automated tests pass.
 
 ---
 

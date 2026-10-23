@@ -1226,3 +1226,49 @@ needs to go live. They are not a deploy script; they only check.
 
 **Why:** most of the product is built but waiting on settings and third-party approvals. One place that
 says exactly what's missing turns going live into a checklist instead of guesswork.
+
+## D80 — Automations 2.0, step 1: more triggers, actions and conditions (2026-10-23)
+**Decision:** the automation engine (D50) grows without changing how it runs. An automation is still
+one trigger, a wait and one action, with one run per subject, a re-check before running, retries and
+history. Existing automations keep working unchanged.
+- **Triggers:**
+  - **Appointments:** booked, coming up (the wait counts back from the start time and follows the
+    booking when it moves; a booking made at short notice runs straight away), moved (runs again on each
+    move), completed, no-show, cancelled.
+  - **Calls and messages:** an answered call is logged, a call is missed, and someone messages the
+    business for the first time.
+  - **Customers and work:** a new customer or lead; a customer hasn't been back for N days (checked
+    daily, each customer reached once per automation); an escalation is raised; a task becomes overdue.
+  - Imports never trigger anything.
+- **Actions:**
+  - **Text the customer.** It goes through the business's SureHelp line and lands in the Inbox. Only
+    customers who agreed to texts, and never numbers that texted STOP. For missed calls, logged calls and
+    first messages (they got in touch), the business may untick the consent requirement.
+  - **Email someone else**, for example the owner or a bookkeeper.
+  - **Add or remove a tag**, and **change the customer's status**.
+  - These join the existing email, task and team notification actions.
+- **Conditions:** up to five checks that all must hold, checked when it happens and again before it
+  runs:
+  - customer tag (has / doesn't have)
+  - customer status
+  - first visit or not
+  - email known
+  - phone known
+  - call outcome
+  - while open or closed
+- **Guards:** an overdue task can't create another task, and escalations and tasks can't email or text
+  the customer.
+- **Recipes:**
+  - Text review request
+  - Missed appointment: offer a new time
+  - How to prepare, 2 days before
+  - Welcome first-time customers
+  - Missed call after hours: call back first thing
+  - Win back customers after 6 months
+  - Email the owner about escalations
+- **Placeholders.** `{booking_link}` (the business's link page, when live) and `{reason}` (the call reason,
+  escalation reason or task title) are added.
+
+**Why:** most follow-ups a business wants are "when X, wait, then do Y". Covering the common X's and Y's
+natively, with consent and re-checks built in, means clients don't need n8n or Zapier for them. Multi-step
+flows with branches are step 2.

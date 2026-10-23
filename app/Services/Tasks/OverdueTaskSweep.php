@@ -5,6 +5,7 @@ namespace App\Services\Tasks;
 use App\Actions\Notifications\NotifyOrganization;
 use App\Models\Task;
 use App\Notifications\TaskActivity;
+use App\Services\Automation\AutomationEngine;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -47,6 +48,7 @@ class OverdueTaskSweep
                             $this->notify->handle($task->organization, $notification, 'tasks.view');
                         }
                         $sent++;
+                        app(AutomationEngine::class)->fire('task_overdue', $task);   // D80
                     } catch (\Throwable $e) {
                         report($e);
                     }

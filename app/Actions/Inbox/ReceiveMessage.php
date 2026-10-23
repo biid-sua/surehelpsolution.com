@@ -14,6 +14,7 @@ use App\Models\Message;
 use App\Models\Organization;
 use App\Notifications\InboxMessageReceived;
 use App\Services\Ai\Contracts\AiProvider;
+use App\Services\Automation\AutomationEngine;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -90,6 +91,10 @@ class ReceiveMessage
         }
 
         $this->linkCustomer($organization, $conversation, $data, $isNew);
+        if ($isNew) {
+            // Automations (D80): someone got in touch for the first time.
+            app(AutomationEngine::class)->fire('conversation_started', $conversation->refresh());
+        }
         $this->route($organization, $conversation, $message);
 
         return $message;

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\CallOwnershipSource;
 use App\Enums\OutcomeCategory;
 use App\Models\Concerns\BelongsToOrganization;
+use App\Services\Automation\AutomationEngine;
 use App\Services\Calls\CallOutcomes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -17,6 +18,16 @@ use Illuminate\Support\Str;
 class CallLog extends Model
 {
     use BelongsToOrganization;
+
+    protected static function booted(): void
+    {
+        // Automations (D80): an answered call was logged (missed calls fire from the phone system).
+        static::created(function (CallLog $call) {
+            if ($call->organization_id) {
+                DB::afterCommit(fn () => app(AutomationEngine::class)->fire('call_logged', $call));
+            }
+        });
+    }
 
     /**
      * Shown in place of empty values in the UI (never the literal "null").

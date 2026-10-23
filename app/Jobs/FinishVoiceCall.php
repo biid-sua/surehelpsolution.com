@@ -10,6 +10,7 @@ use App\Models\Organization;
 use App\Models\PhoneNumber;
 use App\Models\VoiceCall;
 use App\Notifications\MissedVoiceCall;
+use App\Services\Automation\AutomationEngine;
 use App\Services\Telephony\Texting;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -63,6 +64,7 @@ class FinishVoiceCall implements ShouldQueue
 
         $notify->handle($organization, new MissedVoiceCall($call, $who), 'calls.view');
         $this->textBack($call, $organization, $texting);
+        app(AutomationEngine::class)->fire('call_missed', $call);   // D80
     }
 
     /**
