@@ -8,6 +8,12 @@
         </x-slot:actions>
     </x-ui.page-header>
 
+    @if ($health && $health['band'] !== 'healthy')
+        <x-ui.alert :tone="$health['band'] === 'risk' ? 'danger' : 'warning'" class="mb-6" :title="'Client health '.$health['score'].' / 100: '.mb_strtolower(\App\Services\Admin\ClientHealth::label($health['band']))">
+            {{ implode(' · ', $health['reasons']) }}
+        </x-ui.alert>
+    @endif
+
     <div class="grid gap-6 lg:grid-cols-3">
         <div class="space-y-6 lg:col-span-2">
             {{-- Business details --}}

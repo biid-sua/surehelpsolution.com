@@ -1440,3 +1440,27 @@ card details. It's a plan feature, `customer_payments`, closed by default.
 **Why:** deposits cut no-shows and getting paid on the spot shortens the wait for money. Both are
 strong reasons to upgrade. Standard accounts leave refunds, disputes, payouts and tax with the
 business's own Stripe dashboard, so SureHelp isn't a payment facilitator.
+
+## D86 — Client health score (2026-10-23)
+**Decision:** every active, set-up business gets a health score from 0 to 100, so SureHelp's team can
+step in before a client cancels. It starts at 100 and loses points for each warning sign:
+- **Calls:** no calls in 30 days after 10 or more the month before (−35); calls down 50% or more (−25);
+  calls down 25–50% (−10). Only for businesses older than 60 days.
+- **Overdue invoices:** any overdue invoice (−15), or −30 when more than 14 days late.
+- **Sign-ins:** nobody on the team has signed in for 30 days, or ever (−20); not for 14–30 days (−10).
+  Only after the first two weeks.
+- **Escalations:** 3 or more open for over 2 days (−10).
+- **Ratings:** satisfaction surveys (D84) averaging under 3.5 over 30 days, with at least 3 answers (−10).
+
+75 and above is *healthy*, 50–74 *watch*, below 50 *at risk*. Each lost point comes with a reason in
+plain words.
+- **Organizations** has a Health column (score, band, first reason) and a filter for "at risk" and
+  "at risk or to watch".
+- **Overview** lists the five businesses most worth a call.
+- **A business's page** shows the score and every reason when it isn't healthy.
+- It's worked out for all businesses in a handful of grouped queries (`App\Services\Admin\ClientHealth`)
+  and cached for 10 minutes.
+
+**Why:** small businesses rarely complain before leaving; they just stop using the service. These
+signals show up weeks earlier, while a call can still help. It's deliberately simple and explainable,
+rather than a model nobody can question.

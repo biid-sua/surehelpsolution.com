@@ -17,6 +17,20 @@
     </div>
 
     <div class="mt-6 grid gap-6 lg:grid-cols-3">
+        <x-ui.card class="lg:col-span-3" title="Clients to check" description="Warning signs: fewer calls, overdue invoices, nobody signing in, open escalations or low ratings." :padding="false">
+            @forelse ($atRisk as $row)
+                <a href="{{ route('admin.organizations.show', $row['organization']) }}" class="flex items-start gap-3 border-b border-line px-5 py-3 last:border-0 hover:bg-surface-2">
+                    <x-ui.badge :tone="\App\Services\Admin\ClientHealth::tone($row['band'])">{{ $row['score'] }}</x-ui.badge>
+                    <span class="min-w-0 flex-1">
+                        <span class="block text-sm font-medium text-ink">{{ $row['organization']->name }}</span>
+                        <span class="block text-xs text-subtle">{{ implode(' · ', $row['reasons']) }}</span>
+                    </span>
+                </a>
+            @empty
+                <p class="px-5 py-4 text-sm text-muted">Every active business looks healthy.</p>
+            @endforelse
+        </x-ui.card>
+
         <x-ui.card class="lg:col-span-2" title="Latest calls" :padding="false">
             @if ($recentCalls->isEmpty())
                 <x-ui.empty-state icon="phone" title="No calls logged yet" description="Calls appear here as soon as an agent saves a call log." />

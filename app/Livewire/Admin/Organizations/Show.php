@@ -10,6 +10,7 @@ use App\Livewire\Concerns\PlatformAdminOnly;
 use App\Models\AgentAssignment;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\Admin\ClientHealth;
 use App\Services\Setup\SetupProgress;
 use App\Support\Audit\Audit;
 use Illuminate\Contracts\View\View;
@@ -153,6 +154,7 @@ class Show extends Component
 
         return view('livewire.admin.organizations.show', [
             'organization' => $organization,
+            'health' => app(ClientHealth::class)->for($organization),
             'agents' => $assigned,
             'availableAgents' => User::where('role', 'agent')->where('is_active', true)
                 ->whereNotIn('id', $assigned->pluck('id'))

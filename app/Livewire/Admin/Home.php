@@ -8,6 +8,7 @@ use App\Livewire\Concerns\PlatformAdminOnly;
 use App\Models\CallLog;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\Admin\ClientHealth;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -27,8 +28,10 @@ class Home extends Component
         $this->authorize('dashboard.view');
     }
 
-    public function render(): View
+    public function render(ClientHealth $health): View
     {
+        // Client health (D86): the businesses most worth a call this week.
+        $scores = collect($health->all())->reject(fn (array $h) => $h['band'] === 'healthy')->sortBy('score')->take(5);
         $today = now()->startOfDay();
 
         $needsReview = CallLog::query()
@@ -44,6 +47,8 @@ class Home extends Component
                 'needsReview' => $needsReview,
             ],
             'recentCalls' => CallLog::with('organization:id,ulid,name')->latest('created_at')->latest('id')->limit(8)->get(),
+            'atRisk' => $scores->isEmpty() ? collect() : Organization::query()->whereIn('id', $scores->keys())->get(['id', 'ulid', 'name'])
+                ->sortBy(fn (Organization $o) => $scores[$o->id]['score'])->map(fn (Organization $o) => ['organization' => $o] + $scores[$o->id])->values(),
             'busiest' => Organization::query()
                 ->withCount(['callLogs as calls_30d' => fn ($q) => $q->where('created_at', '>=', now()->subDays(30))])
                 ->orderByDesc('calls_30d')
