@@ -41,6 +41,10 @@ return [
         'description' => 'AI-assisted SEO work every month (keyword plan, page titles and descriptions, local pages, FAQ), with Search Console statistics.',
         'default_mode' => 'plan',
     ],
+    'reviews' => [
+        'label' => 'Reviews',
+        'description' => 'Google reviews in one place, with alerts, AI reply drafts and replies posted from SureHelp.',
+    ],
     'white_label' => [
         'label' => 'White-label',
         'description' => 'The business\'s own logo, colour and sender name on customer emails, booking pages and its portal, without SureHelp branding.',

@@ -377,7 +377,7 @@ class Automations extends Component
         $class = AutomationRun::SUBJECTS[$type];
         /** @var Builder<Model> $query */
         $query = $class::query()->where('organization_id', $this->organization()->id);
-        if ($customerId) {
+        if ($customerId && $type !== 'review') {
             $type === 'customer' ? $query->whereKey($customerId) : $query->where('customer_id', $customerId);
         }
 
@@ -392,7 +392,7 @@ class Automations extends Component
     private function subjectLabel(string $trigger): string
     {
         return ['appointment' => 'appointment', 'customer' => 'customer', 'call' => 'logged call', 'voice_call' => 'phone call',
-            'conversation' => 'conversation', 'escalation' => 'escalation', 'task' => 'task'][Automation::SUBJECT_FOR[$trigger] ?? 'customer'];
+            'conversation' => 'conversation', 'escalation' => 'escalation', 'task' => 'task', 'review' => 'review'][Automation::SUBJECT_FOR[$trigger] ?? 'customer'];
     }
 
     private function describe(Model $subject): string
@@ -598,7 +598,7 @@ class Automations extends Component
 
             return null;
         }
-        if (in_array($action, ['send_email', 'send_text'], true) && in_array($trigger, ['task_overdue', 'escalation_raised'], true)) {
+        if (in_array($action, ['send_email', 'send_text'], true) && in_array($trigger, ['task_overdue', 'escalation_raised', 'review_received'], true)) {
             $this->addError($at.'.action', 'Tell your team about this one; customers shouldn\'t hear about internal tasks.');
 
             return null;

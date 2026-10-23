@@ -55,14 +55,14 @@
             <div class="overflow-hidden rounded-xl bg-white text-[#1f2330] shadow-sm">
                 <div class="h-1.5" style="background: {{ $previewColor }}"></div>
                 <div class="px-5 pb-5 pt-4 text-sm">
-                    <p class="text-xs text-gray-500">From: <span class="font-medium text-gray-800">{{ $allowed && trim($sender) !== '' ? $sender : $brand['name'] }}</span></p>
+                    <p class="text-xs" style="color:#6b7080">From: <span class="font-medium" style="color:#1f2330">{{ $allowed && trim($sender) !== '' ? $sender : $brand['name'] }}</span></p>
                     <div class="my-4 text-center">
-                        @if ($brand['logo'])<img src="{{ $brand['logo'] }}" alt="" class="mx-auto h-10 w-auto">@else<p class="text-lg font-bold">{{ $brand['name'] }}</p>@endif
+                        @if ($brand['logo'])<img src="{{ $brand['logo'] }}" alt="" class="mx-auto h-10 w-auto">@else<p class="text-lg font-bold" style="color:#1f2330">{{ $brand['name'] }}</p>@endif
                     </div>
-                    <p>Hi Ana,</p>
-                    <p class="mt-2">Your appointment with {{ $brand['name'] }} is confirmed for Friday at 10:00 AM.</p>
+                    <p style="color:#1f2330">Hi Ana,</p>
+                    <p class="mt-2" style="color:#1f2330">Your appointment with {{ $brand['name'] }} is confirmed for Friday at 10:00 AM.</p>
                     <p class="mt-4 text-center"><span class="inline-block rounded-lg px-4 py-2 font-semibold" style="background: {{ $previewColor }}; color: {{ \App\Services\Business\Branding::textOn($previewColor) }}">Change or cancel</span></p>
-                    <p class="mt-4 border-t border-gray-100 pt-3 text-center text-xs text-gray-400">{{ $brand['name'] }}@unless ($allowed) · sent with SureHelp Solutions @endunless</p>
+                    <p class="mt-4 border-t pt-3 text-center text-xs" style="color:#8a8fa3;border-color:#ececf1">{{ $brand['name'] }}@unless ($allowed) · sent with SureHelp Solutions @endunless</p>
                 </div>
             </div>
         </x-ui.card>

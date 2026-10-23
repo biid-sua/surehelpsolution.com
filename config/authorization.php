@@ -148,6 +148,7 @@ return [
                 'escalations.view', 'escalations.resolve',
                 'knowledge_base.view',
                 'reports.view',
+                'reviews.view',
                 'support.view', 'support.create',
             ],
         ],

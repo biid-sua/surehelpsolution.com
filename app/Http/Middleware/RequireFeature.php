@@ -22,9 +22,12 @@ class RequireFeature
     public function handle(Request $request, Closure $next, string $feature): Response
     {
         $organization = $this->current->get();
-        if ($organization && $this->features->allows($organization, $feature)) {
+        // "a|b": any one of the features is enough (D83: Google can be connected for posts or for reviews).
+        $options = explode('|', $feature);
+        if ($organization && collect($options)->contains(fn (string $f) => $this->features->allows($organization, $f))) {
             return $next($request);
         }
+        $feature = $options[0];
 
         $message = $this->features->label($feature).' isn\'t included in your plan.';
         if ($request->expectsJson() || $request->is('api/*')) {

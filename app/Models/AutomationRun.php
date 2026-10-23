@@ -23,6 +23,7 @@ class AutomationRun extends Model
     public const SUBJECTS = [
         'appointment' => Appointment::class, 'customer' => Customer::class, 'call' => CallLog::class, 'voice_call' => VoiceCall::class,
         'conversation' => Conversation::class, 'escalation' => Escalation::class, 'task' => Task::class,
+        'review' => Review::class,
     ];
 
     protected $fillable = ['automation_id', 'organization_id', 'subject_type', 'subject_id', 'customer_id', 'status', 'run_at', 'attempts', 'result', 'ran_at', 'cursor', 'log'];

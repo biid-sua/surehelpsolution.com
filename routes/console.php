@@ -50,6 +50,7 @@ Schedule::command('privacy:run')->dailyAt('04:20')->withoutOverlapping(60);
 Schedule::command('social:publish-due')->everyMinute()->withoutOverlapping(5);
 // Automation steps that are due (D50).
 Schedule::command('automations:run')->everyMinute()->withoutOverlapping(5);
+Schedule::command('reviews:sync')->hourly()->withoutOverlapping(30);
 
 // Agent company assignments: start scheduled ones and end expired ones (D40). Access itself never waits for this.
 Schedule::command('assignments:sweep')->everyFiveMinutes()->withoutOverlapping(10);

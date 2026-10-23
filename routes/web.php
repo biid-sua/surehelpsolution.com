@@ -112,6 +112,7 @@ use App\Livewire\Client\Inbox\Assistant as InboxAssistant;
 use App\Livewire\Client\Inbox\Channels as InboxChannels;
 use App\Livewire\Client\Inbox\Index as InboxIndex;
 use App\Livewire\Client\Results as ClientResults;
+use App\Livewire\Client\Reviews as ClientReviews;
 use App\Livewire\Client\Search as ClientSearch;
 use App\Livewire\Client\Seo as ClientSeo;
 use App\Livewire\Client\Settings\Notifications as NotificationSettings;
@@ -257,7 +258,8 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/social/posts/new', SocialCompose::class)->middleware('can:social.manage')->name('social.posts.create');
         Route::get('/social/posts/{post}', SocialCompose::class)->name('social.posts.edit');
     });
-    Route::middleware(['can:social.manage', 'feature:social_publishing'])->whereIn('connector', ['meta', 'linkedin', 'google'])->group(function () {
+    // Google Business Profile serves both posts and reviews (D83); the controller checks which.
+    Route::middleware(['can:social.manage', 'feature:social_publishing|reviews'])->whereIn('connector', ['meta', 'linkedin', 'google'])->group(function () {
         Route::get('/social/connect/{connector}', [SocialOAuthController::class, 'redirect'])->name('social.connect');
         Route::get('/social/connect/{connector}/callback', [SocialOAuthController::class, 'callback'])->name('social.connect.callback');
     });
@@ -265,6 +267,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/appointments', AppointmentsIndex::class)->name('appointments.index');
         Route::get('/appointments/export', AppointmentExportController::class)->name('appointments.export');
     });
+    Route::get('/reviews', ClientReviews::class)->middleware(['can:reviews.view', 'feature:reviews'])->name('reviews');
     Route::get('/escalations', EscalationsIndex::class)->middleware('can:escalations.view')->name('escalations.index');
     Route::middleware('can:customers.view')->group(function () {
         Route::get('/customers', CustomerIndex::class)->name('customers.index');

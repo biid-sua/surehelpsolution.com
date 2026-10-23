@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Client;
 use App\Http\Controllers\Controller;
 use App\Models\SocialAccount;
 use App\Services\Billing\Entitlements;
+use App\Services\Billing\FeatureAccess;
 use App\Services\Social\SocialManager;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentOrganization;
@@ -22,8 +23,10 @@ class SocialOAuthController extends Controller
 
     public function __construct(private readonly SocialManager $social) {}
 
-    public function redirect(Request $request, CurrentOrganization $current, string $connector): RedirectResponse
+    public function redirect(Request $request, CurrentOrganization $current, FeatureAccess $features, string $connector): RedirectResponse
     {
+        // Facebook and LinkedIn are only for posting; Google is for posting or reviews.
+        abort_unless($connector === 'google' || (($org = $current->get()) && $features->allows($org, 'social_publishing')), 403);
         $adapter = $this->social->connector($connector);
         abort_unless($adapter->isConfigured(), 404);
 
@@ -34,15 +37,17 @@ class SocialOAuthController extends Controller
             'organization_id' => $current->id(),
             'user_id' => $request->user()->id,
             'at' => now()->timestamp,
+            'back' => $request->query('back') === 'reviews' ? 'app.reviews' : 'app.social.accounts',
         ]);
 
         return redirect()->away($adapter->authorizationUrl($this->redirectUri($connector), $state));
     }
 
-    public function callback(Request $request, CurrentOrganization $current, Entitlements $entitlements, Audit $audit, string $connector): RedirectResponse
+    public function callback(Request $request, CurrentOrganization $current, Entitlements $entitlements, Audit $audit, FeatureAccess $features, string $connector): RedirectResponse
     {
+        abort_unless($connector === 'google' || (($org = $current->get()) && $features->allows($org, 'social_publishing')), 403);
         $pending = $request->session()->pull(self::SESSION_KEY);
-        $back = redirect()->route('app.social.accounts');
+        $back = redirect()->route(is_array($pending) && ($pending['back'] ?? null) === 'app.reviews' ? 'app.reviews' : 'app.social.accounts');
 
         // Forged callbacks (CSRF): the state must be the one we issued to this person, for this business, recently.
         $valid = is_array($pending)

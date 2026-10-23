@@ -1341,3 +1341,36 @@ by default, like the SEO service).
 **Why:** the pricing page promised it, and businesses that resell or are particular about their image
 pay for it. The sending address stays SureHelp's verified domain, so emails keep reaching inboxes.
 Custom sending domains can follow if clients ask.
+
+## D83 — Reviews and reputation (2026-10-23)
+**Decision:** a business's Google reviews come into SureHelp through its Business Profile connection, and
+it can answer them from SureHelp. It's a feature, `reviews`, open to every plan.
+- **Sync.** `reviews:sync` runs every hour. *Check now* is on the page, at most once per two minutes.
+  - It reads the newest 50 reviews per location through the Business Profile API v4.
+  - The first time, it imports up to 200 quietly, for the history. Unanswered reviews older than 30 days
+    are marked "no reply needed", so old work doesn't pile up.
+  - Replies made on Google directly are picked up too.
+- **New reviews:**
+  - A notification ("New Google review", which people can switch off).
+  - For 1–2 stars, a high-priority task to reply within a day.
+  - A new automation trigger, *A new Google review arrives*, with a star-rating condition (1–2, 3, 4–5).
+    Review automations can notify the team, create tasks or email someone else, but never message the
+    "customer": reviewers aren't matched to customers.
+- **Replies.** *Reviews* (in the client navigation) lists reviews by "waiting", "all" and "1–3 stars".
+  - Replies are posted to Google with `PUT …/reviews/{id}/reply`, and can be updated later.
+  - **AI drafts** are made only when someone presses *Draft with AI*: one small call (low effort,
+    600 tokens at most), recorded in `ai_runs` as `review`. There are at most 100 drafts per business a
+    month (`REVIEWS_AI_MONTHLY_DRAFTS`), and an optional cheaper model (`REVIEWS_AI_MODEL`).
+  - The instructions keep replies short, use the reviewer's language, never argue, and never mention
+    private details. Medical and legal practices rely on that.
+- **Numbers.**
+  - The page shows the Google rating and count, the last 30 days, how many are waiting, the reply rate
+    over 12 months, and a month-by-month rating chart (with a table for screen readers).
+  - *Results* gets a Reviews row for the chosen month.
+- **Connecting.** The Google connection is allowed for businesses with social publishing or reviews.
+  Facebook and LinkedIn stay with social publishing. Connecting from *Reviews* comes back to *Reviews*.
+- **Who.** Owners and managers can reply; staff can read.
+
+**Why:** reviews are the most visible proof of a local business's quality, and answering them quickly
+helps its ranking. Doing it next to the calls and bookings, with a task for bad ones, means it actually
+gets done. Asking happy customers for a review is in the after-call survey (D84).

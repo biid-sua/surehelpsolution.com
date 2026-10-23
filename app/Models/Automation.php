@@ -41,6 +41,7 @@ class Automation extends Model
             'customer_inactive' => 'A customer hasn\'t been back for a while',
             'escalation_raised' => 'An escalation is raised',
             'task_overdue' => 'A task becomes overdue',
+            'review_received' => 'A new Google review arrives',
         ],
     ];
 
@@ -54,6 +55,7 @@ class Automation extends Model
         'appointment_completed' => 'appointment', 'appointment_no_show' => 'appointment', 'appointment_cancelled' => 'appointment',
         'call_logged' => 'call', 'call_missed' => 'voice_call', 'conversation_started' => 'conversation',
         'customer_created' => 'customer', 'customer_inactive' => 'customer', 'escalation_raised' => 'escalation', 'task_overdue' => 'task',
+        'review_received' => 'review',
     ];
 
     public const ACTIONS = [
@@ -76,6 +78,7 @@ class Automation extends Model
         'has_phone' => ['label' => 'Customer phone', 'ops' => ['yes' => 'is known', 'no' => 'isn\'t known'], 'value' => null],
         'call_outcome' => ['label' => 'Call outcome', 'ops' => ['is' => 'is', 'not' => 'isn\'t'], 'value' => 'outcome'],
         'business_hours' => ['label' => 'It happened', 'ops' => ['open' => 'while you\'re open', 'closed' => 'while you\'re closed'], 'value' => null],
+        'review_rating' => ['label' => 'The review', 'ops' => ['low' => 'has 1 or 2 stars', 'mid' => 'has 3 stars', 'high' => 'has 4 or 5 stars'], 'value' => null],
         // Only in a flow's "If" step (D81): "since" is when the flow started.
         'replied' => ['label' => 'A reply from them', 'ops' => ['yes' => 'came in since the flow started', 'no' => 'hasn\'t come in yet'], 'value' => null, 'branch_only' => true],
         'booked_since' => ['label' => 'A new booking', 'ops' => ['yes' => 'was made since the flow started', 'no' => 'hasn\'t been made yet'], 'value' => null, 'branch_only' => true],

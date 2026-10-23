@@ -22,6 +22,7 @@ use App\Models\Customer;
 use App\Models\Escalation;
 use App\Models\Message;
 use App\Models\Organization;
+use App\Models\Review;
 use App\Models\Tag;
 use App\Models\Task;
 use App\Models\VoiceCall;
@@ -37,6 +38,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 
 /**
  * Runs businesses' automations (spec §42–43, D50; Automations 2.0, D80).
@@ -469,6 +471,11 @@ class AutomationEngine
                     ->whereIn('conversation_id', Conversation::withoutGlobalScopes()->where('customer_id', $customer->id)->select('id'))->exists();
 
                 return ($op === 'yes') === $replied ? null : ($op === 'yes' ? 'They haven\'t replied.' : 'They replied.');
+            case 'review_rating':
+                $stars = $subject instanceof Review ? $subject->rating : 0;
+                $band = $stars >= 4 ? 'high' : ($stars === 3 ? 'mid' : ($stars > 0 ? 'low' : null));
+
+                return $band === $op ? null : 'A different star rating.';
             case 'booked_since':
                 $booked = $customer && $customer->appointments()->where('created_at', '>', $since ?? now())
                     ->whereNot('status', AppointmentStatus::Cancelled)
@@ -653,7 +660,7 @@ class AutomationEngine
     private function values(Automation $automation, Organization $organization, Model $subject, ?Customer $customer): array
     {
         $base = $subject instanceof Appointment ? $this->messages->values($subject) : [
-            'first_name' => $customer?->first_name ?: 'there',
+            'first_name' => $customer?->first_name ?: ($subject instanceof Review ? (string) Str::before($subject->authorLabel().' ', ' ') : 'there'),
             'business' => BusinessProfile::withoutGlobalScopes()->where('organization_id', $organization->id)->value('display_name') ?: $organization->name,
             'service' => '', 'date' => '', 'time' => '', 'address' => '', 'phone' => '',
         ];
@@ -661,6 +668,7 @@ class AutomationEngine
             $subject instanceof CallLog => (string) $subject->reason_for_call,
             $subject instanceof Escalation => (string) $subject->reason,
             $subject instanceof Task => (string) $subject->title,
+            $subject instanceof Review => $subject->rating.' stars: '.mb_substr((string) $subject->comment, 0, 300),
             default => '',
         };
         $links = app(LinkPage::class);
