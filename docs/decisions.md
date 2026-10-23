@@ -1204,3 +1204,25 @@ belong to SureHelp, not to a tenant.
 **Why:** the website's only lead path was a long contact form, and "Book a demo" led to it. A chat that
 answers at once and books a time in a few taps turns more visitors into calls with the team. Keeping the
 AI to free text and caching keeps the cost per lead small. Details are in `docs/sales-chat.md`.
+
+## D79 — Go-live readiness check (2026-10-23)
+**Decision:** `php artisan launch:check` and *Admin › System status* check an installation against what it
+needs to go live. They are not a deploy script; they only check.
+- **Statuses:**
+  - **fail:** must be fixed before launch (production mode, HTTPS, database, migrations, front-end build,
+    storage, cron, queue, real email sending).
+  - **warn:** strongly recommended (secure cookies, log level, CSP enforced, token expiry, agent assignments).
+  - **off:** a feature that stays hidden until its keys are set (AI, calendars, Twilio calls and texts,
+    Stripe, invoice details, plans, Meta, LinkedIn, Google Business Profile, push, store links).
+- **Addresses to register.** `--urls` (and the page) list every redirect and webhook address to paste
+  into each provider, built from the live `APP_URL`.
+- **Test email.** `--mail=` (and a button on the page) sends one.
+- **Scheduler heartbeat.** The scheduler records a heartbeat every minute, so a missing cron entry shows
+  up.
+- **Safety.** No secret values are ever printed. A section that can't be read (for example, the database
+  is down) shows as one failed line instead of an error.
+- **Order.** [go-live.md](go-live.md) gives the order, starting with the approvals that take weeks: A2P
+  10DLC, Google OAuth verification and Business Profile access, Meta App Review, and the store accounts.
+
+**Why:** most of the product is built but waiting on settings and third-party approvals. One place that
+says exactly what's missing turns going live into a checklist instead of guesswork.

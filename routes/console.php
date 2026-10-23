@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AuditLog;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schedule;
 
 /*
@@ -60,3 +61,6 @@ Schedule::command('agent-calendars:sync')->dailyAt('03:40')->withoutOverlapping(
 // SEO service (D57): Search Console statistics daily; monthly autopilot on the 1st.
 Schedule::command('seo:daily')->dailyAt('08:10')->withoutOverlapping(60);
 Schedule::command('websites:check')->dailyAt('07:20')->withoutOverlapping(60);
+
+// Proof the cron entry runs, for launch:check and Admin › System status (D79).
+Schedule::call(fn () => Cache::put('scheduler:heartbeat', now()->timestamp, now()->addHour()))->everyMinute()->name('scheduler-heartbeat');

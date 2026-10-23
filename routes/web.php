@@ -58,6 +58,7 @@ use App\Livewire\Admin\Schedules\Index as AdminSchedules;
 use App\Livewire\Admin\Search as AdminSearch;
 use App\Livewire\Admin\Seo\Index as AdminSeo;
 use App\Livewire\Admin\Support\Index as AdminSupport;
+use App\Livewire\Admin\SystemStatus as AdminSystemStatus;
 use App\Livewire\Admin\Usage\Index as AdminUsage;
 use App\Livewire\Admin\Users\Index as AdminUsers;
 use App\Livewire\Agent\Assignments as AgentAssignments;
@@ -367,6 +368,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth.home', 'force.password
     Route::get('/seo', AdminSeo::class)->middleware('can:seo.manage')->name('seo');
     Route::get('/phone-lines', AdminPhoneLines::class)->middleware('can:settings.view')->name('phone-lines');
     Route::get('/appearance', AdminAppearance::class)->middleware('can:settings.view')->name('appearance');
+    Route::get('/system', AdminSystemStatus::class)->middleware('can:settings.view')->name('system');
     Route::get('/usage', AdminUsage::class)->middleware('can:billing.view')->name('usage');
     Route::get('/escalations', AdminEscalations::class)->middleware('can:escalations.view')->name('escalations');
     Route::get('/billing', AdminBilling::class)->middleware('can:billing.view')->name('billing');
