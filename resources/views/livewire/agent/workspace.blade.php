@@ -150,6 +150,11 @@
                     <div class="sm:col-span-2">
                         <label for="c-notes" class="sh-label">Notes</label>
                         <textarea id="c-notes" wire:model="entry.notes" rows="3" class="sh-input" placeholder="What the caller needs, in their words."></textarea>
+                        @if ($assistReady)
+                            <button type="button" wire:click="fillFromNotes" wire:loading.attr="disabled" wire:target="fillFromNotes" class="mt-1 inline-flex items-center gap-1 text-xs font-medium text-brand-300 hover:underline">
+                                <x-ui.icon name="sparkles" class="size-3.5" /><span wire:loading.remove wire:target="fillFromNotes">Fill the form from my notes</span><span wire:loading wire:target="fillFromNotes">Filling…</span>
+                            </button>
+                        @endif
                     </div>
                 </div>
             </x-ui.card>
@@ -262,7 +267,20 @@
 
             <x-ui.card title="Knowledge">
                 <label for="kb-find" class="sr-only">Search knowledge</label>
-                <input id="kb-find" type="search" wire:model.live.debounce.250ms="knowledgeSearch" class="sh-input mb-3" placeholder="Search answers, policies, prices…" autocomplete="off">
+                <div class="mb-3 flex gap-2">
+                    <input id="kb-find" type="search" wire:model.live.debounce.250ms="knowledgeSearch" wire:keydown.enter.prevent="askAi" class="sh-input" placeholder="Search, or type the caller's question…" autocomplete="off">
+                    @if ($assistReady)
+                        <x-ui.button size="sm" variant="secondary" icon="sparkles" wire:click="askAi" wire:loading.attr="disabled" wire:target="askAi" title="Answer from this business's facts">Ask AI</x-ui.button>
+                    @endif
+                </div>
+                @error('assist') <p class="mb-3 text-sm text-danger">{{ $message }}</p> @enderror
+                @if ($aiAnswer)
+                    <div class="mb-3 rounded-lg border {{ $aiAnswer['confident'] ? 'border-brand-400/40 bg-brand-600/10' : 'border-warning/40 bg-warning/10' }} p-3 text-sm" aria-live="polite">
+                        <p class="text-xs font-medium text-subtle">AI answer to "{{ \Illuminate\Support\Str::limit($aiAnswer['question'], 80) }}"{{ $aiAnswer['confident'] ? '' : ' · not in the business notes' }}</p>
+                        <p class="mt-1 text-ink">{{ $aiAnswer['answer'] }}</p>
+                        <p class="mt-1 text-xs text-subtle">From this business's knowledge and rules. Check anything that matters before promising it.</p>
+                    </div>
+                @endif
                 @forelse ($knowledge as $item)
                     <details class="group border-b border-line py-2 last:border-0" @if ($item->is_pinned || $knowledgeSearch !== '') open @endif>
                         <summary class="flex cursor-pointer list-none items-center gap-2 text-sm font-medium text-ink">

@@ -1490,3 +1490,27 @@ rather than a model nobody can question.
 
 **Why:** "Can we connect it to n8n / Zapier / our CRM?" comes up with every larger client. A key plus
 webhooks covers almost all of it, and our own automations (D80–D81) remain the no-code option.
+
+## D88 — AI help for agents during calls (2026-10-23)
+**Decision:** the agent's call workspace gets two AI helpers. Both use the business's own briefing,
+the same knowledge, rules, hours and services the messaging assistant sees.
+- **Ask AI.** The agent types the caller's question in the knowledge box and presses *Ask AI* (or
+  Enter).
+  - The answer is 1–3 sentences to read out, using only the business's facts.
+  - When the facts don't cover it, the answer is marked "not in the business notes" and says what to
+    do instead: take a message or offer a call back. It never invents prices, times or policies.
+- **Fill the form from my notes.** The agent types quick notes during the call. AI fills in only the
+  empty fields: name, phone, email, reason, and an outcome from the business's own outcome list. It
+  also tidies the notes into a short summary.
+  - What the agent typed is never overwritten. The agent checks everything before saving, as before.
+- **Cost.** Each use is one small, low-effort call (700 tokens at most), recorded in `ai_runs` as
+  `assist`.
+  - At most 300 per business per day (`AGENT_ASSIST_DAILY`) and 30 per agent per minute.
+  - `AGENT_ASSIST_MODEL` (for example Haiku) keeps answers fast while the caller waits.
+  - The briefing is the messaging assistant's, so the provider's prompt cache is shared when the
+    model is the same.
+- There's no live transcription yet: suggestions work from what the agent types. Live speech-to-text
+  during calls (Twilio Media Streams) would be the next step, and costs per minute.
+
+**Why:** faster, more accurate calls, especially for new agents and businesses with long knowledge
+bases. Typed questions keep it cheap and predictable compared with listening to every call.
