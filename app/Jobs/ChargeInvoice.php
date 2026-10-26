@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Invoice;
 use App\Services\Billing\Stripe\CardPayments;
+use App\Support\DemoGuard;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -22,7 +23,7 @@ class ChargeInvoice implements ShouldQueue
     public function handle(CardPayments $payments): void
     {
         $invoice = Invoice::withoutGlobalScopes()->with('organization')->find($this->invoiceId);
-        if ($invoice) {
+        if ($invoice && ! DemoGuard::isDemo($invoice->organization_id)) {
             $payments->chargeAutomatically($invoice);
         }
     }

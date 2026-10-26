@@ -1,5 +1,10 @@
+@php
+  $siteThemes = app(\App\Support\Ui\Themes::class);
+  $siteDefault = $siteThemes->siteDefault();
+  $sitePicker = $siteThemes->sitePickerVisible();
+@endphp
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"@if ($siteDefault !== \App\Support\Ui\Themes::SITE_BASE) data-site-theme="{{ $siteDefault }}"@endif data-site-theme-default="{{ $siteDefault }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,13 +20,19 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="apple-touch-icon" href="{{ asset('assets/img/favicon.png') }}">
 
-  <!-- Colour theme (D59): the visitor's choice, kept in this browser only; applied before the page paints. -->
+  <!-- Colour theme (D59): the default an administrator picked (Admin › Appearance), or the visitor's own
+       choice kept in this browser only while the picker is shown; applied before the page paints. -->
   <script nonce="{{ Vite::cspNonce() }}">
     (() => {
+      @if ($sitePicker)
       try {
         const theme = localStorage.getItem('surehelp.site-theme');
-        if (@json(array_keys(config('themes.site'))).includes(theme) && theme !== 'indigo') document.documentElement.dataset.siteTheme = theme;
+        if (@json(array_keys(config('themes.site'))).includes(theme)) {
+          if (theme === @json(\App\Support\Ui\Themes::SITE_BASE)) delete document.documentElement.dataset.siteTheme;
+          else document.documentElement.dataset.siteTheme = theme;
+        }
       } catch (e) { /* storage blocked: default theme */ }
+      @endif
     })();
 
     // Buttons name the page function they run (data-call, data-arg) instead of inline onclick
@@ -956,7 +967,9 @@
 
 @include('partials.footer')
 
+@if ($sitePicker)
 @include('partials.site-theme-picker')
+@endif
 
 <!-- Additional Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

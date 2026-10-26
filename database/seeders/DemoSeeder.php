@@ -18,6 +18,7 @@ use App\Actions\Organizations\ChangeOrganizationStatus;
 use App\Actions\Organizations\ProvisionUserTenancy;
 use App\Actions\Tasks\ChangeTaskStatus;
 use App\Actions\Tasks\CreateTask;
+use App\Console\Commands\InstallTrainingStarter;
 use App\Enums\AppointmentStatus;
 use App\Enums\EscalationType;
 use App\Enums\InboxChannel;
@@ -114,6 +115,11 @@ use SplPriorityQueue;
  * answering service through the app's own actions, so timestamps, audit entries, customer
  * timelines, invoices and notifications all line up. Nothing leaves the machine: mail goes to the
  * array mailer, queued work runs inline, outbound HTTP is refused and the AI provider stays off.
+ *
+ * Sandbox mode (D94, Admin › Demo data, App\Services\Demo\DemoData) loads the same story into a
+ * system that already has real data: it creates its own staff accounts (with unusable passwords)
+ * instead of renaming the default ones, leaves real plans, feature settings, courses, shifts and
+ * legal records alone, and only touches rows it created itself.
  */
 class DemoSeeder extends Seeder
 {
@@ -122,6 +128,11 @@ class DemoSeeder extends Seeder
     public const TOTP_SECRET = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
 
     private CarbonImmutable $now;
+
+    /** Files written to storage, for removal with the demo data (D94). @var list<string> */
+    public array $files = [];
+
+    public function __construct(public bool $sandbox = false) {}
 
     private CarbonImmutable $clock;
 
@@ -191,13 +202,16 @@ class DemoSeeder extends Seeder
         $this->queue = new SplPriorityQueue;
 
         if (Organization::query()->withTrashed()->where('name', 'Rivera Plumbing & Heating')->exists()) {
+            if ($this->sandbox) {
+                throw new \RuntimeException('A business called Rivera Plumbing & Heating already exists, so the demo data would clash with it.');
+            }
             $this->command->error('The demo data is already here. Start again with: php artisan migrate:fresh --force && php artisan db:seed --class=DemoSeeder --force');
 
             return;
         }
 
         // The default users come from UserSeeder; run it when this database doesn't have them yet.
-        if (! User::query()->where('email', 'admin@surehelpsolution.com')->exists()) {
+        if (! $this->sandbox && ! User::query()->where('email', 'admin@surehelpsolution.com')->exists()) {
             $this->call(UserSeeder::class);
         }
 
@@ -234,7 +248,9 @@ class DemoSeeder extends Seeder
             Carbon::setTestNow();
         }
 
-        $this->report($started);
+        if (! $this->sandbox) {   // loaded from Admin › Demo data: no console to print to
+            $this->report($started);
+        }
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -343,14 +359,30 @@ class DemoSeeder extends Seeder
     // People
     // ---------------------------------------------------------------------------------------------
 
+    /** The demo's own accounts in sandbox mode; nobody can sign in to them (View as reaches the owners). */
+    public const SANDBOX_ACCOUNTS = [
+        'admin' => ['Alex Morgan', 'alex.morgan@surehelp-demo.example', 'admin'],
+        'john' => ['John Carter', 'john.carter@surehelp-demo.example', 'agent'],
+        'mike' => ['Mike Johnson', 'mike.johnson@surehelp-demo.example', 'agent'],
+        'owner' => ['Elena Rivera', 'elena@riveraplumbing.example', 'client'],
+        'sarah' => ['Dr. Sarah Wilson', 'sarah@brightsmile.example', 'client'],
+    ];
+
+    private User $sarah;
+
     private function users(): void
     {
+        if ($this->sandbox) {
+            $this->sandboxUsers();
+
+            return;
+        }
         $find = fn (string $email) => User::where('email', $email)->firstOrFail();
         $this->admin = $find('admin@surehelpsolution.com');
         $this->john = $find('agent@surehelpsolution.com');
         $this->mike = $find('mike.agent@surehelpsolution.com');
         $this->owner = $find('client@surehelpsolution.com');
-        $sarah = $find('sarah.client@surehelpsolution.com');
+        $sarah = $this->sarah = $find('sarah.client@surehelpsolution.com');
 
         $joined = $this->now->subDays(220);
         $this->admin->forceFill(['name' => 'Alex Morgan', 'phone' => '+1 (512) 555-0100', 'timezone' => self::TZ, 'created_at' => $joined])->save();
@@ -365,12 +397,36 @@ class DemoSeeder extends Seeder
         $this->travel($this->now);
     }
 
+    private function sandboxUsers(): void
+    {
+        $joined = $this->now->subDays(220);
+        $make = function (string $key, string $phone, CarbonImmutable $created, ?string $timezone = null) {
+            [$name, $email, $role] = self::SANDBOX_ACCOUNTS[$key];
+            $this->travel($created);
+            $user = $this->newUser($name, $email, $phone, $role);
+            $user->forceFill(['timezone' => $timezone ?? $user->timezone])->save();
+
+            return $user;
+        };
+        $this->admin = $make('admin', '+1 (512) 555-0100', $joined, self::TZ);
+        $this->john = $make('john', '+1 (512) 555-0101', $joined->addDays(20), self::TZ);
+        $this->mike = $make('mike', '+1 (512) 555-0103', $joined->addDays(45), self::TZ);
+        $this->owner = $make('owner', '+1 (512) 555-0102', $this->now->subDays(131));
+        $this->sarah = $make('sarah', '+1 (512) 555-0104', $this->now->subDays(121));
+
+        $this->travel($this->now->subDays(129));
+        $this->manager = $this->newUser('Marcus Rivera', 'marcus@riveraplumbing.example', '+1 (512) 555-0110');
+        $this->staff = $this->newUser('Sofia Ramirez', 'sofia@riveraplumbing.example', '+1 (512) 555-0111');
+        $this->travel($this->now);
+    }
+
     private function newUser(string $name, string $email, ?string $phone = null, string $role = 'client'): User
     {
         $user = User::create([
             'name' => $name,
             'email' => $email,
-            'password' => 'password',
+            // Sandbox accounts get a password nobody knows: the demo must never open a way in.
+            'password' => $this->sandbox ? Str::random(64) : 'password',
             'role' => $role,
             'phone' => $phone,
             'is_active' => true,
@@ -389,20 +445,21 @@ class DemoSeeder extends Seeder
     {
         $this->travel($this->now->subDays(200));
 
+        $slug = fn (string $s) => $this->sandbox ? 'demo-'.$s : $s;
         $this->plans['starter'] = Plan::create([
-            'slug' => 'starter', 'name' => 'Starter', 'description' => 'Live answering for small businesses: calls, messages and bookings.',
+            'slug' => $slug('starter'), 'name' => 'Starter', 'description' => 'Live answering for small businesses: calls, messages and bookings.',
             'price_cents' => 14900, 'interval' => 'month', 'trial_days' => 14, 'sort_order' => 1,
             'features' => ['customer_emails'],
             'limits' => ['calls' => 100, 'extra_call_cents' => 150, 'team_members' => 2, 'calendars' => 1],
         ]);
         $this->plans['receptionist'] = Plan::create([
-            'slug' => 'receptionist', 'name' => 'Receptionist', 'description' => 'A full virtual receptionist with calendar sync and the AI messaging assistant.',
+            'slug' => $slug('receptionist'), 'name' => 'Receptionist', 'description' => 'A full virtual receptionist with calendar sync and the AI messaging assistant.',
             'price_cents' => 29900, 'interval' => 'month', 'trial_days' => 14, 'sort_order' => 2,
             'features' => ['customer_emails', 'calendar_sync', 'ai_assistant'],
             'limits' => ['calls' => 250, 'extra_call_cents' => 125, 'team_members' => 5, 'calendars' => 2],
         ]);
         $this->plans['pro'] = Plan::create([
-            'slug' => 'pro', 'name' => 'Pro', 'description' => 'Everything, for busy service businesses: social publishing and website tools included.',
+            'slug' => $slug('pro'), 'name' => 'Pro', 'description' => 'Everything, for busy service businesses: social publishing and website tools included.',
             'price_cents' => 49900, 'interval' => 'month', 'trial_days' => 14, 'sort_order' => 3,
             'features' => ['customer_emails', 'calendar_sync', 'ai_assistant', 'social_publishing', 'website_tools', 'white_label', 'customer_payments'],
             'limits' => ['calls' => 600, 'extra_call_cents' => 100, 'team_members' => 15, 'calendars' => 5],
@@ -414,7 +471,17 @@ class DemoSeeder extends Seeder
             ['website_tools', 'Website tools', 'Website health check plus chat, booking and click-to-call on your site.', 2900, 3],
             ['bilingual', 'Bilingual answering', 'English and Spanish speaking agents for every call.', 3100, 4],
         ] as [$slug, $name, $description, $price, $sort]) {
-            $this->addons[$slug] = Addon::create(['slug' => $slug, 'name' => $name, 'description' => $description, 'price_cents' => $price, 'sort_order' => $sort]);
+            // In sandbox mode a real add-on with this slug is used as it is (feature access goes by slug).
+            $this->addons[$slug] = ($this->sandbox ? Addon::query()->where('slug', $slug)->first() : null)
+                ?? Addon::create(['slug' => $slug, 'name' => $name, 'description' => $description, 'price_cents' => $price, 'sort_order' => $sort]);
+        }
+        if ($this->sandbox) {
+            // Demo plans aren't offered to anyone, and the real feature settings stay as they are.
+            foreach ($this->plans as $plan) {
+                $plan->forceFill(['name' => $plan->name.' (demo)', 'is_public' => false])->save();
+            }
+
+            return;
         }
 
         // Paid features really are paid in the demo, so the "Upgrade" badges show for smaller plans.
@@ -440,11 +507,21 @@ class DemoSeeder extends Seeder
     private function training(): void
     {
         $this->travel($this->now->subDays(150));
-        Artisan::call('training:starter');
-
+        $titles = ['handling' => 'SureHelp Call Handling Standards', 'privacy' => 'Privacy and Security Essentials'];
         $publisher = app(CoursePublisher::class);
-        foreach (['handling' => 'SureHelp Call Handling Standards', 'privacy' => 'Privacy and Security Essentials'] as $key => $title) {
-            $course = TrainingCourse::query()->whereNull('organization_id')->where('title', $title)->firstOrFail();
+        $starter = app(InstallTrainingStarter::class);
+        foreach ($titles as $key => $title) {
+            $course = TrainingCourse::query()->whereNull('organization_id')->where('title', $title)->first();
+            if ($this->sandbox && $course?->isPublished()) {
+                // In sandbox mode a real, published starter course is used as it is.
+                $this->courses[$key] = $course;
+
+                continue;
+            }
+            if (! $course || $this->sandbox) {
+                // A real draft is left alone: the demo publishes its own copy.
+                $course = $starter->install($title, $course ? $title.' (demo)' : null);
+            }
             $course->forceFill(['owner_user_id' => $this->admin->id, 'created_by_user_id' => $this->admin->id])->save();
             $publisher->publish($course, $this->admin, 'First release');
             $this->courses[$key] = $course->fresh();
@@ -480,8 +557,16 @@ class DemoSeeder extends Seeder
         }
 
         $assigner = app(TrainingAssigner::class);
-        $assigner->createRule($this->courses['handling'], $this->admin, ['scope' => 'everyone', 'is_required' => true, 'priority' => 'high', 'due_days' => 14, 'enforcement' => 'warning']);
-        $assigner->createRule($this->courses['privacy'], $this->admin, ['scope' => 'role', 'role' => 'agent', 'is_required' => true, 'priority' => 'normal', 'due_days' => 30, 'enforcement' => 'warning']);
+        if ($this->sandbox) {
+            // Rules for the demo agents only: real agents get no demo training.
+            foreach ([$this->john, $this->mike] as $agent) {
+                $assigner->createRule($this->courses['handling'], $this->admin, ['scope' => 'agent', 'agent_user_id' => $agent->id, 'is_required' => true, 'priority' => 'high', 'due_days' => 14, 'enforcement' => 'warning']);
+                $assigner->createRule($this->courses['privacy'], $this->admin, ['scope' => 'agent', 'agent_user_id' => $agent->id, 'is_required' => true, 'priority' => 'normal', 'due_days' => 30, 'enforcement' => 'warning']);
+            }
+        } else {
+            $assigner->createRule($this->courses['handling'], $this->admin, ['scope' => 'everyone', 'is_required' => true, 'priority' => 'high', 'due_days' => 14, 'enforcement' => 'warning']);
+            $assigner->createRule($this->courses['privacy'], $this->admin, ['scope' => 'role', 'role' => 'agent', 'is_required' => true, 'priority' => 'normal', 'due_days' => 30, 'enforcement' => 'warning']);
+        }
 
         // John completes everything early; Mike finishes the standards, the rest is in progress.
         $this->travel($this->now->subDays(146)->setTime(15, 10));
@@ -561,7 +646,7 @@ class DemoSeeder extends Seeder
                 'calls' => 220, 'call_days' => 120, 'pool' => 80, 'pool_offset' => 0,
             ],
             'dental' => [
-                'name' => 'Bright Smile Dental', 'owner' => User::where('email', 'sarah.client@surehelpsolution.com')->firstOrFail(), 'start' => 120, 'industry' => 'dental', 'mode' => 'business',
+                'name' => 'Bright Smile Dental', 'owner' => $this->sarah, 'start' => 120, 'industry' => 'dental', 'mode' => 'business',
                 'phone' => '(512) 555-0161', 'email' => 'frontdesk@brightsmile.example', 'website' => 'https://brightsmile.example',
                 'job_value' => 22000, 'plan' => 'receptionist', 'agents' => [[$this->john, 'standard', true], [$this->mike, 'backup', false]],
                 'calls' => 55, 'call_days' => 115, 'pool' => 32, 'pool_offset' => 17,
@@ -1977,7 +2062,9 @@ class DemoSeeder extends Seeder
                 }
             });
         }
-        $this->at($this->localAt(0, 6, 0)->min($this->now->subMinutes(30)), fn () => app(QualityReviews::class)->drawSample(now()->subDay()));
+        if (! $this->sandbox) {   // the sample spans every business, real ones too
+            $this->at($this->localAt(0, 6, 0)->min($this->now->subMinutes(30)), fn () => app(QualityReviews::class)->drawSample(now()->subDay()));
+        }
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -2201,6 +2288,7 @@ class DemoSeeder extends Seeder
         $bytes = (string) ob_get_clean();
         imagedestroy($image);
         Storage::disk('local')->put($path, $bytes);
+        $this->files[] = $path;
 
         return [strlen($bytes), $size, $size];
     }
@@ -2472,7 +2560,9 @@ class DemoSeeder extends Seeder
 
     private function schedules(): void
     {
-        AgentDutySchedule::query()->delete();
+        if (! $this->sandbox) {
+            AgentDutySchedule::query()->delete();
+        }
         $start = $this->now->startOfWeek()->subWeeks(2);
         for ($d = 0; $d < 35; $d++) {
             $day = $start->addDays($d);
@@ -2526,29 +2616,32 @@ class DemoSeeder extends Seeder
         $codes = ['demo1-codes', 'demo2-codes', 'demo3-codes', 'demo4-codes', 'demo5-codes', 'demo6-codes', 'demo7-codes', 'demo8-codes'];
         $hashed = array_map(fn (string $c) => Hash::make($c, ['rounds' => 4]), $codes);
 
-        $emails = ['admin@surehelpsolution.com', 'agent@surehelpsolution.com', 'mike.agent@surehelpsolution.com', 'client@surehelpsolution.com', 'sarah.client@surehelpsolution.com',
-            'marcus@riveraplumbing.example', 'sofia@riveraplumbing.example', 'david@lakesidelaw.example', 'tom@greenvalleyhvac.example', 'priya@sunriseyoga.example'];
-        foreach (User::query()->whereIn('email', $emails)->get() as $user) {
+        $emails = $this->sandbox ? array_column(self::SANDBOX_ACCOUNTS, 1) : ['admin@surehelpsolution.com', 'agent@surehelpsolution.com', 'mike.agent@surehelpsolution.com', 'client@surehelpsolution.com', 'sarah.client@surehelpsolution.com'];
+        $emails = [...$emails, 'marcus@riveraplumbing.example', 'sofia@riveraplumbing.example', 'david@lakesidelaw.example', 'tom@greenvalleyhvac.example', 'priya@sunriseyoga.example'];
+        $users = User::query()->whereIn('email', $emails)->get();
+        foreach ($users as $user) {
             $this->travel($this->now->subDays(min(100, max(1, (int) $user->created_at?->diffInDays($this->now)))));
             $legal->accept($user);
             $this->travel($this->now);
             $changes = ['is_active' => true, 'must_change_password' => false, 'email_verified_at' => $user->email_verified_at ?? $user->created_at ?? $this->now, 'last_login_at' => $this->now->subHours(mt_rand(2, 30))];
             if ($user->requiresTwoFactor()) {
-                $changes += ['two_factor_secret' => self::TOTP_SECRET, 'two_factor_recovery_codes' => $hashed, 'two_factor_confirmed_at' => $this->now->subDays(30)];
+                // Sandbox accounts can't sign in anyway; they never get the published secret.
+                $changes += ['two_factor_secret' => $this->sandbox ? Str::upper(Str::random(32)) : self::TOTP_SECRET, 'two_factor_recovery_codes' => $hashed, 'two_factor_confirmed_at' => $this->now->subDays(30)];
             }
             $user->forceFill($changes)->save();
         }
-        LegalAcceptance::query()->update(['ip_address' => '198.51.100.24', 'user_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36']);
+        LegalAcceptance::query()->whereIn('user_id', $users->modelKeys())->update(['ip_address' => '198.51.100.24', 'user_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36']);
     }
 
     /** Rebooking tasks created by automations are worked like any other. */
     private function tidyAutomationTasks(): void
     {
-        foreach (Task::query()->where('source', 'automation')->where('status', TaskStatus::Open->value)->where('created_at', '<', $this->now->subDays(2))->get() as $task) {
+        $demo = collect($this->orgs)->map->id->values()->all();
+        foreach (Task::query()->whereIn('organization_id', $demo)->where('source', 'automation')->where('status', TaskStatus::Open->value)->where('created_at', '<', $this->now->subDays(2))->get() as $task) {
             $task->forceFill(['status' => TaskStatus::Completed, 'completed_at' => $task->created_at->addHours(mt_rand(3, 30)), 'completed_by_user_id' => $this->owner->id,
                 'assigned_to_user_id' => $task->assigned_to_user_id ?? $this->staff->id])->saveQuietly();
         }
-        Task::query()->where('source', 'automation')->whereNull('assigned_to_user_id')->update(['assigned_to_user_id' => $this->staff->id]);
+        Task::query()->whereIn('organization_id', $demo)->where('source', 'automation')->whereNull('assigned_to_user_id')->update(['assigned_to_user_id' => $this->staff->id]);
     }
 
     /** @return list<string> detail pages worth showing in a recording (ULIDs change on every rebuild) */

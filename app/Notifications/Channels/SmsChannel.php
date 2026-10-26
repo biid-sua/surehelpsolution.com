@@ -18,7 +18,8 @@ class SmsChannel
 
     public function send(object $notifiable, Notification $notification): void
     {
-        $to = $notifiable instanceof User ? $notifiable->routeNotificationForSms() : null;
+        // Demo people (D94) get no texts.
+        $to = $notifiable instanceof User && ! $notifiable->is_demo ? $notifiable->routeNotificationForSms() : null;
         if (! $to || ! NotificationChannels::enabled('sms')) {
             return;
         }

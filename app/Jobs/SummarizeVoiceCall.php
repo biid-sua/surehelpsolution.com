@@ -7,6 +7,7 @@ use App\Models\CallLog;
 use App\Models\VoiceCall;
 use App\Services\Ai\Contracts\AiProvider;
 use App\Services\Ai\Data\AiRequest;
+use App\Support\DemoGuard;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -36,7 +37,7 @@ TXT;
     public function handle(AiProvider $ai): void
     {
         $call = VoiceCall::withoutGlobalScopes()->find($this->callId);
-        if (! $call || empty($call->transcript)) {
+        if (! $call || empty($call->transcript) || DemoGuard::isDemo($call->organization_id)) {
             return;
         }
         if (! $ai->isConfigured()) {

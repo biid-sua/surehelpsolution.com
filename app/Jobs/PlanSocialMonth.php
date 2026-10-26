@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\SocialAiRun;
 use App\Services\Social\Ai\ContentStudio;
+use App\Support\DemoGuard;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -27,7 +28,7 @@ class PlanSocialMonth implements ShouldQueue
     public function handle(ContentStudio $studio): void
     {
         $run = SocialAiRun::withoutGlobalScopes()->find($this->runId);
-        if ($run && in_array($run->status, ['queued', 'running'], true)) {
+        if ($run && in_array($run->status, ['queued', 'running'], true) && ! DemoGuard::isDemo($run->organization_id)) {
             $studio->runPlan($run);
         }
     }

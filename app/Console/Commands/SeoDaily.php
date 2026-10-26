@@ -32,7 +32,7 @@ class SeoDaily extends Command
         }
 
         $started = 0;
-        Organization::query()->whereIn('status', ['active', 'onboarding'])->each(function (Organization $org) use ($features, $desk, $tokens, &$started) {
+        Organization::query()->whereIn('status', ['active', 'onboarding'])->where('is_demo', false)->each(function (Organization $org) use ($features, $desk, $tokens, &$started) {
             if (! $features->allows($org, 'seo_service') || (($org->seo_settings ?? [])['autopilot'] ?? true) === false) {
                 return;
             }

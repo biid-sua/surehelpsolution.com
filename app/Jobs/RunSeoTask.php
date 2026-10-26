@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\SeoTask;
 use App\Services\Seo\SeoDesk;
+use App\Support\DemoGuard;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -26,7 +27,7 @@ class RunSeoTask implements ShouldQueue
     public function handle(SeoDesk $desk): void
     {
         $task = SeoTask::withoutGlobalScopes()->find($this->taskId);
-        if ($task) {
+        if ($task && ! DemoGuard::isDemo($task->organization_id)) {
             $desk->run($task);
         }
     }

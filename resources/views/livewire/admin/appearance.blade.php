@@ -1,5 +1,5 @@
 <div>
-    <x-ui.page-header title="Appearance" description="The colour theme everyone sees in the portals, unless they picked their own." />
+    <x-ui.page-header title="Appearance" description="The colour theme everyone sees in the portals, unless they picked their own, and the public website's colours." />
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <x-ui.card title="Default theme" description="Used by everyone who hasn't chosen a theme, and on the sign-in pages. People who chose their own keep it.">
@@ -69,4 +69,50 @@
             @endif
         </x-ui.card>
     </div>
+
+    <x-ui.card class="mt-6" title="Public website" description="The colours of the home page and every other public page.">
+        <form wire:submit="saveSite" class="space-y-5">
+            <div>
+                <p class="sh-label">Default colour</p>
+                <div class="grid gap-3 sm:grid-cols-3 xl:grid-cols-6" role="radiogroup" aria-label="Default website colour">
+                    @foreach ($siteThemes as $key => $theme)
+                        <label wire:key="s-{{ $key }}" @class([
+                            'flex cursor-pointer flex-col rounded-xl border p-3 transition-colors hover:border-brand-400',
+                            'border-brand-400 ring-1 ring-brand-400' => $siteDefault === $key,
+                            'border-line-strong' => $siteDefault !== $key,
+                        ])>
+                            <input type="radio" name="siteDefault" value="{{ $key }}" wire:model.live="siteDefault" class="sr-only" @disabled(! $canManage)>
+                            <span class="flex h-10 overflow-hidden rounded-lg ring-1 ring-line" aria-hidden="true">
+                                @foreach ($theme['swatch'] as $i => $color)<span class="block h-full" style="background: {{ $color }}; flex: {{ $i === 0 ? 2 : 1 }}"></span>@endforeach
+                            </span>
+                            <span class="mt-2 flex items-center justify-between gap-2">
+                                <span class="text-sm font-medium text-ink">{{ $theme['label'] }}</span>
+                                @if ($siteDefault === $key)<x-ui.badge tone="brand">Default</x-ui.badge>@endif
+                            </span>
+                        </label>
+                    @endforeach
+                </div>
+                @error('siteDefault')<p class="mt-1 text-xs text-danger">{{ $message }}</p>@enderror
+            </div>
+
+            <label class="flex items-start gap-3">
+                <input type="checkbox" wire:model.live="sitePicker" class="mt-0.5 rounded text-brand-500" @disabled(! $canManage)>
+                <span>
+                    <span class="block text-sm font-medium text-ink">Let visitors change the colour</span>
+                    <span class="block text-sm text-muted">{{ $sitePicker
+                        ? 'Visitors see a palette button and can pick another colour. Their choice is kept in their own browser only.'
+                        : 'The palette button is hidden and every visitor sees the default colour, including anyone who picked their own before.' }}</span>
+                </span>
+            </label>
+
+            @if ($canManage)
+                <div class="flex flex-wrap items-center gap-3">
+                    <x-ui.button type="submit">Save website colours</x-ui.button>
+                    <a href="{{ url('/') }}" target="_blank" rel="noopener" class="text-sm text-brand-300 hover:underline">Open the website</a>
+                </div>
+            @else
+                <p class="text-sm text-muted">Only administrators with settings access can change these.</p>
+            @endif
+        </form>
+    </x-ui.card>
 </div>

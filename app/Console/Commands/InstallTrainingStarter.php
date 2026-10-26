@@ -10,6 +10,7 @@ use App\Models\TrainingModule;
 use App\Models\TrainingQuestion;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 /**
  * Two platform-wide starter courses for Agent University, created as drafts for an administrator
@@ -38,8 +39,19 @@ class InstallTrainingStarter extends Command
         return self::SUCCESS;
     }
 
+    /**
+     * One starter course by its title, as a draft, optionally under another title (the demo data's
+     * own copy when a real draft already has the name, D94).
+     */
+    public function install(string $title, ?string $as = null): TrainingCourse
+    {
+        $data = collect($this->courses())->firstWhere('title', $title) ?? throw new InvalidArgumentException("No starter course called \"{$title}\".");
+
+        return DB::transaction(fn () => $this->create(['title' => $as ?? $title] + $data));
+    }
+
     /** @param array<string, mixed> $data */
-    private function create(array $data): void
+    private function create(array $data): TrainingCourse
     {
         $category = TrainingCategory::query()->firstOrCreate(['name' => $data['category']]);
         $course = TrainingCourse::create([
@@ -66,6 +78,8 @@ class InstallTrainingStarter extends Command
                 }
             }
         }
+
+        return $course;
     }
 
     /** @return list<array<string, mixed>> */

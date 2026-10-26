@@ -4,6 +4,7 @@ namespace App\Services\System;
 
 use App\Models\Plan;
 use App\Services\Billing\BillingSettings;
+use App\Support\DemoGuard;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -135,6 +136,7 @@ class LaunchReadiness
                 'Run a week with CSP_MODE=report, then set CSP_MODE=enforce.', self::WARN),
             $this->check($g, 'Agents only see assigned businesses', ! config('tenancy.auto_assign_agents'), 'TENANCY_AUTO_ASSIGN_AGENTS',
                 'Set TENANCY_AUTO_ASSIGN_AGENTS=false and review Agent assignments.', self::WARN),
+            $this->check($g, 'No demo data', ! DemoGuard::present(), 'Admin › Demo data', 'Remove the demo data under Admin › Demo data before real customers arrive.'),
         ];
     }
 

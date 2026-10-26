@@ -14,7 +14,18 @@ class Themes
 {
     public const DEFAULT_SETTING = 'ui.default_theme';
 
+    public const SITE_DEFAULT_SETTING = 'ui.site_default_theme';
+
+    public const SITE_PICKER_SETTING = 'ui.site_theme_picker';
+
+    /** The public website's base palette: the CSS without a `data-site-theme` attribute. */
+    public const SITE_BASE = 'indigo';
+
     private ?string $default = null;
+
+    private ?string $siteDefault = null;
+
+    private ?bool $sitePicker = null;
 
     /** @return array<string, array{label: string, description: string, mode: string, swatch: list<string>, colors?: array<string, string>}> */
     public function portal(): array
@@ -42,6 +53,41 @@ class Themes
     {
         PlatformSetting::put(self::DEFAULT_SETTING, $key);
         $this->default = $key;
+    }
+
+    /** @return array<string, array{label: string, swatch: list<string>}> the public website's themes */
+    public function site(): array
+    {
+        return config('themes.site');
+    }
+
+    /** The public website's colour theme for every visitor who hasn't picked their own. */
+    public function siteDefault(): string
+    {
+        if ($this->siteDefault === null) {
+            $saved = rescue(fn () => PlatformSetting::get(self::SITE_DEFAULT_SETTING), null, report: false);
+            $this->siteDefault = is_string($saved) && array_key_exists($saved, $this->site()) ? $saved : self::SITE_BASE;
+        }
+
+        return $this->siteDefault;
+    }
+
+    /** Whether visitors see the colour picker on the public website (on unless an administrator hid it). */
+    public function sitePickerVisible(): bool
+    {
+        if ($this->sitePicker === null) {
+            $saved = rescue(fn () => PlatformSetting::get(self::SITE_PICKER_SETTING), null, report: false);
+            $this->sitePicker = $saved === null ? true : (bool) $saved;
+        }
+
+        return $this->sitePicker;
+    }
+
+    public function setSite(string $default, bool $pickerVisible): void
+    {
+        PlatformSetting::put(self::SITE_DEFAULT_SETTING, $default);
+        PlatformSetting::put(self::SITE_PICKER_SETTING, $pickerVisible);
+        [$this->siteDefault, $this->sitePicker] = [$default, $pickerVisible];
     }
 
     /** The theme key this person sees (may be `system`). */

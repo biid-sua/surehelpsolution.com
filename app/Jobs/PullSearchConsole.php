@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\SearchConsoleConnection;
 use App\Services\Seo\SearchConsole;
+use App\Support\DemoGuard;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -23,7 +24,7 @@ class PullSearchConsole implements ShouldQueue
     public function handle(SearchConsole $console): void
     {
         $connection = SearchConsoleConnection::withoutGlobalScopes()->find($this->connectionId);
-        if ($connection) {
+        if ($connection && ! DemoGuard::isDemo($connection->organization_id)) {
             $console->pull($connection);
         }
     }

@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Appointment;
 use App\Services\Calendar\CalendarSync;
+use App\Support\DemoGuard;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -28,7 +29,7 @@ class PushAppointmentToCalendars implements ShouldQueue
     {
         $appointment = Appointment::withoutGlobalScopes()->find($this->appointmentId);
 
-        if ($appointment) {
+        if ($appointment && ! DemoGuard::isDemo($appointment->organization_id)) {
             $sync->pushAppointment($appointment);
         }
     }

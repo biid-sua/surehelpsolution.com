@@ -2,8 +2,10 @@
 
 namespace App\Jobs;
 
+use App\Models\SocialPost;
 use App\Models\SocialPostTarget;
 use App\Services\Social\SocialPublishing;
+use App\Support\DemoGuard;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -28,7 +30,7 @@ class PublishSocialTarget implements ShouldQueue
     {
         $target = SocialPostTarget::find($this->targetId);
 
-        if ($target) {
+        if ($target && ! DemoGuard::isDemo(SocialPost::withoutGlobalScopes()->whereKey($target->social_post_id)->value('organization_id'))) {
             $publishing->publish($target);
         }
     }

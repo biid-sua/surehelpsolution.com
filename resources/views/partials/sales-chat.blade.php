@@ -24,6 +24,7 @@
       </button>
     </header>
     <p class="sales-chat__disclosure" hidden></p>
+    <p class="sales-chat__debug" role="note" hidden></p>
     <div class="sales-chat__log" aria-live="polite" aria-relevant="additions" tabindex="-1"></div>
     <div class="sales-chat__error" role="alert" hidden><span></span> <button type="button" data-sc="retry">Try again</button></div>
     <form class="sales-chat__composer" novalidate>

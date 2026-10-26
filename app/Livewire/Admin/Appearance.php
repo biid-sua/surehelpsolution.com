@@ -17,7 +17,8 @@ use Livewire\Component;
 /**
  * Admin › Appearance (D59): the colour theme everyone sees unless they picked their own. Changing
  * the default never touches personal choices; resetting them is a separate, deliberate action
- * with a reason, typed confirmation, an audit entry and a notice to each person affected.
+ * with a reason, typed confirmation, an audit entry and a notice to each person affected. The public
+ * website has its own default colour and a switch for the visitors' colour picker.
  */
 #[Layout('layouts.portal', ['portal' => 'admin'])]
 #[Title('Appearance')]
@@ -26,6 +27,10 @@ class Appearance extends Component
     use PlatformAdminOnly;
 
     public string $default = '';
+
+    public string $siteDefault = '';
+
+    public bool $sitePicker = true;
 
     public string $resetScope = 'one';
 
@@ -39,6 +44,23 @@ class Appearance extends Component
     {
         $this->authorize('settings.view');
         $this->default = $themes->default();
+        $this->siteDefault = $themes->siteDefault();
+        $this->sitePicker = $themes->sitePickerVisible();
+    }
+
+    public function saveSite(Themes $themes, Audit $audit): void
+    {
+        $this->authorize('settings.manage');
+        $this->validate(['siteDefault' => ['required', Rule::in(array_keys($themes->site()))], 'sitePicker' => ['boolean']]);
+        $before = ['theme' => $themes->siteDefault(), 'visitor_picker' => $themes->sitePickerVisible()];
+        $themes->setSite($this->siteDefault, $this->sitePicker);
+        $audit->record('ui.site_theme_changed', null, $before, ['theme' => $this->siteDefault, 'visitor_picker' => $this->sitePicker],
+            label: $themes->site()[$this->siteDefault]['label']);
+
+        $label = $themes->site()[$this->siteDefault]['label'];
+        $this->dispatch('toast', type: 'success', message: $this->sitePicker
+            ? "Website colours saved. New visitors see {$label}; visitors who picked their own colour keep it."
+            : "Website colours saved. Every visitor now sees {$label} and the colour picker is hidden.");
     }
 
     public function saveDefault(Themes $themes, Audit $audit): void
@@ -91,6 +113,7 @@ class Appearance extends Component
     {
         return view('livewire.admin.appearance', [
             'themes' => $themes->portal(),
+            'siteThemes' => $themes->site(),
             'chosen' => User::query()->whereNotNull('theme')->selectRaw('theme, COUNT(*) as people')->groupBy('theme')->pluck('people', 'theme'),
             'canManage' => auth()->user()->hasPermissionIn('settings.manage'),
         ]);

@@ -15,7 +15,21 @@ use Illuminate\Support\Facades\Cache;
  */
 class SalesAssistant
 {
+    /** Why the last {@see answer()} fell back, for the developer notice on a local install. */
+    public ?string $lastError = null;
+
     public function __construct(private AiProvider $ai, private SalesBrain $brain) {}
+
+    /** Why the AI won't answer this chat, in plain words; null when it will. */
+    public function unavailableReason(SalesChat $chat): ?string
+    {
+        return match (true) {
+            ! $this->ai->isConfigured() => 'No ANTHROPIC_API_KEY is set, so free-text questions get keyword answers only.',
+            $chat->ai_replies >= (int) config('sales.ai.replies_per_chat', 30) => 'This chat used all its AI answers (SALES_CHAT_REPLIES_PER_CHAT).',
+            self::spentToday() >= (int) config('sales.ai.daily_token_budget', 2_000_000) => 'Today\'s AI budget is spent (SALES_CHAT_DAILY_TOKENS).',
+            default => null,
+        };
+    }
 
     /** The AI may answer: a key is set, this chat and today's budget have room. */
     public function available(SalesChat $chat): bool
@@ -76,6 +90,7 @@ class SalesAssistant
             }
         } catch (AiUnavailable $e) {
             report($e);
+            $this->lastError = $e->getMessage();
         } finally {
             $chat->increment('ai_replies', $text === null ? 0 : 1, [
                 'input_tokens' => $chat->input_tokens + $usage['input'],

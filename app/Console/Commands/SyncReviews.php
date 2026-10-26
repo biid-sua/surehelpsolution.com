@@ -23,7 +23,7 @@ class SyncReviews extends Command
         $ids = SocialAccount::withoutGlobalScopes()->where('network', SocialNetwork::GoogleBusiness->value)
             ->where('status', SocialAccount::STATUS_ACTIVE)->distinct()->pluck('organization_id');
         $new = 0;
-        foreach (Organization::query()->whereIn('id', $ids)->get() as $organization) {
+        foreach (Organization::query()->whereIn('id', $ids)->where('is_demo', false)->get() as $organization) {  // demo businesses (D94) have no real Google account
             if (! $organization->isServing() || ! $features->allows($organization, 'reviews')) {
                 continue;
             }

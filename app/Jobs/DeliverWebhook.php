@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\WebhookDelivery;
 use App\Services\Integrations\Webhooks;
+use App\Support\DemoGuard;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -23,7 +24,7 @@ class DeliverWebhook implements ShouldQueue
     public function handle(Webhooks $webhooks): void
     {
         $delivery = WebhookDelivery::query()->with('endpoint')->find($this->deliveryId);
-        if (! $delivery || $delivery->status !== 'pending' || ! $delivery->endpoint?->is_active) {
+        if (! $delivery || $delivery->status !== 'pending' || ! $delivery->endpoint?->is_active || DemoGuard::isDemo($delivery->endpoint->organization_id)) {
             return;
         }
         if (! $webhooks->deliver($delivery) && $delivery->refresh()->status === 'pending') {

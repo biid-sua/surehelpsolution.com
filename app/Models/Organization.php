@@ -56,6 +56,7 @@ class Organization extends Model
     {
         return [
             'status' => OrganizationStatus::class,
+            'is_demo' => 'boolean',
             'setup_progress' => 'array',
             'setup_completed_at' => 'datetime',
             'signed_up_at' => 'datetime',
