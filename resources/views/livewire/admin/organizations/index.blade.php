@@ -51,7 +51,7 @@
                     @foreach ($organizations as $organization)
                         <tr wire:key="org-{{ $organization->id }}">
                             <td>
-                                <a href="{{ route('admin.organizations.show', $organization) }}" class="font-medium text-ink hover:text-brand-300">{{ $organization->name }}</a>
+                                <a href="{{ route('admin.organizations.show', $organization) }}" class="font-medium text-ink hover:text-brand-300">{{ $organization->name }}</a>@if ($organization->is_demo) <x-ui.badge tone="warning">Demo</x-ui.badge>@endif
                                 <p class="text-xs text-subtle">{{ $organization->timezone ?? 'Timezone not set' }}</p>
                             </td>
                             <td class="text-muted">

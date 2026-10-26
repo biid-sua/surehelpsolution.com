@@ -53,6 +53,7 @@ use App\Livewire\Admin\Billing\Index as AdminBilling;
 use App\Livewire\Admin\Calls\Index as AdminCalls;
 use App\Livewire\Admin\Calls\Review as CallReview;
 use App\Livewire\Admin\Customers\Index as AdminCustomers;
+use App\Livewire\Admin\DemoData as AdminDemoData;
 use App\Livewire\Admin\Enquiries\Index as AdminEnquiries;
 use App\Livewire\Admin\Escalations\Index as AdminEscalations;
 use App\Livewire\Admin\Home as AdminHome;
@@ -401,6 +402,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth.home', 'force.password
     Route::get('/phone-lines', AdminPhoneLines::class)->middleware('can:settings.view')->name('phone-lines');
     Route::get('/appearance', AdminAppearance::class)->middleware('can:settings.view')->name('appearance');
     Route::get('/system', AdminSystemStatus::class)->middleware('can:settings.view')->name('system');
+    Route::get('/demo-data', AdminDemoData::class)->middleware('can:settings.view')->name('demo-data');
     Route::get('/usage', AdminUsage::class)->middleware('can:billing.view')->name('usage');
     Route::get('/escalations', AdminEscalations::class)->middleware('can:escalations.view')->name('escalations');
     Route::get('/billing', AdminBilling::class)->middleware('can:billing.view')->name('billing');

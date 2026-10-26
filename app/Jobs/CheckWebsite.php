@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\Website;
 use App\Services\Billing\FeatureAccess;
 use App\Services\Websites\WebsiteHealthCheck;
+use App\Support\DemoGuard;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -34,7 +35,7 @@ class CheckWebsite implements ShouldBeUnique, ShouldQueue
     public function handle(WebsiteHealthCheck $check): void
     {
         $website = Website::withoutGlobalScopes()->with('organization')->find($this->websiteId);
-        if ($website && $website->isVerified() && app(FeatureAccess::class)->allows($website->organization, 'website_tools')) {
+        if ($website && ! DemoGuard::isDemo($website->organization_id) && $website->isVerified() && app(FeatureAccess::class)->allows($website->organization, 'website_tools')) {
             $check->run($website);
         }
     }

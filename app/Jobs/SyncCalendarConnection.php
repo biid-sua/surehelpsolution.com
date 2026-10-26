@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\CalendarConnection;
 use App\Services\Calendar\CalendarSync;
+use App\Support\DemoGuard;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -33,7 +34,7 @@ class SyncCalendarConnection implements ShouldBeUnique, ShouldQueue
     {
         $connection = CalendarConnection::withoutGlobalScopes()->find($this->connectionId);
 
-        if ($connection && $connection->isActive()) {
+        if ($connection && $connection->isActive() && ! DemoGuard::isDemo($connection->organization_id)) {
             $sync->pullBusy($connection);
             $sync->pushMissing($connection->refresh());
         }

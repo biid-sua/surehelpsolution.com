@@ -45,7 +45,7 @@ class ProvisionUserTenancy
             ]);
 
             if (config('tenancy.auto_assign_agents')) {
-                User::where('role', 'agent')->where('is_active', true)->each(
+                User::where('role', 'agent')->where('is_active', true)->where('is_demo', false)->each(
                     fn (User $agent) => $organization->assignAgent($agent, $source)
                 );
             }
@@ -56,8 +56,8 @@ class ProvisionUserTenancy
 
     private function provisionAgent(User $agent, AgentAssignmentSource $source): null
     {
-        if (config('tenancy.auto_assign_agents')) {
-            Organization::whereIn('status', [OrganizationStatus::Active, OrganizationStatus::Onboarding])
+        if (config('tenancy.auto_assign_agents') && ! $agent->is_demo) {   // demo agents (D94) only serve demo businesses
+            Organization::whereIn('status', [OrganizationStatus::Active, OrganizationStatus::Onboarding])->where('is_demo', false)
                 ->each(fn (Organization $organization) => $organization->assignAgent($agent, $source));
         }
 

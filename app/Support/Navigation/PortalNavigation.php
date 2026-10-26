@@ -64,6 +64,7 @@ class PortalNavigation
                 $this->item('Audit log', 'shield', 'admin.audit', 'admin.audit', 'audit_logs.view'),
                 $this->item('Appearance', 'swatch', 'admin.appearance', 'admin.appearance', 'settings.view'),
                 $this->item('System status', 'shield', 'admin.system', 'admin.system', 'settings.view'),
+                $this->item('Demo data', 'sparkles', 'admin.demo-data', 'admin.demo-data', 'settings.view'),
                 $this->item('Agent assignments', 'users', 'agent.assignments', 'agent.assignments|agent.team*', 'agent_assignments.view'),
                 $this->item('Agent University', 'sparkles', 'agent.training.courses', 'agent.training.*', 'training.view_progress'),
                 $this->item('Agent workspace', 'phone', 'agent.home', 'agent.home|agent.companies|agent.businesses.*|agent.calls*|agent.schedule', 'calls.create'),

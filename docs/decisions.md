@@ -1629,3 +1629,57 @@ The website sales chat (D78) now explains itself on a developer's install:
 **Why:** without a key, or when PHP can't verify HTTPS, typed questions get keyword answers. That
 looks like a broken chat, with nothing saying why. Website colours are a brand decision, so the admin
 sets the default and decides whether visitors may change it.
+
+## D94 — Demo data an administrator loads and removes (2026-10-26)
+**Decision:** *Admin › Demo data* loads five sample businesses with four months of history, so the team
+can learn every screen before real customers arrive. Only platform administrators with settings
+access can load or remove it (from that page, or `php artisan demo:data load|remove|status` on the
+server).
+- **What's loaded:** the `DemoSeeder` story in sandbox mode: Rivera Plumbing & Heating, Bright Smile
+  Dental, Lakeside Law Group, Green Valley HVAC (onboarding) and Sunrise Yoga Studio (paused), with
+  calls, escalations, appointments, customers, inbox, tasks, invoices, support, call quality, social,
+  reviews, website, SEO, phone lines, automations, two demo agents with shifts and training, and
+  website enquiries. The admin explores the client portal with *View as* the demo owners.
+- **Sandbox mode** touches only what it creates:
+  - its own staff accounts, not the default ones;
+  - every demo account gets an unknown random password and no published two-step secret;
+  - demo plans are `demo-…` and hidden from sign-up, and existing add-ons are reused by slug;
+  - feature settings, installed starter courses and existing shifts are left alone;
+  - training rules are for the demo agents only;
+  - no quality sample is drawn across real businesses.
+- **Recorded exactly:**
+  - the load runs in one transaction, so it lands completely or not at all;
+  - work that normally waits for a commit runs in the demo's timeline (`ImmediateCallbacks`);
+  - every created row is recorded by primary key (`demo_data_rows`), and so is the original of any
+    existing row it changed (`demo_data_changes`);
+  - demo businesses and people are flagged `is_demo`.
+- **Removal** deletes:
+  - the recorded rows;
+  - everything later added inside a demo business, by anyone;
+  - whatever points at those rows, following foreign keys, polymorphic links and a few known
+    unlinked columns.
+
+  It never deletes real data:
+  - a real row with an optional link to a demo row is unlinked;
+  - a real business's row that needs a demo row keeps it, and the page lists what was kept (for
+    example a real business on a demo plan, or a real call taken by a demo agent);
+  - only pure link rows (agent assignments, memberships, training assignments) are removed with the
+    demo.
+
+  Changed rows get their original values back unless someone changed them since. Invoice numbering
+  continues from the last real invoice, and the demo's image files are deleted. Each load and removal
+  is in the audit log (`demo.loaded`, `demo.removed`).
+- **While it's loaded, nothing reaches the outside world:**
+  - mail to the demo's reserved example addresses (`example.com/.net/.org`, `*.example`) is dropped
+    (`DropDemoMail`), and demo businesses never send texts;
+  - jobs that call another service skip demo businesses: Stripe charges, website checks, webhooks,
+    social publishing and AI planning, Search Console, calendar sync, SEO tasks, call summaries, and
+    the daily SEO and review syncs;
+  - demo agents are never auto-assigned to real businesses;
+  - `launch:check` fails until the demo data is removed.
+- **Runs after the page answers** (`RunDemoData`, `set_time_limit(0)`); the page polls for the result.
+  A load or removal that stopped for 30 minutes can be checked and recovered from the page.
+
+**Why:** the owners want to understand the whole system with realistic data for the first weeks,
+then start clean. The demo has to be safe beside real data: removable by an administrator only,
+exactly, and silent to the outside world while it's there.

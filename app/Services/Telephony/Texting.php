@@ -14,6 +14,8 @@ use App\Models\PhoneNumber;
 use App\Models\SmsOptOut;
 use App\Models\User;
 use App\Support\Audit\Audit;
+use App\Support\DemoGuard;
+use Illuminate\Support\Str;
 
 /**
  * Texts from a business's SureHelp number (D61). Every text, by a person, the AI or an automation,
@@ -80,6 +82,9 @@ class Texting
         $line = PhoneNumber::withoutGlobalScopes()->active()->where('organization_id', $conversation->organization_id)->where('number', $conversation->channel_key)->first();
         if (! $line) {
             throw new TelephonyUnavailable('The number this conversation used is no longer active.');
+        }
+        if (DemoGuard::isDemo($conversation->organization_id)) {
+            return 'SMdemo'.Str::lower(Str::random(24));   // demo businesses (D94) never text anyone
         }
 
         return $this->provider->sendSms($line->number, $to, $body, route('webhooks.sms.status'));
