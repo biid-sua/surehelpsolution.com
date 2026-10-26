@@ -113,6 +113,7 @@
   /* ---------- Applying a server response ---------- */
   function apply(data) {
     clearTransient();
+    if (data.debug) showDebug(data.debug);
     (data.messages || []).forEach(addMessage);
     if (typeof data.staff_joined === 'boolean') setStaff(data.staff_joined);
     if (data.booking) addBooked(data.booking);
@@ -421,6 +422,14 @@
     errorBox.querySelector('button').hidden = !retry;
     state.retry = retry;
     errorBox.hidden = false;
+  }
+  // Only sent with APP_DEBUG on (a developer's own install): why the AI fell back to keyword answers.
+  function showDebug(text) {
+    const box = $('.sales-chat__debug');
+    if (!box) return;
+    box.textContent = text;
+    box.hidden = false;
+    if (window.console) console.warn('[sales chat] ' + text);
   }
   function hideError() { errorBox.hidden = true; state.retry = null; }
 

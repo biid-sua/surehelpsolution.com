@@ -34,16 +34,17 @@ class SalesChatController extends Controller
             'assistant' => config('sales.assistant', 'Ava'),
             'disclosure' => 'You\'re chatting with '.config('sales.assistant', 'Ava').', SureHelp\'s AI assistant. Ask for a person any time. '
                 .'Please don\'t share payment details here.',
-        ]);
+        ] + $this->debug($assistant->unavailableReason($chat)));
     }
 
-    public function send(Request $request): JsonResponse
+    public function send(Request $request, SalesAssistant $assistant): JsonResponse
     {
         $body = $this->body($request);
         $chat = $this->chat($body);
         $this->throttle('sales-chat-msg:'.$chat->id, 8);
         $chat->forceFill(['visitor_seen_at' => now()])->save();
 
+        $why = null;
         if (is_string($body['quick'] ?? null)) {
             $messages = $this->desk->quick($chat, $body['quick']);
         } else {
@@ -51,10 +52,12 @@ class SalesChatController extends Controller
             if ($text === '' || mb_strlen($text) > (int) config('sales.max_message_chars', 600)) {
                 return $this->json(['error' => 'Please write a message of up to '.config('sales.max_message_chars', 600).' characters.'], 422);
             }
+            $why = $assistant->unavailableReason($chat);
             $messages = $this->desk->say($chat, $text);
+            $why = $assistant->lastError ?? $why;
         }
 
-        return $this->json($this->desk->payload($chat, $messages));
+        return $this->json($this->desk->payload($chat, $messages) + $this->debug($why));
     }
 
     public function lead(Request $request): JsonResponse
@@ -124,6 +127,17 @@ class SalesChatController extends Controller
         $host = $origin ? parse_url($origin, PHP_URL_HOST) : null;
         $allowed = array_filter([parse_url((string) config('app.url'), PHP_URL_HOST), $request->getHost()]);
         abort_unless($host && in_array(strtolower($host), array_map('strtolower', $allowed), true), 403);
+    }
+
+    /**
+     * With APP_DEBUG on (a developer's own install, never production), say why the AI didn't answer,
+     * so keyword answers aren't mistaken for a broken chat. `php artisan sales-chat:check` explains more.
+     *
+     * @return array{debug?: string}
+     */
+    private function debug(?string $reason): array
+    {
+        return $reason !== null && config('app.debug') ? ['debug' => 'Developer note: '.$reason.' Run php artisan sales-chat:check for details.'] : [];
     }
 
     private function throttle(string $key, int $max, int $decay = 60): void

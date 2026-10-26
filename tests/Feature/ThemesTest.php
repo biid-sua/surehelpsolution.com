@@ -162,6 +162,41 @@ class ThemesTest extends TestCase
         $this->assertStringNotContainsString(route('account.theme'), $html);
     }
 
+    public function test_admins_pick_the_website_colour_and_whether_visitors_may_change_it(): void
+    {
+        $this->actingAs($this->admin);
+        Livewire::test(Appearance::class)->assertSet('siteDefault', 'indigo')->assertSet('sitePicker', true)
+            ->set('siteDefault', 'neon')->call('saveSite')->assertHasErrors('siteDefault')
+            ->set('siteDefault', 'ocean')->call('saveSite')->assertHasNoErrors();
+        $this->app['auth']->forgetGuards();
+
+        // Every visitor starts on Ocean, drawn by the server; their own choice still wins in their browser.
+        $this->app->forgetScopedInstances();
+        $html = $this->get(route('home'))->assertOk()->getContent();
+        $this->assertStringContainsString('<html lang="en" data-site-theme="ocean" data-site-theme-default="ocean">', $html);
+        $this->assertStringContainsString("localStorage.getItem('surehelp.site-theme')", $html);
+        $this->assertStringContainsString('id="site-theme-picker"', $html);
+
+        // With the picker hidden, nobody's stored choice is read and the palette button is gone.
+        $this->actingAs($this->admin);
+        Livewire::test(Appearance::class)->set('sitePicker', false)->call('saveSite')->assertHasNoErrors();
+        $this->app['auth']->forgetGuards();
+        $this->app->forgetScopedInstances();
+        $html = $this->get(route('home'))->assertOk()->getContent();
+        $this->assertStringContainsString('data-site-theme="ocean"', $html);
+        $this->assertStringNotContainsString("localStorage.getItem('surehelp.site-theme')", $html);
+        $this->assertStringNotContainsString('id="site-theme-picker"', $html);
+
+        $log = AuditLog::query()->where('action', 'ui.site_theme_changed')->latest('id')->first();
+        $this->assertSame(['theme' => 'ocean', 'visitor_picker' => true], $log->old_values);
+        $this->assertSame(['theme' => 'ocean', 'visitor_picker' => false], $log->new_values);
+
+        // The base palette needs no attribute.
+        app(Themes::class)->setSite('indigo', true);
+        $this->app->forgetScopedInstances();
+        $this->assertStringContainsString('<html lang="en" data-site-theme-default="indigo">', $this->get(route('home'))->getContent());
+    }
+
     public function test_the_mobile_app_reads_and_saves_the_same_theme_as_the_web(): void
     {
         $owner = User::factory()->create(['role' => 'client', 'is_active' => true, 'must_change_password' => false, 'password' => 'Secret123!']);

@@ -73,6 +73,7 @@ _As of 2026-10-21. Detailed tracker: [implementation-plan.md](implementation-pla
 - **Referrals (D90):** each business has a referral link. When a business it referred pays its first invoice, the referrer gets a month of its plan as credit, taken off its next invoices.
 - **Operations (D91):** server errors are emailed to the team (throttled), `/health` serves uptime monitors, and the database is backed up every night with off-server copies optional. *System status* and `launch:check` warn about anything missing.
 - **Spanish for customers (D92):** businesses choose English, Spanish or "match the visitor's browser". It covers booking and appointment pages, the website widget, surveys, payment pages, and the standard emails and texts. The portal and the app remain English for now.
+- **Website colours and chat troubleshooting (D93):** *Admin › Appearance › Public website* picks the website's default colour and whether visitors may change it. On a developer's install the sales chat says why the AI didn't answer, and `php artisan sales-chat:check` finds the cause.
 - **The mobile app was rebuilt** in its own repo (`biid-sua/SHS_Mobile_App`) for businesses, agents and admins, and merged. Its own README lists the store steps.
 
 625 automated tests pass.

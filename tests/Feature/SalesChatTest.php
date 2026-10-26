@@ -185,6 +185,44 @@ class SalesChatTest extends TestCase
         $this->assertSame([], $this->ai->requests, 'over budget: no AI call');
     }
 
+    public function test_on_a_developers_install_the_chat_says_why_the_ai_did_not_answer(): void
+    {
+        config(['app.debug' => true]);
+        $this->ai->configured = false;
+        $token = $this->start();
+        $this->chat('POST', 'start', ['token' => $token])->assertJsonPath('debug', fn (string $d) => str_contains($d, 'No ANTHROPIC_API_KEY'));
+        $this->chat('POST', 'messages', ['token' => $token, 'text' => 'Do you work with dentists?'])
+            ->assertJsonPath('debug', fn (string $d) => str_contains($d, 'sales-chat:check'));
+
+        // A failed AI call is named too; buttons never carry a note.
+        $this->ai->configured = true;
+        $this->ai->fail();
+        $this->assertStringContainsString('Overloaded', $this->chat('POST', 'messages', ['token' => $token, 'text' => 'Do you work with dentists?'])->json('debug'));
+        $this->chat('POST', 'messages', ['token' => $token, 'quick' => 'pricing'])->assertJsonMissingPath('debug');
+
+        // Never in production.
+        config(['app.debug' => false]);
+        $this->ai->configured = false;
+        $this->chat('POST', 'start', ['token' => $token])->assertJsonMissingPath('debug');
+    }
+
+    public function test_the_check_command_finds_what_stops_the_chat(): void
+    {
+        $this->ai->configured = false;
+        $this->artisan('sales-chat:check')->expectsOutputToContain('No ANTHROPIC_API_KEY')->assertSuccessful();
+
+        $this->ai->configured = true;
+        $this->ai->reply('OK');
+        $this->artisan('sales-chat:check')->expectsOutputToContain('Live AI answer from claude-haiku-5-5')->assertSuccessful();
+
+        $this->ai->fail();
+        $this->artisan('sales-chat:check')->expectsOutputToContain('Live AI answer')->assertFailed();
+        $this->artisan('sales-chat:check --no-ai')->assertSuccessful();
+
+        config(['sales.enabled' => false]);
+        $this->artisan('sales-chat:check --no-ai')->expectsOutputToContain('SALES_CHAT_ENABLED')->assertFailed();
+    }
+
     public function test_a_person_takes_over_and_the_visitor_sees_the_reply(): void
     {
         $token = $this->start();

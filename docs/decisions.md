@@ -1606,3 +1606,26 @@ browser**.
 **Why:** many of our clients' customers prefer Spanish, and they're the ones who see these pages and
 messages. Translating the customer-facing surface first gives most of the benefit for a fraction of
 the work of translating the whole portal.
+
+## D93 — Website colours set by an administrator; chat troubleshooting (2026-10-26)
+**Decision:** *Admin › Appearance › Public website* sets the public website's colour theme:
+- **Default colour:** the theme every visitor sees first (Indigo, Ocean, Emerald, Sunset, Rose or
+  Graphite). The server draws it on `<html data-site-theme>`, so there's no flash of another colour.
+- **Let visitors change the colour:** on by default. When on, the palette button shows and a visitor's
+  own choice (kept in their browser only, D59) wins on their device. Picking the default again forgets
+  the choice, so they follow the default if it changes. When off, the button is hidden and the stored
+  choice isn't read, so every visitor sees the default.
+- Stored as `ui.site_default_theme` and `ui.site_theme_picker` platform settings, read through
+  `App\Support\Ui\Themes`. Each save is audited (`ui.site_theme_changed`).
+
+The website sales chat (D78) now explains itself on a developer's install:
+- With `APP_DEBUG=true` only, the chat shows a yellow developer note when the AI didn't answer, with
+  the reason: no `ANTHROPIC_API_KEY`, the chat or daily budget spent, or the error from the AI call.
+  Production (debug off) never shows it.
+- `php artisan sales-chat:check` checks the switch, the tables, the cache, `APP_URL`, and makes one
+  short live AI call (`--no-ai` skips it). For a failed call it names the likely fix: the PHP CA bundle
+  (common on Windows), a refused key, an unavailable model, no credit, or no connection.
+
+**Why:** without a key, or when PHP can't verify HTTPS, typed questions get keyword answers. That
+looks like a broken chat, with nothing saying why. Website colours are a brand decision, so the admin
+sets the default and decides whether visitors may change it.

@@ -60,6 +60,17 @@ leads and books 30-minute demo calls with the team. It is separate from the busi
 - `SALES_CHAT_ENABLED=false` removes the chat from the site.
 - Chats that never became a lead are deleted after `retention_days` (90) by `privacy:run`.
 
+## When the chat doesn't answer properly
+
+Run `php artisan sales-chat:check`. It checks the chat is on, the tables exist (`php artisan migrate`),
+the cache works, and makes one short live AI call. It names the fix for a failed call. On Windows, the
+usual one is the PHP CA bundle: set `curl.cainfo` and `openssl.cafile` in `php.ini` to a downloaded
+`cacert.pem`.
+
+With `APP_DEBUG=true` (never in production), the chat itself shows a yellow developer note when the AI
+didn't answer, and the browser console logs it. Without `ANTHROPIC_API_KEY`, typed questions get
+keyword answers ("Good question. I can show pricing…"). That's expected, not a fault.
+
 ## Code
 
 - `App\Http\Controllers\SalesChatController`: the routes under `/api/sales-chat/*`. Requests must come from
@@ -69,4 +80,5 @@ leads and books 30-minute demo calls with the team. It is separate from the busi
   times and locked booking. `LeadScore`: the score.
 - `public/assets/js/sales-chat.js` and `css/sales-chat.css`, plus `resources/views/partials/sales-chat.blade.php`:
   the widget (plain JS, CSP-safe, follows the site theme).
+- `App\Console\Commands\SalesChatCheck`: `php artisan sales-chat:check`.
 - Tests: `tests/Feature/SalesChatTest.php`.
