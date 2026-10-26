@@ -18,6 +18,7 @@ use App\Actions\Organizations\ChangeOrganizationStatus;
 use App\Actions\Organizations\ProvisionUserTenancy;
 use App\Actions\Tasks\ChangeTaskStatus;
 use App\Actions\Tasks\CreateTask;
+use App\Console\Commands\InstallTrainingStarter;
 use App\Enums\AppointmentStatus;
 use App\Enums\EscalationType;
 use App\Enums\InboxChannel;
@@ -507,19 +508,22 @@ class DemoSeeder extends Seeder
     {
         $this->travel($this->now->subDays(150));
         $titles = ['handling' => 'SureHelp Call Handling Standards', 'privacy' => 'Privacy and Security Essentials'];
-        // In sandbox mode the real starter courses, if installed, are used as they are.
-        $installed = $this->sandbox && TrainingCourse::query()->whereNull('organization_id')->whereIn('title', $titles)->count() === count($titles);
-        if (! $installed) {
-            Artisan::call('training:starter');
-        }
-
         $publisher = app(CoursePublisher::class);
+        $starter = app(InstallTrainingStarter::class);
         foreach ($titles as $key => $title) {
-            $course = TrainingCourse::query()->whereNull('organization_id')->where('title', $title)->firstOrFail();
-            if (! $installed) {
-                $course->forceFill(['owner_user_id' => $this->admin->id, 'created_by_user_id' => $this->admin->id])->save();
-                $publisher->publish($course, $this->admin, 'First release');
+            $course = TrainingCourse::query()->whereNull('organization_id')->where('title', $title)->first();
+            if ($this->sandbox && $course?->isPublished()) {
+                // In sandbox mode a real, published starter course is used as it is.
+                $this->courses[$key] = $course;
+
+                continue;
             }
+            if (! $course || $this->sandbox) {
+                // A real draft is left alone: the demo publishes its own copy.
+                $course = $starter->install($title, $course ? $title.' (demo)' : null);
+            }
+            $course->forceFill(['owner_user_id' => $this->admin->id, 'created_by_user_id' => $this->admin->id])->save();
+            $publisher->publish($course, $this->admin, 'First release');
             $this->courses[$key] = $course->fresh();
         }
 
