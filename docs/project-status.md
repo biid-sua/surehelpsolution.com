@@ -75,6 +75,7 @@ _As of 2026-10-21. Detailed tracker: [implementation-plan.md](implementation-pla
 - **Spanish for customers (D92):** businesses choose English, Spanish or "match the visitor's browser". It covers booking and appointment pages, the website widget, surveys, payment pages, and the standard emails and texts. The portal and the app remain English for now.
 - **Website colours and chat troubleshooting (D93):** *Admin › Appearance › Public website* picks the website's default colour and whether visitors may change it. On a developer's install the sales chat says why the AI didn't answer, and `php artisan sales-chat:check` finds the cause.
 - **Demo data (D94):** *Admin › Demo data* loads five sample businesses with four months of history to learn the system, and removes them exactly, never touching real data. While it's loaded, no email, text or outside call goes out for the demo, and `launch:check` fails until it's removed.
+- **Project guide (D95):** `CLAUDE.md` with the rules and a map of the docs, plus new [product.md](product.md), [state-machines.md](state-machines.md), [stack.md](stack.md) and a generated [schema.md](schema.md) (`php artisan docs:schema`).
 - **The mobile app was rebuilt** in its own repo (`biid-sua/SHS_Mobile_App`) for businesses, agents and admins, and merged. Its own README lists the store steps.
 
 625 automated tests pass.
