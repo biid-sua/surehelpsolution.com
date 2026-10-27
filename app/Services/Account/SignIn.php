@@ -53,7 +53,23 @@ class SignIn
             return route('password.change');
         }
 
-        return $request->session()->pull('url.intended', $user->homeUrl());
+        $intended = $request->session()->pull('url.intended');
+
+        return is_string($intended) && $this->canOpen($user, $intended) ? $intended : $user->homeUrl();
+    }
+
+    /** The page saved before sign-in, unless it's in a portal this person can't open (an admin isn't sent to /app). */
+    private function canOpen(User $user, string $url): bool
+    {
+        $portals = ['admin' => ['admin'], 'agent' => ['agent', 'admin'], 'app' => ['client']];
+        foreach ($portals as $prefix => $roles) {
+            $root = url($prefix);
+            if ($url === $root || str_starts_with($url, $root.'/') || str_starts_with($url, $root.'?')) {
+                return in_array($user->role, $roles, true);
+            }
+        }
+
+        return true;
     }
 
     public function logout(Request $request, ?string $notice = null): void

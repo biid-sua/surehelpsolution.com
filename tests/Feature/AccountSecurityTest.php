@@ -67,6 +67,17 @@ class AccountSecurityTest extends TestCase
         $this->get(route('login'))->assertSee('You\'re signed out.');
     }
 
+    public function test_a_page_saved_before_sign_in_from_another_portal_is_skipped(): void
+    {
+        $admin = $this->user('admin');
+        $this->get(route('app.dashboard'))->assertRedirect(route('login'));
+        $this->post(route('auth.login'), ['email' => $admin->email, 'password' => 'Secret123!'])->assertRedirect(route('admin.home'));
+        $this->post(route('auth.logout'));
+
+        $this->get(route('agent.home'))->assertRedirect(route('login'));
+        $this->post(route('auth.login'), ['email' => $admin->email, 'password' => 'Secret123!'])->assertRedirect(route('agent.home'));
+    }
+
     // Password reset -------------------------------------------------------------------
 
     public function test_forgot_password_never_reveals_accounts_and_a_reset_signs_out_everywhere(): void
