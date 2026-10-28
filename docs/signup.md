@@ -16,10 +16,15 @@ Businesses can create their own SureHelp account at **`/start`**. The website's 
 - The business is **onboarding**, and Admin › Organizations shows "Signed up online".
 - Staff check the details, assign agents, connect the phone line and switch the business to active, exactly as for businesses they create.
 
-## Billing
+## The free trial (D97)
 
 - The plan's free trial starts at once and nothing is charged during it.
-- When the trial ends, the first invoice is issued as usual. With card payments switched on (docs/billing.md), the owner can save a card under Billing to pay it automatically.
+- **Sample data.** The portal starts with a few example customers, calls, bookings and follow-ups, so the owner sees what SureHelp does. Nobody is contacted. *Remove sample data* on the dashboard deletes them, and only them.
+- **Calls.** Our receptionists answer up to 25 calls during the trial (once staff have connected the phone line). After that, calls go to the business's own number or voicemail until the owner keeps a plan.
+- **Keeping the plan.** Under *Billing*, the owner picks *Keep this plan*, or another plan. The first invoice is issued when the trial ends. With card payments switched on (docs/billing.md), they can save a card to pay it automatically.
+- **Reminders.** The portal shows how many days are left. Owners get an email 3 days and 1 day before the end.
+- **If they don't keep a plan,** the trial ends on its last day and no invoice is issued. The account becomes read-only: they can still sign in, look at everything and download their data, but can't change anything, and our receptionists stop answering. Nothing is deleted. *Start this plan* under *Billing* switches everything back on, with the first invoice that day.
+- Trials that staff set up for a business (Admin › Billing) aren't affected: they turn into a paid plan by themselves.
 
 ## Settings (.env)
 
@@ -27,6 +32,8 @@ Businesses can create their own SureHelp account at **`/start`**. The website's 
 |---|---|---|
 | `SIGNUP_ENABLED` | `true` | `false` shows "Sign-ups are closed" with a link to the contact form |
 | `SIGNUP_PER_HOUR` | `5` | sign-up attempts allowed per IP address per hour |
+| `SIGNUP_TRIAL_CALLS` | `25` | calls our receptionists answer before the owner keeps a plan (empty: no limit) |
+| `SIGNUP_SAMPLE_DATA` | `true` | `false` starts new trials without sample data |
 
 ## Spam protection
 

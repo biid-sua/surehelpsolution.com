@@ -19,6 +19,7 @@ use App\Services\Billing\Entitlements;
 use App\Services\Billing\Gateways\PaymentGateway;
 use App\Services\Billing\Referrals;
 use App\Services\Billing\Stripe\CardPayments;
+use App\Services\Billing\Trials;
 use App\Services\Billing\Usage;
 use App\Support\Audit\Audit;
 use Illuminate\Contracts\View\View;
@@ -100,6 +101,37 @@ class Index extends Component
         $this->dispatch('toast', type: 'success', message: 'Request sent. We\'ll confirm the change by email.');
     }
 
+    /** Self-serve trial (D97): keep this plan for after the trial. */
+    public function keepPlan(int $planId, Trials $trials, Entitlements $entitlements): void
+    {
+        $organization = $this->organization();
+        $this->authorize('billing.manage', $organization);
+        $plan = Plan::query()->where('is_active', true)->where('is_public', true)->findOrFail($planId);
+        $pending = $trials->pending($organization) ?? abort(404);
+
+        $trials->keep($pending, $plan, auth()->user());
+        $entitlements->forget($organization);
+        $this->dispatch('toast', type: 'success', message: "Thank you! {$plan->name} carries on after your trial. Nothing is charged until then.");
+    }
+
+    /** After the trial ended (D97): start a plan now and open the account again. */
+    public function startPlan(int $planId, Trials $trials): void
+    {
+        $organization = $this->organization();
+        $this->authorize('billing.manage', $organization);
+        $plan = Plan::query()->where('is_active', true)->where('is_public', true)->findOrFail($planId);
+
+        try {
+            $trials->restart($organization, $plan, auth()->user());
+        } catch (ValidationException $e) {
+            $this->dispatch('toast', type: 'warning', message: collect($e->errors())->flatten()->first());
+
+            return;
+        }
+        session()->flash('status', "Welcome back! {$plan->name} is on, and your first invoice is below.");
+        $this->redirectRoute('app.billing');
+    }
+
     public function activateAddon(int $addonId, ManageAddons $addons): void
     {
         $organization = $this->organization();
@@ -136,6 +168,8 @@ class Index extends Component
         $subscription = $entitlements->subscription($organization)?->loadMissing('nextPlan');
         $active = OrganizationAddon::query()->forOrganization($organization)->active()->with('addon')->get()->keyBy('addon_id');
         $outstanding = Invoice::query()->forOrganization($organization)->outstanding()->orderBy('due_at')->get();
+        $trials = app(Trials::class);
+        $pending = $trials->pending($organization);
 
         return view('livewire.client.billing.index', [
             'subscription' => $subscription,
@@ -158,6 +192,10 @@ class Index extends Component
             'referral' => config('referrals.enabled', true) && config('signup.enabled')
                 ? ['link' => app(Referrals::class)->link($organization), 'summary' => app(Referrals::class)->summary($organization)] : null,
             'autopayCard' => $organization->fresh()?->autopay_card_label,
+            'pendingTrial' => $pending !== null,
+            'trialCalls' => $trials->includedCalls(),
+            'trialCallsUsed' => $pending ? $trials->callsUsed($pending) : 0,
+            'trialEnded' => $trials->ended($organization),
         ]);
     }
 }

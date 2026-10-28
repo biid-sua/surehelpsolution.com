@@ -90,9 +90,13 @@ and `App\Actions\Billing\RecordPayment`.
 | `active` → `past_due` | Daily billing run, when an invoice is overdue |
 | `past_due` → `active` | When a payment clears the last overdue invoice |
 | `trialing` → `cancelled` | Cancelling a trial ends it immediately |
+| `trialing` → `cancelled` | Daily billing run, on the end date of a self-serve trial the owner didn't keep (`ended_reason = trial_ended`, D97) |
 | `active` / `past_due` → `cancelled` | At the period end after "cancel at period end", or immediately when an admin chooses |
 
 - "Cancel at period end" is a flag (`cancel_at_period_end`), not a status; `resume()` clears it.
+- A self-serve trial (`confirm_by_trial_end`) only becomes `active` once the owner keeps the plan
+  (`confirmed_at`, `App\Services\Billing\Trials::keep()`). While its last subscription ended `trial_ended`
+  and nothing replaced it, the business is read-only (`Trials::ended()`).
 - `cancelled` is terminal: a new subscription is created instead.
 
 ## Invoice

@@ -151,7 +151,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
     Route::delete('/devices/{id}', [DeviceController::class, 'destroy'])->whereNumber('id');
 
     // Client Dashboard Routes
-    Route::prefix('client')->middleware(['role:client', 'tenant'])->group(function () {
+    Route::prefix('client')->middleware(['role:client', 'tenant', 'trial.read-only'])->group(function () {
         Route::middleware('can:calls.view')->group(function () {
             Route::get('/dashboard/summary', [ClientDashboardController::class, 'getDashboardSummary']);
             Route::get('/call-history', [ClientDashboardController::class, 'getCallHistory']);

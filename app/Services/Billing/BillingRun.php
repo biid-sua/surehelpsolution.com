@@ -20,7 +20,8 @@ use Illuminate\Support\Facades\DB;
  * The daily billing cycle (`billing:run`). Safe to run more than once a day: every step checks
  * state first and invoices are unique per subscription period.
  *
- *  1. Trials that ended become paid plans and get their first invoice.
+ *  1. Trials that ended become paid plans and get their first invoice. A self-serve trial the owner
+ *     didn't keep ends instead (D97); those still running get a reminder 3 days and 1 day before.
  *  2. Periods that ended renew (applying a scheduled plan change) and get the next invoice,
  *     or end, when cancellation was requested for the period end.
  *     The closing period's usage is recorded; calls beyond the plan and active add-ons are added
@@ -41,20 +42,27 @@ class BillingRun
         private readonly Audit $audit,
         private readonly Usage $usage,
         private readonly ManageAddons $addons,
+        private readonly Trials $trials,
     ) {}
 
     /**
-     * @return array{trials_converted: int, renewed: int, ended: int, reminders: int, usage_alerts: int}
+     * @return array{trials_converted: int, trials_ended: int, trial_reminders: int, renewed: int, ended: int, reminders: int, usage_alerts: int}
      */
     public function run(?CarbonImmutable $today = null): array
     {
         $today = ($today ?? CarbonImmutable::today())->startOfDay();
-        $report = ['trials_converted' => 0, 'renewed' => 0, 'ended' => 0, 'reminders' => 0, 'usage_alerts' => 0];
+        $report = ['trials_converted' => 0, 'trials_ended' => 0, 'trial_reminders' => 0, 'renewed' => 0, 'ended' => 0, 'reminders' => 0, 'usage_alerts' => 0];
 
         Subscription::withoutGlobalScopes()->where('status', SubscriptionStatus::Trialing->value)
             ->whereDate('trial_ends_on', '<=', $today->toDateString())->with(['plan', 'organization'])
             ->each(function (Subscription $subscription) use (&$report) {
                 $this->safely(function () use ($subscription, &$report) {
+                    if ($subscription->awaitsConfirmation()) {
+                        $this->trials->end($subscription);
+                        $report['trials_ended']++;
+
+                        return;
+                    }
                     $start = CarbonImmutable::parse($subscription->trial_ends_on->toDateString());
                     $end = ManageSubscription::advance($start, $subscription->interval);
                     $subscription->forceFill([
@@ -65,6 +73,14 @@ class BillingRun
                     $this->invoices->forPeriod($subscription, null,
                         $this->addons->renew($subscription->organization_id, $subscription->interval, $start, IssueInvoice::periodLabel($start, $end)));
                     $report['trials_converted']++;
+                });
+            });
+
+        Subscription::withoutGlobalScopes()->where('status', SubscriptionStatus::Trialing->value)->where('confirm_by_trial_end', true)
+            ->whereNull('confirmed_at')->whereDate('trial_ends_on', '>', $today->toDateString())->with(['plan', 'organization'])
+            ->each(function (Subscription $subscription) use (&$report, $today) {
+                $this->safely(function () use ($subscription, &$report, $today) {
+                    $report['trial_reminders'] += (int) $this->trials->remind($subscription, $today);
                 });
             });
 

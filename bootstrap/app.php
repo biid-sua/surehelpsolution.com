@@ -14,6 +14,7 @@ use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\SearchIndexing;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SubfolderLivewire;
+use App\Http\Middleware\TrialReadOnly;
 use App\Services\System\ErrorAlerts;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -38,6 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'account.gate' => AccountGate::class,
             'feature' => RequireFeature::class,
             'idempotent' => Idempotent::class,
+            'trial.read-only' => TrialReadOnly::class,
         ]);
 
         $middleware->append(SecurityHeaders::class);

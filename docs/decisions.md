@@ -1719,3 +1719,27 @@ go out of date.
 
 **Why:** reminders and an easy reschedule link are the cheapest ways to cut no-shows, and most sales come
 from the follow-up. Recording outcomes shows which demos, and which campaigns, turn into customers.
+
+## D97 — Free trials from the website lead to a plan (2026-10-28)
+**Decision:** a trial started at `/start` shows its value quickly, has clear limits, and ends unless the
+owner keeps a plan. Trials that staff set up still turn into paid plans by themselves (D22).
+- **Sample data:** a new trial starts with 6 example customers, 8 answered calls, 3 bookings and 2
+  follow-ups, so the dashboard, calendar and results aren't empty. They use example.com addresses and
+  555-01xx numbers, have no consent, are created without automations or emails, and are dated before the
+  trial, so they never count as usage. *Remove sample data* on the dashboard deletes exactly those rows.
+  `SIGNUP_SAMPLE_DATA=false` turns this off.
+- **Calls:** our receptionists answer up to `SIGNUP_TRIAL_CALLS` (25) calls before the owner keeps a
+  plan. After that, calls go to the business's own number or voicemail. Keeping the plan lifts the limit.
+- **Keeping the plan:** the owner picks *Keep this plan* (or another public plan) under *Billing*.
+  Nothing is charged until the trial ends; then the first invoice is issued as usual.
+- **Reminders:** 3 days and 1 day before the end, each sent once, with a countdown banner in the portal.
+- **When it ends unkept:** the subscription is cancelled (`ended_reason = trial_ended`), with no invoice.
+  The account becomes read-only: pages and the app still open and nothing is deleted, but saving is
+  refused (web, Livewire actions and `/api/v1/client` writes), every feature is off and calls go to the
+  business. Billing and data exports stay open. *Start this plan* opens everything again, with the first
+  invoice that day.
+
+**Why:** owners need to see the product working with their kind of work before they pay, and our live
+receptionists cost real money, so the trial gives the software freely and limits the calls. Asking the
+owner to choose, instead of billing them by surprise, builds trust. A read-only account keeps their data
+and setup safe, so coming back is one click.

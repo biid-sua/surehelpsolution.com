@@ -77,6 +77,7 @@ _As of 2026-10-21. Detailed tracker: [implementation-plan.md](implementation-pla
 - **Demo data (D94):** *Admin › Demo data* loads five sample businesses with four months of history to learn the system, and removes them exactly, never touching real data. While it's loaded, no email, text or outside call goes out for the demo, and `launch:check` fails until it's removed.
 - **Project guide (D95):** `CLAUDE.md` with the rules and a map of the docs, plus new [product.md](product.md), [state-machines.md](state-machines.md), [stack.md](stack.md) and a generated [schema.md](schema.md) (`php artisan docs:schema`).
 - **Demo follow-up (D96):** Microsoft Teams link in every demo invitation, reminders by email and text, a page to move or cancel, outcomes in *Website enquiries*, and follow-up emails. Set `SALES_DEMO_MEETING_URL` on the server.
+- **Free trials lead to a plan (D97):** sample data in new trials, 25 answered calls before the owner keeps a plan, a countdown banner and reminder emails, and a read-only account (nothing deleted) when a trial ends unkept. Run `php artisan migrate` on the server.
 - **The mobile app was rebuilt** in its own repo (`biid-sua/SHS_Mobile_App`) for businesses, agents and admins, and merged. Its own README lists the store steps.
 
 625 automated tests pass.

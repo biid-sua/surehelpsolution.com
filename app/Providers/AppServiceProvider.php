@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Http\Middleware\AccountGate;
 use App\Http\Middleware\ResolveOrganization;
 use App\Http\Middleware\RoleMiddleware;
+use App\Http\Middleware\TrialReadOnly;
 use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\Channels\PushChannel;
@@ -17,6 +18,7 @@ use App\Services\Billing\FeatureAccess;
 use App\Services\Billing\Gateways\PaymentGateway;
 use App\Services\Billing\Gateways\PayoneerGateway;
 use App\Services\Billing\Gateways\StripeGateway;
+use App\Services\Billing\Trials;
 use App\Services\Business\Branding;
 use App\Services\Calls\CallOutcomes;
 use App\Services\Rules\BusinessRules;
@@ -54,6 +56,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(Entitlements::class);
         $this->app->scoped(Themes::class);
         $this->app->scoped(FeatureAccess::class);
+        $this->app->scoped(Trials::class);
         $this->app->scoped(Branding::class);
         $this->app->scoped(SalesAssistant::class);   // the chat endpoint reads why the last answer fell back
         // AI vendor behind one interface (spec §33, D38).
@@ -74,6 +77,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // After a self-serve trial ended, business-portal actions wait for a plan (D97).
+        \Livewire\on('call', function ($component, string $method, $params, $addEffect, callable $returnEarly) {
+            if (TrialReadOnly::blocks($component, $method)) {
+                $component->dispatch('toast', type: 'warning', message: TrialReadOnly::MESSAGE);
+                $returnEarly();
+            }
+        });
+
         // Livewire's script URL is root-relative. When the app runs in a sub-folder (a local XAMPP
         // install), the browser would ask the server root for it and every page's scripts would
         // fail; add the folder. At a domain root (production) the base path is empty: unchanged.

@@ -5,9 +5,11 @@ namespace App\Livewire\Client;
 use App\Livewire\Concerns\ScopedToOrganization;
 use App\Models\BusinessProfile;
 use App\Models\Escalation;
+use App\Services\Billing\Trials;
 use App\Services\Business\BusinessHours;
 use App\Services\Metrics\ClientMetrics;
 use App\Services\Metrics\DashboardAlerts;
+use App\Services\Setup\SampleData;
 use App\Services\Setup\SetupProgress;
 use App\Support\Audit\Audit;
 use App\Support\Calendar\CalendarSources;
@@ -45,6 +47,21 @@ class Dashboard extends Component
     {
         $this->authorize('dashboard.view', $this->organization());
         $this->normalizePeriod();
+        // A new trial's sample calls are from last week (D97): show them rather than an empty today.
+        if (! request()->has('period') && app(SampleData::class)->has($this->organization())) {
+            $today = now($this->organization()->timezoneOrDefault())->toImmutable();
+            [$this->period, $this->from, $this->to] = ['custom', $today->subDays(13)->toDateString(), $today->toDateString()];
+        }
+    }
+
+    /** Sample data from the free trial (D97): gone in one click, nothing real touched. */
+    public function removeSampleData(SampleData $samples): void
+    {
+        $organization = $this->organization();
+        $this->authorize('organization.update', $organization);
+        $samples->remove($organization, auth()->user());
+        $this->period = 'today';
+        $this->dispatch('toast', type: 'success', message: 'Sample data removed. Everything you see now is your own.');
     }
 
     public function updatedPeriod(): void
@@ -98,6 +115,8 @@ class Dashboard extends Component
             'activity' => $shown->has('activity') ? $metrics->customerActivity($organization, $this->period, $from, $to) : null,
             'schedule' => $shown->has('schedule') ? $metrics->todaysSchedule($organization) : collect(),
             'recentCalls' => $shown->has('recent_calls') ? $metrics->recentCalls($organization) : collect(),
+            'hasSamples' => app(SampleData::class)->has($organization),
+            'canRemoveSamples' => auth()->user()->can('organization.update', $organization) && ! app(Trials::class)->ended($organization),
             'away' => (function () use ($organization) {
                 $profile = BusinessProfile::query()->forOrganization($organization)->first();
                 $today = now($organization->timezoneOrDefault())->toDateString();

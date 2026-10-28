@@ -1159,6 +1159,7 @@ Indexes: (user_id, status); unique (organization_id, user_id).
 | `signed_up_at` | datetime | yes |  |  |
 | `referral_code` | varchar | yes |  | unique |
 | `is_demo` | tinyint(1) |  | `0` |  |
+| `sample_data` | text | yes |  |  |
 
 ## password_reset_tokens
 
@@ -1672,6 +1673,10 @@ Indexes: (organization_id, status, scheduled_at).
 | `created_at` | datetime | yes |  |  |
 | `updated_at` | datetime | yes |  |  |
 | `usage_alerts` | text | yes |  |  |
+| `confirm_by_trial_end` | tinyint(1) |  | `0` |  |
+| `confirmed_at` | datetime | yes |  |  |
+| `ended_reason` | varchar | yes |  |  |
+| `trial_reminders` | text | yes |  |  |
 
 Indexes: (organization_id, status); (status, current_period_end).
 

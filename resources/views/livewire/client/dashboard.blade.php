@@ -35,6 +35,14 @@
     @if (session('status'))
         <x-ui.alert tone="success" class="mb-6">{{ session('status') }}</x-ui.alert>
     @endif
+    @if ($hasSamples)
+        <x-ui.alert tone="info" class="mb-6" title="You're looking at sample data">
+            To show you what SureHelp does, we added a few example customers, answered calls, bookings and follow-ups. They aren't real people and nobody is contacted.
+            @if ($canRemoveSamples)
+                <div class="mt-2"><x-ui.button size="sm" variant="secondary" wire:click="removeSampleData" wire:confirm="Remove all the sample customers, calls, bookings and follow-ups? Your own data stays.">Remove sample data</x-ui.button></div>
+            @endif
+        </x-ui.alert>
+    @endif
     @if (in_array($organization->status->value, ['paused', 'cancelled'], true) && ! $organization->closed_at)
         <x-ui.alert tone="warning" class="mb-6" :title="$organization->status->value === 'paused' ? 'Your SureHelp service is paused' : 'Your SureHelp service is cancelled'">
             Our receptionists aren't answering for you and your website tools are hidden.

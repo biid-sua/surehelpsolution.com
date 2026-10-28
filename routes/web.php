@@ -228,7 +228,7 @@ Route::prefix('account')->name('account.')->middleware(['auth.home', 'force.pass
 });
 
 // Business portal (clients) — docs/implementation-plan.md P1-4
-Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.change', 'role:client', 'tenant', 'account.gate'])->group(function () {
+Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.change', 'role:client', 'tenant', 'account.gate', 'trial.read-only'])->group(function () {
     Route::get('/', ClientDashboard::class)->middleware('can:dashboard.view')->name('dashboard');
     Route::get('/search', ClientSearch::class)->middleware('can:dashboard.view')->name('search');
     Route::get('/setup', SetupWizard::class)->middleware('can:organization.update')->name('setup');

@@ -7,6 +7,7 @@ use App\Models\BusinessHour;
 use App\Models\Organization;
 use App\Models\PhoneNumber;
 use App\Models\VoiceCall;
+use App\Services\Billing\Trials;
 use App\Services\Business\BusinessHours;
 use DOMElement;
 
@@ -52,7 +53,9 @@ class CallRouter
         ]);
 
         // After hours the line may skip the agents (D61); "agents" answers as during the day.
-        $agents = $closed && $line->after_hours !== 'agents' ? collect() : $this->presence->availableFor($organization);
+        // A free trial past its included calls, or one that ended, goes straight to the business (D97).
+        $agents = ($closed && $line->after_hours !== 'agents') || ! app(Trials::class)->answersCalls($organization)
+            ? collect() : $this->presence->availableFor($organization);
         $twiml = TwiML::make();
         if ($line->record_calls) {
             $twiml->say((string) config('telephony.disclosure'));
