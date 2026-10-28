@@ -42,6 +42,7 @@ use App\Http\Controllers\PasswordChangeController;
 use App\Http\Controllers\PayController;
 use App\Http\Controllers\RecordingController;
 use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\Sites\SiteController;
 use App\Http\Controllers\SupportAttachmentController;
 use App\Http\Controllers\SurveyController;
 use App\Livewire\Account\Notifications as AccountNotifications;
@@ -129,6 +130,7 @@ use App\Livewire\Client\Settings\Notifications as NotificationSettings;
 use App\Livewire\Client\Settings\Privacy as PrivacySettings;
 use App\Livewire\Client\Settings\Team as TeamSettings;
 use App\Livewire\Client\Setup\Wizard as SetupWizard;
+use App\Livewire\Client\SiteBuilder as ClientSiteBuilder;
 use App\Livewire\Client\Social\Accounts as SocialAccounts;
 use App\Livewire\Client\Social\Compose as SocialCompose;
 use App\Livewire\Client\Social\Index as SocialIndex;
@@ -140,6 +142,16 @@ use App\Livewire\Customer\ManageAppointment;
 use Illuminate\Support\Facades\Route;
 
 // Landing page
+// Hosted business websites (D99): on their own subdomain once SITES_DOMAIN is set up, and always at /site/{subdomain}.
+if ($sitesDomain = config('sites.domain')) {
+    Route::domain('{subdomain}.'.$sitesDomain)->middleware('throttle:240,1')->where(['subdomain' => '[a-z0-9-]+', 'page' => '[a-z0-9-]+'])->group(function () {
+        Route::get('/', [SiteController::class, 'show'])->name('sites.domain.home');
+        Route::get('/{page}', [SiteController::class, 'show'])->name('sites.domain.page');
+    });
+}
+Route::get('/site/{subdomain}/{page?}', [SiteController::class, 'show'])->where(['subdomain' => '[a-z0-9-]+', 'page' => '[a-z0-9-]+'])
+    ->middleware('throttle:240,1')->name('sites.path');
+
 Route::get('/', [HomeController::class, 'index'])->name('home');
 // Search engines (D58): the sitemap and robots.txt are built from the routes.
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])->name('seo.sitemap');
@@ -324,6 +336,10 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/business/emails', BusinessCustomerEmails::class)->middleware('feature:customer_emails')->name('business.emails');
         Route::get('/business/calendars', BusinessCalendarsPage::class)->middleware(['can:integrations.view', 'feature:calendar_sync'])->name('business.calendars');
         Route::get('/website', ClientWebsite::class)->middleware(['can:integrations.view', 'feature:website_tools'])->name('website');
+        Route::middleware(['can:integrations.view', 'feature:website_builder'])->group(function () {
+            Route::get('/site', ClientSiteBuilder::class)->name('site');
+            Route::get('/site/preview/{page?}', [SiteController::class, 'preview'])->where('page', '[a-z0-9-]+')->name('site.preview');
+        });
     });
 });
 

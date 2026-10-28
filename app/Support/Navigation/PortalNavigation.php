@@ -36,6 +36,7 @@ class PortalNavigation
                 $this->item('Reviews', 'star', 'app.reviews', 'app.reviews', 'reviews.view', 'reviews'),
                 $this->item('Social', 'megaphone', 'app.social.index', 'app.social.*', 'social.view', 'social_publishing'),
                 $this->item('Business', 'building', 'app.business.profile', 'app.business.*', 'organization.view'),
+                $this->item('Website builder', 'sparkles', 'app.site', 'app.site*', 'integrations.view', 'website_builder'),
                 $this->item('Website', 'globe', 'app.website', 'app.website*', 'integrations.view', 'website_tools'),
                 $this->item('SEO', 'trend-up', 'app.seo', 'app.seo*', 'seo.view'),
                 $this->item('Billing', 'card', 'app.billing', 'app.billing*', 'billing.view'),

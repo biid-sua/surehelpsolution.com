@@ -1767,3 +1767,22 @@ sales chat all read from it, instead of keeping their own copies.
 **Why:** prices and plan contents were typed into the website and a config file separately from the
 plans used for billing, so changing one left the others wrong. One source means what visitors read,
 what they sign up for and what they're billed always match.
+
+## D99 — Websites we host, changed by asking (2026-10-28)
+**Decision:** businesses can have a website we host. It starts from one of three templates filled with
+their own details, and they change it by asking in plain words.
+- **Content is data:** a fixed JSON shape (theme plus pages of sections, every section with heading,
+  text, button and items). The AI returns the whole content in that shape; the server strips HTML,
+  drops unknown parts and caps lengths. Templates decide the look.
+- **Draft, preview, publish, undo:** every change is a numbered version. Visitors see only the
+  published one; any version can be restored.
+- **Facts, not invention:** the starter uses only what the business told us, and the AI is told to do
+  the same and never to write reviews. Phone, address and hours are filled in live.
+- **Addresses:** `{name}.{SITES_DOMAIN}` once that domain has wildcard DNS and a certificate, or
+  `/site/{name}` until then. Custom domains come later, with the hosting decision.
+- **AI cost:** a monthly token allowance per business (`SITES_MONTHLY_TOKENS`, or a plan's
+  `site_ai_tokens`), one change at a time. Selling extra credits is the next step.
+
+**Why:** owners want a good website without learning a site builder, and asking in plain words is how
+they'd brief a designer. Keeping content as data, not HTML, means the AI can't break the layout or
+add scripts, pages stay fast and search-friendly, and every change can be undone.
