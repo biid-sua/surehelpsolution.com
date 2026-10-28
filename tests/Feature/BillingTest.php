@@ -94,7 +94,7 @@ class BillingTest extends TestCase
 
         $this->actingAs($this->admin)->get(route('admin.billing', ['tab' => 'plans']))->assertOk()->assertSee('No plans yet');
         Livewire::test(AdminBilling::class)->set('tab', 'plans')
-            ->set('plan.name', 'Virtual Receptionist')->set('plan.price', '299')->set('plan.features', 'calendar_sync, ai.website_chatbot')
+            ->set('plan.name', 'Virtual Receptionist')->set('plan.price', '299')->set('plan.features', ['calendar_sync'])->set('plan.other_features', 'ai.website_chatbot')
             ->call('savePlan')->assertHasNoErrors();
         $plan = Plan::sole();
         $this->assertSame(29900, $plan->price_cents);

@@ -167,6 +167,7 @@ class SignupTest extends TestCase
         auth()->logout();
 
         $this->get(route('login'))->assertSee(route('signup'), false);
-        $this->get(route('home'))->assertSee(route('signup', ['plan' => 'essential']), false);
+        // The website's plan cards link to sign-up with their plan (D98).
+        $this->get(route('home'))->assertSee(route('signup', ['plan' => 'receptionist']), false);
     }
 }

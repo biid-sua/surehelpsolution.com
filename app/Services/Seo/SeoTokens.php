@@ -4,12 +4,14 @@ namespace App\Services\Seo;
 
 use App\Models\Organization;
 use App\Models\SeoTask;
+use App\Services\Billing\AiCredits;
 use App\Services\Billing\Entitlements;
 use Carbon\CarbonImmutable;
 
 /**
  * The AI token allowance for SEO work (D57): per calendar month in the business's timezone. Staff can
  * set an amount for one business; otherwise the plan's `seo_ai_tokens` limit; otherwise the default.
+ * Beyond it, tasks the business starts use AI credits (D100); the autopilot stays within the allowance.
  */
 class SeoTokens
 {
@@ -39,8 +41,23 @@ class SeoTokens
         return max(0, $this->allowance($organization) - $this->used($organization));
     }
 
+    /** Within the allowance alone: the monthly autopilot. */
     public function canStart(Organization $organization): bool
     {
         return $this->remaining($organization) >= (int) config('seo.min_tokens_to_start', 5000);
+    }
+
+    /** What's left this month plus the business's AI credits, in tokens. */
+    public function available(Organization $organization): int
+    {
+        $credits = app(AiCredits::class);
+
+        return $this->remaining($organization) + max(0, $credits->balance($organization)) * $credits->tokensPerCredit();
+    }
+
+    /** Tasks the business (or staff) starts may use credits once the allowance is spent. */
+    public function canStartWithCredits(Organization $organization): bool
+    {
+        return $this->available($organization) >= (int) config('seo.min_tokens_to_start', 5000);
     }
 }

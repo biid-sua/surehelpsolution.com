@@ -82,6 +82,6 @@ class SignupController extends Controller
     /** @return Collection<int, Plan> */
     private function plans(): Collection
     {
-        return Plan::query()->where('is_active', true)->where('is_public', true)->ordered()->get();
+        return Plan::query()->selfServe()->ordered()->get();
     }
 }

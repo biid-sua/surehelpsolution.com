@@ -8,7 +8,6 @@ use App\Models\SearchConsoleConnection;
 use App\Models\SeoTask;
 use App\Services\Billing\FeatureAccess;
 use App\Services\Seo\SeoDesk;
-use App\Services\Seo\SeoTokens;
 use Illuminate\Console\Command;
 
 /**
@@ -22,7 +21,7 @@ class SeoDaily extends Command
 
     protected $description = 'Fetch Search Console statistics and run the monthly SEO autopilot';
 
-    public function handle(FeatureAccess $features, SeoDesk $desk, SeoTokens $tokens): int
+    public function handle(FeatureAccess $features, SeoDesk $desk): int
     {
         SearchConsoleConnection::withoutGlobalScopes()->where('status', SearchConsoleConnection::STATUS_ACTIVE)->whereNotNull('site_url')
             ->pluck('id')->each(fn (int $id) => PullSearchConsole::dispatch($id));
@@ -32,7 +31,7 @@ class SeoDaily extends Command
         }
 
         $started = 0;
-        Organization::query()->whereIn('status', ['active', 'onboarding'])->where('is_demo', false)->each(function (Organization $org) use ($features, $desk, $tokens, &$started) {
+        Organization::query()->whereIn('status', ['active', 'onboarding'])->where('is_demo', false)->each(function (Organization $org) use ($features, $desk, &$started) {
             if (! $features->allows($org, 'seo_service') || (($org->seo_settings ?? [])['autopilot'] ?? true) === false) {
                 return;
             }
@@ -45,7 +44,7 @@ class SeoDaily extends Command
                 'gbp_posts' => ! $done('gbp_posts', 25),
             ]);
             foreach (array_keys($plan) as $type) {
-                if ($desk->blocker($org, $type) === null && $tokens->canStart($org)) {
+                if ($desk->blocker($org, $type, 'autopilot') === null) {
                     $desk->request($org, $type, [], null, 'autopilot');
                     $started++;
                 }

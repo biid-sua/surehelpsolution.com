@@ -3,7 +3,7 @@
 
     <div class="mb-4 flex flex-wrap items-end gap-3">
         <div class="flex flex-wrap gap-2" role="group" aria-label="Show">
-            @foreach (['open' => 'Open ('.$openCount.')', 'handled' => 'Handled', 'all' => 'All'] as $value => $label)
+            @foreach (['open' => 'Open ('.$openCount.')', 'demos' => 'Upcoming demos ('.$demoCount.')', 'outcome' => 'Needs outcome ('.$outcomeCount.')', 'handled' => 'Handled', 'all' => 'All'] as $value => $label)
                 <button type="button" wire:click="$set('show', '{{ $value }}')" @class([
                     'rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
                     'bg-brand-600 text-white' => $show === $value,
@@ -60,7 +60,10 @@
                                         <x-ui.badge :tone="$enquiry->inquiry_type === 'support' ? 'warning' : 'brand'">{{ $enquiry->inquiryLabel() }}</x-ui.badge>
                                         @if ($enquiry->source === 'chat')<x-ui.badge>Chat</x-ui.badge>@endif
                                         @if ($enquiry->score)<x-ui.badge :tone="['hot' => 'danger', 'warm' => 'warning', 'cold' => 'neutral'][$enquiry->score] ?? 'neutral'">{{ ucfirst($enquiry->score) }}</x-ui.badge>@endif
-                                        @if ($enquiry->demo_status === 'booked' && $enquiry->demo_at)<x-ui.badge tone="success">Demo {{ $enquiry->demo_at->setTimezone(config('sales.demos.timezone'))->format('M j, g:i A') }}</x-ui.badge>@endif
+                                        @if ($enquiry->demoNeedsOutcome())<x-ui.badge tone="warning">Demo needs outcome</x-ui.badge>
+                                        @elseif ($enquiry->demo_status === 'booked' && $enquiry->demo_at)<x-ui.badge tone="success">Demo {{ $enquiry->demo_at->setTimezone($demoTz)->format('M j, g:i A') }}</x-ui.badge>
+                                        @elseif ($enquiry->demo_status)<x-ui.badge :tone="['attended' => 'brand', 'no_show' => 'danger', 'cancelled' => 'neutral'][$enquiry->demo_status] ?? 'neutral'">Demo: {{ $statuses[$enquiry->demo_status] ?? $enquiry->demo_status }}</x-ui.badge>@endif
+                                        @if ($enquiry->demo_outcome)<x-ui.badge tone="success">{{ $outcomes[$enquiry->demo_outcome] ?? $enquiry->demo_outcome }}</x-ui.badge>@endif
                                         @if ($enquiry->handled_at)<x-ui.badge tone="success">Handled</x-ui.badge>@endif
                                     </span>
                                     <span class="mt-1 line-clamp-2 block text-sm text-muted">{{ $enquiry->message }}</span>
@@ -82,14 +85,58 @@
                         <dt class="text-subtle">Company</dt><dd class="text-ink">{{ $current->company ?: '—' }}</dd>
                         <dt class="text-subtle">SMS consent</dt><dd class="text-ink">{{ $current->sms_consent ? 'Yes' : 'No' }}</dd>
                         @if ($current->score)<dt class="text-subtle">Score</dt><dd class="text-ink">{{ ucfirst($current->score) }}</dd>@endif
-                        @if ($current->demo_status === 'booked' && $current->demo_at)
-                            <dt class="text-subtle">Demo</dt><dd class="font-medium text-ink">{{ $current->demo_at->setTimezone(config('sales.demos.timezone'))->format('D, M j, g:i A T') }}</dd>
-                        @endif
                         @foreach (['industry' => 'Industry', 'team_size' => 'Team size', 'monthly_calls' => 'Calls a month', 'current_solution' => 'Uses today', 'needs' => 'Needs', 'timeline' => 'Start', 'plan' => 'Plan'] as $key => $label)
                             @if (filled($current->details[$key] ?? null))<dt class="text-subtle">{{ $label }}</dt><dd class="text-ink">{{ $current->details[$key] }}</dd>@endif
                         @endforeach
                         @if ($current->chat?->utm)<dt class="text-subtle">Campaign</dt><dd class="text-ink">{{ collect($current->chat->utm)->map(fn ($v, $k) => "$k: $v")->implode(' · ') }}</dd>@endif
                     </dl>
+                    @if ($current->demo_status && $current->demo_at)
+                        <div class="mt-4 rounded-xl bg-surface-2 p-4 ring-1 ring-line">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <h3 class="text-sm font-semibold text-ink">Demo call</h3>
+                                <x-ui.badge :tone="$current->demoNeedsOutcome() ? 'warning' : (['booked' => 'success', 'attended' => 'brand', 'no_show' => 'danger', 'cancelled' => 'neutral'][$current->demo_status] ?? 'neutral')">{{ $current->demoNeedsOutcome() ? 'Needs outcome' : ($statuses[$current->demo_status] ?? $current->demo_status) }}</x-ui.badge>
+                            </div>
+                            <p class="mt-1 text-sm font-medium text-ink">{{ $current->demo_at->setTimezone($demoTz)->format('D, M j, g:i A T') }}</p>
+                            <p class="mt-1 text-xs text-subtle">
+                                @if ($current->demo_reminded_day_at || $current->demo_reminded_hour_at)Reminded{{ $current->demo_reminded_day_at ? ' the day before' : '' }}{{ $current->demo_reminded_day_at && $current->demo_reminded_hour_at ? ' and' : '' }}{{ $current->demo_reminded_hour_at ? ' an hour before' : '' }}. @endif
+                                @if ($current->demo_followed_up_at){{ $current->demo_status === 'no_show' ? 'Sent the "pick a new time" email' : 'Sent the recap' }} {{ $current->demo_followed_up_at->diffForHumans() }}. @endif
+                                @if ($current->demo_nudged_at)Nudged {{ $current->demo_nudged_at->diffForHumans() }}. @endif
+                                @if ($current->signedUpOrganization)Signed up as <a href="{{ route('admin.organizations.show', $current->signedUpOrganization) }}" class="text-brand-300 hover:underline">{{ $current->signedUpOrganization->name }}</a>.@endif
+                            </p>
+                            @if ($canManage)
+                                <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                                    <div>
+                                        <label for="demo-owner" class="sh-label">Runs the demo</label>
+                                        <select id="demo-owner" class="sh-input" wire:change="assignDemo($event.target.value)">
+                                            <option value="">Nobody yet</option>
+                                            @foreach ($staff as $person)
+                                                <option value="{{ $person->id }}" @selected($current->demo_owner_user_id === $person->id)>{{ $person->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="demo-outcome" class="sh-label">Outcome</label>
+                                        <select id="demo-outcome" class="sh-input" wire:change="setOutcome($event.target.value)">
+                                            <option value="">Not yet</option>
+                                            @foreach ($outcomes as $value => $label)
+                                                <option value="{{ $value }}" @selected($current->demo_outcome === $value)>{{ $label }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    <x-ui.button size="sm" :variant="$current->demo_status === 'attended' ? 'primary' : 'secondary'" wire:click="markDemo('attended')">Attended</x-ui.button>
+                                    <x-ui.button size="sm" :variant="$current->demo_status === 'no_show' ? 'danger' : 'secondary'" wire:click="markDemo('no_show')">No-show</x-ui.button>
+                                    @if ($current->demo_status === 'booked')
+                                        <x-ui.button size="sm" variant="ghost" wire:click="cancelDemo" wire:confirm="Cancel this demo? They'll be emailed, with a link to pick a new time.">Cancel demo</x-ui.button>
+                                    @endif
+                                </div>
+                                <p class="mt-2 text-xs text-subtle">Marking it sends the follow-up once: a recap with their trial link, or a link to pick a new time. Sign-ups with the same email are spotted automatically.</p>
+                            @elseif ($current->demoOwner)
+                                <p class="mt-2 text-sm text-ink">Run by {{ $current->demoOwner->name }}</p>
+                            @endif
+                        </div>
+                    @endif
                     <p class="mt-4 whitespace-pre-line rounded-xl bg-surface-2 p-4 text-sm text-ink ring-1 ring-line">{{ $current->message }}</p>
                     @if ($current->chat)
                         <div class="mt-5">

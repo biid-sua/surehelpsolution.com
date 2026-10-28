@@ -23,7 +23,10 @@ issues invoice ── email + PDF ──► opens Billing page
    - **Default Payoneer payment link**: in Payoneer, open *Receive › Request a payment* and create a reusable link with no fixed amount (if your account offers that), then paste it here. Every invoice without its own link uses it.
    - **Bank transfer details**: copy them from Payoneer *Receive › Receiving accounts*. Usually that's the USD account (ACH routing and account number), plus EUR/GBP if you bill in those. They are printed on invoices and the client's billing page.
    - **Days to pay**: 7 by default.
-2. **Plans.** On *Admin › Billing › Plans*, create your plans: name, monthly or yearly price, free-trial days and, optionally, feature keys. A plan that's switched off can't be chosen for new subscriptions; existing subscribers keep it.
+2. **Plans.** On *Admin › Billing › Plans*, create your plans: name, monthly or yearly price, free-trial days, what's included and the features it unlocks. The same plans appear on the website's pricing section, at sign-up and on clients' *Billing* page (D98).
+   - **Website extras:** a "Best for" line, a yearly price per month for the Annual toggle, a "Most popular" badge, the order, and *Price on request* for plans like Enterprise (shown as "Custom", not offered at sign-up).
+   - **Retiring:** untick *Available* and *Shown to clients*. Existing subscribers keep the plan; nobody new can choose it.
+   - **Deleting:** possible only for a plan nobody has ever been on. The *Delete* button appears only then.
 3. **Subscribe businesses.** On *Admin › Billing › Subscriptions*, pick a business, a plan and a start date, then choose whether it gets a free trial.
    - Without a trial, the first invoice is issued and emailed right away.
    - After that, `billing:run` invoices each renewal on the same day of the month. The 31st becomes the last day in shorter months.
@@ -114,6 +117,7 @@ Built and switched off. Payoneer stays the provider (`BILLING_GATEWAY=payoneer`)
 ## Usage, add-ons and limits (D30)
 
 - **Calls included and extra calls.** On a plan, set *Calls included* (per billing period) and *Price per extra call*. Spam calls never count. Each period's usage is recorded once when it ends, and extra calls are added to the next invoice (or to a final invoice when a subscription ends). Clients see a meter on *Billing* and get an alert at 80% and 100%. Calls are always answered.
+- **AI credits.** Businesses buy packs under *Billing*; each purchase is an invoice, and the credits arrive when it's paid. Packs and hand-given credits are under *Admin › Billing › AI credits* ([ai-credits.md](ai-credits.md), D100).
 - **Add-ons.** Create them under *Admin › Billing › Add-ons*: name, monthly price, and a feature key (fixed once created). Owners turn them on from *Billing*. The rest of the current period is invoiced straight away, pro rata (free during a trial). After that, each renewal invoice includes it. Turning one off takes effect at the end of the period. A new price applies only to businesses that turn the add-on on afterwards.
 - **Limits.** *Team members* caps the people who can sign in (members plus open invitations); *Connected calendars* caps calendar connections. Leave blank for unlimited.
 - **Feature access (D46).** *Admin › Billing › Feature access* sets each paid feature (`calendar_sync`, `ai_assistant`, `social_publishing`, `website_tools`, `customer_emails`) to "every business" (default) or "only plans / add-ons that include it". Staff can override per business on its admin page. In code, use `App\Services\Billing\FeatureAccess::allows()` (it applies the override, the mode, then the plan and add-ons) and the `feature:` route middleware.

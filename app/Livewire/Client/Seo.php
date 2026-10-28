@@ -9,6 +9,7 @@ use App\Models\Addon;
 use App\Models\BusinessService;
 use App\Models\SearchConsoleConnection;
 use App\Models\SeoTask;
+use App\Services\Billing\AiCredits;
 use App\Services\Billing\FeatureAccess;
 use App\Services\Seo\SearchConsole;
 use App\Services\Seo\SeoDesk;
@@ -180,7 +181,7 @@ class Seo extends Component
             'busy' => $tasks->contains(fn (SeoTask $t) => in_array($t->status, ['queued', 'running'], true)),
             'types' => SeoTaskCatalog::TYPES,
             'blockers' => $on ? collect(SeoTaskCatalog::TYPES)->map(fn ($d, string $type) => $desk->blocker($organization, $type))->all() : [],
-            'tokens' => ['used' => $tokens->used($organization), 'allowance' => $tokens->allowance($organization)],
+            'tokens' => ['used' => $tokens->used($organization), 'allowance' => $tokens->allowance($organization), 'credits' => app(AiCredits::class)->balance($organization)],
             'connection' => SearchConsoleConnection::query()->forOrganization($organization)->first(),
             'consoleAvailable' => $console->isConfigured(),
             'services' => BusinessService::query()->forOrganization($organization)->where('is_active', true)->orderBy('name')->pluck('name'),

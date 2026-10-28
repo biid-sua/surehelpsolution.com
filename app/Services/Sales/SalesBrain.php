@@ -15,8 +15,8 @@ class SalesBrain
     public function instructions(): string
     {
         $name = (string) config('sales.assistant', 'Ava');
-        $plans = collect(config('sales.plans', []))->map(fn (array $p) => '- '.$p['name'].': '
-            .($p['monthly'] ? '$'.$p['monthly'].'/month ($'.$p['annual_monthly'].'/month billed annually)' : 'custom pricing')
+        $plans = collect(app(SalesPlans::class)->all())->map(fn (array $p) => '- '.$p['name'].': '
+            .($p['monthly'] ? '$'.$p['monthly'].'/month'.($p['annual_monthly'] ? ' ($'.$p['annual_monthly'].'/month billed annually)' : '') : 'custom pricing')
             .'; '.$p['minutes'].'; best for '.$p['best_for'].'; includes '.$p['includes'].'; '.$p['extra'].'.')->implode("\n");
         $facts = collect(config('sales.facts', []))->map(fn (string $f) => '- '.$f)->implode("\n");
         $faq = collect(config('site.faq_page', []))->flatMap(fn (array $group) => $group[2])

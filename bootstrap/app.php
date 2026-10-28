@@ -13,7 +13,9 @@ use App\Http\Middleware\ResolveOrganization;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\SearchIndexing;
 use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\ServeCustomDomain;
 use App\Http\Middleware\SubfolderLivewire;
+use App\Http\Middleware\TrialReadOnly;
 use App\Services\System\ErrorAlerts;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -38,11 +40,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'account.gate' => AccountGate::class,
             'feature' => RequireFeature::class,
             'idempotent' => Idempotent::class,
+            'trial.read-only' => TrialReadOnly::class,
         ]);
 
         $middleware->append(SecurityHeaders::class);
         $middleware->append(SearchIndexing::class);   // only the public website is indexed (D58)
         $middleware->append(SubfolderLivewire::class); // local sub-folder installs only
+        $middleware->append(ServeCustomDomain::class); // businesses' own domains (D101), inside the security headers
 
         // Guests are sent to the sign-in page; the API never redirects, it answers 401.
         $middleware->redirectGuestsTo(fn ($request) => $request->is('api/*') ? null : route('login'));

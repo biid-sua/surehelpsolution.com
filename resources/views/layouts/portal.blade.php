@@ -173,6 +173,9 @@
             </header>
 
             <main id="main" class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8" tabindex="-1">
+                @if ($portal === 'client' && $organization)
+                    @include('partials.trial-banner', ['organization' => $organization])
+                @endif
                 @if (session('feature_locked'))
                     <x-ui.alert tone="info" class="mb-6" title="Not in your plan">{{ session('feature_locked') }}</x-ui.alert>
                 @endif

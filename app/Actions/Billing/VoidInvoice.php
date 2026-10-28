@@ -5,6 +5,7 @@ namespace App\Actions\Billing;
 use App\Enums\InvoiceStatus;
 use App\Models\Invoice;
 use App\Models\User;
+use App\Services\Billing\AiCredits;
 use App\Support\Audit\Audit;
 use Illuminate\Validation\ValidationException;
 
@@ -25,6 +26,7 @@ class VoidInvoice
         }
 
         $invoice->forceFill(['status' => InvoiceStatus::Void, 'voided_at' => now(), 'notes' => trim(($invoice->notes ? $invoice->notes."\n" : '').'Voided: '.trim($reason))])->save();
+        app(AiCredits::class)->invoiceVoided($invoice);   // D100
         $this->audit->record('invoice.voided', $invoice, new: ['reason' => trim($reason)], organization: $invoice->organization, actor: $actor, label: $invoice->number);
 
         return $invoice;

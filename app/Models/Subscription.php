@@ -22,6 +22,10 @@ use Illuminate\Support\Carbon;
  * @property Carbon $current_period_end
  * @property Carbon|null $cancelled_at
  * @property array{period?: string, levels?: list<int>}|null $usage_alerts usage alerts sent in the current period
+ * @property bool $confirm_by_trial_end a self-serve trial (D97): it ends unless the owner keeps the plan
+ * @property Carbon|null $confirmed_at when the owner chose to keep the plan after the trial
+ * @property string|null $ended_reason trial_ended when an unconfirmed trial ran out
+ * @property list<int>|null $trial_reminders days-left reminders already sent
  */
 class Subscription extends Model
 {
@@ -30,6 +34,7 @@ class Subscription extends Model
     protected $fillable = [
         'organization_id', 'plan_id', 'next_plan_id', 'status', 'price_cents', 'currency', 'interval', 'started_on',
         'trial_ends_on', 'current_period_start', 'current_period_end', 'cancel_at_period_end', 'cancelled_at', 'usage_alerts',
+        'confirm_by_trial_end', 'confirmed_at', 'ended_reason', 'trial_reminders',
     ];
 
     protected function casts(): array
@@ -44,6 +49,9 @@ class Subscription extends Model
             'usage_alerts' => 'array',
             'cancel_at_period_end' => 'boolean',
             'cancelled_at' => 'datetime',
+            'confirm_by_trial_end' => 'boolean',
+            'confirmed_at' => 'datetime',
+            'trial_reminders' => 'array',
         ];
     }
 
@@ -71,6 +79,12 @@ class Subscription extends Model
     public function scopeCurrent(Builder $query): void
     {
         $query->where('status', '!=', SubscriptionStatus::Cancelled->value);
+    }
+
+    /** A self-serve trial the owner hasn't kept yet (D97): it ends on its last day. */
+    public function awaitsConfirmation(): bool
+    {
+        return $this->status === SubscriptionStatus::Trialing && $this->confirm_by_trial_end && $this->confirmed_at === null;
     }
 
     public function priceLabel(): string

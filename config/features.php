@@ -27,6 +27,10 @@ return [
         'label' => 'Social publishing',
         'description' => 'Plan and publish posts to Facebook, Instagram, LinkedIn and Google Business Profile.',
     ],
+    'website_builder' => [
+        'label' => 'Website builder',
+        'description' => 'A website we host, made from a template and the business\'s details, changed by asking in plain words.',
+    ],
     'website_tools' => [
         'label' => 'Website tools',
         'description' => 'Website health and SEO check, plus booking, click-to-call and the contact form in the snippet.',

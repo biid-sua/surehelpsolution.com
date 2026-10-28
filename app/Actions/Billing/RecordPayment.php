@@ -10,6 +10,7 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\User;
 use App\Notifications\PaymentReceived;
+use App\Services\Billing\AiCredits;
 use App\Services\Billing\Referrals;
 use App\Support\Audit\Audit;
 use Carbon\CarbonImmutable;
@@ -84,6 +85,7 @@ class RecordPayment
             organization: $invoice->organization, actor: $actor, label: $invoice->number);
         $this->notify->handle($invoice->organization, new PaymentReceived($payment), 'billing.view');
         app(Referrals::class)->invoicePaid($invoice);   // D90
+        app(AiCredits::class)->invoicePaid($invoice);   // D100
 
         return $payment;
     }

@@ -3,7 +3,6 @@
 namespace App\Services\Sales;
 
 use App\Mail\SalesChatReplyMail;
-use App\Mail\SalesDemoBookedMail;
 use App\Mail\SalesLeadAlertMail;
 use App\Models\ContactSubmission;
 use App\Models\SalesChat;
@@ -278,7 +277,7 @@ class SalesChatDesk
         }
         $chat->forceFill(['pending_slot' => null])->save();
         $enquiry->forceFill(['score' => 'hot'])->save();
-        Mail::to($enquiry->email)->queue(new SalesDemoBookedMail($enquiry->fresh()));
+        app(DemoFollowUp::class)->booked($enquiry);   // invitation with the reschedule link, reminders (D96)
         $this->alertTeam($chat, 'Demo booked: '.$this->slots->label($at));
         $this->action = null;
 
@@ -401,10 +400,12 @@ class SalesChatDesk
 
     private function pricingText(): string
     {
-        $plans = collect(config('sales.plans', []))->map(fn (array $p) => '**'.$p['name'].'**: '
+        $sales = app(SalesPlans::class);
+        $plans = collect($sales->all())->map(fn (array $p) => '**'.$p['name'].'**: '
             .($p['monthly'] ? '$'.$p['monthly'].'/month, '.$p['minutes'] : 'custom pricing for '.$p['best_for']))->implode("\n");
+        $saving = $sales->annualSaving();
 
-        return "Our plans:\n{$plans}\nAnnual billing saves 10%, there are no setup fees and every plan starts with a free trial. Want help picking one?";
+        return "Our plans:\n{$plans}\n".($saving ? "Annual billing saves {$saving}%, there" : 'There').' are no setup fees and every plan starts with a free trial. Want help picking one?';
     }
 
     private function greeting(SalesChat $chat): string

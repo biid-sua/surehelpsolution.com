@@ -5,12 +5,14 @@ namespace App\Actions\Signup;
 use App\Actions\Billing\ManageSubscription;
 use App\Actions\Organizations\ProvisionUserTenancy;
 use App\Enums\OrganizationStatus;
+use App\Enums\SubscriptionStatus;
 use App\Models\Organization;
 use App\Models\Plan;
 use App\Models\User;
 use App\Notifications\NewSignup;
 use App\Services\Account\LegalDocuments;
 use App\Services\Billing\Referrals;
+use App\Services\Setup\SampleData;
 use App\Support\Audit\Audit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +22,9 @@ use Illuminate\Support\Facades\Notification;
  * A business creates its own account from the website (D65): the owner, the business (onboarding,
  * so staff still connect its phone line and go live), the chosen plan's free trial and the accepted
  * terms. The owner confirms their email before using the portal; staff hear about every sign-up.
+ *
+ * The trial is self-serve (D97): it ends unless the owner keeps the plan, and it starts with sample
+ * data so the portal isn't empty on day one.
  */
 class SignUpBusiness
 {
@@ -57,7 +62,13 @@ class SignUpBusiness
             ])->save();
 
             if ($plan) {
-                $this->subscriptions->subscribe($organization, $plan, $user);
+                $subscription = $this->subscriptions->subscribe($organization, $plan, $user);
+                if ($subscription->status === SubscriptionStatus::Trialing) {
+                    $subscription->forceFill(['confirm_by_trial_end' => true])->save();
+                }
+            }
+            if (config('signup.sample_data')) {
+                app(SampleData::class)->add($organization, $user);
             }
             app(Referrals::class)->signedUp($organization, $data['ref'] ?? null);
             $this->legal->accept($user, $request);

@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Website;
 use App\Services\Ai\Contracts\AiProvider;
 use App\Services\Ai\Data\AiRequest;
+use App\Services\Billing\AiCredits;
 use App\Services\Billing\FeatureAccess;
 use App\Support\Audit\Audit;
 use Illuminate\Validation\ValidationException;
@@ -32,12 +33,13 @@ class SeoDesk
     ) {}
 
     /** Why a new task can't start now, or null. */
-    public function blocker(Organization $organization, string $type): ?string
+    public function blocker(Organization $organization, string $type, string $source = 'client'): ?string
     {
         return match (true) {
             ! $this->features->allows($organization, 'seo_service') => 'The SEO service isn\'t switched on for this business.',
             ! $this->ai->isConfigured() => 'The AI isn\'t set up yet. Please contact SureHelp support.',
-            ! $this->tokens->canStart($organization) => 'This month\'s AI allowance for SEO is used up. It resets on the 1st.',
+            $source === 'autopilot' && ! $this->tokens->canStart($organization) => 'This month\'s AI allowance for SEO is used up. It resets on the 1st.',
+            ! $this->tokens->canStartWithCredits($organization) => 'This month\'s AI allowance for SEO is used up. Buy AI credits under Billing to keep going, or wait until the 1st.',
             ($this->catalog::TYPES[$type]['needs_pages'] ?? false) && $this->pages($organization) === [] => 'Add and verify your website under Website first, so we know its pages.',
             SeoTask::withoutGlobalScopes()->where('organization_id', $organization->id)->whereIn('status', ['queued', 'running'])->count() >= 3 => 'Three tasks are already running. Try again in a minute.',
             default => null,
@@ -54,7 +56,7 @@ class SeoDesk
         if (! isset(SeoTaskCatalog::TYPES[$type])) {
             throw ValidationException::withMessages(['type' => ['Choose a task.']]);
         }
-        if ($why = $this->blocker($organization, $type)) {
+        if ($why = $this->blocker($organization, $type, $source)) {
             throw ValidationException::withMessages(['type' => [$why]]);
         }
 
@@ -85,6 +87,8 @@ class SeoDesk
         }
         $organization = Organization::query()->findOrFail($task->organization_id);
         $task->forceFill(['status' => 'running'])->save();
+        // What's left of the allowance decides how much of this task credits pay for (D100).
+        $allowanceLeft = $this->tokens->remaining($organization);
 
         try {
             $request = $this->catalog->request($task, $task->website_id ? Website::withoutGlobalScopes()->find($task->website_id) : null);
@@ -105,17 +109,27 @@ class SeoDesk
                 };
 
                 $task->forceFill($used + ['status' => 'failed', 'error' => $why])->save();
+                $this->chargeCredits($task, $allowanceLeft);
 
                 return $task;
             }
 
             $task->forceFill($used + ['status' => 'done', 'output' => $this->catalog->tidy($task->type, $data), 'error' => null])->save();
+            $this->chargeCredits($task, $allowanceLeft);
         } catch (AiUnavailable $e) {
             report($e);
             $task->forceFill(['status' => 'failed', 'error' => 'The AI couldn\'t be reached. Try again in a few minutes; no tokens were used.'])->save();
         }
 
         return $task;
+    }
+
+    /** The monthly autopilot runs on the allowance alone; never on credits the business bought. */
+    private function chargeCredits(SeoTask $task, int $allowanceLeft): void
+    {
+        if ($task->source !== 'autopilot') {
+            app(AiCredits::class)->chargeSeoTask($task, $allowanceLeft);
+        }
     }
 
     public function website(Organization $organization): ?Website

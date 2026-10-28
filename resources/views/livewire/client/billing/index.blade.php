@@ -86,7 +86,9 @@
                     @if ($subscription->status->value === 'trialing')
                         <div class="flex justify-between gap-2"><dt class="text-muted">Trial ends</dt><dd class="text-ink">{{ $subscription->trial_ends_on->format('M j, Y') }}</dd></div>
                     @endif
-                    @if ($subscription->nextBillingDate())
+                    @if ($pendingTrial)
+                        <div class="flex justify-between gap-2"><dt class="text-muted">Next invoice</dt><dd class="text-ink">Only if you keep your plan</dd></div>
+                    @elseif ($subscription->nextBillingDate())
                         <div class="flex justify-between gap-2"><dt class="text-muted">Next invoice</dt><dd class="text-ink">{{ $subscription->nextBillingDate()->format('M j, Y') }}</dd></div>
                     @endif
                     @if ($subscription->nextPlan)
@@ -96,7 +98,10 @@
                         <div class="text-amber-300">Ends on {{ $subscription->current_period_end->format('M j, Y') }}.</div>
                     @endif
                 </dl>
-                @if ($meter && $meter['included'])
+                @if ($pendingTrial && $trialCalls !== null)
+                    {{-- Self-serve trial (D97): the calls our receptionists answer before the plan is kept. --}}
+                    <p class="mt-5 text-sm text-muted">{{ number_format(min($trialCallsUsed, $trialCalls)) }} of {{ $trialCalls }} trial calls answered. Keep your plan to have us answer every call.</p>
+                @elseif ($meter && $meter['included'])
                     @php($pct = min(100, $meter['percent']))
                     <div class="mt-5">
                         <div class="flex items-baseline justify-between gap-2 text-sm">
@@ -119,7 +124,7 @@
                     <p class="mt-5 text-sm text-muted">{{ number_format($meter['used']) }} calls answered this period. Your plan has no call limit.</p>
                 @endif
             @else
-                <p class="text-sm text-muted">No plan yet. Choose one below and we'll set it up.</p>
+                <p class="text-sm text-muted">{{ $trialEnded ? 'Your free trial has ended. Choose a plan below to switch everything back on.' : 'No plan yet. Choose one below and we\'ll set it up.' }}</p>
             @endif
         </x-ui.card>
 
@@ -161,6 +166,39 @@
             @endforelse
         </x-ui.card>
 
+        {{-- AI credits (D100): for AI work beyond the monthly allowance, such as website changes. --}}
+        <x-ui.card id="credits" title="AI credits" description="Used when AI work goes past your monthly allowance, for example website changes. They don't expire.">
+            <p class="text-3xl font-semibold tabular-nums text-ink">{{ number_format($credits['balance']) }} <span class="text-base font-normal text-muted">{{ \Illuminate\Support\Str::plural('credit', $credits['balance']) }}</span></p>
+            <p class="mt-1 text-xs text-subtle">A website change usually takes 2 to 5 credits.</p>
+            @foreach ($credits['pending'] as $purchase)
+                <p class="mt-3 text-sm text-muted" wire:key="cp-{{ $purchase->id }}">{{ number_format($purchase->credits) }} credits arrive when invoice
+                    @if ($purchase->invoice)<a href="{{ route('app.billing.invoice', $purchase->invoice->ulid) }}" class="text-brand-300 hover:underline">{{ $purchase->invoice->number }}</a>@endif is paid.</p>
+            @endforeach
+            @if ($canManage && $credits['packs'] && $subscription)
+                <div class="mt-4 grid gap-2 sm:grid-cols-3">
+                    @foreach ($credits['packs'] as $i => $pack)
+                        <button type="button" wire:key="pack-{{ $i }}" wire:click="buyCredits({{ $i }})" wire:confirm="Buy {{ number_format($pack['credits']) }} AI credits for {{ \App\Support\Money::format($pack['price_cents']) }}? We'll issue an invoice now."
+                            class="rounded-xl border border-line bg-surface-2 p-3 text-left hover:border-brand-400">
+                            <span class="block font-semibold text-ink">{{ number_format($pack['credits']) }} credits</span>
+                            <span class="block text-sm text-muted">{{ \App\Support\Money::format($pack['price_cents']) }}</span>
+                        </button>
+                    @endforeach
+                </div>
+            @elseif (! $subscription)
+                <p class="mt-3 text-sm text-muted">Choose a plan first: credits are added to your plan.</p>
+            @endif
+            @if ($credits['entries']->isNotEmpty())
+                <ul class="mt-4 divide-y divide-line border-t border-line text-sm" role="list">
+                    @foreach ($credits['entries'] as $entry)
+                        <li class="flex items-baseline justify-between gap-3 py-2" wire:key="ce-{{ $entry->id }}">
+                            <span class="min-w-0 truncate text-muted">{{ $entry->note }} <span class="text-xs text-subtle">· {{ $entry->created_at->format('M j') }}</span></span>
+                            <span @class(['shrink-0 tabular-nums font-medium', 'text-success' => $entry->credits > 0, 'text-ink' => $entry->credits < 0])>{{ $entry->credits > 0 ? '+' : '' }}{{ number_format($entry->credits) }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+        </x-ui.card>
+
         @if ($referral)
             {{-- Referral programme (D90) --}}
             <x-ui.card title="Refer a business, get a month free" class="lg:col-span-1" description="When a business joins with your link and pays its first invoice, a month of your plan comes off your next invoice.">
@@ -189,16 +227,27 @@
                                 <p class="text-xs text-muted">{{ number_format($plan->limits['calls']) }} calls included @if (isset($plan->limits['extra_call_cents']))· {{ \App\Support\Money::format($plan->limits['extra_call_cents'], $plan->currency) }} per extra call @endif</p>
                             @endif
                             @if ($plan->description)<p class="mt-2 whitespace-pre-line text-sm text-muted">{{ $plan->description }}</p>@endif
-                            @if ($plan->trial_days > 0 && ! $subscription)<p class="mt-2 text-xs text-emerald-300">{{ $plan->trial_days }}-day free trial</p>@endif
-                            @if ($isCurrent)
-                                <p class="mt-3 text-sm font-medium text-brand-300">Your plan</p>
-                            @elseif ($canManage)
+                            @if ($plan->trial_days > 0 && ! $subscription && ! $trialEnded)<p class="mt-2 text-xs text-emerald-300">{{ $plan->trial_days }}-day free trial</p>@endif
+                            @if ($pendingTrial && $canManage)
+                                {{-- Self-serve trial (D97): keeping a plan is the owner's own choice, no request to us. --}}
+                                <x-ui.button class="mt-3" size="sm" :variant="$isCurrent ? 'primary' : 'secondary'" wire:click="keepPlan({{ $plan->id }})"
+                                    wire:confirm="Keep {{ $plan->name }} ({{ $plan->priceLabel() }}) after your free trial? Nothing is charged until {{ $subscription->trial_ends_on->format('M j') }}.">{{ $isCurrent ? 'Keep this plan' : 'Keep this plan instead' }}</x-ui.button>
+                            @elseif ($trialEnded && $canManage)
+                                <x-ui.button class="mt-3" size="sm" wire:click="startPlan({{ $plan->id }})"
+                                    wire:confirm="Start {{ $plan->name }} ({{ $plan->priceLabel() }}) now? Your first invoice is issued today and everything switches back on.">Start this plan</x-ui.button>
+                            @elseif ($isCurrent)
+                                <p class="mt-3 text-sm font-medium text-brand-300">Your plan{{ $subscription->confirmed_at && $subscription->status->value === 'trialing' ? ', kept for after the trial' : '' }}</p>
+                            @elseif ($canManage && ! $trialEnded)
                                 <x-ui.button class="mt-3" size="sm" variant="secondary" wire:click="requestPlan({{ $plan->id }})" wire:confirm="Ask us to {{ $subscription ? 'switch you to' : 'start' }} {{ $plan->name }}?">{{ $subscription ? 'Switch to this plan' : 'Choose this plan' }}</x-ui.button>
                             @endif
                         </div>
                     @endforeach
                 </div>
-                @if ($subscription)<p class="mt-3 text-xs text-subtle">Plan changes start at your next renewal, so you're never charged twice.</p>@endif
+                @if ($pendingTrial)
+                    <p class="mt-3 text-xs text-subtle">Your trial ends on {{ $subscription->trial_ends_on->format('M j, Y') }}. Keep a plan before then to carry on; otherwise your account becomes read-only, and nothing is deleted.</p>
+                @elseif ($trialEnded)
+                    <p class="mt-3 text-xs text-subtle">Your free trial has ended. Start a plan to switch everything back on: your customers, calls and settings are all still here.</p>
+                @elseif ($subscription)<p class="mt-3 text-xs text-subtle">Plan changes start at your next renewal, so you're never charged twice.</p>@endif
             </x-ui.card>
         @endif
 

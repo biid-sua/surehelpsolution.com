@@ -31,6 +31,7 @@ use App\Http\Controllers\Client\SearchConsoleController;
 use App\Http\Controllers\Client\SocialOAuthController;
 use App\Http\Controllers\Client\SwitchOrganizationController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DemoBookingController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InboxMediaController;
@@ -41,6 +42,7 @@ use App\Http\Controllers\PasswordChangeController;
 use App\Http\Controllers\PayController;
 use App\Http\Controllers\RecordingController;
 use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\Sites\SiteController;
 use App\Http\Controllers\SupportAttachmentController;
 use App\Http\Controllers\SurveyController;
 use App\Livewire\Account\Notifications as AccountNotifications;
@@ -128,6 +130,7 @@ use App\Livewire\Client\Settings\Notifications as NotificationSettings;
 use App\Livewire\Client\Settings\Privacy as PrivacySettings;
 use App\Livewire\Client\Settings\Team as TeamSettings;
 use App\Livewire\Client\Setup\Wizard as SetupWizard;
+use App\Livewire\Client\SiteBuilder as ClientSiteBuilder;
 use App\Livewire\Client\Social\Accounts as SocialAccounts;
 use App\Livewire\Client\Social\Compose as SocialCompose;
 use App\Livewire\Client\Social\Index as SocialIndex;
@@ -139,6 +142,18 @@ use App\Livewire\Customer\ManageAppointment;
 use Illuminate\Support\Facades\Route;
 
 // Landing page
+// Hosted business websites (D99): on their own subdomain once SITES_DOMAIN is set up, and always at /site/{subdomain}.
+if ($sitesDomain = config('sites.domain')) {
+    Route::domain('{subdomain}.'.$sitesDomain)->middleware('throttle:240,1')->where(['subdomain' => '[a-z0-9-]+', 'page' => '[a-z0-9-]+'])->group(function () {
+        Route::get('/', [SiteController::class, 'show'])->name('sites.domain.home');
+        Route::get('/{page}', [SiteController::class, 'show'])->name('sites.domain.page');
+    });
+}
+// For Caddy's on-demand TLS: certificates only for domains businesses have connected (D101).
+Route::get('/sites/domain-allowed', [SiteController::class, 'domainAllowed'])->middleware('throttle:120,1')->name('sites.domain-allowed');
+Route::get('/site/{subdomain}/{page?}', [SiteController::class, 'show'])->where(['subdomain' => '[a-z0-9-]+', 'page' => '[a-z0-9-]+'])
+    ->middleware('throttle:240,1')->name('sites.path');
+
 Route::get('/', [HomeController::class, 'index'])->name('home');
 // Search engines (D58): the sitemap and robots.txt are built from the routes.
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])->name('seo.sitemap');
@@ -150,6 +165,12 @@ Route::get('/health', HealthController::class)->middleware('throttle:60,1')->nam
 Route::middleware('throttle:30,1')->prefix('pay/{token}')->name('pay.')->group(function () {
     Route::get('/', [PayController::class, 'show'])->name('show');
     Route::post('/', [PayController::class, 'checkout'])->name('checkout');
+});
+// A visitor's demo call with the SureHelp team (D96): see, move or cancel it, by token.
+Route::middleware('throttle:30,1')->prefix('demo/{token}')->name('demo.')->group(function () {
+    Route::get('/', [DemoBookingController::class, 'show'])->name('show');
+    Route::post('/move', [DemoBookingController::class, 'reschedule'])->name('reschedule');
+    Route::post('/cancel', [DemoBookingController::class, 'cancel'])->name('cancel');
 });
 // Satisfaction surveys (D84): public, by token.
 Route::middleware('throttle:30,1')->prefix('s/{token}')->name('survey.')->group(function () {
@@ -221,7 +242,7 @@ Route::prefix('account')->name('account.')->middleware(['auth.home', 'force.pass
 });
 
 // Business portal (clients) — docs/implementation-plan.md P1-4
-Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.change', 'role:client', 'tenant', 'account.gate'])->group(function () {
+Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.change', 'role:client', 'tenant', 'account.gate', 'trial.read-only'])->group(function () {
     Route::get('/', ClientDashboard::class)->middleware('can:dashboard.view')->name('dashboard');
     Route::get('/search', ClientSearch::class)->middleware('can:dashboard.view')->name('search');
     Route::get('/setup', SetupWizard::class)->middleware('can:organization.update')->name('setup');
@@ -317,6 +338,10 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/business/emails', BusinessCustomerEmails::class)->middleware('feature:customer_emails')->name('business.emails');
         Route::get('/business/calendars', BusinessCalendarsPage::class)->middleware(['can:integrations.view', 'feature:calendar_sync'])->name('business.calendars');
         Route::get('/website', ClientWebsite::class)->middleware(['can:integrations.view', 'feature:website_tools'])->name('website');
+        Route::middleware(['can:integrations.view', 'feature:website_builder'])->group(function () {
+            Route::get('/site', ClientSiteBuilder::class)->name('site');
+            Route::get('/site/preview/{page?}', [SiteController::class, 'preview'])->where('page', '[a-z0-9-]+')->name('site.preview');
+        });
     });
 });
 

@@ -15,11 +15,42 @@ Stack ([decisions.md](decisions.md) D5): Blade + Livewire 3 + Alpine (bundled wi
 
 All of them use `layouts/portal`, except the account page, which is a standalone page built with the same tokens and components. The public website (`/`, legal pages) is the marketing site with its own layout until its redesign.
 
-Navigation per portal: `App\Support\Navigation\PortalNavigation`. Items are filtered by permission. Unbuilt items show as **Soon** (spec §95), and only the core set is shown to clients (spec §119).
+Navigation per portal: `App\Support\Navigation\PortalNavigation`, which is also the complete list of screens (the table above shows the main ones). Items are filtered by permission. Unbuilt items show as **Soon** (spec §95), and only the core set is shown to clients (spec §119).
 
-## Design tokens (`resources/css/app.css`)
+## Design tokens
 
-`canvas` / `surface` / `surface-2` / `surface-3` backgrounds, `line` / `line-strong` borders, `ink` / `muted` / `subtle` text, `brand-*` (indigo) and `accent-*` (purple). Text colours meet WCAG AA on the surfaces they're used on. A single `:focus-visible` outline serves keyboard users, and `prefers-reduced-motion` is respected.
+Defined once in `resources/css/app.css` (`@theme`), so Tailwind classes use them by name (`bg-surface`,
+`text-muted`, `border-line`, `bg-brand-600`…). Never hard-code a colour in a view; add a token instead.
+The values below are the default **Midnight** theme.
+
+| Token | Value | Use |
+|---|---|---|
+| `canvas` | `#0b0c22` | Page background |
+| `surface` | `#121331` | Cards, panels |
+| `surface-2` | `#191b3f` | Inputs, hovered rows, nested panels |
+| `surface-3` | `#22254f` | Raised controls, selected items |
+| `line` | white at 8% | Hairline borders and dividers |
+| `line-strong` | white at 16% | Input and control borders |
+| `ink` | `#eef0fa` | Main text |
+| `muted` | `#a9adcf` | Secondary text |
+| `subtle` | `#8a8fb8` | Hints, captions, meta |
+| `brand-200` to `brand-700` | `#c7d2fe` to `#4338ca` (indigo) | Buttons (`brand-600`), links and focus (`brand-300`/`400`) |
+| `accent-400`, `accent-500` | `#c084fc`, `#a855f7` (purple) | Highlights, gradients with brand |
+| `success` / `warning` / `danger` / `info` | `#34d399` / `#fbbf24` / `#f87171` / `#60a5fa` | Status colours (badges, alerts, stat changes) |
+| `radius-card` | `1rem` | Card and panel corners |
+| `shadow-card` | inset hairline + soft drop shadow | Cards |
+| `font-sans` | Inter Variable, then system fonts | All text (bundled locally) |
+
+- **Accessibility:** text tokens meet WCAG AA on the surfaces they're used on. A single `:focus-visible`
+  outline (`brand-400`) serves keyboard users, and `prefers-reduced-motion` is respected.
+- **Portal themes (D59):** `resources/css/themes.css` redefines the same tokens under
+  `[data-theme="dark|light|ocean|forest|sunset"]`; `system` follows the device. The same palettes, as plain
+  values for the mobile app, are in `config/themes.php` (`colors`); `ThemesTest` checks they match the CSS.
+- **Public website themes (D59, D93):** `public/assets/css/site-themes.css`, keyed by `[data-site-theme]`.
+  The default and whether visitors may change it are set under *Admin › Appearance*.
+- **White-label (D82):** a business's logo, colours and sender name apply to *its own* customer-facing
+  pages and emails (`App\Services\Branding`), never to the portals' tokens.
+- **Charts and calendars** read the tokens too (`--fc-*` variables for FullCalendar in `app.css`).
 
 ## Components (`resources/views/components/ui/`)
 

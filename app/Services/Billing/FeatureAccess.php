@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Schema;
  * Whether a business may use a paid feature (spec §30–31, FND-18, D46). In order:
  *
  *  1. A staff override for this business (on or off) wins.
+ *     After a self-serve trial ended without a plan, nothing else is on (D97).
  *  2. A feature open to everyone (the default) is allowed.
  *  3. Otherwise the business's plan or one of its active add-ons must include the feature key.
  *
@@ -44,6 +45,9 @@ class FeatureAccess
         $override = $this->overrides($organization)[$feature] ?? null;
         if ($override !== null) {
             return $override;
+        }
+        if (app(Trials::class)->ended($organization)) {
+            return false;
         }
         if ($this->mode($feature) === self::EVERYONE) {
             return true;
