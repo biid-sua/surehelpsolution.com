@@ -1818,3 +1818,14 @@ own server (Caddy on-demand TLS, which asks us before issuing; or Forge) or Clou
 several. One DNS record is the least we can ask of a non-technical owner. Keeping the certificate
 provider behind an interface means the hosting choice (D6) can change without touching the feature.
 
+
+## D102 — The free trial and AI credits in the mobile app (2026-10-28)
+**Decision:** the app's Billing screen shows the free trial (days and calls left, "Keep my plan", or
+"Choose a plan" once it ended) and AI credits (balance, packs, credits waiting for payment), using the
+same rules as the web (`Trials`, `AiCredits`). The billing summary gains `trial` and `credits`, and
+new endpoints list the plans, keep or start a plan and buy a pack. All additive (D7). The website
+builder and own domains stay on the web; the app links there.
+
+**Why:** owners spend most of their time in the app, so the trial must be kept from where they are,
+or many trials end by accident. Buying credits reuses invoices, which the app already pays. The
+builder needs a large preview, so it suits the web.
