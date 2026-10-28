@@ -217,10 +217,17 @@
                         @foreach ($plans as $p)
                             <li class="flex items-center justify-between gap-3 px-5 py-3" wire:key="plan-{{ $p->id }}">
                                 <span>
-                                    <span class="font-medium text-ink">{{ $p->name }}</span> <span class="text-muted">{{ $p->priceLabel() }}</span>
-                                    <span class="block text-xs text-subtle">{{ $p->subscriptions_count }} {{ \Illuminate\Support\Str::plural('business', $p->subscriptions_count) }}{{ $p->trial_days ? ' · '.$p->trial_days.'-day trial' : '' }}{{ $p->is_public ? '' : ' · hidden' }}{{ $p->is_active ? '' : ' · retired' }}@if (isset($p->limits['calls'])) · {{ number_format($p->limits['calls']) }} calls @if (isset($p->limits['extra_call_cents']))(+{{ \App\Support\Money::format($p->limits['extra_call_cents']) }} each extra)@endif @endif @if (isset($p->limits['team_members'])) · {{ $p->limits['team_members'] }} people @endif @if (isset($p->limits['calendars'])) · {{ $p->limits['calendars'] }} {{ \Illuminate\Support\Str::plural('calendar', $p->limits['calendars']) }}@endif</span>
+                                    <span class="font-medium text-ink">{{ $p->name }}</span> <span class="text-muted">{{ $p->contact_only ? 'Custom' : $p->priceLabel() }}</span>
+                                    <span class="block text-xs text-subtle">{{ $p->subscriptions_count }} {{ \Illuminate\Support\Str::plural('business', $p->subscriptions_count) }}{{ $p->trial_days ? ' · '.$p->trial_days.'-day trial' : '' }}{{ $p->is_public ? '' : ' · hidden' }}{{ $p->is_active ? '' : ' · retired' }}{{ $p->is_featured ? ' · most popular' : '' }}{{ $p->contact_only ? ' · price on request' : '' }}@if (isset($p->limits['calls'])) · {{ number_format($p->limits['calls']) }} calls @if (isset($p->limits['extra_call_cents']))(+{{ \App\Support\Money::format($p->limits['extra_call_cents']) }} each extra)@endif @endif @if (isset($p->limits['team_members'])) · {{ $p->limits['team_members'] }} people @endif @if (isset($p->limits['calendars'])) · {{ $p->limits['calendars'] }} {{ \Illuminate\Support\Str::plural('calendar', $p->limits['calendars']) }}@endif</span>
                                 </span>
-                                @if ($canManage)<x-ui.button size="sm" variant="ghost" wire:click="editPlan({{ $p->id }})">Edit</x-ui.button>@endif
+                                @if ($canManage)
+                                    <span class="flex shrink-0 gap-1">
+                                        <x-ui.button size="sm" variant="ghost" wire:click="editPlan({{ $p->id }})">Edit</x-ui.button>
+                                        @if ($p->ever_count === 0)
+                                            <x-ui.button size="sm" variant="ghost" wire:click="deletePlan({{ $p->id }})" wire:confirm="Delete {{ $p->name }}? It disappears from the website, sign-up and Billing.">Delete</x-ui.button>
+                                        @endif
+                                    </span>
+                                @endif
                             </li>
                         @endforeach
                     </ul>
@@ -233,14 +240,27 @@
                         <div><label for="pl-price" class="sh-label">Price ($)</label><input id="pl-price" type="text" inputmode="decimal" wire:model="plan.price" class="sh-input">@error('plan.price') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror</div>
                         <div><label for="pl-int" class="sh-label">Billed</label><select id="pl-int" wire:model="plan.interval" class="sh-input">@foreach (\App\Models\Plan::INTERVALS as $k => $l)<option value="{{ $k }}">{{ $l }}</option>@endforeach</select></div>
                         <div><label for="pl-trial" class="sh-label">Trial days</label><input id="pl-trial" type="number" min="0" max="90" wire:model="plan.trial_days" class="sh-input">@error('plan.trial_days') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror</div>
-                        <div class="sm:col-span-2"><label for="pl-desc" class="sh-label">What's included</label><textarea id="pl-desc" wire:model="plan.description" rows="3" class="sh-input"></textarea></div>
+                        <div class="sm:col-span-2"><label for="pl-tag" class="sh-label">Best for <span class="font-normal text-subtle">(one line under the name on the website)</span></label><input id="pl-tag" type="text" wire:model="plan.tagline" class="sh-input" placeholder="Best for home services &amp; growing businesses">@error('plan.tagline') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror</div>
+                        <div class="sm:col-span-2"><label for="pl-desc" class="sh-label">What's included <span class="font-normal text-subtle">(one item per line; the website shows the first 5, the rest under "See more")</span></label><textarea id="pl-desc" wire:model="plan.description" rows="6" class="sh-input"></textarea></div>
+                        <div><label for="pl-annual" class="sh-label">Yearly price per month ($) <span class="font-normal text-subtle">(website's Annual toggle, optional)</span></label><input id="pl-annual" type="text" inputmode="decimal" wire:model="plan.annual_price" class="sh-input" placeholder="e.g. 360">@error('plan.annual_price') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror</div>
+                        <div><label for="pl-order" class="sh-label">Order on the website <span class="font-normal text-subtle">(lowest first)</span></label><input id="pl-order" type="number" min="0" max="999" wire:model="plan.sort_order" class="sh-input">@error('plan.sort_order') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror</div>
                         <div><label for="pl-calls" class="sh-label">Calls included <span class="font-normal text-subtle">(per period, blank = unlimited)</span></label><input id="pl-calls" type="number" min="1" wire:model="plan.calls" class="sh-input">@error('plan.calls') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror</div>
                         <div><label for="pl-extra" class="sh-label">Price per extra call ($)</label><input id="pl-extra" type="text" inputmode="decimal" wire:model="plan.extra_call" class="sh-input" placeholder="e.g. 1.50">@error('plan.extra_call') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror</div>
                         <div><label for="pl-team" class="sh-label">Team members <span class="font-normal text-subtle">(blank = unlimited)</span></label><input id="pl-team" type="number" min="1" wire:model="plan.team_members" class="sh-input">@error('plan.team_members') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror</div>
                         <div><label for="pl-cal" class="sh-label">Connected calendars <span class="font-normal text-subtle">(blank = unlimited)</span></label><input id="pl-cal" type="number" min="0" max="10" wire:model="plan.calendars" class="sh-input">@error('plan.calendars') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror</div>
-                        <div class="sm:col-span-2"><label for="pl-feat" class="sh-label">Feature keys <span class="font-normal text-subtle">(comma-separated, for feature access)</span></label><input id="pl-feat" type="text" wire:model="plan.features" class="sh-input" placeholder="calendar_sync, ai.website_chatbot"></div>
-                        <label class="flex items-center gap-2 text-sm text-ink"><input type="checkbox" wire:model="plan.is_public" class="size-4 rounded border-line-strong bg-surface-2 text-brand-500"> Shown to clients</label>
+                        <fieldset class="sm:col-span-2">
+                            <legend class="sh-label">Features this plan unlocks <span class="font-normal text-subtle">(only matters for features set to "Plans and add-ons" under Feature access)</span></legend>
+                            <div class="mt-1 grid gap-2 sm:grid-cols-2">
+                                @foreach (config('features') as $key => $feature)
+                                    <label class="flex items-start gap-2 text-sm text-ink" wire:key="pf-{{ $key }}"><input type="checkbox" value="{{ $key }}" wire:model="plan.features" class="mt-0.5 size-4 rounded border-line-strong bg-surface-2 text-brand-500"> <span>{{ $feature['label'] }}</span></label>
+                                @endforeach
+                            </div>
+                        </fieldset>
+                        <div class="sm:col-span-2"><label for="pl-feat" class="sh-label">Other feature keys <span class="font-normal text-subtle">(comma-separated, rarely needed)</span></label><input id="pl-feat" type="text" wire:model="plan.other_features" class="sh-input"></div>
+                        <label class="flex items-center gap-2 text-sm text-ink"><input type="checkbox" wire:model="plan.is_public" class="size-4 rounded border-line-strong bg-surface-2 text-brand-500"> Shown to clients and on the website</label>
                         <label class="flex items-center gap-2 text-sm text-ink"><input type="checkbox" wire:model="plan.is_active" class="size-4 rounded border-line-strong bg-surface-2 text-brand-500"> Available</label>
+                        <label class="flex items-center gap-2 text-sm text-ink"><input type="checkbox" wire:model="plan.is_featured" class="size-4 rounded border-line-strong bg-surface-2 text-brand-500"> "Most popular" badge</label>
+                        <label class="flex items-start gap-2 text-sm text-ink"><input type="checkbox" wire:model="plan.contact_only" class="mt-0.5 size-4 rounded border-line-strong bg-surface-2 text-brand-500"> <span>Price on request <span class="block text-xs text-subtle">Shows "Custom" and "Talk to us"; not offered at sign-up</span></span></label>
                         <div class="sm:col-span-2 flex justify-end gap-2">
                             @if ($editingPlan)<x-ui.button variant="ghost" size="sm" wire:click="cancelPlanEdit">Cancel</x-ui.button>@endif
                             <x-ui.button type="submit" size="sm">Save plan</x-ui.button>

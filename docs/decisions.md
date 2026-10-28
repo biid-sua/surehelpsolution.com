@@ -1743,3 +1743,27 @@ owner keeps a plan. Trials that staff set up still turn into paid plans by thems
 receptionists cost real money, so the trial gives the software freely and limits the calls. Asking the
 owner to choose, instead of billing them by surprise, builds trust. A read-only account keeps their data
 and setup safe, so coming back is one click.
+
+## D98 — Plans in Admin drive the website's pricing (2026-10-28)
+**Decision:** *Admin › Billing › Plans* is the one place to set prices, what each plan includes and
+which plans exist. The website's pricing section, the sign-up page, the client *Billing* page and the
+sales chat all read from it, instead of keeping their own copies.
+- **On each plan:** name, price, monthly or yearly billing, trial days, a "Best for" line, what's
+  included (one item per line; the website shows 5 and puts the rest under "See more"), an optional
+  yearly price per month for the website's Annual toggle, calls included and the extra-call price,
+  team and calendar limits, the features it unlocks (checkboxes from `config/features.php`), the order
+  on the website, and switches for "Shown to clients", "Available", "Most popular" and "Price on
+  request".
+- **Price on request** (Enterprise): the website shows "Custom" and "Talk to us". Businesses can't pick
+  it at sign-up or in Billing; staff set it up for them.
+- **Deleting:** only a plan nobody has ever been on can be deleted. One with subscriptions, past or
+  present, is retired instead (untick "Available" and "Shown to clients"), so invoices and history keep
+  pointing at it.
+- **Price changes** reach existing customers at their next renewal, as before (D22).
+- **Moving over:** the migration adds the four plans the website listed until now (Essential,
+  Professional, Growth, Enterprise) when they're missing, on an install that already has plans. A new
+  install with no public plans shows "Talk to us" in place of the plan cards.
+
+**Why:** prices and plan contents were typed into the website and a config file separately from the
+plans used for billing, so changing one left the others wrong. One source means what visitors read,
+what they sign up for and what they're billed always match.

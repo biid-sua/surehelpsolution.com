@@ -60,7 +60,8 @@ return [
         'nudge_after_days' => 3,
     ],
 
-    // What the assistant may say about plans. Keep in step with the pricing section of home.blade.php.
+    // Fallback for the assistant when no plan is shown on the website yet. Normally the chat reads the
+    // plans from Admin › Billing › Plans (D98, App\Services\Sales\SalesPlans).
     'plans' => [
         ['name' => 'Essential', 'monthly' => 300, 'annual_monthly' => 270, 'minutes' => '100 minutes a month', 'best_for' => 'solo professionals and coaches',
             'includes' => '24/7 answering, appointment booking, SMS and email notifications, client portal and app, message taking, follow-up on up to 50 calls a month', 'extra' => '$2.00 per extra call'],
@@ -73,7 +74,7 @@ return [
     ],
 
     'facts' => [
-        'Annual billing saves 10%. No setup fees; cancel any time; 30-day money-back guarantee.',
+        'No setup fees; cancel any time; 30-day money-back guarantee.',
         'Every plan starts with a free trial at /start (self-serve sign-up).',
         'Live in about 48 hours: we set up the script, rules and calendar, then the business forwards its line.',
         'Real, trained receptionists answer 24/7 in the business\'s name; an AI assistant can also answer website chat, Facebook, Instagram and texts.',

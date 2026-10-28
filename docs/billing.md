@@ -23,7 +23,10 @@ issues invoice ── email + PDF ──► opens Billing page
    - **Default Payoneer payment link**: in Payoneer, open *Receive › Request a payment* and create a reusable link with no fixed amount (if your account offers that), then paste it here. Every invoice without its own link uses it.
    - **Bank transfer details**: copy them from Payoneer *Receive › Receiving accounts*. Usually that's the USD account (ACH routing and account number), plus EUR/GBP if you bill in those. They are printed on invoices and the client's billing page.
    - **Days to pay**: 7 by default.
-2. **Plans.** On *Admin › Billing › Plans*, create your plans: name, monthly or yearly price, free-trial days and, optionally, feature keys. A plan that's switched off can't be chosen for new subscriptions; existing subscribers keep it.
+2. **Plans.** On *Admin › Billing › Plans*, create your plans: name, monthly or yearly price, free-trial days, what's included and the features it unlocks. The same plans appear on the website's pricing section, at sign-up and on clients' *Billing* page (D98).
+   - **Website extras:** a "Best for" line, a yearly price per month for the Annual toggle, a "Most popular" badge, the order, and *Price on request* for plans like Enterprise (shown as "Custom", not offered at sign-up).
+   - **Retiring:** untick *Available* and *Shown to clients*. Existing subscribers keep the plan; nobody new can choose it.
+   - **Deleting:** possible only for a plan nobody has ever been on. The *Delete* button appears only then.
 3. **Subscribe businesses.** On *Admin › Billing › Subscriptions*, pick a business, a plan and a start date, then choose whether it gets a free trial.
    - Without a trial, the first invoice is issued and emailed right away.
    - After that, `billing:run` invoices each renewal on the same day of the month. The 31st becomes the last day in shorter months.

@@ -258,8 +258,9 @@ class Index extends Component
     private function resetPlanForm(): void
     {
         $this->editingPlan = null;
-        $this->plan = ['name' => '', 'price' => '', 'interval' => 'month', 'trial_days' => '0', 'description' => '', 'features' => '', 'is_public' => true, 'is_active' => true,
-            'calls' => '', 'extra_call' => '', 'team_members' => '', 'calendars' => ''];
+        $this->plan = ['name' => '', 'price' => '', 'interval' => 'month', 'trial_days' => '0', 'description' => '', 'features' => [], 'other_features' => '', 'is_public' => true, 'is_active' => true,
+            'calls' => '', 'extra_call' => '', 'team_members' => '', 'calendars' => '', 'tagline' => '', 'annual_price' => '', 'is_featured' => false, 'contact_only' => false,
+            'sort_order' => (string) ((int) Plan::max('sort_order') + 1)];
     }
 
     public function editPlan(int $id): void
@@ -268,7 +269,11 @@ class Index extends Component
         $this->editingPlan = $plan->id;
         $this->plan = [
             'name' => $plan->name, 'price' => Money::toInput($plan->price_cents), 'interval' => $plan->interval, 'trial_days' => (string) $plan->trial_days,
-            'description' => (string) $plan->description, 'features' => implode(', ', $plan->features ?? []), 'is_public' => $plan->is_public, 'is_active' => $plan->is_active,
+            'description' => (string) $plan->description, 'is_public' => $plan->is_public, 'is_active' => $plan->is_active,
+            'features' => array_values(array_intersect($plan->features ?? [], array_keys(config('features')))),
+            'other_features' => implode(', ', array_diff($plan->features ?? [], array_keys(config('features')))),
+            'tagline' => (string) $plan->tagline, 'annual_price' => $plan->annual_monthly_cents !== null ? Money::toInput($plan->annual_monthly_cents) : '',
+            'is_featured' => $plan->is_featured, 'contact_only' => $plan->contact_only, 'sort_order' => (string) $plan->sort_order,
             'calls' => (string) ($plan->limits['calls'] ?? ''), 'extra_call' => isset($plan->limits['extra_call_cents']) ? Money::toInput($plan->limits['extra_call_cents']) : '',
             'team_members' => (string) ($plan->limits['team_members'] ?? ''), 'calendars' => (string) ($plan->limits['calendars'] ?? ''),
         ];
@@ -290,7 +295,12 @@ class Index extends Component
             'plan.interval' => ['required', Rule::in(array_keys(Plan::INTERVALS))],
             'plan.trial_days' => ['required', 'integer', 'min:0', 'max:90'],
             'plan.description' => ['nullable', 'string', 'max:2000'],
-            'plan.features' => ['nullable', 'string', 'max:1000'],
+            'plan.features' => ['array'],
+            'plan.features.*' => ['string', Rule::in(array_keys(config('features')))],
+            'plan.other_features' => ['nullable', 'string', 'max:1000'],
+            'plan.tagline' => ['nullable', 'string', 'max:160'],
+            'plan.annual_price' => ['nullable', 'string', 'max:20'],
+            'plan.sort_order' => ['required', 'integer', 'min:0', 'max:999'],
             'plan.calls' => ['nullable', 'integer', 'min:1', 'max:1000000'],
             'plan.extra_call' => ['nullable', 'string', 'max:20'],
             'plan.team_members' => ['nullable', 'integer', 'min:1', 'max:1000'],
@@ -302,6 +312,14 @@ class Index extends Component
             $extraCall = filled($this->plan['extra_call']) ? Money::parse((string) $this->plan['extra_call']) : null;
         } catch (\InvalidArgumentException) {
             $this->addError('plan.extra_call', 'Enter a price like 1.50.');
+
+            return;
+        }
+
+        try {
+            $annual = filled($this->plan['annual_price']) ? Money::parse((string) $this->plan['annual_price']) : null;
+        } catch (\InvalidArgumentException) {
+            $this->addError('plan.annual_price', 'Enter a price like 270 or 270.00.');
 
             return;
         }
@@ -320,7 +338,13 @@ class Index extends Component
             'interval' => $this->plan['interval'],
             'trial_days' => (int) $this->plan['trial_days'],
             'description' => $this->plan['description'] ?: null,
-            'features' => array_values(array_filter(array_map('trim', explode(',', (string) $this->plan['features'])))) ?: null,
+            'features' => array_values(array_unique([...(array) $this->plan['features'],
+                ...array_filter(array_map('trim', explode(',', (string) $this->plan['other_features'])))])) ?: null,
+            'tagline' => trim((string) $this->plan['tagline']) ?: null,
+            'annual_monthly_cents' => $annual,
+            'is_featured' => (bool) $this->plan['is_featured'],
+            'contact_only' => (bool) $this->plan['contact_only'],
+            'sort_order' => (int) $this->plan['sort_order'],
             'is_public' => (bool) $this->plan['is_public'],
             'is_active' => (bool) $this->plan['is_active'],
             'limits' => array_filter([
@@ -334,7 +358,8 @@ class Index extends Component
         if ($this->editingPlan) {
             $plan = Plan::findOrFail($this->editingPlan);
             $plan->fill($values)->save();
-            $audit->changes('plan.updated', $plan, ['name', 'price_cents', 'interval', 'trial_days', 'is_public', 'is_active', 'limits']);
+            $audit->changes('plan.updated', $plan, ['name', 'price_cents', 'interval', 'trial_days', 'is_public', 'is_active', 'limits', 'features',
+                'annual_monthly_cents', 'is_featured', 'contact_only', 'sort_order']);
             $message = 'Plan saved. Existing customers move to the new price at their next renewal.';
         } else {
             $slug = Str::slug($values['name']);
@@ -345,6 +370,28 @@ class Index extends Component
 
         $this->resetPlanForm();
         $this->dispatch('toast', type: 'success', message: $message);
+    }
+
+    /**
+     * Deletes a plan nobody has ever been on (D98). One with subscriptions, past or present, is
+     * retired instead: invoices and history keep pointing at it.
+     */
+    public function deletePlan(int $id, Audit $audit): void
+    {
+        $this->authorize('billing.manage');
+        $plan = Plan::findOrFail($id);
+        if ($plan->inUse()) {
+            $this->dispatch('toast', type: 'warning', message: "{$plan->name} has (or had) subscribers, so it can't be deleted. Untick \"Available\" and \"Shown to clients\" to retire it.");
+
+            return;
+        }
+
+        $audit->record('plan.deleted', $plan, old: ['name' => $plan->name, 'price_cents' => $plan->price_cents, 'interval' => $plan->interval], label: $plan->name);
+        $plan->delete();
+        if ($this->editingPlan === $id) {
+            $this->resetPlanForm();
+        }
+        $this->dispatch('toast', type: 'success', message: "{$plan->name} deleted.");
     }
 
     // Settings ─────────────────────────────────────────────────────────────────
@@ -400,7 +447,7 @@ class Index extends Component
                 'reported' => Invoice::withoutGlobalScopes()->where('status', InvoiceStatus::Open->value)->whereNotNull('client_reported_paid_at')->count(),
             ],
             'subscriptions' => $current->sortBy(fn (Subscription $s) => $s->organization->name ?? ''),
-            'plans' => Plan::query()->ordered()->withCount(['subscriptions' => fn ($q) => $q->where('status', '!=', 'cancelled')])->get(),
+            'plans' => Plan::query()->ordered()->withCount(['subscriptions' => fn ($q) => $q->where('status', '!=', 'cancelled'), 'subscriptions as ever_count'])->get(),
             'organizations' => Organization::query()->orderBy('name')->get(['id', 'name']),
             'unsubscribed' => Organization::query()->whereNotIn('id', $current->pluck('organization_id'))->orderBy('name')->get(['id', 'name']),
             'methods' => PaymentMethod::cases(),

@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Plan;
+use Illuminate\Support\Facades\Schema;
+
 class HomeController extends Controller
 {
     /**
-     * Display the landing page.
+     * Display the landing page. Its pricing section lists the plans from Admin › Billing › Plans (D98).
      */
     public function index()
     {
-        return view('home');
+        $plans = rescue(fn () => Schema::hasTable('plans') ? Plan::query()->onWebsite()->ordered()->get() : collect(), collect(), report: false);
+
+        return view('home', ['plans' => $plans]);
     }
 
     /**

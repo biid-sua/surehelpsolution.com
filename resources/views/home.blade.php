@@ -615,6 +615,11 @@
         input:checked + .slider { background: linear-gradient(135deg, var(--site-primary) 0%, var(--site-secondary) 100%); }
         input:checked + .slider:before { transform: translateX(30px); }
         .pricing-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(0.75rem, 1.5vw, 1.125rem); margin: 1.75rem 0 2rem; position: relative; z-index: 1; align-items: start; }
+        @media (min-width: 1200px) {
+            .pricing-grid[data-cols="1"] { grid-template-columns: minmax(0, 440px); justify-content: center; }
+            .pricing-grid[data-cols="2"] { grid-template-columns: repeat(2, minmax(0, 440px)); justify-content: center; }
+            .pricing-grid[data-cols="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
         @media (max-width: 1199.98px) { .pricing-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 575.98px) { .pricing-grid { grid-template-columns: 1fr; max-width: 440px; margin-left: auto; margin-right: auto; } }
         .pricing-card { background: rgba(255,255,255,.05); border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.1); transition: all .3s ease; position: relative; overflow: hidden; display: flex; flex-direction: column; height: auto; min-height: 0; }
@@ -1996,150 +2001,88 @@
                 <span class="compliance-pill">🔑 End-to-End Encrypted</span>
                 <span class="compliance-pill compliance-pill--guarantee">✅ 30-day money-back guarantee</span>
             </div>
+            @php
+                // The website's plans come from Admin › Billing › Plans (D98).
+                $money = fn (?int $cents) => $cents === null ? null : (fmod($cents / 100, 1) == 0 ? number_format($cents / 100) : number_format($cents / 100, 2));
+                $saving = $plans->filter(fn ($p) => $p->annual_monthly_cents && $p->price_cents > 0 && $p->interval === 'month')
+                    ->map(fn ($p) => (int) round((1 - $p->annual_monthly_cents / $p->price_cents) * 100))->max();
+            @endphp
+            @if ($saving)
             <div class="pricing-toggle">
                 <div class="toggle-container">
                     <span class="toggle-option">Monthly</span>
                     <label class="switch">
-                        <input type="checkbox" id="pricingToggle">
+                        <input type="checkbox" id="pricingToggle" aria-label="Show yearly prices">
                         <span class="slider"></span>
                     </label>
                     <span class="toggle-option">Annual</span>
-                    <span class="save-badge">Save 10%</span>
+                    <span class="save-badge">Save {{ $saving }}%</span>
                 </div>
             </div>
+            @endif
         </div>
 
-        <div class="pricing-grid">
-            <div class="pricing-card">
+        @if ($plans->isEmpty())
+            <div class="text-center" style="padding: 2rem 0;">
+                <p class="plan-description" style="font-size: 1.1rem;">Our plans are being updated. Tell us about your business and we'll send you pricing today.</p>
+                <a href="#contact" class="pricing-cta" style="width: auto; margin-top: 1.25rem;"><span>Talk to us</span><i class="fas fa-arrow-right"></i></a>
+            </div>
+        @else
+        <div class="pricing-grid" data-cols="{{ min(4, $plans->count()) }}">
+            @foreach ($plans as $plan)
+                @php
+                    $items = $plan->highlights();
+                    if (isset($plan->limits['extra_call_cents'])) {
+                        $items[] = 'Extra calls: $'.number_format($plan->limits['extra_call_cents'] / 100, 2).'/call';
+                    }
+                    $shown = array_slice($items, 0, 5);
+                    $more = array_slice($items, 5);
+                    $period = $plan->interval === 'year' ? '/year' : '/month';
+                @endphp
+            <div @class(['pricing-card', 'popular' => $plan->is_featured, 'pricing-card-enterprise' => $plan->contact_only])>
+                @if ($plan->is_featured)<div class="popular-badge">⭐ MOST POPULAR</div>@endif
                 <div class="card-header">
-                    <div class="plan-name">Essential</div>
+                    <div class="plan-name">{{ $plan->name }}</div>
                     <div class="price-container">
-                        <div class="price-monthly essential-monthly" style="display: flex;">
-                            <span class="currency">$</span><span class="amount">300</span><span class="period">/month</span>
-                        </div>
-                        <div class="price-annual essential-annual d-none" style="display: none;">
-                            <span class="currency">$</span><span class="amount">270</span><span class="period">/month</span>
-                        </div>
+                        @if ($plan->contact_only)
+                            <div class="price-custom-display" style="display: flex;"><span class="amount">Custom</span></div>
+                        @else
+                            <div class="price-monthly" style="display: flex;">
+                                <span class="currency">$</span><span class="amount">{{ $money($plan->price_cents) }}</span><span class="period">{{ $period }}</span>
+                            </div>
+                            <div class="price-annual d-none" style="display: none;">
+                                <span class="currency">$</span><span class="amount">{{ $money($plan->annual_monthly_cents ?? $plan->price_cents) }}</span><span class="period">{{ $period }}</span>
+                            </div>
+                        @endif
                     </div>
-                    <p class="plan-description">Best for solo professionals &amp; coaches</p>
+                    @if ($plan->tagline)<p class="plan-description">{{ $plan->tagline }}</p>@endif
                 </div>
                 <div class="feature-list">
-                    <div class="feature-item"><i class="fas fa-check"></i><span><b>100 minutes/month included</b></span></div>
-                    <div class="feature-item"><i class="fas fa-check"></i><span>24/7 call answering</span></div>
-                    <div class="feature-item"><i class="fas fa-check"></i><span>Appointment scheduling</span></div>
-                    <div class="feature-item"><i class="fas fa-check"></i><span>SMS/Email notifications</span></div>
-                    <div class="feature-item"><i class="fas fa-check"></i><span>Client Portal & app access</span></div>
-                    <div class="feature-more" data-feature-toggle>
-                        <div class="feature-more-content">
-                            <div class="feature-item"><i class="fas fa-check"></i><span>Basic follow-up on up to 50 calls/month</span></div>
-                            <div class="feature-item"><i class="fas fa-check"></i><span>Message taking & forwarding</span></div>
-                            <div class="feature-item"><i class="fas fa-check"></i><span>Extra calls: $2.00/call</span></div>
+                    @foreach ($shown as $i => $item)
+                        <div class="feature-item"><i class="fas fa-check"></i><span>@if ($i === 0)<b>{{ $item }}</b>@else{{ $item }}@endif</span></div>
+                    @endforeach
+                    @if ($more)
+                        <div class="feature-more" data-feature-toggle>
+                            <div class="feature-more-content">
+                                @foreach ($more as $item)
+                                    <div class="feature-item"><i class="fas fa-check"></i><span>{{ $item }}</span></div>
+                                @endforeach
+                            </div>
+                            <button type="button" class="feature-more-toggle" aria-expanded="false">See more..</button>
                         </div>
-                        <button type="button" class="feature-more-toggle" aria-expanded="false">See more..</button>
-                    </div>
+                    @endif
                 </div>
                 <div class="card-footer">
-                    <a href="{{ route('signup', ['plan' => 'essential']) }}" class="pricing-cta"><span>Start Free Trial</span><i class="fas fa-arrow-right"></i></a>
+                    @if ($plan->contact_only)
+                        <a href="#contact" class="pricing-cta"><span>Talk to us</span><i class="fas fa-arrow-right"></i></a>
+                    @else
+                        <a href="{{ route('signup', ['plan' => $plan->slug]) }}" class="pricing-cta"><span>{{ $plan->trial_days > 0 ? 'Start Free Trial' : 'Get Started' }}</span><i class="fas fa-arrow-right"></i></a>
+                    @endif
                 </div>
             </div>
-
-            <div class="pricing-card">
-                <div class="card-header">
-                    <div class="plan-name">Professional</div>
-                    <div class="price-container">
-                        <div class="price-monthly professional-monthly" style="display: flex;">
-                            <span class="currency">$</span><span class="amount">400</span><span class="period">/month</span>
-                        </div>
-                        <div class="price-annual professional-annual d-none" style="display: none;">
-                            <span class="currency">$</span><span class="amount">360</span><span class="period">/month</span>
-                        </div>
-                    </div>
-                    <p class="plan-description">Best for home services &amp; growing businesses</p>
-                </div>
-                <div class="feature-list">
-                    <div class="feature-item"><i class="fas fa-check"></i><span><b>150 minutes/month included</b></span></div>
-                    <div class="feature-item"><i class="fas fa-check"></i><span>Everything in Essential</span></div>
-                    <div class="feature-item"><i class="fas fa-check"></i><span>Custom call scripts</span></div>
-                    <div class="feature-item"><i class="fas fa-check"></i><span>Full follow-up on every call</span></div>
-                    <div class="feature-item"><i class="fas fa-check"></i><span>Monthly performance reports</span></div>
-                    <div class="feature-more" data-feature-toggle>
-                        <div class="feature-more-content">
-                            <div class="feature-item"><i class="fas fa-check"></i><span>Priority notifications</span></div>
-                            <div class="feature-item"><i class="fas fa-check"></i><span>Extra calls: $1.50/call</span></div>
-                            <div class="feature-item"><i class="fas fa-check"></i><span>Enhanced client portal</span></div>
-                            <div class="feature-item"><i class="fas fa-check"></i><span>Advanced analytics dashboard</span></div>
-                        </div>
-                        <button type="button" class="feature-more-toggle" aria-expanded="false">See more..</button>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <a href="{{ route('signup', ['plan' => 'professional']) }}" class="pricing-cta"><span>Start Free Trial</span><i class="fas fa-arrow-right"></i></a>
-                </div>
-            </div>
-
-            <div class="pricing-card popular">
-                <div class="popular-badge">⭐ MOST POPULAR</div>
-                <div class="card-header">
-                    <div class="plan-name">Growth</div>
-                    <div class="price-container">
-                        <div class="price-monthly premium-monthly" style="display: flex;">
-                            <span class="currency">$</span><span class="amount">450</span><span class="period">/month</span>
-                        </div>
-                        <div class="price-annual premium-annual d-none" style="display: none;">
-                            <span class="currency">$</span><span class="amount">405</span><span class="period">/month</span>
-                        </div>
-                    </div>
-                    <p class="plan-description">Best for medical, legal &amp; financial practices</p>
-                </div>
-                <div class="feature-list">
-                    <div class="feature-item"><i class="fas fa-check"></i><span><b>200 minutes/month included</b></span></div>
-                    <div class="feature-item"><i class="fas fa-check"></i><span>Everything in Professional</span></div>
-                    <div class="feature-item"><i class="fas fa-check"></i><span>Dedicated account manager</span></div>
-                    <div class="feature-item"><i class="fas fa-check"></i><span>Advanced analytics & reporting</span></div>
-                    <div class="feature-item"><i class="fas fa-check"></i><span>Priority support & white-label options</span></div>
-                    <div class="feature-more" data-feature-toggle>
-                        <div class="feature-more-content">
-                            <div class="feature-item"><i class="fas fa-check"></i><span>2x call follow-up + priority routing</span></div>
-                            <div class="feature-item"><i class="fas fa-check"></i><span>Custom call scripts</span></div>
-                            <div class="feature-item"><i class="fas fa-check"></i><span>Extra calls: $1.25/call</span></div>
-                        </div>
-                        <button type="button" class="feature-more-toggle" aria-expanded="false">See more..</button>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <a href="{{ route('signup', ['plan' => 'growth']) }}" class="pricing-cta"><span>Start Free Trial</span><i class="fas fa-arrow-right"></i></a>
-                </div>
-            </div>
-
-            <div class="pricing-card pricing-card-enterprise">
-                <div class="card-header">
-                    <div class="plan-name">Enterprise</div>
-                    <div class="price-container">
-                        <div class="price-custom-display" style="display: flex;">
-                            <span class="amount">Custom</span>
-                        </div>
-                    </div>
-                    <p class="plan-description">Best for franchises &amp; multi-location businesses</p>
-                </div>
-                <div class="feature-list">
-                    <div class="feature-item"><i class="fas fa-check"></i><span><b>Custom minutes</b></span></div>
-                    <div class="feature-item"><i class="fas fa-check"></i><span>Everything in Growth</span></div>
-                    <div class="feature-item"><i class="fas fa-check"></i><span>Dedicated franchise teams</span></div>
-                    <div class="feature-item"><i class="fas fa-check"></i><span>Custom integrations & automation</span></div>
-                    <div class="feature-item"><i class="fas fa-check"></i><span>White glove onboarding</span></div>
-                    <div class="feature-more" data-feature-toggle>
-                        <div class="feature-more-content">
-                            <div class="feature-item"><i class="fas fa-check"></i><span>Guaranteed SLAs &amp; priority escalation</span></div>
-                            <div class="feature-item"><i class="fas fa-check"></i><span>Volume pricing &amp; tailored contracts</span></div>
-                        </div>
-                        <button type="button" class="feature-more-toggle" aria-expanded="false">See more</button>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <a href="{{ route('signup', ['plan' => 'enterprise']) }}" class="pricing-cta"><span>Start Free Trial</span><i class="fas fa-arrow-right"></i></a>
-                </div>
-            </div>
+            @endforeach
         </div>
+        @endif
 
 
         <!-- <div class="enterprise-section">
@@ -2323,7 +2266,7 @@
 @section('scripts')
   <script nonce="{{ Vite::cspNonce() }}">
   // Add click event to the toggle
-        document.getElementById('pricingToggle').addEventListener('change', function() {
+        document.getElementById('pricingToggle')?.addEventListener('change', function() {
             const monthlyPrices = document.querySelectorAll('.price-monthly');
             const annualPrices = document.querySelectorAll('.price-annual');
             

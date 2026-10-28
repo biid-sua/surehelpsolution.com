@@ -92,7 +92,7 @@ class Index extends Component
     {
         $organization = $this->organization();
         $this->authorize('billing.manage', $organization);
-        $plan = Plan::query()->where('is_active', true)->where('is_public', true)->findOrFail($planId);
+        $plan = Plan::query()->selfServe()->findOrFail($planId);
 
         $team = User::query()->where('role', 'admin')->where('is_active', true)->get()->filter(fn (User $u) => $u->hasPermissionIn('billing.manage'));
         Notification::send($team, new PlanChangeRequested($organization, $plan, auth()->user()));
@@ -106,7 +106,7 @@ class Index extends Component
     {
         $organization = $this->organization();
         $this->authorize('billing.manage', $organization);
-        $plan = Plan::query()->where('is_active', true)->where('is_public', true)->findOrFail($planId);
+        $plan = Plan::query()->selfServe()->findOrFail($planId);
         $pending = $trials->pending($organization) ?? abort(404);
 
         $trials->keep($pending, $plan, auth()->user());
@@ -119,7 +119,7 @@ class Index extends Component
     {
         $organization = $this->organization();
         $this->authorize('billing.manage', $organization);
-        $plan = Plan::query()->where('is_active', true)->where('is_public', true)->findOrFail($planId);
+        $plan = Plan::query()->selfServe()->findOrFail($planId);
 
         try {
             $trials->restart($organization, $plan, auth()->user());
@@ -178,7 +178,7 @@ class Index extends Component
             'options' => $outstanding->isNotEmpty() ? $gateway->options($outstanding->first()) : [],
             'invoices' => Invoice::query()->forOrganization($organization)->latest('issued_at')->latest('id')->paginate(12),
             'payments' => Payment::query()->forOrganization($organization)->with('invoice:id,number')->latest('received_at')->limit(10)->get(),
-            'plans' => Plan::query()->where('is_active', true)->where('is_public', true)->ordered()->get(),
+            'plans' => Plan::query()->selfServe()->ordered()->get(),
             'instructions' => $settings->get('payment_instructions'),
             'canManage' => auth()->user()->can('billing.manage', $organization),
             'openStatus' => InvoiceStatus::Open,

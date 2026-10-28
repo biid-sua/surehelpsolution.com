@@ -1305,6 +1305,10 @@ Indexes: (organization_id, status).
 | `sort_order` | integer |  | `0` |  |
 | `created_at` | datetime | yes |  |  |
 | `updated_at` | datetime | yes |  |  |
+| `tagline` | varchar | yes |  |  |
+| `annual_monthly_cents` | integer | yes |  |  |
+| `is_featured` | tinyint(1) |  | `0` |  |
+| `contact_only` | tinyint(1) |  | `0` |  |
 
 ## platform_settings
 

@@ -40,6 +40,6 @@ Businesses can create their own SureHelp account at **`/start`**. The website's 
 - The form has a hidden field that people don't see. Bots that fill it get a normal-looking "check your email" answer, but nothing is created.
 - Attempts are limited per IP address. Each email address can have only one account.
 
-## Website plan names
+## Website plans (D98)
 
-The website's pricing cards link to `/start?plan=essential`, `professional`, `growth` and `enterprise`. To preselect the matching plan, give plans in Admin › Plans those slugs. If no plan matches, the first public plan is selected.
+The website's pricing section lists the plans that are *Available* and *Shown to clients* in Admin › Billing › Plans, in their website order. Each card's button opens `/start?plan=<slug>` with that plan picked. Plans marked *Price on request* show "Custom" and "Talk to us", and aren't offered at sign-up.
