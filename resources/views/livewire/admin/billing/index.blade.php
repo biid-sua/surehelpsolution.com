@@ -271,6 +271,8 @@
         </div>
     @elseif ($tab === 'addons')
         <livewire:admin.billing.addons />
+    @elseif ($tab === 'credits')
+        <livewire:admin.billing.credits />
     @elseif ($tab === 'features')
         <livewire:admin.billing.features />
     @else

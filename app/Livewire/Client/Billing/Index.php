@@ -7,6 +7,8 @@ use App\Actions\Billing\ReportPayment;
 use App\Enums\InvoiceStatus;
 use App\Livewire\Concerns\ScopedToOrganization;
 use App\Models\Addon;
+use App\Models\CreditEntry;
+use App\Models\CreditPurchase;
 use App\Models\Invoice;
 use App\Models\OrganizationAddon;
 use App\Models\Payment;
@@ -14,6 +16,7 @@ use App\Models\Plan;
 use App\Models\UsageRecord;
 use App\Models\User;
 use App\Notifications\PlanChangeRequested;
+use App\Services\Billing\AiCredits;
 use App\Services\Billing\BillingSettings;
 use App\Services\Billing\Entitlements;
 use App\Services\Billing\Gateways\PaymentGateway;
@@ -132,6 +135,26 @@ class Index extends Component
         $this->redirectRoute('app.billing');
     }
 
+    /** Buy a pack of AI credits (D100): an invoice now, the credits once it's paid. */
+    public function buyCredits(int $pack, AiCredits $credits): void
+    {
+        $organization = $this->organization();
+        $this->authorize('billing.manage', $organization);
+
+        try {
+            $purchase = $credits->buy($organization, $pack, auth()->user());
+        } catch (ValidationException $e) {
+            $this->dispatch('toast', type: 'warning', message: (string) collect($e->errors())->flatten()->first());
+
+            return;
+        }
+        $invoice = $purchase->invoice()->firstOrFail();
+        session()->flash('status', $invoice->status === InvoiceStatus::Paid
+            ? number_format($purchase->credits).' AI credits added. Thank you!'
+            : 'Invoice '.$invoice->number.' is ready. Your '.number_format($purchase->credits).' credits are added as soon as it\'s paid.');
+        $this->redirectRoute('app.billing.invoice', $invoice->ulid);
+    }
+
     public function activateAddon(int $addonId, ManageAddons $addons): void
     {
         $organization = $this->organization();
@@ -192,6 +215,12 @@ class Index extends Component
             'referral' => config('referrals.enabled', true) && config('signup.enabled')
                 ? ['link' => app(Referrals::class)->link($organization), 'summary' => app(Referrals::class)->summary($organization)] : null,
             'autopayCard' => $organization->fresh()?->autopay_card_label,
+            'credits' => [
+                'balance' => app(AiCredits::class)->balance($organization),
+                'packs' => app(AiCredits::class)->packs(),
+                'entries' => CreditEntry::query()->forOrganization($organization)->latest('id')->limit(8)->get(),
+                'pending' => CreditPurchase::query()->forOrganization($organization)->where('status', 'pending')->with('invoice:id,ulid,number')->latest('id')->get(),
+            ],
             'pendingTrial' => $pending !== null,
             'trialCalls' => $trials->includedCalls(),
             'trialCallsUsed' => $pending ? $trials->callsUsed($pending) : 0,

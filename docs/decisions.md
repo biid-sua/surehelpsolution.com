@@ -1786,3 +1786,18 @@ their own details, and they change it by asking in plain words.
 **Why:** owners want a good website without learning a site builder, and asking in plain words is how
 they'd brief a designer. Keeping content as data, not HTML, means the AI can't break the layout or
 add scripts, pages stay fast and search-friendly, and every change can be undone.
+
+## D100 — AI credits for AI work beyond the allowance (2026-10-28)
+**Decision:** businesses buy packs of AI credits under Billing. Credits pay for AI work beyond the
+monthly allowance, starting with the website builder. One credit is 1,000 tokens.
+- **Buying issues an invoice;** the credits arrive when it's paid. This reuses every way we already
+  take money (card, automatic payments, Payoneer and bank transfers that staff record) and keeps a
+  normal invoice for the business's books.
+- **A ledger, not a counter:** every credit in or out is a row (`credit_entries`), so the balance can
+  always be explained and audited.
+- **Allowance first, then credits,** rounded up to whole credits per change.
+- **Staff set the packs** and can give or take back credits with a note.
+
+**Why:** the allowance keeps costs predictable, and credits let busy businesses keep going without
+moving to a bigger plan. Selling credits rather than raw tokens is easier to understand ("a change is
+about 3 credits") and leaves margin over what the AI costs us.

@@ -98,6 +98,10 @@
                                 <div @class(['h-full rounded-full', 'bg-brand-500' => $percent < 80, 'bg-warning' => $percent >= 80]) style="width: {{ $percent }}%"></div>
                             </div>
                             <p class="mt-1 text-xs text-subtle">Most changes use 1–3% of it. It resets on the 1st.</p>
+                            <p class="mt-2 flex items-baseline justify-between gap-2 text-xs">
+                                <span class="text-muted">AI credits: <span class="tabular-nums text-ink">{{ number_format($credits) }}</span>@if ($percent >= 100) <span class="text-subtle">(used after the allowance)</span>@endif</span>
+                                @can('billing.view', $site->organization)<a href="{{ route('app.billing') }}#credits" class="text-brand-300 hover:underline">Buy credits</a>@endcan
+                            </p>
                         </div>
                     </x-ui.card>
                 @endif

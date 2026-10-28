@@ -166,6 +166,39 @@
             @endforelse
         </x-ui.card>
 
+        {{-- AI credits (D100): for AI work beyond the monthly allowance, such as website changes. --}}
+        <x-ui.card id="credits" title="AI credits" description="Used when AI work goes past your monthly allowance, for example website changes. They don't expire.">
+            <p class="text-3xl font-semibold tabular-nums text-ink">{{ number_format($credits['balance']) }} <span class="text-base font-normal text-muted">{{ \Illuminate\Support\Str::plural('credit', $credits['balance']) }}</span></p>
+            <p class="mt-1 text-xs text-subtle">A website change usually takes 2 to 5 credits.</p>
+            @foreach ($credits['pending'] as $purchase)
+                <p class="mt-3 text-sm text-muted" wire:key="cp-{{ $purchase->id }}">{{ number_format($purchase->credits) }} credits arrive when invoice
+                    @if ($purchase->invoice)<a href="{{ route('app.billing.invoice', $purchase->invoice->ulid) }}" class="text-brand-300 hover:underline">{{ $purchase->invoice->number }}</a>@endif is paid.</p>
+            @endforeach
+            @if ($canManage && $credits['packs'] && $subscription)
+                <div class="mt-4 grid gap-2 sm:grid-cols-3">
+                    @foreach ($credits['packs'] as $i => $pack)
+                        <button type="button" wire:key="pack-{{ $i }}" wire:click="buyCredits({{ $i }})" wire:confirm="Buy {{ number_format($pack['credits']) }} AI credits for {{ \App\Support\Money::format($pack['price_cents']) }}? We'll issue an invoice now."
+                            class="rounded-xl border border-line bg-surface-2 p-3 text-left hover:border-brand-400">
+                            <span class="block font-semibold text-ink">{{ number_format($pack['credits']) }} credits</span>
+                            <span class="block text-sm text-muted">{{ \App\Support\Money::format($pack['price_cents']) }}</span>
+                        </button>
+                    @endforeach
+                </div>
+            @elseif (! $subscription)
+                <p class="mt-3 text-sm text-muted">Choose a plan first: credits are added to your plan.</p>
+            @endif
+            @if ($credits['entries']->isNotEmpty())
+                <ul class="mt-4 divide-y divide-line border-t border-line text-sm" role="list">
+                    @foreach ($credits['entries'] as $entry)
+                        <li class="flex items-baseline justify-between gap-3 py-2" wire:key="ce-{{ $entry->id }}">
+                            <span class="min-w-0 truncate text-muted">{{ $entry->note }} <span class="text-xs text-subtle">· {{ $entry->created_at->format('M j') }}</span></span>
+                            <span @class(['shrink-0 tabular-nums font-medium', 'text-success' => $entry->credits > 0, 'text-ink' => $entry->credits < 0])>{{ $entry->credits > 0 ? '+' : '' }}{{ number_format($entry->credits) }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+        </x-ui.card>
+
         @if ($referral)
             {{-- Referral programme (D90) --}}
             <x-ui.card title="Refer a business, get a month free" class="lg:col-span-1" description="When a business joins with your link and pays its first invoice, a month of your plan comes off your next invoice.">

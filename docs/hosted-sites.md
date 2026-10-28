@@ -34,7 +34,8 @@ snippet adds booking and chat.
   told to use only the business's facts and never to write reviews. Requests that aren't about the
   website make no change. Demo businesses never call the AI.
 - **Allowance.** `SITES_MONTHLY_TOKENS` (150,000) tokens per calendar month, or a plan's
-  `site_ai_tokens` limit. A change usually uses 2,000 to 5,000. At most one change runs at a time, and 30
+  `site_ai_tokens` limit. A change usually uses 2,000 to 5,000. Beyond the allowance, changes use AI
+  credits ([ai-credits.md](ai-credits.md), D100). At most one change runs at a time, and 30
   requests an hour.
 - **Who.** People with `integrations.view` see the builder; `integrations.manage` (owners, and
   managers if allowed) can change and publish. The `website_builder` feature can be limited to plans
@@ -52,5 +53,4 @@ snippet adds booking and chat.
 ## Not yet
 
 - Businesses' own domains (needs the hosting decision: Cloudflare for SaaS, or Forge / Laravel Cloud).
-- Buying AI credits (top-ups); for now each business has the monthly allowance.
 - Photos and image uploads in sections.

@@ -10,6 +10,7 @@ use App\Models\SiteEdit;
 use App\Models\User;
 use App\Services\Ai\Contracts\AiProvider;
 use App\Services\Ai\Data\AiRequest;
+use App\Services\Billing\AiCredits;
 use App\Services\Billing\Entitlements;
 use App\Services\Seo\SeoFacts;
 use App\Support\Audit\Audit;
@@ -34,6 +35,7 @@ class SiteEditor
         private readonly SeoFacts $facts,
         private readonly Entitlements $entitlements,
         private readonly Audit $audit,
+        private readonly AiCredits $credits,
     ) {}
 
     public function allowance(Organization $organization): int
@@ -54,13 +56,19 @@ class SiteEditor
         return max(0, $this->allowance($organization) - $this->used($organization));
     }
 
+    /** Tokens a change may use: what's left this month, plus credits (D100). */
+    public function available(Organization $organization): int
+    {
+        return $this->remaining($organization) + max(0, $this->credits->balance($organization)) * $this->credits->tokensPerCredit();
+    }
+
     public function blocker(Site $site): ?string
     {
         $organization = $site->organization;
 
         return match (true) {
             ! $this->ai->isConfigured() => 'The AI isn\'t set up yet. Please contact SureHelp support.',
-            $this->remaining($organization) < (int) config('sites.min_tokens_to_start', 8000) => 'This month\'s AI allowance for your website is used up. It resets on the 1st.',
+            $this->available($organization) < (int) config('sites.min_tokens_to_start', 8000) => 'This month\'s AI allowance for your website is used up. Buy AI credits under Billing to keep going, or wait until the 1st.',
             SiteEdit::withoutGlobalScopes()->where('site_id', $site->id)->whereIn('status', ['queued', 'running'])->exists() => 'A change is already being made. Wait for it to finish, then ask for the next one.',
             default => null,
         };
@@ -94,6 +102,8 @@ class SiteEditor
         }
         $edit->forceFill(['status' => 'running'])->save();
         $site = Site::withoutGlobalScopes()->with('organization')->findOrFail($edit->site_id);
+        // What's left of the monthly allowance decides how much of this change credits pay for (D100).
+        $allowanceLeft = $this->remaining($site->organization);
         $draft = $site->draft();
 
         try {
@@ -119,7 +129,7 @@ class SiteEditor
                     default => 'The AI\'s answer couldn\'t be read. Please try again.',
                 };
 
-                $edit->forceFill($used + ['status' => 'failed', 'error' => $why])->save();
+                $this->finish($edit, $used + ['status' => 'failed', 'error' => $why], $allowanceLeft);
 
                 return $edit;
             }
@@ -127,14 +137,14 @@ class SiteEditor
             $summary = Str::limit(trim((string) ($data['summary'] ?? '')), 500, '') ?: 'Updated the website.';
             $content = SiteContent::normalize($data['content']);
             if (! ($data['changed'] ?? true) || $content === SiteContent::normalize($draft->content)) {
-                $edit->forceFill($used + ['status' => 'nothing', 'summary' => $summary])->save();
+                $this->finish($edit, $used + ['status' => 'nothing', 'summary' => $summary], $allowanceLeft);
 
                 return $edit;
             }
 
             $version = $this->builder->addVersion($site, $content, Str::limit($edit->prompt, 200), 'ai', $edit->user);
 
-            $edit->forceFill($used + ['status' => 'done', 'summary' => $summary, 'version_id' => $version->id])->save();
+            $this->finish($edit, $used + ['status' => 'done', 'summary' => $summary, 'version_id' => $version->id], $allowanceLeft);
 
             return $edit;
         } catch (AiUnavailable $e) {
@@ -144,6 +154,17 @@ class SiteEditor
 
             return $edit;
         }
+    }
+
+    /**
+     * Saves the outcome and charges credits for tokens beyond the allowance.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private function finish(SiteEdit $edit, array $attributes, int $allowanceLeft): void
+    {
+        $edit->forceFill($attributes)->save();
+        $this->credits->chargeSiteEdit($edit, $allowanceLeft);
     }
 
     private function instructions(string $facts): string

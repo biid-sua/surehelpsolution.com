@@ -6,6 +6,7 @@ use App\Livewire\Concerns\ScopedToOrganization;
 use App\Models\Site;
 use App\Models\SiteEdit;
 use App\Models\SiteVersion;
+use App\Services\Billing\AiCredits;
 use App\Services\Sites\SiteBuilder as Builder;
 use App\Services\Sites\SiteContent;
 use App\Services\Sites\SiteEditor;
@@ -143,6 +144,7 @@ class SiteBuilder extends Component
             'versions' => $site ? SiteVersion::query()->forOrganization($organization)->where('site_id', $site->id)->with('author:id,name')->orderByDesc('number')->limit(12)->get() : collect(),
             'canManage' => auth()->user()->can('integrations.manage', $organization),
             'tokens' => ['used' => $editor->used($organization), 'allowance' => $editor->allowance($organization)],
+            'credits' => app(AiCredits::class)->balance($organization),
         ]);
     }
 }

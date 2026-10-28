@@ -185,6 +185,16 @@ The sweep also moves any assignment past its end date to `ended`.
 - **Outcome** (`demo_outcome`) is separate: `trial`, `customer` or `not_interested`. It's set by the team, or
   automatically when a business owner signs up with the same email (`trial`, then `customer` once paying).
 
+## AI credit purchase (D100)
+
+`App\Models\CreditPurchase`, changed by `App\Services\Billing\AiCredits`.
+
+| From | Allowed to |
+|---|---|
+| (new) | `pending`, with an invoice issued |
+| `pending` | `granted` (the invoice is paid; the credits are added once), `cancelled` (the invoice is voided) |
+| `granted`, `cancelled` | terminal |
+
 ## Demo data (D94)
 
 The `demo.state` platform setting, changed by `App\Services\Demo\DemoData`.
