@@ -126,6 +126,48 @@
                     </x-ui.card>
                 @endif
 
+                {{-- The business's own domain (D101) --}}
+                @if ($ownDomains)
+                    <x-ui.card title="Your own domain" description="Use your business's web address, like www.yourbusiness.com. Your free address keeps working and sends visitors there.">
+                        @if (! $site->custom_domain)
+                            @if ($canManage)
+                                <form wire:submit="connectDomain" class="space-y-2">
+                                    <label for="sb-domain" class="sr-only">Your domain</label>
+                                    <input id="sb-domain" type="text" wire:model="ownDomain" class="sh-input" placeholder="www.yourbusiness.com" autocomplete="off" spellcheck="false">
+                                    @error('ownDomain') <p class="text-sm text-danger">{{ $message }}</p> @enderror
+                                    <div class="flex justify-end"><x-ui.button type="submit" size="sm">Connect domain</x-ui.button></div>
+                                </form>
+                            @else
+                                <p class="text-sm text-muted">Ask the business owner to connect your domain.</p>
+                            @endif
+                        @else
+                            <p class="flex flex-wrap items-center gap-2 text-sm font-medium text-ink">
+                                {{ $site->custom_domain }}
+                                @if ($site->domain_status === 'active')<x-ui.badge tone="success">Connected</x-ui.badge>@else<x-ui.badge tone="warning">Waiting</x-ui.badge>@endif
+                            </p>
+                            @if ($site->domain_status !== 'active' && $domainRecord)
+                                <p class="mt-3 text-sm text-muted">At the company you bought the domain from (GoDaddy, Namecheap, Google, …), add this DNS record:</p>
+                                <div class="mt-2 overflow-x-auto rounded-lg border border-line">
+                                    <table class="w-full text-left text-sm">
+                                        <thead class="bg-surface-2 text-xs text-subtle"><tr><th class="px-3 py-2 font-medium">Type</th><th class="px-3 py-2 font-medium">Name / host</th><th class="px-3 py-2 font-medium">Value / points to</th></tr></thead>
+                                        <tbody><tr class="font-mono text-ink"><td class="px-3 py-2">{{ $domainRecord['type'] }}</td><td class="px-3 py-2">{{ $domainRecord['name'] }}</td><td class="px-3 py-2 break-all">{{ $domainRecord['value'] }}</td></tr></tbody>
+                                    </table>
+                                </div>
+                                @if ($site->domain_error)<p class="mt-2 text-xs text-muted">{{ $site->domain_error }}</p>@endif
+                                <p class="mt-1 text-xs text-subtle">We check every few minutes{{ $site->domain_checked_at ? '; last checked '.$site->domain_checked_at->diffForHumans() : '' }}.</p>
+                            @elseif ($site->domain_status === 'active')
+                                <p class="mt-1 text-xs text-subtle">Visitors at {{ $site->custom_domain }} see your website, with a secure (https) connection.</p>
+                            @endif
+                            @if ($canManage)
+                                <div class="mt-3 flex justify-end gap-2">
+                                    @if ($site->domain_status !== 'active')<x-ui.button variant="ghost" size="sm" wire:click="checkDomain">Check now</x-ui.button>@endif
+                                    <x-ui.button variant="ghost" size="sm" wire:click="removeDomain" wire:confirm="Remove {{ $site->custom_domain }}? Your website goes back to its free address.">Remove</x-ui.button>
+                                </div>
+                            @endif
+                        @endif
+                    </x-ui.card>
+                @endif
+
                 <x-ui.card title="Versions" description="Every change is saved. Go back to any version, then publish it." :padding="false">
                     <ul class="divide-y divide-line" role="list">
                         @foreach ($versions as $v)

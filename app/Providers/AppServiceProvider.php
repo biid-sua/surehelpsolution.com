@@ -23,6 +23,10 @@ use App\Services\Business\Branding;
 use App\Services\Calls\CallOutcomes;
 use App\Services\Rules\BusinessRules;
 use App\Services\Sales\SalesAssistant;
+use App\Services\Sites\Domains\CloudflareDomainProvider;
+use App\Services\Sites\Domains\DomainProvider;
+use App\Services\Sites\Domains\FakeDomainProvider;
+use App\Services\Sites\Domains\ManualDomainProvider;
 use App\Services\Telephony\FakeProvider;
 use App\Services\Telephony\TelephonyProvider;
 use App\Services\Telephony\TwilioProvider;
@@ -61,6 +65,12 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(SalesAssistant::class);   // the chat endpoint reads why the last answer fell back
         // AI vendor behind one interface (spec §33, D38).
         $this->app->singleton(AiProvider::class, ClaudeProvider::class);
+        // Who issues HTTPS certificates for businesses' own domains (D101).
+        $this->app->singleton(DomainProvider::class, fn () => match (config('sites.custom_domains.driver')) {
+            'cloudflare' => new CloudflareDomainProvider,
+            'fake' => new FakeDomainProvider,
+            default => new ManualDomainProvider,
+        });
         // Telephony vendor behind one interface (D10, D60).
         $this->app->singleton(TelephonyProvider::class, fn () => match (config('telephony.driver')) {
             'twilio' => $this->app->make(TwilioProvider::class),

@@ -81,6 +81,7 @@ _As of 2026-10-21. Detailed tracker: [implementation-plan.md](implementation-pla
 - **Plans drive the website (D98):** prices, "Best for", what's included, yearly price, "Most popular", price on request, order and features are set per plan in *Admin › Billing › Plans*, and the website, sign-up, Billing and sales chat follow. Unused plans can be deleted. After deploying, review the plans there.
 - **Hosted websites (D99):** *Website builder* in the business portal: three templates filled from the business profile, changes asked in plain words (AI, monthly allowance), preview, publish and version history. Sites live at `/site/{name}` until `SITES_DOMAIN` is set up. See [hosted-sites.md](hosted-sites.md).
 - **AI credits (D100):** businesses buy credit packs under *Billing* (an invoice; credits arrive when paid). Website changes and SEO tasks beyond their monthly allowance use them (the SEO autopilot never does). Staff set packs and give credits under *Admin › Billing › AI credits*. See [ai-credits.md](ai-credits.md).
+- **Own domains for hosted websites (D101):** owners connect `www.theirbusiness.com` with one DNS record; we check it, the certificate is issued (Caddy on-demand TLS or Cloudflare for SaaS), and the free address redirects there. Set `SITES_CNAME_TARGET` (and the Cloudflare settings if used). See [hosted-sites.md](hosted-sites.md).
 - **The mobile app was rebuilt** in its own repo (`biid-sua/SHS_Mobile_App`) for businesses, agents and admins, and merged. Its own README lists the store steps.
 
 625 automated tests pass.

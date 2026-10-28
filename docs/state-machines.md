@@ -185,6 +185,17 @@ The sweep also moves any assignment past its end date to `ended`.
 - **Outcome** (`demo_outcome`) is separate: `trial`, `customer` or `not_interested`. It's set by the team, or
   automatically when a business owner signs up with the same email (`trial`, then `customer` once paying).
 
+## Own domain of a hosted website (D101)
+
+`sites.domain_status`, changed by `App\Services\Sites\SiteDomains`.
+
+| From | Allowed to |
+|---|---|
+| (none) | `pending` (the owner connects a domain) |
+| `pending` | `active` (the DNS points here and the certificate is issued) |
+| `active` | `pending` (the daily check finds the DNS no longer points here) |
+| any | (none) (the owner removes the domain) |
+
 ## AI credit purchase (D100)
 
 `App\Models\CreditPurchase`, changed by `App\Services\Billing\AiCredits`.

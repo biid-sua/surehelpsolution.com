@@ -1803,3 +1803,18 @@ monthly allowance: website changes and the SEO tasks a business starts. One cred
 **Why:** the allowance keeps costs predictable, and credits let busy businesses keep going without
 moving to a bigger plan. Selling credits rather than raw tokens is easier to understand ("a change is
 about 3 credits") and leaves margin over what the AI costs us.
+
+## D101 — Businesses' own domains for hosted websites (2026-10-28)
+**Decision:** a hosted website can use the business's own domain. The owner adds one DNS record
+(a `CNAME` for `www.`, or an `A` record for a bare domain when we publish an address); pointing the
+domain at us is the proof it's theirs. Certificates come from a provider behind one interface: our
+own server (Caddy on-demand TLS, which asks us before issuing; or Forge) or Cloudflare for SaaS.
+- We check every 10 minutes until it works, then daily; a domain that stops pointing here goes back to
+  waiting and the free address serves again.
+- Once it works, the free address redirects to the domain (301) and search tags use the domain.
+- A domain can belong to one website only, and never to our own addresses.
+
+**Why:** owners want their own address on cards and vans, and Google ranks one address better than
+several. One DNS record is the least we can ask of a non-technical owner. Keeping the certificate
+provider behind an interface means the hosting choice (D6) can change without touching the feature.
+

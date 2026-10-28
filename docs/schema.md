@@ -1628,6 +1628,12 @@ Indexes: unique (site_id, number).
 | `published_at` | datetime | yes |  |  |
 | `created_at` | datetime | yes |  |  |
 | `updated_at` | datetime | yes |  |  |
+| `custom_domain` | varchar | yes |  | unique |
+| `domain_status` | varchar | yes |  |  |
+| `domain_provider_id` | varchar | yes |  |  |
+| `domain_error` | varchar | yes |  |  |
+| `domain_checked_at` | datetime | yes |  |  |
+| `domain_active_at` | datetime | yes |  |  |
 
 ## sms_opt_outs
 

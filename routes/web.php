@@ -149,6 +149,8 @@ if ($sitesDomain = config('sites.domain')) {
         Route::get('/{page}', [SiteController::class, 'show'])->name('sites.domain.page');
     });
 }
+// For Caddy's on-demand TLS: certificates only for domains businesses have connected (D101).
+Route::get('/sites/domain-allowed', [SiteController::class, 'domainAllowed'])->middleware('throttle:120,1')->name('sites.domain-allowed');
 Route::get('/site/{subdomain}/{page?}', [SiteController::class, 'show'])->where(['subdomain' => '[a-z0-9-]+', 'page' => '[a-z0-9-]+'])
     ->middleware('throttle:240,1')->name('sites.path');
 

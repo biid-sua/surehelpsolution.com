@@ -9,6 +9,7 @@ use App\Models\SiteVersion;
 use App\Services\Billing\AiCredits;
 use App\Services\Sites\SiteBuilder as Builder;
 use App\Services\Sites\SiteContent;
+use App\Services\Sites\SiteDomains;
 use App\Services\Sites\SiteEditor;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\RateLimiter;
@@ -33,6 +34,9 @@ class SiteBuilder extends Component
     public string $subdomain = '';
 
     public string $prompt = '';
+
+    /** The business's own domain being connected (D101). */
+    public string $ownDomain = '';
 
     /** The page shown in the preview (slug; "" is the home page). */
     #[Url(except: '')]
@@ -117,6 +121,44 @@ class SiteBuilder extends Component
         }
     }
 
+    public function connectDomain(SiteDomains $domains): void
+    {
+        $this->authorize('integrations.manage', $this->organization());
+        $this->resetValidation();
+        try {
+            $site = $domains->connect($this->site(), $this->ownDomain, auth()->user());
+        } catch (ValidationException $e) {
+            $this->addError('ownDomain', (string) collect($e->errors())->flatten()->first());
+
+            return;
+        }
+        $this->ownDomain = '';
+        $this->dispatch('toast', type: 'success', message: $site->domain_status === 'active'
+            ? "{$site->custom_domain} is connected."
+            : "Now add the DNS record below at your domain company. We'll keep checking.");
+    }
+
+    public function checkDomain(SiteDomains $domains): void
+    {
+        $this->authorize('integrations.manage', $this->organization());
+        if (RateLimiter::tooManyAttempts('site-domain:'.$this->organization()->id, 10)) {
+            $this->dispatch('toast', type: 'warning', message: 'Please wait a minute before checking again.');
+
+            return;
+        }
+        RateLimiter::hit('site-domain:'.$this->organization()->id, 60);
+        $site = $domains->check($this->site());
+        $this->dispatch('toast', type: $site->domain_status === 'active' ? 'success' : 'info',
+            message: $site->domain_status === 'active' ? "{$site->custom_domain} works. Visitors there see your website." : 'Not yet. '.($site->domain_error ?? ''));
+    }
+
+    public function removeDomain(SiteDomains $domains): void
+    {
+        $this->authorize('integrations.manage', $this->organization());
+        $domains->remove($this->site(), auth()->user());
+        $this->dispatch('toast', type: 'success', message: 'Domain removed. Your website is back on its free address.');
+    }
+
     private function site(): Site
     {
         return Site::query()->forOrganization($this->organization())->with('published')->firstOrFail();
@@ -139,6 +181,8 @@ class SiteBuilder extends Component
             'pages' => $pages,
             'templates' => config('sites.templates'),
             'domain' => config('sites.domain'),
+            'ownDomains' => (bool) config('sites.custom_domains.cname_target'),
+            'domainRecord' => $site ? app(SiteDomains::class)->record($site) : null,
             'edits' => $edits,
             'pending' => $edits->contains(fn (SiteEdit $e) => $e->isPending()),
             'versions' => $site ? SiteVersion::query()->forOrganization($organization)->where('site_id', $site->id)->with('author:id,name')->orderByDesc('number')->limit(12)->get() : collect(),

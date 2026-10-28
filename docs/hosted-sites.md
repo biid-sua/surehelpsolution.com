@@ -40,6 +40,7 @@ snippet adds booking and chat.
 - **Who.** People with `integrations.view` see the builder; `integrations.manage` (owners, and
   managers if allowed) can change and publish. The `website_builder` feature can be limited to plans
   under *Feature access*.
+- **Search engines:** public pages can be indexed (`X-Robots-Tag: all`); previews never are.
 - **When a site is offline:** while the business is paused or cancelled, when the feature is off for
   it (including after an unkept free trial, D97), or when the owner takes it offline.
 
@@ -49,8 +50,47 @@ snippet adds booking and chat.
 |---|---|---|
 | `SITES_DOMAIN` | empty | e.g. `surehelp.site`. Needs a wildcard DNS record (`*.surehelp.site`) and a wildcard certificate pointing at this app. Empty: sites are served at `/site/{address}` |
 | `SITES_MONTHLY_TOKENS` | `150000` | AI tokens per business per month |
+| `SITES_DOMAIN_DRIVER` | `manual` | who issues certificates for own domains: `manual` or `cloudflare` |
+| `SITES_CNAME_TARGET` | empty | where owners point their `www` CNAME; empty hides own domains |
+| `SITES_IP` | empty | this server's address, for bare domains (A records) |
+| `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ZONE_ID` | empty | for the `cloudflare` driver |
+
+## Own domains (D101)
+
+Under **Your own domain** in the builder, the owner types their address (for example
+`www.brightplumbing.com`) and adds one DNS record at the company they bought it from:
+
+| Domain | Record |
+|---|---|
+| `www.` or another subdomain | `CNAME` from `www` to `SITES_CNAME_TARGET` (for example `sites.surehelp.site`) |
+| a bare domain (`brightplumbing.com`) | `A` record `@` to `SITES_IP`; only offered when that's set, otherwise owners use the `www.` version and forward the bare domain at their domain company |
+
+Pointing the domain at us is the proof it's theirs. We check every 10 minutes (`sites:check-domains`),
+and **Check now** checks straight away. Once the DNS points here and the certificate is issued, the
+site answers on the domain over HTTPS, the free address redirects there (301), and search tags use it.
+Working domains are rechecked daily: one that stops pointing here goes back to waiting and the free
+address serves again. While a domain waits, visitors there see a plain "being set up" note.
+
+**Removing** the domain puts the site back on its free address.
+
+### Setting up the server (once)
+
+Choose who issues certificates with `SITES_DOMAIN_DRIVER`:
+
+- **`cloudflare`** (Cloudflare for SaaS; about $0.10 per domain a month after the first 100):
+  1. Put `surehelp.site` (or your sites domain) on Cloudflare and turn on **SSL/TLS › Custom Hostnames**.
+  2. Add a proxied record `sites.surehelp.site` pointing to this server, and set it as the **fallback origin**.
+  3. Create an API token with *SSL and Certificates: Edit* on that zone.
+  4. Set `SITES_CNAME_TARGET=sites.surehelp.site`, `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ZONE_ID`.
+- **`manual`** (the default; this server issues certificates):
+  - With **Caddy**, use on-demand TLS and let it ask us first:
+    `on_demand_tls { ask https://YOUR-APP/sites/domain-allowed }`. We answer yes only for domains a
+    business has connected.
+  - With **Forge** or another host, add each domain's certificate there when it's connected.
+  - Set `SITES_CNAME_TARGET` to a host name pointing at this server, and `SITES_IP` to its address
+    if bare domains should work.
+
+Until `SITES_CNAME_TARGET` is set, the **Your own domain** card doesn't show.
 
 ## Not yet
-
-- Businesses' own domains (needs the hosting decision: Cloudflare for SaaS, or Forge / Laravel Cloud).
 - Photos and image uploads in sections.

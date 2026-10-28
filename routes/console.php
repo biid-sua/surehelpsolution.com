@@ -68,3 +68,6 @@ Schedule::command('websites:check')->dailyAt('07:20')->withoutOverlapping(60);
 
 // Proof the cron entry runs, for launch:check and Admin › System status (D79).
 Schedule::call(fn () => Cache::put('scheduler:heartbeat', now()->timestamp, now()->addHour()))->everyMinute()->name('scheduler-heartbeat');
+
+// Businesses' own website domains (D101): watch for the DNS record and the certificate.
+Schedule::command('sites:check-domains')->everyTenMinutes()->withoutOverlapping(15);

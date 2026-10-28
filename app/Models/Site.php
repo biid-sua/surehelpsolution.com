@@ -15,6 +15,10 @@ use Illuminate\Support\Str;
  * published one.
  *
  * @property Carbon|null $published_at
+ * @property string|null $custom_domain the business's own domain (D101)
+ * @property string|null $domain_status pending, active or failed
+ * @property Carbon|null $domain_checked_at
+ * @property Carbon|null $domain_active_at
  */
 class Site extends Model
 {
@@ -24,7 +28,7 @@ class Site extends Model
 
     protected function casts(): array
     {
-        return ['published_at' => 'datetime'];
+        return ['published_at' => 'datetime', 'domain_checked_at' => 'datetime', 'domain_active_at' => 'datetime'];
     }
 
     protected static function booted(): void
@@ -56,8 +60,17 @@ class Site extends Model
         return $this->published_version_id !== $this->draft()->id;
     }
 
+    /** The business's own domain, once it works (D101). */
+    public function liveDomain(): ?string
+    {
+        return $this->domain_status === 'active' ? $this->custom_domain : null;
+    }
+
     public function url(string $page = ''): string
     {
+        if ($own = $this->liveDomain()) {
+            return 'https://'.$own.($page !== '' ? '/'.$page : '');
+        }
         $domain = config('sites.domain');
 
         return $domain

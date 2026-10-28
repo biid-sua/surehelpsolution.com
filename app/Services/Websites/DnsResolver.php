@@ -38,4 +38,17 @@ class DnsResolver
             @dns_get_record($host, DNS_TXT) ?: [],
         )));
     }
+
+    /**
+     * CNAME targets of a host, without the trailing dot.
+     *
+     * @return list<string>
+     */
+    public function cname(string $host): array
+    {
+        return array_values(array_filter(array_map(
+            fn (array $r) => isset($r['target']) ? rtrim(strtolower((string) $r['target']), '.') : null,
+            @dns_get_record($host, DNS_CNAME) ?: [],
+        )));
+    }
 }
