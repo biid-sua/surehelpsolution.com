@@ -53,7 +53,9 @@ class SampleData
             return;
         }
 
-        $tz = $organization->timezoneOrDefault();
+        // A new business usually hasn't set its timezone yet. Late morning to afternoon US Eastern is
+        // still the working day once they pick any US timezone (8 AM to 1 PM Pacific).
+        $tz = $organization->timezone ?: 'America/New_York';
         $now = CarbonImmutable::now($tz);
         $made = ['customers' => [], 'call_logs' => [], 'appointments' => [], 'tasks' => []];
 
@@ -79,7 +81,7 @@ class SampleData
                 }
 
                 // Spread over the last week, during the working day.
-                $at = $now->subDays(8 - $i)->setTime(9 + ($i * 2) % 8, [5, 20, 35, 50][$i % 4]);
+                $at = $now->subDays(8 - $i)->setTime(11 + ($i * 2) % 6, [5, 20, 35, 50][$i % 4]);
                 $call = $this->make(CallLog::class, [
                     'call_id' => CallLog::generateCallId(),
                     'organization_id' => $organization->id,
@@ -100,7 +102,7 @@ class SampleData
                 $made['call_logs'][] = $call->id;
 
                 if ($outcome === 'scheduled-appointment') {
-                    $made['appointments'][] = $this->booking($organization, $customers[$key], $call, $tz, $now->addDays(2 + count($made['appointments']))->setTime(10 + count($made['appointments']) * 3, 0), 'Visit: '.Str::before($notes, '.'))->id;
+                    $made['appointments'][] = $this->booking($organization, $customers[$key], $call, $tz, $now->addDays(2 + count($made['appointments']))->setTime(11 + count($made['appointments']) * 3, 0), 'Visit: '.Str::before($notes, '.'))->id;
                 }
                 if ($outcome === 'callback-requested' || $outcome === 'escalated-to-client') {
                     $made['tasks'][] = $this->make(Task::class, [
@@ -113,7 +115,7 @@ class SampleData
                         'priority' => $outcome === 'escalated-to-client' ? 'high' : 'normal',
                         'status' => 'open',
                         'source' => 'call',
-                        'due_at' => $now->addDay()->setTime(17, 0)->utc(),
+                        'due_at' => $now->addDay()->setTime(16, 0)->utc(),
                     ])->id;
                 }
             }
