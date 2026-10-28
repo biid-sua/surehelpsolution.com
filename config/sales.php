@@ -51,6 +51,13 @@ return [
         'capacity' => (int) env('SALES_DEMO_CAPACITY', 1),
         // Where the call happens; shown in the invitation.
         'location' => env('SALES_DEMO_LOCATION', 'Phone or video call; we\'ll send the link before the call'),
+        // The meeting link for every demo (D96), for example a recurring Microsoft Teams meeting
+        // ("Join the meeting" link). When set, invitations, reminders and the calendar file carry it.
+        'meeting_url' => env('SALES_DEMO_MEETING_URL'),
+        // Follow-ups (D96): reminders before the call, and a nudge this many days after a demo
+        // when they haven't started a trial.
+        'remind_hours' => [24, 1],
+        'nudge_after_days' => 3,
     ],
 
     // What the assistant may say about plans. Keep in step with the pricing section of home.blade.php.

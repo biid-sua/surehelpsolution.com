@@ -33,6 +33,24 @@ leads and books 30-minute demo calls with the team. It is separate from the busi
   - a booked demo;
   - a chat handed to the team.
 
+## After a demo is booked (D96)
+
+- **Microsoft Teams link:** set `SALES_DEMO_MEETING_URL` to the "Join the meeting" link of a recurring
+  Teams meeting. The invitation, reminders, text and calendar file all carry it.
+- **The visitor's page** (`/demo/{token}`, linked from every email): see the time, join, move it to another
+  open time, or cancel. Moving updates the same calendar entry; cancelling removes it. The team is emailed
+  either way.
+- **Reminders:** an email the day before (skipped when they booked in the last 12 hours) and an email an
+  hour before, plus a text an hour before when they agreed to texts and texting is on.
+- **In Website enquiries:** the *Upcoming demos* and *Needs outcome* tabs; on each demo, who runs it,
+  **Attended** / **No-show**, and the outcome.
+- **Follow-ups, sent once:**
+  - **Attended:** a recap with their trial link.
+  - **No-show:** a "sorry we missed you" with their page to pick a new time.
+  - **Attended, no trial after `nudge_after_days` (3):** one nudge.
+- **Sign-ups are spotted:** when someone signs up with the same email, the outcome becomes *Started a trial*,
+  then *Became a customer* once they pay. `php artisan sales:demo-follow-ups` runs every five minutes.
+
 ## Keeping the AI cheap
 
 - Buttons, forms and the time picker never call the AI. Only free text does.
@@ -81,4 +99,5 @@ keyword answers ("Good question. I can show pricing…"). That's expected, not a
 - `public/assets/js/sales-chat.js` and `css/sales-chat.css`, plus `resources/views/partials/sales-chat.blade.php`:
   the widget (plain JS, CSP-safe, follows the site theme).
 - `App\Console\Commands\SalesChatCheck`: `php artisan sales-chat:check`.
+- `App\Services\Sales\DemoFollowUp`, `App\Http\Controllers\DemoBookingController`, `SalesDemoFollowUpMail`: demo follow-up (D96); tests in `tests/Feature/DemoFollowUpTest.php`.
 - Tests: `tests/Feature/SalesChatTest.php`.

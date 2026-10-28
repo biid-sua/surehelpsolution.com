@@ -1701,3 +1701,21 @@ outside services, the mobile API, the front end) and links to one page per topic
 rediscovering them. The common "six vault files" template was adapted rather than copied: the reasons
 stay hand-written (decisions, product), and what the code already says (schema) is generated so it can't
 go out of date.
+
+## D96 — Demo calls followed through to a sale (2026-10-28)
+**Decision:** a booked demo call is followed through to its outcome.
+- **Microsoft Teams:** one recurring Teams meeting link (`SALES_DEMO_MEETING_URL`) for every demo. It
+  goes in the invitation, reminders, text and calendar file. Creating a separate Teams meeting per demo
+  would need a Microsoft 365 app registration (Graph API); the recurring link works today.
+- **Moving and cancelling:** each demo has a private page (`/demo/{token}`, a 40-character token like a
+  calendar link). Moving keeps the same calendar entry (one UID, rising SEQUENCE); cancelling sends a
+  calendar cancellation. The team is emailed.
+- **Reminders:** by email the day before and an hour before, and by text an hour before only when the visitor
+  agreed to texts. The day-before email is skipped when the booking is less than 12 hours old.
+- **Outcome:** the team assigns who runs the demo, then marks it attended or no-show and sets an outcome
+  (trial, customer, not interested). A sign-up with the same email is spotted automatically.
+- **Follow-ups:** each goes once. Attended gets a recap with the trial link; no-show gets a link to pick a
+  new time; an attended demo with no trial after 3 days gets one nudge.
+
+**Why:** reminders and an easy reschedule link are the cheapest ways to cut no-shows, and most sales come
+from the follow-up. Recording outcomes shows which demos, and which campaigns, turn into customers.

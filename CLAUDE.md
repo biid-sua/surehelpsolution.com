@@ -10,7 +10,7 @@ the docs rather than repeating them.
 | Need | File |
 |---|---|
 | What we're building and for whom | [docs/product.md](docs/product.md), with full detail in [SureHelpSolution_Enterprise_Task.md](SureHelpSolution_Enterprise_Task.md) and [task.md](task.md) |
-| Why things are the way they are (D1–D94…) | [docs/decisions.md](docs/decisions.md) |
+| Why things are the way they are (D1, D2, …) | [docs/decisions.md](docs/decisions.md) |
 | Statuses and allowed changes | [docs/state-machines.md](docs/state-machines.md) |
 | Design tokens, components, screen rules | [docs/ui.md](docs/ui.md) |
 | Versions and infrastructure | [docs/stack.md](docs/stack.md) |

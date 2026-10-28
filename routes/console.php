@@ -55,6 +55,8 @@ Schedule::command('backup:database')->dailyAt('03:15')->withoutOverlapping(120);
 
 // Agent company assignments: start scheduled ones and end expired ones (D40). Access itself never waits for this.
 Schedule::command('assignments:sweep')->everyFiveMinutes()->withoutOverlapping(10);
+// Demo calls with the SureHelp team: reminders, sign-up spotting and nudges (D96).
+Schedule::command('sales:demo-follow-ups')->everyFiveMinutes()->withoutOverlapping(10);
 // Agent University reminders: due soon, overdue, certification expiring or expired (sent once each).
 Schedule::command('training:sweep')->hourly()->withoutOverlapping(30);
 // Agents' own calendars: nightly catch-up of copied shifts (D54). Changes are copied as they happen.

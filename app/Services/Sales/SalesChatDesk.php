@@ -3,7 +3,6 @@
 namespace App\Services\Sales;
 
 use App\Mail\SalesChatReplyMail;
-use App\Mail\SalesDemoBookedMail;
 use App\Mail\SalesLeadAlertMail;
 use App\Models\ContactSubmission;
 use App\Models\SalesChat;
@@ -278,7 +277,7 @@ class SalesChatDesk
         }
         $chat->forceFill(['pending_slot' => null])->save();
         $enquiry->forceFill(['score' => 'hot'])->save();
-        Mail::to($enquiry->email)->queue(new SalesDemoBookedMail($enquiry->fresh()));
+        app(DemoFollowUp::class)->booked($enquiry);   // invitation with the reschedule link, reminders (D96)
         $this->alertTeam($chat, 'Demo booked: '.$this->slots->label($at));
         $this->action = null;
 

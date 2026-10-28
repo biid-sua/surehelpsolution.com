@@ -607,6 +607,15 @@ Indexes: unique (organization_id, key).
 | `score` | varchar | yes |  |  |
 | `demo_at` | datetime | yes |  |  |
 | `demo_status` | varchar | yes |  |  |
+| `demo_token` | varchar | yes |  | unique |
+| `demo_booked_at` | datetime | yes |  |  |
+| `demo_owner_user_id` | integer | yes |  | → users.id (set null) |
+| `demo_outcome` | varchar | yes |  |  |
+| `signed_up_organization_id` | integer | yes |  | → organizations.id (set null) |
+| `demo_reminded_day_at` | datetime | yes |  |  |
+| `demo_reminded_hour_at` | datetime | yes |  |  |
+| `demo_followed_up_at` | datetime | yes |  |  |
+| `demo_nudged_at` | datetime | yes |  |  |
 
 Indexes: (handled_at, created_at).
 

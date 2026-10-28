@@ -31,6 +31,7 @@ use App\Http\Controllers\Client\SearchConsoleController;
 use App\Http\Controllers\Client\SocialOAuthController;
 use App\Http\Controllers\Client\SwitchOrganizationController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DemoBookingController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InboxMediaController;
@@ -150,6 +151,12 @@ Route::get('/health', HealthController::class)->middleware('throttle:60,1')->nam
 Route::middleware('throttle:30,1')->prefix('pay/{token}')->name('pay.')->group(function () {
     Route::get('/', [PayController::class, 'show'])->name('show');
     Route::post('/', [PayController::class, 'checkout'])->name('checkout');
+});
+// A visitor's demo call with the SureHelp team (D96): see, move or cancel it, by token.
+Route::middleware('throttle:30,1')->prefix('demo/{token}')->name('demo.')->group(function () {
+    Route::get('/', [DemoBookingController::class, 'show'])->name('show');
+    Route::post('/move', [DemoBookingController::class, 'reschedule'])->name('reschedule');
+    Route::post('/cancel', [DemoBookingController::class, 'cancel'])->name('cancel');
 });
 // Satisfaction surveys (D84): public, by token.
 Route::middleware('throttle:30,1')->prefix('s/{token}')->name('survey.')->group(function () {

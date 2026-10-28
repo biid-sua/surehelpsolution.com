@@ -165,6 +165,22 @@ and `SweepAssignments`.
 
 The sweep also moves any assignment past its end date to `ended`.
 
+## Demo call with the SureHelp team (D96)
+
+`contact_submissions.demo_status`, changed by `App\Services\Sales\DemoSlots::book()` and `App\Services\Sales\DemoFollowUp`.
+
+| From | Allowed to |
+|---|---|
+| (none) | `booked` (picked in the website chat) |
+| `booked` | `booked` again (moved by the visitor), `cancelled` (visitor or team), `attended`, `no_show` |
+| `cancelled`, `no_show` | `booked` (the visitor picks a new time on their page) |
+| `attended`, `no_show` | each other (the team corrects a mistake) |
+
+- A `booked` demo whose time has passed shows as **Needs outcome** in *Website enquiries*.
+- Marking `attended` or `no_show` sends one follow-up, only the first time.
+- **Outcome** (`demo_outcome`) is separate: `trial`, `customer` or `not_interested`. It's set by the team, or
+  automatically when a business owner signs up with the same email (`trial`, then `customer` once paying).
+
 ## Demo data (D94)
 
 The `demo.state` platform setting, changed by `App\Services\Demo\DemoData`.
