@@ -1,8 +1,10 @@
 # AI credits (D100)
 
-Every AI feature comes with a monthly allowance. **AI credits** pay for use beyond it. For now that's the
-website builder (D99): once a business has used its monthly website allowance, further changes use
-credits.
+Every AI feature comes with a monthly allowance. **AI credits** pay for use beyond it:
+- **Website builder** (D99): once the monthly website allowance is used, further changes use credits.
+- **SEO service** (D57): tasks the business (or staff) starts use credits once the SEO allowance is
+  used. The monthly **autopilot never spends credits**: when the allowance is used up, it waits for
+  the next month.
 
 ## For businesses
 
@@ -10,7 +12,7 @@ credits.
   history (bought, given by SureHelp, used).
 - **Buying:** choose a pack. We issue an invoice straight away; the credits are added as soon as it's
   paid (by card, automatic payment, or a payment SureHelp records). A business needs a plan to buy.
-- **Using:** a website change uses the monthly allowance first. Anything beyond it comes off the
+- **Using:** a website change or an SEO task uses its monthly allowance first. Anything beyond it comes off the
   balance, rounded up to whole credits. One credit is 1,000 AI tokens, so a change usually costs 2 to 5.
 - Credits don't expire and aren't refunded in cash; staff can take back credits bought by mistake.
 
@@ -32,8 +34,10 @@ Voiding a credit invoice cancels the purchase. Paying it twice is impossible; th
   (invoice voided). See [state-machines.md](state-machines.md).
 - `credit_entries`: every change to a balance (`purchase`, `grant`, `usage`). The balance is the sum.
 - `App\Services\Billing\AiCredits` does the work; `RecordPayment` and `VoidInvoice` call it.
-- `SiteEditor` lets a change start when the allowance left plus credits covers it, and charges credits
-  for the tokens beyond what was left of the allowance when the change started.
+- `SiteEditor` and `SeoDesk` let work start when the allowance left plus credits covers it, and charge
+  credits for the tokens beyond what was left of the allowance when it started (`chargeSiteEdit`,
+  `chargeSeoTask`; each entry points at its change or task, so it's charged once). SEO autopilot tasks
+  check the allowance alone and are never charged.
 
 ## Settings (.env)
 

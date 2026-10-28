@@ -13,6 +13,7 @@ Businesses take our SEO service under **SEO** in the business portal. AI does th
 4. **Optional settings** (`.env`):
    - `SEO_MONTHLY_TOKENS`: the default monthly allowance (250,000).
    - A plan limit `seo_ai_tokens`: a different allowance for that plan.
+   - Beyond the allowance, tasks the business or staff start use AI credits ([ai-credits.md](ai-credits.md), D100). The monthly autopilot never does: it waits for next month's allowance.
 
 ## What the business does
 

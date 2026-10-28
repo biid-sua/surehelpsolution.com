@@ -45,10 +45,11 @@
             ])>{{ $label }}</button>
         @endforeach
         <span class="ml-auto hidden self-center whitespace-nowrap pb-1 text-xs text-subtle md:inline" title="AI tokens are what the AI reads and writes. A typical task uses 5,000–20,000.">
-            AI allowance this month: {{ number_format($tokens['used']) }} of {{ number_format($tokens['allowance']) }} tokens
+            AI allowance this month: {{ number_format($tokens['used']) }} of {{ number_format($tokens['allowance']) }} tokens · AI credits: {{ number_format($tokens['credits']) }}
+            @can('billing.view', $organization)<a href="{{ route('app.billing') }}#credits" class="ml-1 text-brand-300 hover:underline">Buy credits</a>@endcan
         </span>
     </div>
-    <p class="-mt-4 mb-4 text-xs text-subtle md:hidden">AI allowance this month: {{ number_format($tokens['used']) }} of {{ number_format($tokens['allowance']) }} tokens</p>
+    <p class="-mt-4 mb-4 text-xs text-subtle md:hidden">AI allowance this month: {{ number_format($tokens['used']) }} of {{ number_format($tokens['allowance']) }} tokens · AI credits: {{ number_format($tokens['credits']) }}</p>
 
     {{-- Results: before and after --}}
     @if ($tab === 'overview')
@@ -140,7 +141,7 @@
         <div class="grid gap-6 xl:grid-cols-[22rem_minmax(0,1fr)]">
             <div class="space-y-4">
                 @if ($on && $canManage)
-                    <x-ui.card title="Run a task" description="Each one uses some of this month's AI allowance.">
+                    <x-ui.card title="Run a task" description="Each one uses some of this month's AI allowance, then AI credits once it's used up.">
                         <div class="space-y-4">
                             @foreach ($types as $type => $def)
                                 <div class="rounded-xl border border-line p-3" wire:key="run-{{ $type }}">

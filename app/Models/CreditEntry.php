@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * One change to a business's AI credit balance (D100). `kind`: purchase, grant (staff, either sign),
- * usage (negative, an AI change beyond the monthly allowance).
+ * usage (negative: a website change or SEO task beyond its monthly allowance).
  */
 class CreditEntry extends Model
 {
@@ -16,7 +16,7 @@ class CreditEntry extends Model
 
     public const KINDS = ['purchase', 'grant', 'usage'];
 
-    protected $fillable = ['organization_id', 'credits', 'kind', 'note', 'credit_purchase_id', 'site_edit_id', 'user_id'];
+    protected $fillable = ['organization_id', 'credits', 'kind', 'note', 'credit_purchase_id', 'site_edit_id', 'seo_task_id', 'user_id'];
 
     protected function casts(): array
     {

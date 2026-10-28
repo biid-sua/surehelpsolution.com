@@ -9,16 +9,18 @@ use App\Models\CreditPurchase;
 use App\Models\Invoice;
 use App\Models\Organization;
 use App\Models\PlatformSetting;
+use App\Models\SeoTask;
 use App\Models\SiteEdit;
 use App\Models\User;
+use App\Services\Seo\SeoTaskCatalog;
 use App\Support\Audit\Audit;
 use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * AI credits (D100). Each AI feature has a monthly allowance; credits pay for use beyond it, starting
- * with the website builder (D99). One credit buys `credits.tokens_per_credit` tokens.
+ * AI credits (D100). Each AI feature has a monthly allowance; credits pay for use beyond it: website
+ * changes (D99) and SEO tasks the business starts (D57; the monthly autopilot never spends credits). One credit buys `credits.tokens_per_credit` tokens.
  *
  * Buying a pack issues an invoice; its credits arrive when the invoice is paid (card, autopay or a
  * payment staff record), and a voided invoice cancels the purchase. The balance is the sum of
@@ -153,15 +155,29 @@ class AiCredits
         return $entry;
     }
 
-    /**
-     * A website change finished: the tokens beyond what was left of the monthly allowance come off
-     * the credit balance, rounded up to whole credits. A rare overshoot past the balance isn't charged.
-     */
+    /** A website change finished (D99): tokens beyond the allowance left when it started come off the balance. */
     public function chargeSiteEdit(SiteEdit $edit, int $allowanceRemainingBefore): int
     {
-        $tokens = $edit->input_tokens + $edit->output_tokens;
+        return $this->charge($edit->organization_id, $edit->input_tokens + $edit->output_tokens, $allowanceRemainingBefore,
+            'Website change: '.mb_substr($edit->prompt, 0, 150), $edit->user_id, ['site_edit_id' => $edit->id]);
+    }
+
+    /** An SEO task the business started finished (D57): the same, against the SEO allowance. */
+    public function chargeSeoTask(SeoTask $task, int $allowanceRemainingBefore): int
+    {
+        return $this->charge($task->organization_id, $task->input_tokens + $task->output_tokens, $allowanceRemainingBefore,
+            'SEO: '.(SeoTaskCatalog::TYPES[$task->type]['label'] ?? $task->type), $task->requested_by_user_id, ['seo_task_id' => $task->id]);
+    }
+
+    /**
+     * Rounded up to whole credits. A rare overshoot past the balance isn't charged.
+     *
+     * @param  array<string, int>  $reference  the one column that ties the entry to its work, so it's charged once
+     */
+    private function charge(int $organizationId, int $tokens, int $allowanceRemainingBefore, string $note, ?int $userId, array $reference): int
+    {
         $credits = $this->creditsFor($tokens - max(0, $allowanceRemainingBefore));
-        $organization = Organization::query()->find($edit->organization_id);
+        $organization = Organization::query()->find($organizationId);
         if ($credits <= 0 || ! $organization) {
             return 0;
         }
@@ -170,9 +186,8 @@ class AiCredits
             return 0;
         }
 
-        CreditEntry::query()->firstOrCreate(['site_edit_id' => $edit->id], [
-            'organization_id' => $edit->organization_id, 'credits' => -$credits, 'kind' => 'usage',
-            'note' => 'Website change: '.mb_substr($edit->prompt, 0, 150), 'user_id' => $edit->user_id,
+        CreditEntry::query()->firstOrCreate($reference, [
+            'organization_id' => $organizationId, 'credits' => -$credits, 'kind' => 'usage', 'note' => mb_substr($note, 0, 200), 'user_id' => $userId,
         ]);
 
         return $credits;

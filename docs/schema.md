@@ -661,6 +661,7 @@ Indexes: (organization_id, needs_human); (organization_id, status, last_message_
 | `user_id` | integer | yes |  | → users.id (set null) |
 | `created_at` | datetime | yes |  |  |
 | `updated_at` | datetime | yes |  |  |
+| `seo_task_id` | integer | yes |  | → seo_tasks.id (set null), unique |
 
 Indexes: (organization_id, created_at).
 

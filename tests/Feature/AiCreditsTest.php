@@ -11,15 +11,20 @@ use App\Enums\PaymentMethod;
 use App\Livewire\Admin\Billing\Credits as AdminCredits;
 use App\Livewire\Client\Billing\Index as ClientBilling;
 use App\Livewire\Client\SiteBuilder;
+use App\Models\Addon;
 use App\Models\CreditEntry;
 use App\Models\CreditPurchase;
 use App\Models\Invoice;
 use App\Models\Organization;
+use App\Models\OrganizationAddon;
 use App\Models\Plan;
+use App\Models\SeoTask;
 use App\Models\SiteEdit;
 use App\Models\User;
 use App\Services\Ai\Contracts\AiProvider;
 use App\Services\Billing\AiCredits;
+use App\Services\Seo\SeoDesk;
+use App\Services\Seo\SeoTaskCatalog;
 use App\Services\Sites\SiteBuilder as Builder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -176,5 +181,59 @@ class AiCreditsTest extends TestCase
 
         $this->actingAs($this->owner)->get(route('admin.billing', ['tab' => 'credits']))->assertForbidden();
         Livewire::actingAs($this->owner)->test(AdminCredits::class)->assertForbidden();
+    }
+
+    private function seoOn(): void
+    {
+        $addon = Addon::firstOrCreate(['slug' => 'seo_service'], ['name' => 'SEO service', 'price_cents' => 19900]);
+        OrganizationAddon::create(['organization_id' => $this->business->id, 'addon_id' => $addon->id, 'status' => 'active', 'price_cents' => 19900, 'started_on' => now()->toDateString()]);
+        app()->forgetScopedInstances();
+    }
+
+    private function faq(): string
+    {
+        return json_encode(['faqs' => [['question' => 'Do you work weekends?', 'answer' => 'Yes, we answer 24/7.']]]);
+    }
+
+    public function test_seo_tasks_the_business_starts_use_credits_beyond_the_allowance(): void
+    {
+        $ai = new ScriptedAiProvider;
+        $this->app->instance(AiProvider::class, $ai);
+        $this->seoOn();
+        $this->business->forceFill(['seo_token_allowance' => 6000])->save();
+        SeoTask::create(['organization_id' => $this->business->id, 'type' => 'faq', 'status' => 'done', 'input_tokens' => 5500, 'output_tokens' => 0]);
+        $desk = app(SeoDesk::class);
+
+        // 500 tokens left and no credits: too little to start.
+        $this->assertStringContainsString('Buy AI credits', (string) $desk->blocker($this->business->fresh(), 'faq'));
+
+        app(AiCredits::class)->grant($this->business, 10, 'Gift', $this->admin);
+        $ai->reply($this->faq());
+        $task = $desk->request($this->business->fresh(), 'faq', [], $this->owner)->fresh();
+
+        $this->assertSame('done', $task->status);
+        // 1,950 tokens used, 500 of them from the allowance: 1,450 from credits, rounded up to 2.
+        $this->assertSame(8, app(AiCredits::class)->balance($this->business));
+        $this->assertSame(-2, CreditEntry::withoutGlobalScopes()->where('seo_task_id', $task->id)->sole()->credits);
+        $this->assertSame('SEO: '.SeoTaskCatalog::TYPES['faq']['label'], CreditEntry::withoutGlobalScopes()->where('seo_task_id', $task->id)->sole()->note);
+    }
+
+    public function test_the_seo_autopilot_never_spends_credits(): void
+    {
+        $ai = new ScriptedAiProvider;
+        $this->app->instance(AiProvider::class, $ai);
+        $this->seoOn();
+        app(AiCredits::class)->grant($this->business, 500, 'Bought', $this->admin);
+        $this->business->forceFill(['seo_token_allowance' => 6000])->save();
+        SeoTask::create(['organization_id' => $this->business->id, 'type' => 'faq', 'status' => 'done', 'input_tokens' => 5500, 'output_tokens' => 0]);
+
+        $this->assertNotNull(app(SeoDesk::class)->blocker($this->business->fresh(), 'keyword_plan', 'autopilot'), 'allowance used up: the autopilot waits');
+
+        // With allowance left, the autopilot runs, and spends no credits.
+        $this->business->forceFill(['seo_token_allowance' => 11000])->save();
+        $ai->reply($this->faq());
+        app(SeoDesk::class)->request($this->business->fresh(), 'faq', [], null, 'autopilot');
+        $this->assertSame(500, app(AiCredits::class)->balance($this->business));
+        $this->assertSame(0, CreditEntry::withoutGlobalScopes()->where('kind', 'usage')->count());
     }
 }

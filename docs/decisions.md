@@ -1789,7 +1789,9 @@ add scripts, pages stay fast and search-friendly, and every change can be undone
 
 ## D100 — AI credits for AI work beyond the allowance (2026-10-28)
 **Decision:** businesses buy packs of AI credits under Billing. Credits pay for AI work beyond the
-monthly allowance, starting with the website builder. One credit is 1,000 tokens.
+monthly allowance: website changes and the SEO tasks a business starts. One credit is 1,000 tokens.
+- **The SEO autopilot never spends credits:** it runs on the monthly allowance only, so nothing a
+  business paid for is used without someone asking.
 - **Buying issues an invoice;** the credits arrive when it's paid. This reuses every way we already
   take money (card, automatic payments, Payoneer and bank transfers that staff record) and keeps a
   normal invoice for the business's books.
