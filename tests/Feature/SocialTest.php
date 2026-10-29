@@ -490,6 +490,30 @@ class SocialTest extends TestCase
         $this->actingAs($owner)->get(route('app.dashboard'))->assertSee(route('app.social.index'));
     }
 
+    public function test_the_month_view_lists_posts_by_day_for_phones_and_only_this_business(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-11-01 12:00', 'UTC'));
+        [$owner, $org] = $this->business('America/Chicago');
+        $fb = $this->account($org, SocialNetwork::Facebook, ['external_id' => '111']);
+        [$otherOwner, $other] = $this->business('America/Chicago');
+        $otherFb = $this->account($other, SocialNetwork::Facebook, ['external_id' => '999']);
+
+        foreach ([[$owner, $fb, 'Spring AC tune-ups are open.'], [$otherOwner, $otherFb, 'Another business entirely.']] as [$user, $account, $body]) {
+            $this->actingAs($user);
+            Livewire::test(Compose::class)->set('selected', [$account->ulid])->set('body', $body)
+                ->set('date', '2026-11-03')->set('time', '09:00')->call('save', 'schedule')->assertHasNoErrors();
+        }
+
+        // The phone list has a section per day with posts, which the small month grid links to.
+        $this->actingAs($owner)->get(route('app.social.index', ['month' => '2026-11']))->assertOk()
+            ->assertSee('id="social-day-2026-11-03"', false)
+            ->assertSee('href="#social-day-2026-11-03"', false)
+            ->assertSee('Tue 3 Nov')
+            ->assertSee('Spring AC tune-ups are open.')
+            ->assertDontSee('Another business entirely.');
+        $this->actingAs($owner)->get(route('app.social.index', ['month' => '2026-12']))->assertOk()->assertSee('No posts in December yet.');
+    }
+
     public function test_mobile_api_lists_and_approves(): void
     {
         [$owner, $org] = $this->business();

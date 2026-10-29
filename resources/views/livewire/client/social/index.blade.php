@@ -116,7 +116,67 @@
                 <h2 class="font-semibold text-ink">{{ $monthStart->format('F Y') }}</h2>
                 <x-ui.button size="sm" variant="ghost" icon="chevron-right" wire:click="shiftMonth(1)" aria-label="Next month" />
             </div>
-            <div class="overflow-x-auto">
+            {{-- Phones: a seven-column table can't fit, so a small month grid marks the days with posts
+                 and the posts follow as a list, day by day. --}}
+            <div class="sm:hidden">
+                <div class="grid grid-cols-7 gap-1 px-3 pt-3 text-center text-[0.6875rem] text-subtle" aria-hidden="true">
+                    @foreach (['M', 'T', 'W', 'T', 'F', 'S', 'S'] as $d)<span>{{ $d }}</span>@endforeach
+                </div>
+                <div class="grid grid-cols-7 gap-1 px-3 pt-1 pb-3">
+                    @foreach ($weeks as $week)
+                        @foreach ($week as $day)
+                            @php($key = $day->format('Y-m-d'))
+                            @php($items = $day->month === $monthStart->month ? $byDay->get($key, collect()) : collect())
+                            @php($dayClasses = ['flex h-11 flex-col items-center justify-center gap-0.5 rounded-lg text-xs', 'text-subtle/50' => $day->month !== $monthStart->month, 'bg-brand-600 font-semibold text-white' => $key === $today, 'bg-surface-2 text-ink' => $items->isNotEmpty() && $key !== $today, 'text-muted' => $items->isEmpty() && $key !== $today && $day->month === $monthStart->month])
+                            @if ($items->isNotEmpty())
+                                <a href="#social-day-{{ $key }}" @class($dayClasses) aria-label="{{ $day->format('j F') }}: {{ $items->count() }} {{ Str::plural('post', $items->count()) }}">
+                            @else
+                                <span @class($dayClasses)>
+                            @endif
+                                <span>{{ $day->day }}</span>
+                                <span class="flex h-1.5 gap-0.5" aria-hidden="true">
+                                    @foreach ($items->flatMap(fn ($p) => $p->targets->pluck('account.network'))->filter()->unique()->take(3) as $n)
+                                        <span class="size-1.5 rounded-full" style="background: {{ $n->color() }}"></span>
+                                    @endforeach
+                                </span>
+                            @if ($items->isNotEmpty())</a>@else</span>@endif
+                        @endforeach
+                    @endforeach
+                </div>
+
+                @php($monthDays = $byDay->filter(fn ($items, $key) => str_starts_with($key, $monthStart->format('Y-m')))->sortKeys())
+                @if ($monthDays->isEmpty())
+                    <p class="border-t border-line px-4 py-6 text-center text-sm text-muted">No posts in {{ $monthStart->format('F') }} yet.</p>
+                @else
+                    <div class="divide-y divide-line border-t border-line">
+                        @foreach ($monthDays as $key => $items)
+                            @php($day = \Carbon\CarbonImmutable::createFromFormat('Y-m-d', $key))
+                            <section id="social-day-{{ $key }}" class="scroll-mt-20 px-4 py-3">
+                                <h3 class="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-subtle">
+                                    {{ $day->format('D j M') }}
+                                    @if ($key === $today)<x-ui.badge tone="brand">Today</x-ui.badge>@endif
+                                </h3>
+                                <ul class="space-y-2">
+                                    @foreach ($items->sortBy(fn ($p) => $p->scheduled_at ?? $p->published_at) as $p)
+                                        <li>
+                                            <a href="{{ route('app.social.posts.edit', $p) }}" class="block rounded-lg bg-surface-2 px-3 py-2 ring-1 ring-line hover:ring-brand-400">
+                                                <span class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-subtle">
+                                                    @foreach ($p->targets->pluck('account.network')->filter()->unique() as $n)<span class="inline-block size-2 rounded-full" style="background: {{ $n->color() }}" title="{{ $n->label() }}"></span>@endforeach
+                                                    <span>{{ ($p->scheduled_at ?? $p->published_at)?->setTimezone($timezone)->format('g:ia') }}</span>
+                                                    <span>· {{ $p->status->value === 'draft' && $p->source === 'ai' ? 'AI draft' : $p->status->label() }}</span>
+                                                </span>
+                                                <span class="mt-1 block text-sm text-ink">{{ $p->excerpt(90) }}</span>
+                                            </a>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </section>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+
+            <div class="hidden overflow-x-auto sm:block">
                 <table class="w-full min-w-[48rem] table-fixed text-sm">
                     <thead>
                         <tr class="text-xs text-subtle">
