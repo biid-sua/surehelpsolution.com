@@ -31,8 +31,13 @@
                                         <span class="block truncate font-medium text-ink">{{ $b['organization']->name }}</span>
                                         <span class="block truncate text-xs text-muted">{{ $b['status']['label'] }} · {{ $b['local_time'] }} local</span>
                                     </span>
-                                    @if ($b['escalations'] > 0)<x-ui.badge tone="danger">{{ $b['escalations'] }} escalated</x-ui.badge>@endif
-                                    @if ($b['follow_ups'] > 0)<x-ui.badge tone="warning">{{ $b['follow_ups'] }} call-back{{ $b['follow_ups'] === 1 ? '' : 's' }}</x-ui.badge>@endif
+                                    @if ($b['escalations'] > 0 || $b['follow_ups'] > 0)
+                                        {{-- Stacked on phones, so the business name keeps its room. --}}
+                                        <span class="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center">
+                                            @if ($b['escalations'] > 0)<x-ui.badge tone="danger">{{ $b['escalations'] }} escalated</x-ui.badge>@endif
+                                            @if ($b['follow_ups'] > 0)<x-ui.badge tone="warning">{{ $b['follow_ups'] }} call-back{{ $b['follow_ups'] === 1 ? '' : 's' }}</x-ui.badge>@endif
+                                        </span>
+                                    @endif
                                     <x-ui.icon name="chevron-right" class="size-4 text-subtle" />
                                 </a>
                             </li>

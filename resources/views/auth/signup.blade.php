@@ -21,7 +21,11 @@
                                         <span class="font-medium text-ink">{{ $plan->name }}</span>
                                         <span class="text-sm text-ink">{{ $plan->priceLabel() }}</span>
                                     </span>
-                                    @if ($plan->description)<span class="mt-0.5 block text-sm text-muted">{{ $plan->description }}</span>@endif
+                                    @if ($plan->tagline)
+                                        <span class="mt-0.5 block text-sm text-muted">{{ $plan->tagline }}</span>
+                                    @elseif ($plan->highlights())
+                                        <span class="mt-0.5 block text-sm text-muted">{{ implode(' · ', array_slice($plan->highlights(), 0, 3)) }}</span>
+                                    @endif
                                     @if ($plan->trial_days > 0)<span class="mt-1 block text-xs text-brand-300">{{ $plan->trial_days }}-day free trial</span>@endif
                                 </span>
                             </label>

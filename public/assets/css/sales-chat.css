@@ -4,6 +4,8 @@
   font-family: inherit; color: var(--sc-ink); }
 body.has-sales-chat .back-to-top { bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important; right: 26px !important; }
 body.has-sales-chat .floating-roi-btn { bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important; }
+/* Phones: chat and the ROI button already fill the corner; back-to-top would sit on top of them. */
+@media (max-width: 767.98px) { body.has-sales-chat .back-to-top { display: none !important; } }
 
 .sales-chat__launcher { position: fixed; right: calc(20px + env(safe-area-inset-right, 0px)); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 1060;
   width: 60px; height: 60px; border: 0; border-radius: 50%; cursor: pointer; color: #fff; display: grid; place-items: center;

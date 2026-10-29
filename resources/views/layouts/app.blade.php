@@ -428,8 +428,10 @@
     }
 
     @media (max-width: 991.98px) {
+      /* The menu's links are light, so the open phone menu needs a dark panel (it was white). */
       .navbar-collapse {
-        background: white;
+        background: rgba(var(--site-bg-1-rgb), 0.97);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         padding: 1rem;
         border-radius: 10px;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
@@ -453,9 +455,72 @@
         display: none;
       }
 
-      .d-flex {
+      /* Only the Sign in / Get Started pair stacks inside the open menu; a bare .d-flex here
+         used to turn every flex row on the site into a column on phones and tablets. */
+      .navbar-collapse > .d-flex {
         flex-direction: column;
-        gap: 1rem;
+        align-items: stretch !important;
+        gap: 0.75rem !important;
+      }
+
+      /* One compact row on phones: logo left, menu button right. */
+      .navbar {
+        padding: 0.5rem 0 !important;
+      }
+
+      .navbar > .container {
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .navbar-brand {
+        margin-right: auto;
+      }
+
+      .brand-icon {
+        width: 150px;
+      }
+
+      .navbar-collapse {
+        max-height: calc(100dvh - 5rem);
+        overflow-y: auto;
+      }
+
+      /* A menu's sub-items open inline under its heading, as a plain list, not floating over the page. */
+      .navbar-collapse .dropdown-menu.mega-menu {
+        position: static !important;
+        border: 0;
+        box-shadow: none;
+        border-radius: 0;
+        padding: 0.25rem 0 0.5rem !important;
+      }
+
+      .navbar-collapse .dropdown-menu.mega-menu::before,
+      .navbar-collapse .dropdown-menu.mega-menu .dropdown-preview {
+        display: none;
+      }
+
+      .navbar-collapse .mega-menu .dropdown-item.d-flex {
+        flex-direction: row;
+        align-items: center;
+        text-align: left;
+        white-space: normal;
+        margin-bottom: 0.125rem !important;
+      }
+
+      .navbar-collapse .mega-menu .dropdown-item i {
+        width: 1.5rem;
+        font-size: 1rem !important;
+        margin-right: 0.75rem !important;
+      }
+
+      .navbar-collapse .mega-menu .dropdown-header {
+        margin: 0.5rem 0 0.25rem !important;
+        padding-left: 1rem;
+      }
+
+      .navbar-collapse .mega-menu .row {
+        --bs-gutter-y: 0;
       }
 
       .dropdown-preview {
@@ -1024,12 +1089,16 @@
     const dropdownMenus = document.querySelectorAll('.dropdown-menu.mega-menu');
     const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
 
+    // Open on hover only with a real mouse. On phones a tap also fires mouseenter, which opened the
+    // menu just before the tap's click closed it again, so the menus never opened.
+    const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
     dropdownToggles.forEach(toggle => {
       const dropdown = bootstrap.Dropdown.getInstance(toggle);
       
       // Handle mouse enter to show dropdown
       toggle.addEventListener('mouseenter', function() {
-        if (dropdown) {
+        if (dropdown && canHover) {
           dropdown.show();
         }
       });
@@ -1050,6 +1119,7 @@
 
     // Handle dropdown menu hover to keep it open
     dropdownMenus.forEach(menu => {
+      if (!canHover) return;
       menu.addEventListener('mouseenter', function() {
         const toggle = this.previousElementSibling;
         if (toggle && toggle.classList.contains('dropdown-toggle')) {
