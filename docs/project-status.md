@@ -84,6 +84,7 @@ _As of 2026-10-21. Detailed tracker: [implementation-plan.md](implementation-pla
 - **Own domains for hosted websites (D101):** owners connect `www.theirbusiness.com` with one DNS record; we check it, the certificate is issued (Caddy on-demand TLS or Cloudflare for SaaS), and the free address redirects there. Set `SITES_CNAME_TARGET` (and the Cloudflare settings if used). See [hosted-sites.md](hosted-sites.md).
 - **Trial and AI credits in the mobile app (D102):** the app's Billing screen shows days and calls left in the trial, keeps or starts a plan, and shows and buys AI credits. New endpoints are in [api.md](api.md).
 - **Phone-size fixes across the website and portal:** nothing scrolls sideways on a phone any more (checked on 36 pages at 390px). The public site's header is one compact row, its menu opens and reads on phones, the floating buttons no longer cover each other or the text, and portal tables, calendars and number tiles fit the screen.
+- **Remember this device at two-step sign-in (D103):** a box on the code page lets a browser skip the code for 30 days (the password is always asked). Remembered devices are listed under Account › Security and can be forgotten; a password change, signing out other devices or a two-step reset forgets them all.
 - **The mobile app was rebuilt** in its own repo (`biid-sua/SHS_Mobile_App`) for businesses, agents and admins, and merged. Its own README lists the store steps.
 
 625 automated tests pass.

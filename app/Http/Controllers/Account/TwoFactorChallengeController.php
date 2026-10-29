@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Account;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\Account\SignIn;
+use App\Services\Account\TrustedDevices;
 use App\Services\Account\TwoFactor;
 use App\Support\Audit\Audit;
 use Illuminate\Contracts\View\View;
@@ -16,6 +17,7 @@ use Illuminate\Validation\ValidationException;
 /**
  * Second step of signing in: a code from the authenticator app, or a one-time recovery code.
  * The password step parks the user id in the session for 10 minutes; nothing is signed in until here.
+ * "Remember this device" lets this browser skip the code for 30 days (D103).
  */
 class TwoFactorChallengeController extends Controller
 {
@@ -23,12 +25,14 @@ class TwoFactorChallengeController extends Controller
 
     public function __construct(private readonly SignIn $signIn) {}
 
-    public function show(Request $request): View|RedirectResponse
+    public function show(Request $request, TrustedDevices $devices): View|RedirectResponse
     {
-        return $this->pending($request) ? view('auth.two-factor-challenge') : redirect()->route('login');
+        return $this->pending($request)
+            ? view('auth.two-factor-challenge', ['rememberDays' => $devices->enabled() ? $devices->days() : null])
+            : redirect()->route('login');
     }
 
-    public function verify(Request $request, TwoFactor $twoFactor, Audit $audit): RedirectResponse
+    public function verify(Request $request, TwoFactor $twoFactor, Audit $audit, TrustedDevices $devices): RedirectResponse
     {
         $user = $this->pending($request);
         if (! $user) {
@@ -60,6 +64,9 @@ class TwoFactorChallengeController extends Controller
 
         RateLimiter::clear($key);
         $next = $this->signIn->complete($user, $request, $recovery ? 'recovery_code' : 'two_factor');
+        if ($request->boolean('remember_device')) {
+            $devices->remember($user, $request);
+        }
         if ($recovery) {
             $left = count($user->fresh()->two_factor_recovery_codes ?? []);
             $request->session()->flash('status', "You used a recovery code. {$left} left: make new ones under Account › Security.");

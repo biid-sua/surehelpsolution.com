@@ -1829,3 +1829,21 @@ builder and own domains stay on the web; the app links there.
 **Why:** owners spend most of their time in the app, so the trial must be kept from where they are,
 or many trials end by accident. Buying credits reuses invoices, which the app already pays. The
 builder needs a large preview, so it suits the web.
+
+## D103 — "Remember this device" at the two-step sign-in (2026-10-29)
+**Decision:** the two-step code page has a "Remember this device for 30 days" box. When ticked, that
+browser gets a random secret in an encrypted, HTTP-only cookie, and we keep only its hash with a
+label, IP and expiry (`trusted_devices`). At the next sign-in in that browser, the right password
+skips the code. The password is always asked.
+- It works only for the person who ticked it, in that browser, until it expires.
+- Account › Security lists remembered devices, with "Forget" and "Forget all".
+- Changing the password, signing out other devices, an admin resetting two-step sign-in or turning
+  two-step off forgets them all.
+- `TWO_FACTOR_REMEMBER_DAYS` sets the days (default 30); 0 turns the option off. It applies to
+  staff and agents too.
+- Expired records are removed daily by `model:prune`.
+
+**Why:** typing a code at every sign-in on your own computer is the main complaint about two-step
+sign-in, and it pushes owners to turn it off. Remembering a device keeps the code for new or lost
+devices, where it matters. Keeping the secret server-side (only a hash) means a device can be revoked
+at any time, unlike a long-lived signed cookie.

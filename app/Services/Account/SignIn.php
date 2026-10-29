@@ -18,11 +18,17 @@ class SignIn
 
     public const NOTICE = 'auth.notice';
 
-    public function __construct(private readonly Audit $audit) {}
+    public function __construct(private readonly Audit $audit, private readonly TrustedDevices $devices) {}
 
-    /** Password is right: either sign in now, or park the user until their two-step code is checked. */
+    /**
+     * Password is right: either sign in now, or park the user until their two-step code is checked.
+     * A browser they chose to remember (D103) skips the code, never the password.
+     */
     public function afterPassword(User $user, Request $request): string
     {
+        if ($user->hasTwoFactor() && $this->devices->recognises($user, $request)) {
+            return $this->complete($user, $request, 'trusted_device');
+        }
         if ($user->hasTwoFactor()) {
             $request->session()->put(self::PENDING, ['id' => $user->id, 'at' => now()->timestamp]);
 
@@ -84,11 +90,12 @@ class SignIn
 
     /**
      * Sign a person out everywhere except, optionally, this browser. Their mobile app tokens go too
-     * unless kept on purpose.
+     * unless kept on purpose, and every remembered browser asks for the two-step code again (D103).
      */
     public function signOutEverywhere(User $user, ?Request $keep = null, bool $includeApp = true): void
     {
         $user->forceFill(['session_epoch' => (int) $user->session_epoch + 1])->saveQuietly();
+        $this->devices->forgetAll($user);
         if ($keep) {
             session()->put('auth.epoch', (int) $user->session_epoch);
         }
