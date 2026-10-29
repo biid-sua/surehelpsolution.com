@@ -6,13 +6,17 @@ use App\Actions\Billing\ReportPayment;
 use App\Exceptions\BillingUnavailable;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
+use App\Models\CreditPurchase;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Organization;
 use App\Models\Payment;
+use App\Models\Plan;
+use App\Services\Billing\AiCredits;
 use App\Services\Billing\Entitlements;
 use App\Services\Billing\InvoicePdf;
 use App\Services\Billing\Stripe\CardPayments;
+use App\Services\Billing\Trials;
 use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,14 +26,16 @@ use Illuminate\Http\Response;
  * Billing in the app (API-11): the plan, invoices with their lines and payments, the PDF, paying by card
  * on Stripe Checkout (D64), reporting a payment made another way, and turning automatic payments off.
  * Everyone with billing.view sees it; only billing.manage (owners) pays or changes anything.
+ * Also the free trial (D97: keep the plan, or start one after it ended) and AI credits (D100).
  */
 class BillingController extends Controller
 {
-    public function summary(Request $request, CurrentOrganization $current, Entitlements $entitlements, CardPayments $cards): JsonResponse
+    public function summary(Request $request, CurrentOrganization $current, Entitlements $entitlements, CardPayments $cards, Trials $trials, AiCredits $credits): JsonResponse
     {
         $organization = $current->get();
         $subscription = $entitlements->subscription($organization);
         $open = Invoice::query()->forOrganization($organization)->outstanding()->get();
+        $pending = $trials->pending($organization);
 
         return ApiResponse::success([
             'plan' => $subscription ? [
@@ -48,7 +54,79 @@ class BillingController extends Controller
             'card_payments' => $cards->enabled(),
             'autopay' => $organization->autopay_payment_method ? ['card' => $organization->autopay_card_label, 'since' => $organization->autopay_enabled_at?->toIso8601String()] : null,
             'can_pay' => $request->user()->hasPermissionIn('billing.manage', $organization),
+            // A self-serve trial still to keep, or one that ended without a plan (read-only); null otherwise.
+            'trial' => match (true) {
+                $pending !== null => [
+                    'status' => 'active',
+                    'ends_on' => $pending->trial_ends_on?->toDateString(),
+                    'days_left' => $trials->daysLeft($pending),
+                    'calls_included' => $trials->includedCalls(),
+                    'calls_used' => $trials->callsUsed($pending),
+                    'plan_id' => $pending->plan_id,
+                ],
+                $trials->ended($organization) => ['status' => 'ended', 'ends_on' => null, 'days_left' => 0, 'calls_included' => null, 'calls_used' => 0, 'plan_id' => null],
+                default => null,
+            },
+            'credits' => [
+                'balance' => $credits->balance($organization),
+                'packs' => collect($credits->packs())->map(fn (array $p, int $i) => ['pack' => $i, 'credits' => $p['credits'], 'price_cents' => $p['price_cents']])->values(),
+                'pending' => CreditPurchase::query()->forOrganization($organization)->where('status', 'pending')->with('invoice:id,ulid')->latest('id')->get()
+                    ->map(fn (CreditPurchase $p) => ['credits' => $p->credits, 'invoice_id' => $p->invoice?->ulid])->values(),
+            ],
         ]);
+    }
+
+    /** The plans a business can choose itself (D98), for keeping a trial or starting a plan. */
+    public function plans(CurrentOrganization $current, Entitlements $entitlements): JsonResponse
+    {
+        $currentPlan = $entitlements->subscription($current->get())?->plan_id;
+
+        return ApiResponse::success(['plans' => Plan::query()->selfServe()->ordered()->get()->map(fn (Plan $plan) => [
+            'id' => $plan->id,
+            'name' => $plan->name,
+            'tagline' => $plan->tagline,
+            'price_cents' => $plan->price_cents,
+            'currency' => $plan->currency,
+            'interval' => $plan->interval,
+            'highlights' => $plan->highlights(),
+            'featured' => $plan->is_featured,
+            'current' => $plan->id === $currentPlan,
+        ])->values()]);
+    }
+
+    /** During a self-serve trial (D97): keep this plan for after the trial. Nothing is charged until then. */
+    public function keepTrial(Request $request, CurrentOrganization $current, Trials $trials, Entitlements $entitlements): JsonResponse
+    {
+        $organization = $current->get();
+        $plan = $this->plan($request);
+        $pending = $trials->pending($organization) ?? abort(404);
+        $trials->keep($pending, $plan, $request->user());
+        $entitlements->forget($organization);
+
+        return ApiResponse::success(['plan_id' => $plan->id], "Thank you! {$plan->name} carries on after your trial. Nothing is charged until then.");
+    }
+
+    /** After the trial ended (D97): a plan starts now, with its first invoice, and the account opens again. */
+    public function startPlan(Request $request, CurrentOrganization $current, Trials $trials): JsonResponse
+    {
+        $organization = $current->get();
+        $plan = $this->plan($request);
+        $trials->restart($organization, $plan, $request->user());
+        $invoice = Invoice::query()->forOrganization($organization)->where('status', '!=', 'draft')->latest('id')->first();
+
+        return ApiResponse::success(['invoice' => $invoice ? $this->invoice($invoice) : null], "Welcome back! {$plan->name} is on.", 201);
+    }
+
+    /** Buy a pack of AI credits (D100): an invoice now, the credits once it's paid. */
+    public function buyCredits(Request $request, CurrentOrganization $current, AiCredits $credits): JsonResponse
+    {
+        $pack = (int) $request->validate(['pack' => ['required', 'integer', 'min:0']])['pack'];
+        $purchase = $credits->buy($current->get(), $pack, $request->user());
+        $invoice = $purchase->invoice()->firstOrFail();
+
+        return ApiResponse::success(['invoice' => $this->invoice($invoice), 'credits' => $purchase->credits], $invoice->balanceCents() <= 0
+            ? number_format($purchase->credits).' AI credits added. Thank you!'
+            : 'Invoice '.$invoice->number.' is ready. Your '.number_format($purchase->credits).' credits are added as soon as it\'s paid.', 201);
     }
 
     public function index(Request $request, CurrentOrganization $current): JsonResponse
@@ -125,6 +203,13 @@ class BillingController extends Controller
         $cards->stopAutopay($current->get(), $request->user());
 
         return ApiResponse::success(['autopay' => null], 'Automatic payments are off. The card was removed.');
+    }
+
+    private function plan(Request $request): Plan
+    {
+        $id = (int) $request->validate(['plan_id' => ['required', 'integer']])['plan_id'];
+
+        return Plan::query()->selfServe()->findOrFail($id);
     }
 
     private function find(Organization $organization, string $ulid): Invoice

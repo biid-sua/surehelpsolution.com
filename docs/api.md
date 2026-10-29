@@ -214,6 +214,11 @@ Social endpoints need the `social_publishing` feature (`403` with `feature` othe
 | POST | `/client/billing/invoices/{id}/pay` | `billing.manage` (owners). `save?` (also save the card for automatic payments) → `data.checkout_url`: open it in an in-app browser. Stripe returns to `/app/billing?paid={id}` (an app link); the payment shows when Stripe confirms it, usually within seconds. `404` when card payments are off, `409` already paid |
 | POST | `/client/billing/invoices/{id}/report-payment` | `note` ("Bank transfer on Nov 3"): the team confirms it |
 | DELETE | `/client/billing/autopay` | Turn automatic payments off and remove the card |
+| GET | `/client/billing` (continued) | Also `trial` (D97): `null`, or `status` (`active`: a trial to keep; `ended`: read-only until a plan starts), `ends_on`, `days_left`, `calls_included` (`null` = no limit), `calls_used`, `plan_id`. And `credits` (D100): `balance`, `packs[]` (`pack`, `credits`, `price_cents`), `pending[]` (`credits`, `invoice_id`: bought, waiting for payment) |
+| GET | `/client/billing/plans` | Plans the business can choose itself (D98) → `data.plans[]`: `id`, `name`, `tagline`, `price_cents`, `currency`, `interval`, `highlights[]`, `featured`, `current` |
+| POST | `/client/billing/trial/keep` | `billing.manage`. `plan_id` → keeps that plan for after the trial; nothing is charged until then. `404` when there's no trial to keep or the plan can't be chosen |
+| POST | `/client/billing/trial/start` | `billing.manage`. `plan_id`, after the trial ended → `201`, `data.invoice` (the first invoice); the account opens again. `422` when the business already has a plan |
+| POST | `/client/billing/credits` | `billing.manage`. `pack` (from `credits.packs[].pack`) → `201`, `data.invoice` and `data.credits`; the credits are added once the invoice is paid. `422` for an unknown pack, no plan, or 3 unpaid credit invoices |
 | GET | `/client/team` | `users.view` → `data.members[]` (`id`, `name`, `email`, `role`, `last_login_at`, `is_you`), `data.invitations[]` (pending: `id`, `email`, `role`, `invited_by`, `expires_at`), `roles`, `can_invite[]` (roles this person may invite), `can_manage` |
 | POST | `/client/team/invitations` | `users.create`: `email`, `role` (managers may invite `staff` only) → `201`. Plan seat limits apply (`422`) |
 | POST | `/client/team/invitations/{id}/resend` · DELETE `/{id}` | Send it again, or cancel it |
@@ -343,6 +348,7 @@ Businesses connect their own tools (n8n, Zapier, Make, a CRM) under **Business �
 
 | Date | Change |
 |---|---|
+| 2026-10-28 | For the mobile app (D102): `trial` and `credits` on `GET /client/billing` (additive); `GET /client/billing/plans`; `POST /client/billing/trial/keep`, `/trial/start`; `POST /client/billing/credits`. |
 | 2026-10-21 | For the mobile app (D76): `call_id` on `POST /client/tasks`; `customer.tag_list` with ids; `business` on `/agent/clients` and agent call logs; `GET /agent/call-logs/{id}`; the business's hours, briefing, services and knowledge on `GET /agent/companies/{id}`; `search` on `GET /admin/users`; `options` on `GET /client/social/posts/{id}`. All additive. |
 | 2026-11-12 | For the mobile app (D74): agents' shift requests, quality reviews and availability; `GET /client/search`; `GET /openapi.json`. |
 | 2026-11-11 | For the mobile app (D73): writing, checking and scheduling social posts, photos, AI writing, openings, link page; billing summary, invoices, PDF, card payment, payment reports, automatic payments off; the team (members, invitations, roles). |

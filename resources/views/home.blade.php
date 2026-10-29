@@ -1437,6 +1437,18 @@
             }
           }
 
+          /* The photo tucks up beside the headline only in the two-column layout; on phones and
+             tablets the columns stack, and pulling it up covered the trust lines. */
+          @media (min-width: 1025px) {
+            .right-content--lift { margin-top: -135px; }
+          }
+
+          /* Phones: smaller badges kept inside the photo, clear of the edge. */
+          @media (max-width: 576px) {
+            .floating-card { padding: 0.5rem 0.75rem; font-size: 0.75rem; border-radius: 12px; }
+            .floating-card:nth-child(3) { right: 2%; }
+          }
+
           /* Floating ROI Button */
           .floating-roi-btn {
             position: fixed;
@@ -1551,7 +1563,7 @@
             {{-- Client logos removed until we have permission to show real customers. --}}
         </div>
 
-        <div class="right-content" style="margin-top: -135px;">
+        <div class="right-content right-content--lift">
             <div class="visual-container">
                 <div class="phone-mockup" style="display: none;">
                     <div class="phone-screen">

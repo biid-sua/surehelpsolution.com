@@ -72,6 +72,22 @@
         display: none !important;
     }
 
+    /*
+     * Grid and flex children default to min-width: auto, so a wide table or a long word stretches the
+     * whole column past a phone's screen. Let them shrink; tables scroll inside x-ui.table instead.
+     * :where() keeps this at zero specificity so a utility like min-w-64 still wins.
+     */
+    :where(.grid) > *,
+    :where(.flex-1) {
+        min-width: 0;
+    }
+
+    /* Screen-reader-only labels are absolutely positioned: anchor them inside scrolling tables and
+       tab bars, or they escape and widen the page on phones. */
+    :where(.overflow-x-auto) {
+        position: relative;
+    }
+
     @media (prefers-reduced-motion: reduce) {
         *,
         *::before,
@@ -102,6 +118,27 @@
 
     .sh-table td {
         @apply px-4 py-3 align-top text-ink;
+    }
+
+    /* Phones: give columns room and let the table scroll inside its frame, rather than squeezing
+       names and numbers into one-word lines. */
+    @media (max-width: 639px) {
+        .sh-table th {
+            @apply whitespace-nowrap;
+        }
+
+        .sh-table td {
+            min-width: 7.5rem;
+        }
+
+        .sh-table td:has(> input[type='checkbox']:only-child) {
+            min-width: 0;
+        }
+    }
+
+    /* Dropdowns in table rows (roles, assignees) stay wide enough to read their choice. */
+    .sh-table td select.sh-input {
+        min-width: 8.5rem;
     }
 
     .sh-table tbody tr {
@@ -225,7 +262,19 @@
 .fc-src-tag.src-tag-bookings { background: rgb(255 255 255 / 0.18); }
 .fc-src-tag.is-conflict { background: #b45309; }
 .fc-timegrid-event .fc-src-tags { flex-wrap: nowrap; overflow: hidden; }
-.fc-list-event .fc-src-event { flex-direction: row; align-items: center; gap: 0.5rem; }
+.fc-list-event .fc-src-event { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.5rem; }
+
+/* Phones: list titles and times wrap, so the agenda fits the screen instead of running off the side. */
+.fc .fc-list-table { width: 100%; }
+.fc .fc-list-event-title { white-space: normal; overflow-wrap: anywhere; }
+.fc-list-event .fc-src-title { white-space: normal; }
+@media (max-width: 639px) {
+    .fc .fc-list-event-time { white-space: normal; width: 5.5rem; }
+    .fc .fc-list-event-graphic { padding-inline: 0.25rem; }
+    .fc .fc-toolbar { flex-wrap: wrap; gap: 0.5rem; }
+    .fc .fc-toolbar-title { font-size: 1.125rem; }
+    .fc .fc-list-day-cushion { white-space: normal; }
+}
 
 /* Busy time from a connected calendar: muted, striped in the provider's colour, not clickable. */
 .fc .fc-event.busy-block { --fc-event-bg-color: rgb(148 163 184 / 0.14); --fc-event-border-color: rgb(148 163 184 / 0.3); --fc-event-text-color: var(--color-muted); cursor: default; border-left-width: 3px; }

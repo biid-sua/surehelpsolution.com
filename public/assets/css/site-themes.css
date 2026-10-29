@@ -104,3 +104,6 @@
 .site-theme-picker__swatch span { display: block; width: 12px; height: 22px; }
 .site-theme-picker__note { margin: 8px 4px 0; font-size: 12px; color: rgba(255, 255, 255, 0.6); line-height: 1.4; }
 @media (max-width: 576px) { .site-theme-picker__toggle { width: 44px; height: 44px; } }
+
+/* Phones: a smaller toggle, so it covers less of the page. */
+@media (max-width: 575.98px) { .site-theme-picker { left: calc(12px + env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); } .site-theme-picker__toggle { width: 40px; height: 40px; } }

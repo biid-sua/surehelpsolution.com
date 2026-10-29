@@ -227,11 +227,15 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
             Route::get('/billing/invoices', [BillingController::class, 'index']);
             Route::get('/billing/invoices/{ulid}', [BillingController::class, 'show']);
             Route::get('/billing/invoices/{ulid}/pdf', [BillingController::class, 'pdf'])->name('api.client.billing.invoice.pdf');
+            Route::get('/billing/plans', [BillingController::class, 'plans']);
         });
         Route::middleware('can:billing.manage')->group(function () {
             Route::post('/billing/invoices/{ulid}/pay', [BillingController::class, 'pay'])->middleware('throttle:10,1');
             Route::post('/billing/invoices/{ulid}/report-payment', [BillingController::class, 'reportPayment']);
             Route::delete('/billing/autopay', [BillingController::class, 'stopAutopay']);
+            Route::post('/billing/trial/keep', [BillingController::class, 'keepTrial'])->middleware('throttle:10,1');
+            Route::post('/billing/trial/start', [BillingController::class, 'startPlan'])->middleware('throttle:10,1');
+            Route::post('/billing/credits', [BillingController::class, 'buyCredits'])->middleware(['throttle:10,1', 'idempotent']);
         });
         // Team (API-12)
         Route::get('/team', [TeamController::class, 'index'])->middleware('can:users.view');

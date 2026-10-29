@@ -313,12 +313,14 @@ h6 {
     display: none;
   }
 
-  .d-flex {
+  /* Inside the open phone menu only: these used to apply to every flex row and button on the
+     site, stacking logos, icons and text that belong side by side. */
+  .navbar-collapse .d-flex {
     flex-direction: column;
     width: 100%;
   }
 
-  .btn {
+  .navbar-collapse .btn {
     width: 100%;
     margin: 0.25rem 0;
   }
