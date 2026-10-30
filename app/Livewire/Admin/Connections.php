@@ -196,6 +196,7 @@ class Connections extends Component
             ];
         }
         $links['google_calendar']['Redirect URL for Search Console (SEO)'] = route('app.seo.search-console.callback');
+        $links['quickbooks'] = ['Redirect URI (Keys & credentials)' => route('app.apps.quickbooks.callback')];
 
         return $links;
     }

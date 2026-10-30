@@ -16,6 +16,7 @@ use App\Models\Task;
 use App\Models\VoiceCall;
 use App\Models\WebhookDelivery;
 use App\Models\WebhookEndpoint;
+use App\Services\Apps\QuickBooks\QuickBooks;
 use App\Services\Websites\DnsResolver;
 use App\Services\Websites\SafeFetcher;
 use Illuminate\Database\Eloquent\Model;
@@ -46,6 +47,12 @@ class Webhooks
     /** Queue the event for every endpoint of the business that wants it. */
     public function dispatch(string $event, Model $subject): int
     {
+        // The business's connected apps take some of the same moments (D110).
+        try {
+            QuickBooks::event($event, $subject);
+        } catch (\Throwable $e) {
+            report($e);
+        }
         $organizationId = (int) $subject->getAttribute('organization_id');
         $endpoints = WebhookEndpoint::withoutGlobalScopes()->where('organization_id', $organizationId)->where('is_active', true)->get()
             ->filter(fn (WebhookEndpoint $e) => $e->wants($event));

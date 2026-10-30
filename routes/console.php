@@ -75,3 +75,6 @@ Schedule::command('sites:check-domains')->everyTenMinutes()->withoutOverlapping(
 
 // SureHelp's own social media (D104): the AI prepares the next 24 hours of scheduled posts.
 Schedule::command('social:house-schedule')->everyFifteenMinutes()->withoutOverlapping(30);
+
+// QuickBooks Online (D110): customers added or changed there come into SureHelp.
+Schedule::command('apps:quickbooks-pull')->hourlyAt(25)->withoutOverlapping(30);

@@ -1991,3 +1991,24 @@ them: press 1 and the lead is called from the business's number.
 **Why:** the business that answers first usually wins the job, and owners can't watch every inbox.
 Answering in seconds and putting the owner on the phone with the lead is a clear, measurable reason
 to buy SureHelp. It builds on texting, tasks, alerts and the phone line already in place.
+
+## D110 — QuickBooks Online, the first connected app (2026-10-30)
+**Decision:** a business can connect its QuickBooks Online company under *Business › Connected apps*.
+- **Payments go in.** Deposits and pay-by-text payments taken through SureHelp (D85) are added as
+  payments from that customer, left unapplied so the bookkeeper applies them to the invoice. The
+  paying customer is matched in QuickBooks by email or name, or added.
+- **Customers come in.** QuickBooks customers with a phone or email are brought into SureHelp every
+  hour (source `quickbooks`), matched to existing customers by phone or email. SureHelp only fills
+  in blanks; it never overwrites what the team typed, and they don't count as new leads or start
+  automations.
+- **New leads stay out by default.** Sending every new SureHelp customer to QuickBooks is a choice,
+  off at first, so leads don't fill up the books.
+- **Nothing twice.** Each matched record is kept (`app_links`) and sends are locked per record.
+  Nothing in QuickBooks is changed or deleted.
+- One Intuit app for all businesses, keyed under *Admin › Connections › Business apps*. Feature
+  `quickbooks`, open to every business. The tables (`app_connections`, `app_links`,
+  `app_sync_entries`) are general, so Jobber, Housecall Pro and ServiceTitan can follow the same way.
+
+**Why:** "Does it work with my system?" is the most common question from US service businesses, and
+QuickBooks is the accounting software most of them use. Money taken through SureHelp landing in
+their books, and their customer list helping the receptionists, makes SureHelp part of how they run.

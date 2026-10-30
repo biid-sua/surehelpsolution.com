@@ -25,6 +25,7 @@ use App\Http\Controllers\Client\DataExportController as ClientDataExportControll
 use App\Http\Controllers\Client\InvoiceController as ClientInvoiceController;
 use App\Http\Controllers\Client\InvoicePaymentController as ClientInvoicePaymentController;
 use App\Http\Controllers\Client\PaymentsConnectController;
+use App\Http\Controllers\Client\QuickBooksController;
 use App\Http\Controllers\Client\ResultsCsvController;
 use App\Http\Controllers\Client\ResultsPdfController;
 use App\Http\Controllers\Client\SearchConsoleController;
@@ -106,6 +107,7 @@ use App\Livewire\Client\Billing\Index as ClientBilling;
 use App\Livewire\Client\Business\Automations as BusinessAutomations;
 use App\Livewire\Client\Business\Branding as BusinessBranding;
 use App\Livewire\Client\Business\Calendars as BusinessCalendarsPage;
+use App\Livewire\Client\Business\ConnectedApps as BusinessConnectedApps;
 use App\Livewire\Client\Business\CustomerEmails as BusinessCustomerEmails;
 use App\Livewire\Client\Business\Hours as BusinessHoursPage;
 use App\Livewire\Client\Business\Integrations as BusinessIntegrations;
@@ -280,6 +282,11 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/callback', [SearchConsoleController::class, 'callback'])->name('callback');
         Route::post('/disconnect', [SearchConsoleController::class, 'disconnect'])->name('disconnect');
     });
+    // QuickBooks Online (D110)
+    Route::middleware(['can:integrations.manage', 'feature:quickbooks'])->prefix('apps/quickbooks')->name('apps.quickbooks.')->group(function () {
+        Route::get('/connect', [QuickBooksController::class, 'redirect'])->name('connect');
+        Route::get('/callback', [QuickBooksController::class, 'callback'])->name('callback');
+    });
     Route::middleware('can:support.view')->group(function () {
         Route::get('/support', ClientSupport::class)->name('support');
         Route::get('/support/attachments/{message}', SupportAttachmentController::class)->whereNumber('message')->name('support.attachment');
@@ -345,6 +352,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/business/automations', BusinessAutomations::class)->name('business.automations');
         Route::get('/business/branding', BusinessBranding::class)->name('business.branding');
         Route::get('/business/integrations', BusinessIntegrations::class)->middleware('can:integrations.manage')->name('business.integrations');
+        Route::get('/business/apps', BusinessConnectedApps::class)->middleware(['can:integrations.manage', 'feature:quickbooks'])->name('business.apps');
         Route::get('/business/emails', BusinessCustomerEmails::class)->middleware('feature:customer_emails')->name('business.emails');
         Route::get('/business/calendars', BusinessCalendarsPage::class)->middleware(['can:integrations.view', 'feature:calendar_sync'])->name('business.calendars');
         Route::get('/website', ClientWebsite::class)->middleware(['can:integrations.view', 'feature:website_tools'])->name('website');

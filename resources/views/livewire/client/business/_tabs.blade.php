@@ -14,6 +14,11 @@
         'app.business.calendars' => 'Calendar sync',
         'app.business.integrations' => 'API & webhooks',
     ];
+    // Connected apps (D110) only where the business can use them.
+    $current = app(\App\Support\Tenancy\CurrentOrganization::class)->get();
+    if ($current && app(\App\Services\Billing\FeatureAccess::class)->allows($current, 'quickbooks')) {
+        $tabs['app.business.apps'] = 'Connected apps';
+    }
 @endphp
 <nav class="mb-6 flex gap-1 overflow-x-auto border-b border-line" aria-label="Business settings">
     @foreach ($tabs as $route => $label)

@@ -56,6 +56,9 @@ class SourceReport
         $customers = Customer::query()->forOrganization($organization)->whereBetween('created_at', $window)->get(['id', 'source']);
         $firstChannel = $this->firstChannels($organization, $customers->where('source', 'message')->pluck('id')->all());
         foreach ($customers as $customer) {
+            if ($customer->source === 'quickbooks') {
+                continue;   // already the business's customers, brought in from QuickBooks (D110)
+            }
             $key = match ($customer->source) {
                 'call' => 'phone',
                 'website' => 'website',

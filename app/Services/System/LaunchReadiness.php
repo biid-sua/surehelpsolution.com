@@ -89,6 +89,9 @@ class LaunchReadiness
                 ['label' => 'Facebook Login › Valid OAuth redirect URIs (Pages and Instagram)', 'url' => route('app.social.connect.callback', 'meta')],
                 ['label' => 'Webhook callback URL (Messenger, Instagram messages)', 'url' => route('webhooks.meta')],
             ],
+            'QuickBooks Online (developer.intuit.com): redirect URI' => [
+                ['label' => 'Businesses connecting QuickBooks', 'url' => route('app.apps.quickbooks.callback')],
+            ],
             'LinkedIn: authorized redirect URL' => [
                 ['label' => 'LinkedIn pages', 'url' => route('app.social.connect.callback', 'linkedin')],
             ],

@@ -28,7 +28,7 @@ class Customer extends Model
 {
     use BelongsToOrganization, HasFactory, SoftDeletes;
 
-    public const SOURCES = ['call', 'manual', 'import', 'chatbot', 'backfill', 'message', 'website', 'lead'];   // lead: a lead source (D109)
+    public const SOURCES = ['call', 'manual', 'import', 'chatbot', 'backfill', 'message', 'website', 'lead', 'quickbooks'];   // lead: a lead source (D109); quickbooks: brought in from QuickBooks (D110)
 
     public const CONTACT_METHODS = ['phone' => 'Phone call', 'sms' => 'Text message', 'email' => 'Email'];
 
@@ -67,9 +67,9 @@ class Customer extends Model
             }
         });
 
-        // Automations (D50): a new customer or lead, but not records copied in by a backfill or import.
+        // Automations (D50): a new customer or lead, but not records copied in by a backfill, an import or QuickBooks.
         static::created(function (Customer $customer) {
-            if (! in_array($customer->source, ['backfill', 'import'], true)) {
+            if (! in_array($customer->source, ['backfill', 'import', 'quickbooks'], true)) {
                 DB::afterCommit(fn () => app(AutomationEngine::class)->fire('customer_created', $customer));
             }
         });

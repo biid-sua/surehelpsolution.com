@@ -12,6 +12,9 @@ use App\Notifications\Channels\PushChannel;
 use App\Notifications\Channels\SmsChannel;
 use App\Services\Ai\AiProviders;
 use App\Services\Ai\Contracts\AiProvider;
+use App\Services\Apps\QuickBooks\FakeQuickBooksClient;
+use App\Services\Apps\QuickBooks\IntuitClient;
+use App\Services\Apps\QuickBooks\QuickBooksClient;
 use App\Services\Billing\BillingSettings;
 use App\Services\Billing\Entitlements;
 use App\Services\Billing\FeatureAccess;
@@ -78,6 +81,10 @@ class AppServiceProvider extends ServiceProvider
             'twilio' => $this->app->make(TwilioProvider::class),
             default => $this->app->make(FakeProvider::class),
         });
+        // QuickBooks Online (D110): Intuit's API, or one kept in memory.
+        $this->app->singleton(QuickBooksClient::class, fn () => config('apps.quickbooks.driver') === 'fake'
+            ? $this->app->make(FakeQuickBooksClient::class)
+            : $this->app->make(IntuitClient::class));
         $this->app->bind(PaymentGateway::class, fn () => match (config('billing.gateway')) {
             'stripe' => $this->app->make(StripeGateway::class),
             default => $this->app->make(PayoneerGateway::class),
