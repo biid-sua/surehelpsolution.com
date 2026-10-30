@@ -5,6 +5,7 @@ namespace App\Livewire\Client\Social;
 use App\Enums\SocialNetwork;
 use App\Enums\SocialPostStatus;
 use App\Livewire\Concerns\ScopedToOrganization;
+use App\Livewire\Concerns\SocialPortal;
 use App\Models\SocialAccount;
 use App\Models\SocialAiRun;
 use App\Models\SocialPost;
@@ -28,7 +29,7 @@ use Livewire\WithPagination;
 #[Title('Social media')]
 class Index extends Component
 {
-    use ScopedToOrganization, WithPagination;
+    use ScopedToOrganization, SocialPortal, WithPagination;
 
     #[Url(except: 'calendar')]
     public string $view = 'calendar';

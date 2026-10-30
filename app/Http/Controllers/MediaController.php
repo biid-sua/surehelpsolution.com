@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\MediaAsset;
+use App\Services\Social\House\HouseSocial;
 use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -15,6 +16,15 @@ class MediaController extends Controller
 {
     public function show(CurrentOrganization $current, string $asset): StreamedResponse
     {
+        return $this->stream(MediaAsset::query()->forOrganization($current->get())->where('ulid', $asset)->firstOrFail(), 'private, max-age=3600');
+    }
+
+    /** SureHelp's own library in the admin console (D104). */
+    public function house(CurrentOrganization $current, HouseSocial $house, string $asset): StreamedResponse
+    {
+        abort_unless(auth()->user()?->hasPermissionIn('social.view'), 403);
+        $current->set($house->organization());
+
         return $this->stream(MediaAsset::query()->forOrganization($current->get())->where('ulid', $asset)->firstOrFail(), 'private, max-age=3600');
     }
 

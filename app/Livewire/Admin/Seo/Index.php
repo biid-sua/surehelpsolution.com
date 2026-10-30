@@ -78,7 +78,7 @@ class Index extends Component
     public function render(FeatureAccess $features, SeoTokens $tokens): View
     {
         $withTasks = SeoTask::withoutGlobalScopes()->distinct()->pluck('organization_id');
-        $businesses = Organization::query()->whereIn('status', ['active', 'onboarding'])->orderBy('name')->get()
+        $businesses = Organization::query()->external()->whereIn('status', ['active', 'onboarding'])->orderBy('name')->get()
             ->filter(fn (Organization $o) => $features->allows($o, 'seo_service') || $withTasks->contains($o->id))->values();
         foreach ($businesses as $b) {
             $this->allowance[$b->id] ??= $b->seo_token_allowance === null ? '' : (string) $b->seo_token_allowance;

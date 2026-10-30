@@ -10,8 +10,8 @@ use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\Channels\PushChannel;
 use App\Notifications\Channels\SmsChannel;
+use App\Services\Ai\AiProviders;
 use App\Services\Ai\Contracts\AiProvider;
-use App\Services\Ai\Providers\ClaudeProvider;
 use App\Services\Billing\BillingSettings;
 use App\Services\Billing\Entitlements;
 use App\Services\Billing\FeatureAccess;
@@ -21,6 +21,7 @@ use App\Services\Billing\Gateways\StripeGateway;
 use App\Services\Billing\Trials;
 use App\Services\Business\Branding;
 use App\Services\Calls\CallOutcomes;
+use App\Services\Connections\Connections;
 use App\Services\Rules\BusinessRules;
 use App\Services\Sales\SalesAssistant;
 use App\Services\Sites\Domains\CloudflareDomainProvider;
@@ -64,7 +65,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(Branding::class);
         $this->app->scoped(SalesAssistant::class);   // the chat endpoint reads why the last answer fell back
         // AI vendor behind one interface (spec §33, D38).
-        $this->app->singleton(AiProvider::class, ClaudeProvider::class);
+        // Claude or ChatGPT, as chosen under Admin › Connections (D104).
+        $this->app->singleton(AiProvider::class, fn () => app(AiProviders::class)->make());
         // Who issues HTTPS certificates for businesses' own domains (D101).
         $this->app->singleton(DomainProvider::class, fn () => match (config('sites.custom_domains.driver')) {
             'cloudflare' => new CloudflareDomainProvider,
@@ -87,6 +89,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Keys and settings entered under Admin › Connections override .env (D104).
+        app(Connections::class)->apply();
         // After a self-serve trial ended, business-portal actions wait for a plan (D97).
         \Livewire\on('call', function ($component, string $method, $params, $addEffect, callable $returnEarly) {
             if (TrialReadOnly::blocks($component, $method)) {
@@ -102,10 +106,11 @@ class AppServiceProvider extends ServiceProvider
             config(['livewire.asset_url' => $base.'/livewire/livewire'.(config('app.debug') ? '' : '.min').'.js']);
         }
 
-        // Lesson files (Agent University) can be larger than Livewire's 12 MB default. Each form
-        // still validates its own limit and file types.
+        // Lesson files (Agent University) and social videos (D104) can be larger than Livewire's 12 MB
+        // default; the larger of the two applies. Each form still validates its own limit and file types.
+        $uploadMb = max(12, (int) config('training.max_upload_mb'), (int) config('social.media.video_max_mb', 100));
         config([
-            'livewire.temporary_file_upload.rules' => ['required', 'file', 'max:'.(max(12, (int) config('training.max_upload_mb')) * 1024)],
+            'livewire.temporary_file_upload.rules' => ['required', 'file', 'max:'.($uploadMb * 1024)],
             'livewire.temporary_file_upload.max_upload_time' => 15,
         ]);
 

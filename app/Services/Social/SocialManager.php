@@ -10,12 +10,16 @@ use App\Notifications\SocialAccountDisconnected;
 use App\Services\Social\Connectors\GoogleBusinessConnector;
 use App\Services\Social\Connectors\LinkedInConnector;
 use App\Services\Social\Connectors\MetaConnector;
+use App\Services\Social\Connectors\XConnector;
+use App\Services\Social\Connectors\YouTubeConnector;
 use App\Services\Social\Contracts\SocialConnector;
 use App\Services\Social\Contracts\SocialPublisher;
 use App\Services\Social\Publishers\FacebookPublisher;
 use App\Services\Social\Publishers\GoogleBusinessPublisher;
 use App\Services\Social\Publishers\InstagramPublisher;
 use App\Services\Social\Publishers\LinkedInPublisher;
+use App\Services\Social\Publishers\XPublisher;
+use App\Services\Social\Publishers\YouTubePublisher;
 use App\Support\Audit\Audit;
 use InvalidArgumentException;
 
@@ -25,13 +29,18 @@ use InvalidArgumentException;
  */
 class SocialManager
 {
-    public const CONNECTORS = ['meta' => MetaConnector::class, 'linkedin' => LinkedInConnector::class, 'google' => GoogleBusinessConnector::class];
+    public const CONNECTORS = [
+        'meta' => MetaConnector::class, 'linkedin' => LinkedInConnector::class, 'google' => GoogleBusinessConnector::class,
+        'youtube' => YouTubeConnector::class, 'x' => XConnector::class,   // D104
+    ];
 
     public const PUBLISHERS = [
         'facebook' => FacebookPublisher::class,
         'instagram' => InstagramPublisher::class,
         'linkedin' => LinkedInPublisher::class,
         'google_business' => GoogleBusinessPublisher::class,
+        'youtube' => YouTubePublisher::class,
+        'x' => XPublisher::class,
     ];
 
     public function __construct(

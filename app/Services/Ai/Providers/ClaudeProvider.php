@@ -116,6 +116,25 @@ class ClaudeProvider implements AiProvider
         return ['role' => $message['role'], 'content' => $content];
     }
 
+    /**
+     * Models this key can use (Admin › Connections fills its dropdown from this, D104).
+     *
+     * @return list<string>
+     *
+     * @throws AiUnavailable
+     */
+    public function listModels(?string $apiKey = null): array
+    {
+        $client = $apiKey ? new Client(apiKey: $apiKey, requestOptions: array_filter(['timeout' => 20.0, 'transporter' => $this->transporter], fn ($v) => $v !== null)) : $this->client();
+        try {
+            $page = $client->models->list(limit: 100);
+        } catch (APIException $e) {
+            throw new AiUnavailable($e->getMessage(), previous: $e);
+        }
+
+        return collect($page->getItems())->map(fn ($m) => (string) $m->id)->values()->all();
+    }
+
     /** Tests pass a PSR-18 client that records the exact HTTP request instead of calling Anthropic. */
     public function usingTransport(ClientInterface $transporter): self
     {

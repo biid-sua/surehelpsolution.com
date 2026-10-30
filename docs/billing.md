@@ -77,6 +77,8 @@ The cron entry for `schedule:run` already in place runs `billing:run` daily. To 
 
 ## Card payments and automatic payments (Stripe, D64)
 
+> Keys and settings for this are entered under **Admin › Connections** (D105), not in `.env`. The card there lists the web addresses to paste into the service and has a Test button.
+
 Built and switched off. Payoneer stays the provider (`BILLING_GATEWAY=payoneer`) until you have a Stripe account, which needs a US company or another country Stripe supports.
 
 ### What changes when Stripe is on

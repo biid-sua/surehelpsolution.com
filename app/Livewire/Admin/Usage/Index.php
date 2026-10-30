@@ -79,7 +79,7 @@ class Index extends Component
         $window = fn (Builder $q, string $column = 'created_at') => $q->where($column, '>=', $from)->where($column, '<', $until);
         $answered = fn (Builder $q) => $window($q)->where('status', '!=', 'spam');
 
-        $organizations = Organization::query()
+        $organizations = Organization::query()->external()
             ->withCount(['callLogs as calls' => $answered])
             ->when(trim($this->search) !== '', fn (Builder $q) => $q->where('name', 'like', '%'.addcslashes(trim($this->search), '%_\\').'%'))
             ->orderByDesc('calls')->orderBy('name')

@@ -7,7 +7,9 @@
 |
 | SureHelp registers one app per network; businesses connect their own accounts through it.
 | A network without credentials is shown as "coming soon" and never contacted.
-| Redirect URIs to register: {APP_URL}/app/social/connect/{meta|linkedin|google}/callback
+| Redirect URIs to register: {APP_URL}/app/social/connect/{connector}/callback for businesses and
+| {APP_URL}/admin/social/connect/{connector}/callback for SureHelp's own accounts (D104). Credentials
+| can also be entered under Admin › Connections.
 |
 */
 
@@ -42,6 +44,19 @@ return [
             'enabled' => (bool) env('GOOGLE_BUSINESS_ENABLED', false),
             'scopes' => ['openid', 'email', 'https://www.googleapis.com/auth/business.manage'],
         ],
+        // YouTube channels (D104): a Google Cloud OAuth client with the YouTube Data API v3 turned on.
+        // Blank: the Google Business Profile client is used.
+        'youtube' => [
+            'client_id' => env('YOUTUBE_CLIENT_ID'),
+            'client_secret' => env('YOUTUBE_CLIENT_SECRET'),
+            'scopes' => ['openid', 'email', 'https://www.googleapis.com/auth/youtube.upload', 'https://www.googleapis.com/auth/youtube.readonly'],
+        ],
+        // X (D104): OAuth 2.0 with PKCE. Posting needs a paid X API plan.
+        'x' => [
+            'client_id' => env('X_CLIENT_ID'),
+            'client_secret' => env('X_CLIENT_SECRET'),
+            'scopes' => ['tweet.read', 'tweet.write', 'users.read', 'media.write', 'offline.access'],
+        ],
     ],
 
     // How far ahead a post can be scheduled.
@@ -54,6 +69,9 @@ return [
     'media' => [
         'max_kb' => 8192,
         'mimes' => ['jpg', 'jpeg', 'png', 'webp'],
+        // Videos (D104): MP4 or MOV. PHP's upload_max_filesize and post_max_size must allow this size.
+        'video_mimes' => ['mp4', 'mov', 'm4v'],
+        'video_max_mb' => (int) env('SOCIAL_VIDEO_MAX_MB', 100),
         // Networks download images from a signed link valid for this long.
         'link_minutes' => 120,
     ],

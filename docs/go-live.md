@@ -56,10 +56,11 @@ Steps marked 🕒 wait on someone else's approval. Start them first: they take d
 Follow [deployment.md](deployment.md) › Every release:
 1. Upload the code, `vendor/` and `public/build/`.
 2. Run `php artisan migrate --force`, `php artisan optimize:clear` and `php artisan optimize`.
-3. Fill in the production `.env`. The table in deployment.md covers the core settings, and
-   `launch:check` names every missing one.
+3. Fill in the production `.env` with the server settings only (app key and address, database,
+   cache, sessions). The table in deployment.md covers them. Every outside service is set up in
+   the admin console instead (below), and `launch:check` names anything missing.
 4. Run `php artisan launch:check` until there are **no ✗ items**.
-5. Send a test email: `php artisan launch:check --mail=you@yourdomain.com`.
+5. Set up email under *Admin › Connections › Email* and press **Send me a test email**.
 6. Once: `php artisan training:starter`, then review and publish the starter courses in Agent University.
 
 ## Week 1: configure in the admin console
@@ -68,25 +69,29 @@ Follow [deployment.md](deployment.md) › Every release:
    prices in step with the website and `config/sales.php`. See [billing.md](billing.md).
 2. **Feature access:** decide which plans include which features (*Admin › Billing › Feature access*).
 3. **Agents:** review *Agent assignments*, so each agent serves only their businesses.
-4. **AI:** set `ANTHROPIC_API_KEY`.
+4. **AI:** add a Claude or ChatGPT key under *Admin › Connections › AI* and press **Test**.
    - For the website chat, set `SALES_CHAT_MODEL=claude-haiku-5-5` and the demo hours (`SALES_DEMO_*`).
    - The token budgets have safe defaults (`SEO_MONTHLY_TOKENS`, `SOCIAL_AI_MONTHLY_TOKENS`, `SALES_CHAT_DAILY_TOKENS`).
 
 ## As each approval arrives
 
-| Approval | Then |
+Everything here is entered under **Admin › Connections** (D105). Each card says where to find the
+keys and lists the web addresses to paste into the service. Press **Test** after saving where
+there is one. Saved values override `.env`, so old `.env` entries can stay as a fallback.
+
+| Approval | Then (Admin › Connections) |
 |---|---|
-| Google OAuth client | `GOOGLE_CALENDAR_CLIENT_ID` / `_SECRET`. Connect one business's calendar and check that a booking appears in it |
-| Google Business Profile API | `GOOGLE_BUSINESS_ENABLED=true` |
-| Microsoft app | `MICROSOFT_CALENDAR_CLIENT_ID` / `_SECRET` / `_TENANT` |
-| Twilio account (calls) | `TELEPHONY_DRIVER=twilio` and the `TWILIO_*` keys. Create the TwiML App with the addresses from `--urls`, buy a line in *Admin › Phone lines*, then call it |
-| A2P 10DLC (texts) | Create the Messaging Service with the approved campaign, then `TELEPHONY_SMS=true` and `php artisan config:cache`. Text a line and reply from the Inbox |
-| Meta App Review | `META_APP_ID` / `_SECRET` / `META_WEBHOOK_VERIFY_TOKEN`. Connect a page and send it a Messenger message |
-| LinkedIn | `LINKEDIN_CLIENT_ID` / `_SECRET` |
-| Stripe Connect (optional, D85) | Turn on Connect (Standard accounts) in the Stripe dashboard, add the Connect webhook from `--urls` and set `STRIPE_CONNECT_WEBHOOK_SECRET`. Optionally set `STRIPE_CONNECT_FEE_PERCENT`. Businesses then connect under *Payments* |
-| Stripe (optional) | `BILLING_GATEWAY=stripe`, `STRIPE_SECRET`, plus the webhook endpoint from `--urls` and its `STRIPE_WEBHOOK_SECRET` ([billing.md](billing.md) › Stripe) |
-| Firebase (push) | `FCM_PROJECT_ID`, `FCM_CREDENTIALS` (service-account JSON) and the APNs key uploaded for iOS |
-| Store listings live | `MOBILE_IOS_STORE_URL`, `MOBILE_ANDROID_STORE_URL`, `MOBILE_ANDROID_SHA256` and `MOBILE_IOS_APP_IDS` (app links). Then open the two `.well-known` addresses from `--urls` in a browser to check them |
+| Google OAuth client | *Calendars › Google Calendar*: client ID and secret. Connect one business's calendar and check that a booking appears in it |
+| Google Business Profile API | *Social networks › Google Business Profile*: tick "Business Profile API access granted" |
+| Microsoft app | *Calendars › Microsoft Outlook calendar*: client ID, secret and which accounts |
+| Twilio account (calls) | *Phone and texts*: the account, API key and TwiML App (with the voice URL shown there), and "Calls go through: Twilio". Press **Test**, buy a line in *Admin › Phone lines*, then call it |
+| A2P 10DLC (texts) | Create the Messaging Service with the approved campaign, then tick "Texting is on" under *Phone and texts*. Text a line and reply from the Inbox |
+| Meta App Review | *Social networks › Facebook and Instagram*: app ID, secret and webhook verify token. Connect a page and send it a Messenger message |
+| LinkedIn | *Social networks › LinkedIn*: client ID and secret |
+| Stripe (optional) | *Payments*: secret key, the webhook signing secret for the endpoint shown there, and "Stripe" for how businesses pay ([billing.md](billing.md) › Stripe) |
+| Stripe Connect (optional, D85) | Turn on Connect (Standard accounts) in Stripe, add the Connect webhook shown under *Payments* and its signing secret, and optionally SureHelp's share. Businesses then connect under *Payments* |
+| Firebase (push) | *Mobile app*: paste the service account key, upload the APNs key for iOS in Firebase, and press **Test the saved key** |
+| Store listings live | *Mobile app › App stores and versions*: both store links, the Android SHA-256 and iOS app IDs. Then open the two `.well-known` addresses from `--urls` in a browser to check them |
 
 ## Launch-day smoke test (about 30 minutes)
 

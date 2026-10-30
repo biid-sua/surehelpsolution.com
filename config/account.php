@@ -13,6 +13,9 @@ return [
         'required_for' => ['admin', 'agent'],
         'issuer' => env('TWO_FACTOR_ISSUER', 'SureHelp'),
         'recovery_codes' => 8,
+        // "Remember this device" at the code step skips the code in that browser for this many days
+        // (D103). 0 turns the option off.
+        'remember_days' => (int) env('TWO_FACTOR_REMEMBER_DAYS', 30),
     ],
 
     // Minutes without activity before a web session ends. Null: only the normal session lifetime applies.

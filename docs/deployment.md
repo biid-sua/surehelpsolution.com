@@ -119,6 +119,11 @@ PHP extensions: besides Laravel's defaults, `zip` is required (business data exp
 
 ## Production `.env` settings to check
 
+`.env` holds the server's own settings. Keys for outside services (AI, social networks, Twilio,
+email, Stripe, calendars, Firebase, Cloudflare, app store links) are entered under
+*Admin › Connections* (D105) and override `.env`. Saving there restarts the queue workers so they
+use the new values. Keep `APP_KEY` safe and never change it: the saved keys are encrypted with it.
+
 | Key | Value |
 |---|---|
 | `APP_ENV` / `APP_DEBUG` | `production` / `false` |

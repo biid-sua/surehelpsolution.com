@@ -3,7 +3,9 @@
 namespace App\Livewire\Account;
 
 use App\Models\AuditLog;
+use App\Models\TrustedDevice;
 use App\Services\Account\SignIn;
+use App\Services\Account\TrustedDevices;
 use App\Services\Account\TwoFactor;
 use App\Support\Account\DeviceName;
 use App\Support\Audit\Audit;
@@ -21,7 +23,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /**
- * Two-step sign-in, recovery codes, signed-in devices and recent sign-ins (D8, spec AUTH-02/03/06).
+ * Two-step sign-in, recovery codes, signed-in and remembered devices (D103) and recent sign-ins (D8, spec AUTH-02/03/06).
  * During setup the new secret travels encrypted in a locked property: the browser can't read or change it,
  * and nothing is saved until the person proves their app works with a first code.
  */
@@ -90,13 +92,14 @@ class Security extends Component
         $this->reset('password');
     }
 
-    public function disable(Audit $audit): void
+    public function disable(Audit $audit, TrustedDevices $devices): void
     {
         $user = auth()->user();
         abort_if($user->requiresTwoFactor(), 403, 'Two-step sign-in is required for your account.');
         $this->checkPassword();
 
         $user->forceFill(['two_factor_secret' => null, 'two_factor_recovery_codes' => null, 'two_factor_confirmed_at' => null])->save();
+        $devices->forgetAll($user);
         $audit->record('auth.two_factor_disabled', $user);
         $this->reset('password', 'freshCodes');
         $this->dispatch('toast', type: 'success', message: 'Two-step sign-in is off.');
@@ -119,6 +122,21 @@ class Security extends Component
         $this->dispatch('toast', type: 'success', message: "Signed out of {$token->name}.");
     }
 
+    /** Stop a remembered browser skipping the code (D103). */
+    public function forgetDevice(int $id, TrustedDevices $devices): void
+    {
+        $device = TrustedDevice::query()->where('user_id', auth()->id())->whereKey($id)->firstOrFail();
+        $devices->forget($device);
+        $this->dispatch('toast', type: 'success', message: "{$device->name} will ask for a code next time.");
+    }
+
+    public function forgetAllDevices(TrustedDevices $devices, Audit $audit): void
+    {
+        $count = $devices->forgetAll(auth()->user());
+        $audit->record('auth.devices_forgotten', auth()->user(), new: ['count' => $count]);
+        $this->dispatch('toast', type: 'success', message: 'Every device will ask for a code next time.');
+    }
+
     public function dismissCodes(): void
     {
         $this->freshCodes = [];
@@ -137,6 +155,7 @@ class Security extends Component
             'secret' => $secret ? trim(chunk_split($secret, 4, ' ')) : null,
             'codesLeft' => count($user->two_factor_recovery_codes ?? []),
             'sessions' => $this->browserSessions(),
+            'trusted' => TrustedDevice::query()->where('user_id', $user->id)->where('expires_at', '>', now())->latest('last_used_at')->get(),
             'tokens' => $user->tokens()->latest('last_used_at')->latest('id')->get(['id', 'name', 'last_used_at', 'created_at', 'expires_at']),
             'history' => AuditLog::query()->where('subject_type', 'User')->where('subject_id', $user->id)
                 ->whereIn('action', ['auth.login', 'auth.login_failed', 'auth.login_blocked', 'auth.password_reset', 'auth.signed_out_everywhere'])

@@ -1,7 +1,7 @@
 <div>
     <x-ui.page-header :title="$post ? 'Social post' : 'New social post'" description="Write once, post everywhere. Each network gets checked before anything is scheduled.">
         <x-slot:actions>
-            <x-ui.button variant="secondary" icon="arrow-left" :href="route('app.social.index')">All posts</x-ui.button>
+            <x-ui.button variant="secondary" icon="arrow-left" :href="$this->socialRoute('index')">All posts</x-ui.button>
         </x-slot:actions>
     </x-ui.page-header>
 
@@ -92,7 +92,7 @@
     @if ($accounts->isEmpty())
         <x-ui.card>
             <x-ui.empty-state icon="megaphone" title="Connect an account first" description="Connect Facebook, Instagram, LinkedIn or Google Business Profile, then come back to write your post." />
-            <div class="mt-4 text-center"><x-ui.button :href="route('app.social.accounts')">Connect accounts</x-ui.button></div>
+            <div class="mt-4 text-center"><x-ui.button :href="$this->socialRoute('accounts')">Connect accounts</x-ui.button></div>
         </x-ui.card>
     @else
         <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
@@ -146,7 +146,7 @@
                                             <span wire:loading wire:target="writeWithAi">Writing…</span>
                                         </x-ui.button>
                                     </div>
-                                    <p class="text-xs text-subtle">Written for each network you picked, from your business details and <a href="{{ route('app.social.accounts') }}#brand-voice" class="text-brand-300 hover:underline">brand voice</a>. Read it before you post.</p>
+                                    <p class="text-xs text-subtle">Written for each network you picked, from your business details and <a href="{{ $this->socialRoute('accounts') }}#brand-voice" class="text-brand-300 hover:underline">brand voice</a>. Read it before you post.</p>
                                 @endif
                             </div>
                         </div>
@@ -195,7 +195,7 @@
                                 <x-ui.button size="sm" variant="secondary" wire:click="$toggle('pickingMedia')">{{ $pickingMedia ? 'Close library' : 'From library' }}</x-ui.button>
                                 <label class="inline-flex cursor-pointer items-center rounded-lg border border-line-strong bg-surface-2 px-3 py-1.5 text-sm font-medium text-ink hover:bg-surface-3">
                                     Upload
-                                    <input type="file" wire:model="uploads" multiple accept="image/jpeg,image/png,image/webp" class="sr-only">
+                                    <input type="file" wire:model="uploads" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime" class="sr-only">
                                 </label>
                             </div>
                         @endif
@@ -210,7 +210,7 @@
                             @foreach ($media as $i => $ulid)
                                 @if ($asset = $mediaAssets->get($ulid))
                                     <div class="relative" wire:key="sel-{{ $ulid }}">
-                                        <img src="{{ $asset->url() }}" alt="{{ $asset->alt_text }}" class="aspect-square w-full rounded-lg object-cover ring-1 ring-line">
+                                        <x-social.media-thumb :asset="$asset" class="aspect-square w-full rounded-lg object-cover ring-1 ring-line" />
                                         @if ($editable)
                                             <div class="absolute inset-x-1 bottom-1 flex justify-between gap-1">
                                                 <button type="button" wire:click="moveMedia('{{ $ulid }}', -1)" class="rounded bg-black/70 px-1.5 text-xs text-white" aria-label="Move earlier" @disabled($i === 0)>‹</button>
@@ -228,7 +228,7 @@
                         <div class="mt-4 grid max-h-80 grid-cols-4 gap-2 overflow-y-auto rounded-lg bg-surface-2 p-2 sm:grid-cols-6">
                             @forelse ($library as $asset)
                                 <button type="button" wire:key="lib-{{ $asset->ulid }}" wire:click="addMedia('{{ $asset->ulid }}')" @class(['rounded-md ring-2', 'ring-brand-400' => in_array($asset->ulid, $media, true), 'ring-transparent' => ! in_array($asset->ulid, $media, true)])>
-                                    <img src="{{ $asset->url() }}" alt="{{ $asset->alt_text ?: 'Add photo' }}" class="aspect-square w-full rounded-md object-cover" loading="lazy">
+                                    <x-social.media-thumb :asset="$asset" :alt="$asset->alt_text ?: 'Add'" class="aspect-square w-full rounded-md object-cover" />
                                 </button>
                             @empty
                                 <p class="col-span-full p-4 text-sm text-muted">Your library is empty. Upload photos above.</p>
@@ -355,7 +355,7 @@
                             @endif
                         </div>
                         @if ($first)
-                            <img src="{{ $first->url() }}" alt="" class="max-h-56 w-full object-cover">
+                            <x-social.media-thumb :asset="$first" alt="" class="max-h-56 w-full object-cover" />
                         @endif
                         <div class="px-4 py-3">
                             <p class="whitespace-pre-line break-words text-sm text-ink">{{ \Illuminate\Support\Str::limit($text, 600) ?: '…' }}</p>

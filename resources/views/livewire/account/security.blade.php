@@ -6,7 +6,7 @@
         'auth.password_reset' => 'Password reset by email',
         'auth.signed_out_everywhere' => 'Signed out of all devices',
     ];
-    $methods = ['password' => 'password', 'two_factor' => 'password + app code', 'recovery_code' => 'password + recovery code'];
+    $methods = ['password' => 'password', 'two_factor' => 'password + app code', 'recovery_code' => 'password + recovery code', 'trusted_device' => 'password on a remembered device'];
 @endphp
 <div>
     <x-ui.page-header title="Your account" description="Your own details, password and security. Only you can see this page." />
@@ -110,6 +110,27 @@
                 <x-ui.button variant="secondary" size="sm" wire:click="signOutOthers">Sign out other devices</x-ui.button>
             </div>
         </x-ui.card>
+
+        @if ($trusted->isNotEmpty())
+            <x-ui.card class="lg:col-span-2" title="Remembered devices" description="These browsers skip the two-step code when you sign in with your password, until the date shown. Changing your password or signing out other devices forgets them all." :padding="false">
+                <ul class="divide-y divide-line" role="list">
+                    @foreach ($trusted as $device)
+                        <li class="flex items-center justify-between gap-3 px-5 py-3" wire:key="trusted-{{ $device->id }}">
+                            <div class="min-w-0">
+                                <p class="text-sm font-medium text-ink">{{ $device->name }}</p>
+                                <p class="text-xs text-subtle">{{ $device->ip_address ?? 'Unknown IP' }} · last used {{ ($device->last_used_at ?? $device->created_at)->diffForHumans() }} · until {{ $device->expires_at->setTimezone($user->timezoneOrDefault())->format('M j, Y') }}</p>
+                            </div>
+                            <x-ui.button size="sm" variant="ghost" wire:click="forgetDevice({{ $device->id }})">Forget</x-ui.button>
+                        </li>
+                    @endforeach
+                </ul>
+                @if ($trusted->count() > 1)
+                    <div class="border-t border-line px-5 py-3">
+                        <x-ui.button variant="secondary" size="sm" wire:click="forgetAllDevices">Forget all devices</x-ui.button>
+                    </div>
+                @endif
+            </x-ui.card>
+        @endif
 
         <x-ui.card class="lg:col-span-2" title="Recent sign-in activity" description="If something here wasn't you, change your password and sign out other devices." :padding="false">
             @if ($history->isEmpty())

@@ -125,7 +125,7 @@ class SocialTest extends TestCase
     {
         $v = app(PostValidator::class);
 
-        $this->assertContains('Instagram posts need at least one photo.', $v->check(SocialNetwork::Instagram, 'Hello', null, 0)['errors']);
+        $this->assertContains('Instagram posts need at least one photo or a video.', $v->check(SocialNetwork::Instagram, 'Hello', null, 0)['errors']);
         $this->assertSame([], $v->check(SocialNetwork::Instagram, 'Hello', null, 1)['errors']);
         $this->assertNotEmpty($v->check(SocialNetwork::Instagram, str_repeat('#tag ', 31), null, 1)['errors']);
         $this->assertNotEmpty($v->check(SocialNetwork::Instagram, 'Hi', 'https://x.test', 1)['warnings'], 'links are not clickable on Instagram');

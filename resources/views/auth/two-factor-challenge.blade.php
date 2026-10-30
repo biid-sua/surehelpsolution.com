@@ -11,6 +11,12 @@
             <input id="recovery_code" name="recovery_code" type="text" class="sh-input font-mono" placeholder="abcde-12345" autocomplete="off" :disabled="!recovery" :required="recovery">
             <p class="mt-1 text-xs text-subtle">Each recovery code works once.</p>
         </div>
+        @if ($rememberDays)
+            <label class="flex items-start gap-2 text-sm text-muted">
+                <input type="checkbox" name="remember_device" value="1" class="mt-0.5 size-4 rounded border-line-strong bg-surface-2 text-brand-500">
+                <span>Remember this device for {{ $rememberDays }} days<span class="block text-xs text-subtle">You'll still enter your password. Don't tick this on a shared computer.</span></span>
+            </label>
+        @endif
         <x-ui.button type="submit" class="w-full">Continue</x-ui.button>
         <button type="button" class="w-full text-center text-sm text-brand-300 hover:underline" x-on:click="recovery = !recovery"
             x-text="recovery ? 'Use a code from my app instead' : 'Lost your phone? Use a recovery code'"></button>

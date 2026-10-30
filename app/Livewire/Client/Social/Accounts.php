@@ -3,6 +3,7 @@
 namespace App\Livewire\Client\Social;
 
 use App\Livewire\Concerns\ScopedToOrganization;
+use App\Livewire\Concerns\SocialPortal;
 use App\Models\BusinessProfile;
 use App\Models\SocialAccount;
 use App\Models\SocialPostTarget;
@@ -25,7 +26,7 @@ use Livewire\Component;
 #[Title('Social accounts')]
 class Accounts extends Component
 {
-    use ScopedToOrganization;
+    use ScopedToOrganization, SocialPortal;
 
     public string $approvalMode = 'owner';
 

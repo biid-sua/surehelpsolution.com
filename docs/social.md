@@ -64,6 +64,11 @@ Photos are private files. Networks download them from a signed link to `/media/{
 
 Until a network is configured, businesses see "Coming soon" for it. Redirect URIs use the production `APP_URL`.
 
+Each network's app ID and secret can be typed into **Admin › Connections** instead of `.env` (D104).
+Saved values are encrypted, override `.env`, and take effect straight away. The page lists both
+redirect URLs to add in each network's app: `/app/social/connect/{network}/callback` for
+businesses and `/admin/social/connect/{network}/callback` for SureHelp's own accounts.
+
 ### Facebook and Instagram (Meta)
 
 1. In [Meta for Developers](https://developers.facebook.com/), create a **Business** app called "SureHelp" and add the **Facebook Login for Business** product.
@@ -96,6 +101,56 @@ Before Community Management approval, connecting still works for the person's ow
 2. Once access is granted, enable the *My Business Account Management*, *My Business Business Information* and *Google My Business* APIs.
 3. Add `https://YOUR-DOMAIN/app/social/connect/google/callback` to the OAuth client's redirect URIs, and the `business.manage` scope to the consent screen.
 4. Set `GOOGLE_BUSINESS_ENABLED=true`. It reuses the calendar client ID and secret, unless `GOOGLE_BUSINESS_CLIENT_ID` and `GOOGLE_BUSINESS_CLIENT_SECRET` are set.
+
+### X (Twitter)
+
+1. In the [X Developer Portal](https://developer.x.com/), create a project and app with a plan that allows posting and media upload.
+2. Under **User authentication settings**, choose OAuth 2.0, type *Web App*, with **Read and write** permissions.
+3. Add both redirect URLs (see above).
+4. Copy the OAuth 2.0 **Client ID** and **Client Secret** into Admin › Connections (or `X_CLIENT_ID`, `X_CLIENT_SECRET`).
+
+Posts are up to 280 characters with up to 4 pictures or one video of up to 140 seconds.
+
+### YouTube
+
+1. In the Google Cloud project, enable the **YouTube Data API v3**.
+2. Use the same OAuth client or a new *Web application* client, with both redirect URLs, and add the `youtube.upload` and `youtube.readonly` scopes to the consent screen.
+3. Put the client ID and secret into Admin › Connections (or `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET`).
+4. Until Google audits the app, uploads from it stay private. Request the audit before going live.
+
+YouTube posts must have a video. The first line of the text is the title, the rest the description.
+
+## Videos (D104)
+
+The media library takes MP4, MOV and M4V files up to `SOCIAL_VIDEO_MAX_MB` (default 100 MB;
+PHP's `upload_max_filesize` and `post_max_size` must allow it). The length is read from the file.
+
+| Network | Video posts |
+|---|---|
+| Facebook | Yes, as a Page video |
+| Instagram | Yes, as a Reel, up to 15 minutes |
+| LinkedIn | Yes, up to 30 minutes |
+| YouTube | Required |
+| X | Yes, up to 140 seconds |
+| Google Business Profile | No (pictures only) |
+
+## SureHelp's own social media (D104)
+
+**Admin › Social media** runs SureHelp's accounts with the same Posts, Media library and Accounts
+screens businesses use, plus a **Schedule** tab. SureHelp is an internal business
+(`organizations.is_internal`): it never appears in admin lists or reports, and has no plan limits.
+
+- **Schedule:** times each day (up to 12), days, which accounts, and the mix of text, picture and
+  video posts. Every 15 minutes `social:house-schedule` writes the posts due in the next 24 hours,
+  one per time, with the AI chosen in Connections (Claude or ChatGPT).
+- **Pictures:** from the library only; from the library with ChatGPT making a new one when every
+  picture was used in the last 30 days; or always new. Videos come from the library, least
+  recently used first.
+- **Topics** are used in turn; recent posts are given to the AI so it doesn't repeat them.
+- **Approval:** off, posts go out at their time; on, they wait under Posts for a staff member.
+  Either way any post can be edited or cancelled until it goes out.
+- **Prepare the next post now** writes the next free time straight away, to check the result.
+- Staff need `social.view` to look and `social.manage` to change anything or connect accounts.
 
 ## Writing with AI (G-2, D66)
 
@@ -133,9 +188,7 @@ Needs `ANTHROPIC_API_KEY`. Without it the panels say "Writing with AI isn't swit
 ## Later
 
 - Post analytics in Results (G-5)
-- TikTok, YouTube Shorts, Pinterest and Threads adapters
-- X as a paid add-on
+- TikTok, Pinterest and Threads adapters
 - Drag-to-reschedule on the calendar
-- Video
 
 Plan limits: a plan can cap connected accounts with the `social_accounts` limit. It is checked when an account is turned on.

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AuditLog;
+use App\Models\TrustedDevice;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schedule;
 
@@ -19,8 +20,8 @@ Schedule::command('queue:work', ['--stop-when-empty', '--max-time=55', '--tries=
     ->withoutOverlapping(5)
     ->runInBackground();
 
-// Retention: audit entries older than config('audit.retention_days').
-Schedule::command('model:prune', ['--model' => [AuditLog::class]])->dailyAt('03:10');
+// Retention: audit entries older than config('audit.retention_days'), and expired remembered devices (D103).
+Schedule::command('model:prune', ['--model' => [AuditLog::class, TrustedDevice::class]])->dailyAt('03:10');
 
 // Failed jobs are kept a week for inspection, then removed.
 Schedule::command('queue:prune-failed', ['--hours' => 168])->dailyAt('03:20');
@@ -71,3 +72,6 @@ Schedule::call(fn () => Cache::put('scheduler:heartbeat', now()->timestamp, now(
 
 // Businesses' own website domains (D101): watch for the DNS record and the certificate.
 Schedule::command('sites:check-domains')->everyTenMinutes()->withoutOverlapping(15);
+
+// SureHelp's own social media (D104): the AI prepares the next 24 hours of scheduled posts.
+Schedule::command('social:house-schedule')->everyFifteenMinutes()->withoutOverlapping(30);

@@ -42,6 +42,8 @@ How calls to a business's SureHelp number reach the agents (decision D60).
 
 ## Without Twilio (demo mode)
 
+> Keys and settings for this are entered under **Admin › Connections** (D105), not in `.env`. The card there lists the web addresses to paste into the service and has a Test button.
+
 `TELEPHONY_DRIVER=fake` (the default):
 - Lines get pretend 555 numbers.
 - Agents start a call from **Your phone › Try a call to a business's line**.

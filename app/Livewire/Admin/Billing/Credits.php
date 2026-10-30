@@ -106,7 +106,7 @@ class Credits extends Component
 
         return view('livewire.admin.billing.credits', [
             'canManage' => auth()->user()->can('billing.manage'),
-            'businesses' => Organization::query()->orderBy('name')->get(['id', 'name']),
+            'businesses' => Organization::query()->external()->orderBy('name')->get(['id', 'name']),
             'entries' => CreditEntry::withoutGlobalScopes()->with('user:id,name')->latest('id')->limit(15)->get(),
             'names' => Organization::query()->pluck('name', 'id'),
             'pending' => CreditPurchase::withoutGlobalScopes()->where('status', 'pending')->with('invoice:id,number')->latest('id')->limit(10)->get(),

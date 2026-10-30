@@ -46,7 +46,7 @@ class Index extends Component
     public function render(ClientHealth $clientHealth): View
     {
         $health = $clientHealth->all();
-        $organizations = Organization::query()
+        $organizations = Organization::query()->external()
             ->with('owner:id,name,email')
             ->withCount([
                 'agents',

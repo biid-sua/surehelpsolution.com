@@ -54,6 +54,7 @@ use App\Livewire\Admin\AuditLogs;
 use App\Livewire\Admin\Billing\Index as AdminBilling;
 use App\Livewire\Admin\Calls\Index as AdminCalls;
 use App\Livewire\Admin\Calls\Review as CallReview;
+use App\Livewire\Admin\Connections as AdminConnections;
 use App\Livewire\Admin\Customers\Index as AdminCustomers;
 use App\Livewire\Admin\DemoData as AdminDemoData;
 use App\Livewire\Admin\Enquiries\Index as AdminEnquiries;
@@ -65,6 +66,11 @@ use App\Livewire\Admin\PhoneLines as AdminPhoneLines;
 use App\Livewire\Admin\Schedules\Index as AdminSchedules;
 use App\Livewire\Admin\Search as AdminSearch;
 use App\Livewire\Admin\Seo\Index as AdminSeo;
+use App\Livewire\Admin\Social\Accounts as HouseSocialAccounts;
+use App\Livewire\Admin\Social\Compose as HouseSocialCompose;
+use App\Livewire\Admin\Social\Index as HouseSocialIndex;
+use App\Livewire\Admin\Social\Media as HouseSocialMedia;
+use App\Livewire\Admin\Social\Schedule as HouseSocialSchedule;
 use App\Livewire\Admin\Support\Index as AdminSupport;
 use App\Livewire\Admin\SystemStatus as AdminSystemStatus;
 use App\Livewire\Admin\Usage\Index as AdminUsage;
@@ -303,7 +309,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/social/posts/{post}', SocialCompose::class)->name('social.posts.edit');
     });
     // Google Business Profile serves both posts and reviews (D83); the controller checks which.
-    Route::middleware(['can:social.manage', 'feature:social_publishing|reviews'])->whereIn('connector', ['meta', 'linkedin', 'google'])->group(function () {
+    Route::middleware(['can:social.manage', 'feature:social_publishing|reviews'])->whereIn('connector', ['meta', 'linkedin', 'google', 'youtube', 'x'])->group(function () {
         Route::get('/social/connect/{connector}', [SocialOAuthController::class, 'redirect'])->name('social.connect');
         Route::get('/social/connect/{connector}/callback', [SocialOAuthController::class, 'callback'])->name('social.connect.callback');
     });
@@ -427,6 +433,21 @@ Route::prefix('admin')->name('admin.')->middleware(['auth.home', 'force.password
     Route::get('/phone-lines', AdminPhoneLines::class)->middleware('can:settings.view')->name('phone-lines');
     Route::get('/appearance', AdminAppearance::class)->middleware('can:settings.view')->name('appearance');
     Route::get('/system', AdminSystemStatus::class)->middleware('can:settings.view')->name('system');
+    Route::get('/connections', AdminConnections::class)->middleware('can:integrations.manage')->name('connections');
+    // SureHelp's own social media, run on the business screens (D104).
+    Route::prefix('social')->name('social.')->middleware('can:social.view')->group(function () {
+        Route::get('/', HouseSocialIndex::class)->name('index');
+        Route::get('/schedule', HouseSocialSchedule::class)->name('schedule');
+        Route::get('/accounts', HouseSocialAccounts::class)->name('accounts');
+        Route::get('/media', HouseSocialMedia::class)->name('media');
+        Route::get('/media/{asset}', [MediaController::class, 'house'])->name('media.show');
+        Route::get('/posts/new', HouseSocialCompose::class)->middleware('can:social.manage')->name('posts.create');
+        Route::get('/posts/{post}', HouseSocialCompose::class)->name('posts.edit');
+        Route::middleware('can:social.manage')->whereIn('connector', ['meta', 'linkedin', 'google', 'youtube', 'x'])->group(function () {
+            Route::get('/connect/{connector}', [SocialOAuthController::class, 'redirect'])->name('connect');
+            Route::get('/connect/{connector}/callback', [SocialOAuthController::class, 'callback'])->name('connect.callback');
+        });
+    });
     Route::get('/demo-data', AdminDemoData::class)->middleware('can:settings.view')->name('demo-data');
     Route::get('/usage', AdminUsage::class)->middleware('can:billing.view')->name('usage');
     Route::get('/escalations', AdminEscalations::class)->middleware('can:escalations.view')->name('escalations');

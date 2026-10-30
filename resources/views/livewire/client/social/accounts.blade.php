@@ -23,14 +23,16 @@
                     @switch($key)
                         @case('meta') Facebook Pages and the Instagram business or creator accounts linked to them. @break
                         @case('linkedin') Your LinkedIn profile and the Company Pages you administer. @break
+                        @case('youtube') Your YouTube channel, for video posts and Shorts. @break
+                        @case('x') Your X (Twitter) account. @break
                         @default Posts, offers and events on your Google Business Profile, shown in Search and Maps.
                     @endswitch
                 </p>
 
                 @if (! $connector->isConfigured())
-                    <p class="mt-4 rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted ring-1 ring-line">Coming soon: we're finishing the {{ $connector->label() }} approval.</p>
+                    <p class="mt-4 rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted ring-1 ring-line">@if ($this->socialPortal() === 'admin')Add this network's app keys under <a href="{{ route('admin.connections') }}" class="text-brand-300 hover:underline">Admin › Connections</a> first.@else Coming soon: we're finishing the {{ $connector->label() }} approval.@endif</p>
                 @elseif ($canManage)
-                    <x-ui.button class="mt-4" size="sm" :variant="$mine->isEmpty() ? 'primary' : 'secondary'" :href="route('app.social.connect', $key)">
+                    <x-ui.button class="mt-4" size="sm" :variant="$mine->isEmpty() ? 'primary' : 'secondary'" :href="$this->socialRoute('connect', $key)">
                         {{ $mine->isEmpty() ? 'Connect' : ($mine->contains(fn ($a) => $a->needsReconnect()) ? 'Reconnect' : 'Connect more / refresh') }}
                     </x-ui.button>
                 @endif
@@ -76,6 +78,8 @@
         @endif
     </x-ui.card>
 
+    {{-- Approval, link page and brand voice belong to a business; SureHelp's own accounts use Admin › Social › Schedule (D104). --}}
+    @if ($this->socialPortal() === 'app')
     <x-ui.card class="mt-6">
         <h2 class="text-base font-semibold text-ink">Approval</h2>
         <p class="mt-1 text-sm text-muted">Nothing is ever published without a person deciding. Choose whether posts by your managers, by SureHelp's content team or written with AI need an owner's approval first.</p>
@@ -145,4 +149,5 @@
             @if ($canManage)<x-ui.button type="submit" size="sm">Save</x-ui.button>@endif
         </form>
     </x-ui.card>
+    @endif
 </div>

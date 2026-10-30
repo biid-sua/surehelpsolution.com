@@ -11,7 +11,8 @@ use App\Services\Social\Data\PublishResult;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * LinkedIn posts (Posts API) for a profile or a Company Page: text, plus one image or a link card.
+ * LinkedIn posts (Posts API) for a profile or a Company Page: text, plus one image, one video (D104)
+ * or a link card.
  */
 class LinkedInPublisher implements SocialPublisher
 {
@@ -34,7 +35,9 @@ class LinkedInPublisher implements SocialPublisher
             'isReshareDisabledByAuthor' => false,
         ];
 
-        if ($request->images !== []) {
+        if ($video = $request->video()) {
+            $body['content'] = ['media' => ['id' => $this->uploadVideo($author, $accessToken, $video), 'title' => mb_substr(strtok($request->text, "\n") ?: 'Video', 0, 200)]];
+        } elseif ($request->images !== []) {
             $image = $request->images[0];
             $body['content'] = ['media' => array_filter(['id' => $this->upload($author, $accessToken, $image), 'altText' => $image['alt']])];
         } elseif ($request->link) {
@@ -45,6 +48,42 @@ class LinkedInPublisher implements SocialPublisher
         $urn = (string) ($response->header('x-restli-id') ?: $response->json('id'));
 
         return new PublishResult($urn, 'https://www.linkedin.com/feed/update/'.$urn);
+    }
+
+    /**
+     * Videos API: ask for upload links, PUT the file in the parts LinkedIn asks for, then finalize
+     * with each part's ETag.
+     *
+     * @param  array{url: string, disk: string, path: string, mime: string, alt: ?string, size: int}  $video
+     */
+    private function uploadVideo(string $owner, string $accessToken, array $video): string
+    {
+        $disk = Storage::disk($video['disk']);
+        $size = $video['size'] ?: (int) $disk->size($video['path']);
+        $init = $this->api->ok($this->api->client($accessToken)->post(LinkedInApi::REST.'/videos?action=initializeUpload', [
+            'initializeUploadRequest' => ['owner' => $owner, 'fileSizeBytes' => $size, 'uploadCaptions' => false, 'uploadThumbnail' => false],
+        ]))->json('value');
+
+        $stream = $disk->readStream($video['path']);
+        $etags = [];
+        try {
+            foreach ((array) $init['uploadInstructions'] as $part) {
+                $length = (int) $part['lastByte'] - (int) $part['firstByte'] + 1;
+                fseek($stream, (int) $part['firstByte']);
+                $response = $this->api->ok($this->api->client($accessToken)
+                    ->withBody((string) fread($stream, $length), 'application/octet-stream')
+                    ->put($part['uploadUrl']));
+                $etags[] = trim((string) $response->header('ETag'), '"');
+            }
+        } finally {
+            is_resource($stream) && fclose($stream);
+        }
+
+        $this->api->ok($this->api->client($accessToken)->post(LinkedInApi::REST.'/videos?action=finalizeUpload', [
+            'finalizeUploadRequest' => ['video' => $init['video'], 'uploadToken' => (string) ($init['uploadToken'] ?? ''), 'uploadedPartIds' => $etags],
+        ]));
+
+        return (string) $init['video'];
     }
 
     /**

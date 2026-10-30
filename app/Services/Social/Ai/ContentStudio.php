@@ -369,6 +369,8 @@ class ContentStudio
             SocialNetwork::Instagram => 'Instagram: a strong first line, short paragraphs, a few emojis at most, 3–8 relevant hashtags at the end, no web links (they aren\'t clickable), at most 2,200 characters.',
             SocialNetwork::LinkedIn => 'LinkedIn: helpful and professional, 50–150 words, up to 3 hashtags, at most 3,000 characters.',
             SocialNetwork::GoogleBusiness => 'Google Business Profile: plain and local, 50–150 words, no hashtags and no phone numbers (Google rejects posts with them), at most 1,500 characters.',
+            SocialNetwork::YouTube => 'YouTube: the first line is the video title (under 100 characters, no hashtags); then a description of 2–4 short paragraphs and up to 3 hashtags.',
+            SocialNetwork::X => 'X: one punchy thought, at most 280 characters including any link, 0–2 hashtags.',
         }, $networks);
 
         return "Network rules:\n".implode("\n", $rules);

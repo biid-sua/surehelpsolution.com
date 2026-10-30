@@ -74,11 +74,18 @@ class FcmService
         return $result;
     }
 
+    /** For the "Test" button under Admin › Connections (D105). */
+    public function canSignIn(): bool
+    {
+        return $this->isConfigured() && $this->accessToken() !== null;
+    }
+
     /** A Google OAuth2 access token for the service account, cached until shortly before it expires. */
     private function accessToken(): ?string
     {
         $credentials = (array) $this->credentials();
-        $cacheKey = 'fcm.access_token.'.md5((string) ($credentials['client_email'] ?? ''));
+        // Per key, so a replaced key (Admin › Connections) isn't hidden by the old one's token.
+        $cacheKey = 'fcm.access_token.'.md5((string) ($credentials['client_email'] ?? '').(string) ($credentials['private_key'] ?? ''));
 
         $token = Cache::get($cacheKey);
         if (is_string($token)) {
