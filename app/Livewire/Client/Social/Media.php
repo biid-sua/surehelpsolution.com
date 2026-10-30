@@ -48,7 +48,7 @@ class Media extends Component
         $count = count($this->uploads);
         $this->reset('uploads');
         $this->resetPage();
-        $this->dispatch('toast', type: 'success', message: $count.' '.str('photo')->plural($count).' added. Add a short description to each for people using screen readers.');
+        $this->dispatch('toast', type: 'success', message: $count.' '.str('file')->plural($count).' added. Add a short description to each for people using screen readers.');
     }
 
     /**
@@ -58,15 +58,22 @@ class Media extends Component
      */
     public static function uploadRules(string $field): array
     {
-        $mimes = implode(',', (array) config('social.media.mimes'));
+        $mimes = implode(',', [...(array) config('social.media.mimes'), ...(array) config('social.media.video_mimes')]);
+        $imageKb = (int) config('social.media.max_kb');
+        $videoMb = (int) config('social.media.video_max_mb', 100);
 
         return [
-            [$field => ['array', 'max:10'], $field.'.*' => ['image', 'mimes:'.$mimes, 'max:'.(int) config('social.media.max_kb')]],
+            [$field => ['array', 'max:10'], $field.'.*' => ['file', 'mimes:'.$mimes, function (string $attribute, $file, \Closure $fail) use ($imageKb, $videoMb) {
+                $video = str_starts_with((string) $file->getMimeType(), 'video/') || in_array(strtolower($file->getClientOriginalExtension()), (array) config('social.media.video_mimes'), true);
+                if (! $video && $file->getSize() > $imageKb * 1024) {
+                    $fail('Each photo must be under '.round($imageKb / 1024).' MB.');
+                } elseif ($video && $file->getSize() > $videoMb * 1024 * 1024) {
+                    $fail('Each video must be under '.$videoMb.' MB.');
+                }
+            }]],
             [
-                $field.'.max' => 'Add up to 10 photos at a time.',
-                $field.'.*.image' => 'Only photos can be added (JPG, PNG or WebP).',
-                $field.'.*.mimes' => 'Only JPG, PNG or WebP photos can be added.',
-                $field.'.*.max' => 'Each photo must be under '.round((int) config('social.media.max_kb') / 1024).' MB.',
+                $field.'.max' => 'Add up to 10 files at a time.',
+                $field.'.*.mimes' => 'Only photos (JPG, PNG or WebP) and videos (MP4 or MOV) can be added.',
             ],
         ];
     }

@@ -53,7 +53,8 @@ class SavePost
 
         if ($publishing) {
             $this->checkTime($intent, $when);
-            $this->checkContent($accounts, (string) $data['body'], $data['custom'] ?? [], $link, $media->count());
+            $videos = $media->filter(fn (MediaAsset $m) => $m->isVideo());
+            $this->checkContent($accounts, (string) $data['body'], $data['custom'] ?? [], $link, $media->count() - $videos->count(), $videos->pluck('duration_seconds')->all());
         }
 
         $byTeam = $this->approval->byOurTeam();
@@ -164,14 +165,15 @@ class SavePost
     /**
      * @param  Collection<int, SocialAccount>  $accounts
      * @param  array<string, ?string>  $custom
+     * @param  list<int|null>  $videoSeconds
      */
-    private function checkContent(Collection $accounts, string $body, array $custom, ?string $link, int $images): void
+    private function checkContent(Collection $accounts, string $body, array $custom, ?string $link, int $images, array $videoSeconds = []): void
     {
         $messages = [];
 
         foreach ($accounts as $account) {
             $text = filled($custom[$account->ulid] ?? null) ? (string) $custom[$account->ulid] : $body;
-            foreach ($this->validator->check($account->network, $text, $link, $images)['errors'] as $error) {
+            foreach ($this->validator->check($account->network, $text, $link, $images, $videoSeconds)['errors'] as $error) {
                 $messages[] = $account->displayName().': '.$error;
             }
         }

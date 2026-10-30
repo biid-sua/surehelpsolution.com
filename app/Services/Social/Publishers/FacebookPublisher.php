@@ -10,7 +10,7 @@ use App\Services\Social\Data\PublishRequest;
 use App\Services\Social\Data\PublishResult;
 
 /**
- * Facebook Page posts: text with a link preview, one photo, or several photos in one post.
+ * Facebook Page posts: text with a link preview, one photo, several photos in one post, or a video (D104).
  */
 class FacebookPublisher implements SocialPublisher
 {
@@ -24,6 +24,14 @@ class FacebookPublisher implements SocialPublisher
     public function publish(SocialAccount $account, string $accessToken, PublishRequest $request): PublishResult
     {
         $page = $account->external_id;
+
+        if ($video = $request->video()) {
+            // Facebook fetches the file from our signed link; the link (if any) goes in the description.
+            $description = $request->link && ! str_contains($request->text, $request->link) ? $request->text."\n\n".$request->link : $request->text;
+            $json = $this->graph->post("{$page}/videos", $accessToken, ['file_url' => $video['url'], 'description' => $description]);
+
+            return new PublishResult((string) $json['id'], 'https://www.facebook.com/'.$page.'/videos/'.$json['id']);
+        }
 
         if ($request->images === []) {
             $json = $this->graph->post("{$page}/feed", $accessToken, array_filter(['message' => $request->text, 'link' => $request->link]));

@@ -8,7 +8,7 @@
                 <x-ui.icon name="photo" class="size-8 text-subtle" />
                 <span class="font-medium text-ink">Add photos</span>
                 <span class="text-sm text-muted">JPG, PNG or WebP, up to {{ round(config('social.media.max_kb') / 1024) }} MB each, 10 at a time</span>
-                <input id="media-upload" type="file" wire:model="uploads" multiple accept="image/jpeg,image/png,image/webp" class="sr-only">
+                <input id="media-upload" type="file" wire:model="uploads" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime" class="sr-only">
             </label>
             <div wire:loading wire:target="uploads" class="mt-3 text-sm text-muted">Uploading…</div>
             @error('uploads') <p class="mt-2 text-sm text-danger">{{ $message }}</p> @enderror
@@ -22,7 +22,7 @@
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             @foreach ($assets as $asset)
                 <x-ui.card :padding="false" wire:key="m-{{ $asset->ulid }}" class="overflow-hidden">
-                    <img src="{{ $asset->url() }}" alt="{{ $asset->alt_text }}" class="aspect-square w-full bg-surface-2 object-cover" loading="lazy">
+                    <x-social.media-thumb :asset="$asset" class="aspect-square w-full bg-surface-2 object-cover" />
                     <div class="space-y-2 p-3">
                         <p class="truncate text-xs text-subtle" title="{{ $asset->original_name }}">{{ $asset->original_name }}@if ($asset->width) · {{ $asset->width }}×{{ $asset->height }}@endif</p>
                         @if ($canManage)

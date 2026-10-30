@@ -69,6 +69,9 @@ return [
     'media' => [
         'max_kb' => 8192,
         'mimes' => ['jpg', 'jpeg', 'png', 'webp'],
+        // Videos (D104): MP4 or MOV. PHP's upload_max_filesize and post_max_size must allow this size.
+        'video_mimes' => ['mp4', 'mov', 'm4v'],
+        'video_max_mb' => (int) env('SOCIAL_VIDEO_MAX_MB', 100),
         // Networks download images from a signed link valid for this long.
         'link_minutes' => 120,
     ],

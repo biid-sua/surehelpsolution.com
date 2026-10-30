@@ -351,8 +351,9 @@ class Compose extends Component
         $mediaAssets = MediaAsset::query()->forOrganization($organization)->whereIn('ulid', $this->media)->get()->keyBy('ulid');
         $link = $this->link !== '' ? $this->link : null;
 
+        $videos = $mediaAssets->filter(fn (MediaAsset $m) => $m->isVideo());
         $checks = $accounts->whereIn('ulid', $this->selected)->mapWithKeys(fn (SocialAccount $a) => [
-            $a->ulid => $validator->check($a->network, $this->textFor($a->ulid), $link, count($this->media)),
+            $a->ulid => $validator->check($a->network, $this->textFor($a->ulid), $link, count($this->media) - $videos->count(), $videos->pluck('duration_seconds')->values()->all()),
         ]);
 
         $editable = ! $post || $post->status->isEditable();

@@ -304,7 +304,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/social/posts/{post}', SocialCompose::class)->name('social.posts.edit');
     });
     // Google Business Profile serves both posts and reviews (D83); the controller checks which.
-    Route::middleware(['can:social.manage', 'feature:social_publishing|reviews'])->whereIn('connector', ['meta', 'linkedin', 'google'])->group(function () {
+    Route::middleware(['can:social.manage', 'feature:social_publishing|reviews'])->whereIn('connector', ['meta', 'linkedin', 'google', 'youtube', 'x'])->group(function () {
         Route::get('/social/connect/{connector}', [SocialOAuthController::class, 'redirect'])->name('social.connect');
         Route::get('/social/connect/{connector}/callback', [SocialOAuthController::class, 'callback'])->name('social.connect.callback');
     });

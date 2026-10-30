@@ -91,6 +91,9 @@ class AppServiceProvider extends ServiceProvider
     {
         // Keys and settings entered under Admin › Connections override .env (D104).
         app(Connections::class)->apply();
+        // Livewire's temporary uploads must allow videos (D104); each screen still checks photo and video sizes.
+        config(['livewire.temporary_file_upload.rules' => ['required', 'file', 'max:'.max(12288, (int) config('social.media.video_max_mb', 100) * 1024)],
+            'livewire.temporary_file_upload.max_upload_time' => 15]);
 
         // After a self-serve trial ended, business-portal actions wait for a plan (D97).
         \Livewire\on('call', function ($component, string $method, $params, $addEffect, callable $returnEarly) {

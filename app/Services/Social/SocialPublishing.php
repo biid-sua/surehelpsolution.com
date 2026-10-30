@@ -82,11 +82,13 @@ class SocialPublishing
                 throw new SocialPostRejected('Social publishing isn\'t included in this business\'s plan.');   // D46
             }
 
+            $files = $post->media->map(fn ($m) => ['url' => $m->publicUrl(), 'disk' => $m->disk, 'path' => $m->path, 'mime' => $m->mime, 'alt' => $m->alt_text, 'size' => (int) $m->size_bytes]);
             $request = new PublishRequest(
                 $target->text(),
                 $post->link_url,
-                $post->media->map(fn ($m) => ['url' => $m->publicUrl(), 'disk' => $m->disk, 'path' => $m->path, 'mime' => $m->mime, 'alt' => $m->alt_text])->values()->all(),
+                $files->reject(fn ($f) => str_starts_with($f['mime'], 'video/'))->map(fn ($f) => array_diff_key($f, ['size' => 0]))->values()->all(),
                 (array) ($target->options ?? []),
+                $files->filter(fn ($f) => str_starts_with($f['mime'], 'video/'))->values()->all(),
             );
 
             $result = $this->social->publisher($account->network)->publish($account, $this->social->accessToken($account), $request);
