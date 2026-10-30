@@ -147,6 +147,16 @@
         </x-ui.card>
     @endif
 
+    @if ($value && $value['value_cents'] !== null && $value['jobs'] > 0)
+        {{-- The dollars report in one line (D107) --}}
+        <a href="{{ route('app.results') }}" wire:navigate class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-card)] border border-brand-500/40 bg-gradient-to-br from-brand-500/15 to-accent-500/10 px-5 py-4 hover:border-brand-400">
+            <span class="text-sm text-muted">This month so far, SureHelp booked
+                <span class="text-lg font-semibold text-ink tabular-nums">{{ \App\Support\Money::format($value['value_cents'], $organization->currency) }}</span>
+                in jobs for you{{ $value['multiple'] !== null && $value['multiple'] >= 1 ? ': '.($value['multiple'] >= 10 ? number_format($value['multiple']) : number_format($value['multiple'], 1)).'× what you pay us' : '' }}.</span>
+            <span class="text-sm font-medium text-brand-300">See Results</span>
+        </a>
+    @endif
+
     <div class="relative">
         <div wire:loading.flex wire:target="period,from,to" class="absolute inset-0 z-10 items-start justify-center rounded-2xl bg-canvas/40 pt-24 backdrop-blur-[1px]">
             <span class="rounded-full bg-surface-2 px-3 py-1 text-xs text-muted ring-1 ring-line">Updating…</span>

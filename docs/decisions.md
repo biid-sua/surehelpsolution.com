@@ -1923,3 +1923,28 @@ and a thin bar in the brand colour shows while the page loads.
 items low in the menu scrolled out of sight after each click. Changing pages in place keeps the
 person's place and feels quicker. Removing inline scripts keeps the security policy strict
 (no `'unsafe-inline'`, a fresh nonce per response) while making that possible.
+
+## D107 — The dollars report, and features for picked businesses only (2026-10-30)
+**Decision:** businesses see what SureHelp was worth to them in dollars, and staff can give any
+feature to the businesses they pick only.
+- **What a job is worth:** each job booked on a call is valued at the price of the service booked,
+  when it has one (fixed, "starting from" or a hidden price). Otherwise the owner's average job
+  value applies. Jobs with neither are counted but not valued, and a month with no value shows
+  "add your average job value" instead of $0.
+- **What they paid:** that month's invoices, or the current plan's monthly price when there is no
+  invoice. A yearly invoice is spread over its months. Void invoices don't count.
+- **The return:** value divided by what they paid ("4×"). The report also shows jobs booked while
+  the business was closed, and the total since the first booking.
+- **Where it shows:** the top of Results, a one-line card on the dashboard, the monthly email
+  headline and PDF, the app's Results (an added `value` field), and for staff the business's admin
+  page (always, with a note when the business doesn't see it).
+- It is the feature `value_report`, open to every business by default.
+- **Features for picked businesses:** Billing › Feature access gains a third choice, "Only
+  businesses I pick". Picked businesses have the feature (a staff override, as on the business's
+  page). Everyone else doesn't see it at all: no menu item and no "Upgrade" badge, and its pages
+  answer 404. Picking and unpicking are recorded in the audit log.
+
+**Why:** owners renew when they can see the return in dollars, and the numbers already existed in
+calls, bookings and invoices. Valuing by service price where known makes the estimate closer to
+their real takings. Picking businesses lets staff try a new feature with a few customers before
+everyone gets it, without inventing a plan for it.

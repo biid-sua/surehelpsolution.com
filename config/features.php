@@ -5,9 +5,9 @@
 | Paid features (spec §30–31, FND-18, docs/decisions.md D46)
 |--------------------------------------------------------------------------
 |
-| Features a plan or an add-on can include. Each one is either open to every business, or only to
-| plans and add-ons that list its key (Admin › Billing › Feature access). Staff can also switch a
-| feature on or off for one business. Everything starts open to everyone, so turning this on never
+| Features a plan or an add-on can include. Each one is open to every business, only to plans and
+| add-ons that list its key, or only to the businesses staff pick (hidden from the rest, D107), set
+| under Admin › Billing › Feature access. Staff can also switch a feature on or off for one business. Everything starts open to everyone, so turning this on never
 | takes anything away by surprise, except a feature with 'default_mode' => 'plan': a new paid service
 | that costs us money to run (D57) starts closed until a plan or add-on includes it.
 |
@@ -53,6 +53,10 @@ return [
         'label' => 'Deposits and payments',
         'description' => 'Take booking deposits and send pay-by-text links, paid into the business\'s own Stripe account.',
         'default_mode' => 'plan',
+    ],
+    'value_report' => [
+        'label' => 'Dollars report',
+        'description' => 'What SureHelp was worth each month in dollars: jobs booked, what the business paid us and the return, on Results, the dashboard and the monthly email.',
     ],
     'white_label' => [
         'label' => 'White-label',

@@ -103,8 +103,12 @@ class PortalNavigation
             }
 
             $item['url'] = $item['route'] && Route::has($item['route']) ? route($item['route']) : null;
-            // A paid feature this business doesn't have: still listed, marked "Upgrade" (D46).
+            // A paid feature this business doesn't have: still listed, marked "Upgrade" (D46), unless
+            // it is only for businesses staff picked, which the rest don't see at all (D107).
             $organization = app(CurrentOrganization::class)->get();
+            if (! empty($item['feature']) && $organization && app(FeatureAccess::class)->hidden($organization, $item['feature'])) {
+                continue;
+            }
             $item['locked'] = ! empty($item['feature']) && $organization && ! app(FeatureAccess::class)->allows($organization, $item['feature']);
             $item['current'] = $item['route'] !== null && request()->routeIs(...explode('|', $item['active']));
             $items[] = $item;

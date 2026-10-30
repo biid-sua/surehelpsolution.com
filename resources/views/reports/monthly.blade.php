@@ -32,7 +32,15 @@
     </tr></table>
 
     <div class="hero">
-        @if ($r['revenue_cents'] !== null)
+        @if (($value ?? null) && $value['value_cents'] !== null)
+            {{-- The dollars report (D107) --}}
+            <div class="muted">What SureHelp was worth to you</div>
+            <div class="big">{{ $money($value['value_cents']) }}</div>
+            <div class="muted">{{ number_format($value['jobs']) }} jobs booked{{ $value['cost_cents'] !== null ? ' · you paid us '.$money($value['cost_cents']) : '' }}{{ $value['multiple'] !== null ? ' · '.($value['multiple'] >= 10 ? number_format($value['multiple']) : number_format($value['multiple'], 1)).'× return' : '' }}</div>
+            @if ($value['after_hours_value_cents'] !== null)
+                <div class="muted">Booked while you were closed: {{ $money($value['after_hours_value_cents']) }} · Since {{ $value['since']?->format('F Y') ?? 'you joined' }}: {{ $money((int) $value['since_value_cents']) }}</div>
+            @endif
+        @elseif ($r['revenue_cents'] !== null)
             <div class="muted">Estimated revenue from jobs we booked for you</div>
             <div class="big">{{ $money($r['revenue_cents']) }}</div>
             <div class="muted">{{ number_format($r['booked']) }} jobs booked × {{ $money($r['job_value_cents']) }} average job value</div>
