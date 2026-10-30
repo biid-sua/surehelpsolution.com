@@ -306,6 +306,10 @@ document.addEventListener('alpine:init', () => {
     /** Toasts: window event `toast` with { type: 'success'|'error'|'info', message }. */
     Alpine.data('toasts', () => ({
         items: [],
+        init() {
+            // A message from the request that drew this page (after a redirect, or an in-place page change).
+            if (this.$el.dataset.flash) this.push(JSON.parse(this.$el.dataset.flash));
+        },
         push(detail) {
             const id = Date.now() + Math.random();
             this.items.push({ id, type: detail.type ?? 'info', message: detail.message });
@@ -316,3 +320,22 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 });
+
+// Portal menu (D106): menu links change the page in place, and the menu keeps its scroll position
+// across page changes, in place or full (a form that reloads the page, say).
+const NAV_SCROLL = 'sh-sidebar-scroll';
+const saveNavScroll = () => {
+    const nav = document.getElementById('sidebar-nav');
+    try { if (nav) sessionStorage.setItem(NAV_SCROLL, String(nav.scrollTop)); } catch { /* storage blocked: start at the top */ }
+};
+const restoreNavScroll = () => {
+    const nav = document.getElementById('sidebar-nav');
+    if (!nav) return;
+    let top = null;
+    try { top = sessionStorage.getItem(NAV_SCROLL); } catch { /* storage blocked */ }
+    if (top !== null) nav.scrollTop = Number(top);
+    nav.querySelector('[aria-current="page"]')?.scrollIntoView({ block: 'nearest' });
+};
+document.addEventListener('livewire:navigate', saveNavScroll);
+window.addEventListener('pagehide', saveNavScroll);
+document.addEventListener('livewire:navigated', restoreNavScroll);

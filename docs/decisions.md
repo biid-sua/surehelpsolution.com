@@ -1902,3 +1902,24 @@ links, versions, app links) and websites (domain, Cloudflare). It builds on D104
 **Why:** the owner should be able to switch providers, rotate a key or turn on a service after an
 approval arrives without a developer or a server login. Keeping one screen with tests and the
 exact addresses to paste removes the most common setup mistakes.
+
+## D106 — Portal pages change in place, not with a full reload (2026-10-30)
+**Decision:** menu links in the three portals use Livewire's `wire:navigate`. A click fetches the
+next page and swaps the page content. The window isn't reloaded, the menu keeps its scroll position,
+and a thin bar in the brand colour shows while the page loads.
+- The menu's scroll position is also kept across full reloads (for example after a form), and the
+  current item is scrolled into view.
+- The agent's browser phone is persisted across page changes, so a live call continues. Leaving
+  the agent workspace during a call asks first. The phone now gives back its tab lock and listeners
+  when it is removed.
+- The browser keeps the first page's Content-Security-Policy, and later pages have a different
+  nonce. So portal pages carry no inline scripts: the theme script is a file
+  (`public/js/theme-boot.js`), a flashed toast is read from `data-flash`, and our own built files
+  are allowed by `'self'`, so their tags carry no nonce. The page head is then the same on every
+  page and is kept. A new deploy (changed file hashes) still forces a full reload.
+- Forms that post, downloads and links to other sites behave as before.
+
+**Why:** a full reload on every click flashed the screen and sent the menu back to the top, so
+items low in the menu scrolled out of sight after each click. Changing pages in place keeps the
+person's place and feels quicker. Removing inline scripts keeps the security policy strict
+(no `'unsafe-inline'`, a fresh nonce per response) while making that possible.

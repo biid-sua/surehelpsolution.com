@@ -1,15 +1,2 @@
-{{-- Colour theme (D59): "Match my device" picks Light or Midnight before the page paints, and follows the device when it changes. --}}
-<script nonce="{{ Vite::cspNonce() }}">
-    (() => {
-        const root = document.documentElement;
-        const light = window.matchMedia('(prefers-color-scheme: light)');
-        const apply = () => {
-            if (root.dataset.themeChoice !== 'system') return;
-            root.dataset.theme = light.matches ? 'light' : 'midnight';
-            root.style.colorScheme = light.matches ? 'light' : 'dark';
-        };
-        apply();
-        light.addEventListener?.('change', () => { apply(); window.dispatchEvent(new CustomEvent('sh-theme')); });
-        window.shApplyTheme = apply;
-    })();
-</script>
+{{-- Colour theme (D59): set before the page paints. A file, not inline, so the head is the same on every page (D106). --}}
+<script src="{{ asset('js/theme-boot.js') }}?v={{ filemtime(public_path('js/theme-boot.js')) }}"></script>

@@ -22,6 +22,8 @@
             'call' => url('agent/phone/calls/__ID__'),
         ],
         'businesses' => $lineBusinesses->map(fn ($o) => ['id' => $o->ulid, 'name' => $o->name])->values(),
+        // Pages that show the phone too, so it stays on during a call when moving between them (D106).
+        'keepOn' => array_values(array_filter(['/agent', $agent->isAgent() ? '/account' : null])),
     ];
 @endphp
 <div x-data="softphone(@js($config))" class="relative" x-on:keydown.escape="open = false" x-on:click.outside="open = false"

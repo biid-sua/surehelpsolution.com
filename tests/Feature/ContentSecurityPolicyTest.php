@@ -36,7 +36,9 @@ class ContentSecurityPolicyTest extends TestCase
 
             // Every executable inline script on the page carries this request's nonce; no inline handlers.
             preg_match_all('/<script(?![^>]*\bsrc=)(?![^>]*application\/ld\+json)([^>]*)>/i', $response->getContent(), $scripts);
-            $this->assertNotEmpty($scripts[0], $path);
+            if ($path === '/') {
+                $this->assertNotEmpty($scripts[0], 'the website has inline scripts to check');
+            }
             foreach ($scripts[1] as $attributes) {
                 $this->assertStringContainsString("nonce=\"{$nonce}\"", $attributes, "{$path}: <script{$attributes}>");
             }

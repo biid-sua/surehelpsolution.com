@@ -31,21 +31,29 @@ export default (config) => {
         originalTitle: '',
         dialNumber: '',
         dialBusiness: config.businesses[0]?.id ?? '',
+        releaseLock: null,
+        waitForLock: null,
+        onUnload: null,
+        onNavigate: null,
 
         init() {
             const start = () => this.start();
             if (navigator.locks?.request) {
+                // The lock is held until this phone is removed (tab closed, or a page without it, D106).
+                const hold = () => new Promise((resolve) => { this.releaseLock = resolve; });
                 navigator.locks.request('surehelp-softphone', { ifAvailable: true }, (lock) => {
                     if (!lock) {
                         this.passive = true;
                         this.schedule();
                         this.poll();
                         // Take over when the tab that owns the phone closes.
-                        navigator.locks.request('surehelp-softphone', () => { this.passive = false; start(); return new Promise(() => {}); });
+                        this.waitForLock = new AbortController();
+                        navigator.locks.request('surehelp-softphone', { signal: this.waitForLock.signal }, () => { this.passive = false; start(); return hold(); })
+                            .catch(() => {}); // aborted: this phone was removed first
                         return null;
                     }
                     start();
-                    return new Promise(() => {}); // hold the lock while this tab is open
+                    return hold();
                 });
             } else {
                 start();
@@ -55,17 +63,31 @@ export default (config) => {
                 if (event.data?.type === 'dialed') this.linkToCallScreen(event.data.call);
             });
             this.clockTimer = setInterval(() => this.tick(), 1000);
-            window.addEventListener('beforeunload', (event) => {
+            this.onUnload = (event) => {
                 if (this.active && !this.passive) { event.preventDefault(); event.returnValue = ''; }
-            });
+            };
+            window.addEventListener('beforeunload', this.onUnload);
+            // Moving between pages keeps the phone (it is persisted) only inside the agent workspace;
+            // anywhere else would end a live call, so ask first.
+            this.onNavigate = (event) => {
+                if (!this.active || this.passive) return;
+                const path = new URL(event.detail?.url ?? '', window.location.href).pathname;
+                if ((config.keepOn ?? []).some((prefix) => path === prefix || path.startsWith(prefix + '/'))) return;
+                if (!window.confirm('You are on a call. Leaving the agent workspace ends it. Leave anyway?')) event.preventDefault();
+            };
+            document.addEventListener('livewire:navigate', this.onNavigate);
         },
 
         destroy() {
             clearTimeout(this.pollTimer);
             clearInterval(this.clockTimer);
             clearInterval(this.titleTimer);
+            window.removeEventListener('beforeunload', this.onUnload);
+            document.removeEventListener('livewire:navigate', this.onNavigate);
             channel?.close();
             device?.destroy();
+            this.waitForLock?.abort();
+            this.releaseLock?.();
         },
 
         start() {

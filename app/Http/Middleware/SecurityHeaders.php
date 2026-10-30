@@ -21,6 +21,11 @@ class SecurityHeaders
         $mode = (string) config('csp.mode', 'enforce');
         if ($mode !== 'off' && ! $request->is('api/*')) {
             Vite::useCspNonce();
+            // Our own built files are allowed by 'self', so their tags carry no nonce: the page head
+            // then stays the same from page to page, and moving between portal pages (D106) keeps it.
+            Vite::useScriptTagAttributes(['nonce' => false]);
+            Vite::useStyleTagAttributes(['nonce' => false]);
+            Vite::usePreloadTagAttributes(['nonce' => false]);
         }
 
         $response = $next($request);

@@ -281,3 +281,11 @@
 .fc .fc-event.busy-block.src-google { --fc-event-border-color: #4285f4; }
 .fc .fc-event.busy-block.src-microsoft { --fc-event-border-color: #0ea5e9; }
 .fc .fc-daygrid-dot-event.busy-block .fc-src-event { color: var(--color-muted); }
+
+/* The bar along the top while a portal page loads in place (D106), in the theme's colour. */
+html #nprogress .bar {
+    background: var(--color-brand-400);
+}
+html #nprogress .peg {
+    box-shadow: 0 0 10px var(--color-brand-400), 0 0 5px var(--color-brand-400);
+}

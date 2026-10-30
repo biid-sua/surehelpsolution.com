@@ -26,7 +26,8 @@
     <link rel="icon" href="{{ asset('favicon.ico') }}">
     @include('partials.theme-boot')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    @livewireStyles
+    {{-- No nonce: inline styles are allowed anyway, and the head must match from page to page (D106). --}}
+    @livewireStyles(['nonce' => ''])
     @if ($brand && ($css = app(\App\Services\Business\Branding::class)->css($organization)))<style>{!! $css !!}</style>@endif
 </head>
 <body class="h-full">
@@ -41,7 +42,7 @@
             class="fixed inset-y-0 left-0 z-50 flex w-64 -translate-x-full flex-col border-r border-line bg-surface transition-transform lg:translate-x-0"
             :class="{ 'translate-x-0': sidebarOpen }" aria-label="Main navigation">
             <div class="flex h-16 items-center justify-between gap-2 border-b border-line px-5">
-                <a href="{{ $navigation[0]['url'] ?? url('/') }}" class="flex items-center gap-2">
+                <a href="{{ $navigation[0]['url'] ?? url('/') }}" wire:navigate class="flex items-center gap-2">
                     @if ($brand)
                         @if ($brand['logo'])<img src="{{ $brand['logo'] }}" alt="" class="size-8 rounded-lg bg-white object-contain p-0.5">@endif
                         <span class="max-w-[10rem] truncate text-base font-semibold text-ink">{{ $brand['name'] }}</span>
@@ -56,7 +57,8 @@
 
             <p class="px-5 pt-5 text-xs font-semibold uppercase tracking-wider text-subtle">{{ $portalLabel }}</p>
 
-            <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-3">
+            {{-- Menu links change only the page, not the whole window (D106); the menu keeps its scroll position. --}}
+            <nav id="sidebar-nav" class="flex-1 space-y-1 overflow-y-auto px-3 py-3">
                 @foreach ($navigation as $item)
                     @if ($item['status'] === 'soon')
                         <span class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-subtle" aria-disabled="true">
@@ -65,7 +67,7 @@
                             <span class="rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide">Soon</span>
                         </span>
                     @elseif ($item['url'])
-                        <a href="{{ $item['url'] }}" @if ($item['current']) aria-current="page" @endif
+                        <a href="{{ $item['url'] }}" wire:navigate @if ($item['current']) aria-current="page" @endif
                             @class([
                                 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                                 'bg-brand-500/15 text-ink ring-1 ring-inset ring-brand-500/30' => $item['current'],
@@ -154,14 +156,17 @@
                 <div class="flex items-center gap-3">
                     {{-- The browser phone for agents taking live calls (D60) --}}
                     @if ($portal === 'agent' && Route::has('agent.phone.check-in'))
-                        <x-agent.softphone />
+                        {{-- Kept alive while moving between pages, so a live call isn't cut off (D106). --}}
+                        @persist('softphone')
+                            <x-agent.softphone />
+                        @endpersist
                     @endif
                     {{-- Colour theme (D59); staff viewing as a client can't change the client's own choice. --}}
                     @unless (session()->has(\App\Services\Account\Impersonation::KEY))
                         <x-ui.theme-picker />
                     @endunless
                     <livewire:notification-bell />
-                    <a href="{{ route('account.profile') }}" class="flex items-center gap-3 rounded-xl px-1.5 py-1 hover:bg-surface-2" title="Your account and security">
+                    <a href="{{ route('account.profile') }}" wire:navigate class="flex items-center gap-3 rounded-xl px-1.5 py-1 hover:bg-surface-2" title="Your account and security">
                         <span class="hidden text-right sm:block">
                             <span class="block text-sm font-medium text-ink">{{ $user->name }}</span>
                             <span class="block text-xs text-subtle">{{ $user->email }}</span>

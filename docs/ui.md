@@ -15,6 +15,10 @@ Stack ([decisions.md](decisions.md) D5): Blade + Livewire 3 + Alpine (bundled wi
 
 All of them use `layouts/portal`, except the account page, which is a standalone page built with the same tokens and components. The public website (`/`, legal pages) is the marketing site with its own layout until its redesign.
 
+**Moving between pages (D106):** menu links use `wire:navigate`, so only the page changes; the
+window, the menu and its scroll position stay put, and a thin bar shows while the next page loads.
+The agent's phone is kept alive (`@persist('softphone')`), so a live call isn't cut off.
+
 Navigation per portal: `App\Support\Navigation\PortalNavigation`, which is also the complete list of screens (the table above shows the main ones). Items are filtered by permission. Unbuilt items show as **Soon** (spec §95), and only the core set is shown to clients (spec §119).
 
 ## Design tokens
@@ -79,3 +83,8 @@ Form fields use the `.sh-input` and `.sh-label` classes.
 4. Look up records **inside** the organization (`forOrganization`) and return 404, not 403, for other tenants' IDs.
 5. Every list is server-paginated. Every screen has loading, empty and error states.
 6. Heavy JS loads lazily (see `resources/js/app.js`: `loadChart`, `loadCalendar`).
+7. **No inline `<script>` on portal pages (D106).** After an in-place page change the browser still
+   uses the first page's security policy, whose nonce the next page doesn't share, so an inline
+   script would be blocked. Put behaviour in an Alpine component (`Alpine.data` in `app.js`), pass
+   data in attributes (`data-…` or `x-data="name(@js($data))"`), and clean up in its `destroy()`.
+   `PortalNavigationTest` checks this.
