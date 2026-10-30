@@ -8,6 +8,7 @@ use App\Actions\Social\StoreMedia;
 use App\Enums\SocialNetwork;
 use App\Enums\SocialPostStatus;
 use App\Livewire\Concerns\ScopedToOrganization;
+use App\Livewire\Concerns\SocialPortal;
 use App\Models\BusinessProfile;
 use App\Models\MediaAsset;
 use App\Models\SocialAccount;
@@ -37,7 +38,7 @@ use Livewire\WithFileUploads;
 #[Title('Social post')]
 class Compose extends Component
 {
-    use ScopedToOrganization, WithFileUploads;
+    use ScopedToOrganization, SocialPortal, WithFileUploads;
 
     public ?string $postUlid = null;
 
@@ -183,7 +184,7 @@ class Compose extends Component
         };
         session()->flash('success', $message);
 
-        return $this->redirectRoute('app.social.posts.edit', $post, navigate: false);
+        return $this->redirect($this->socialRoute('posts.edit', $post), navigate: false);
     }
 
     /** Write the post for each chosen network from a short brief (D66). */
@@ -291,7 +292,7 @@ class Compose extends Component
         $workflow->delete($this->requirePost(), auth()->user());
         session()->flash('success', 'Post deleted.');
 
-        return $this->redirectRoute('app.social.index', navigate: false);
+        return $this->redirect($this->socialRoute('index'), navigate: false);
     }
 
     public function updatedUploads(StoreMedia $store): void

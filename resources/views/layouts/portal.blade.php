@@ -145,7 +145,7 @@
                                 <a href="{{ route('app.locations') }}" class="mt-1 block rounded-lg border-t border-line px-3 py-2 text-sm font-medium text-brand-300 hover:bg-surface-2">All locations overview</a>
                             </div>
                         </div>
-                    @elseif ($organization)
+                    @elseif ($organization && $portal !== 'admin')
                         <p class="truncate text-sm font-semibold text-ink">{{ $organization->name }}</p>
                         <p class="truncate text-xs text-subtle">{{ $organization->timezone ?? 'Timezone not set yet' }}</p>
                     @endif

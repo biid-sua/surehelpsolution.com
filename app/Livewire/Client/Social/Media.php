@@ -4,6 +4,7 @@ namespace App\Livewire\Client\Social;
 
 use App\Actions\Social\StoreMedia;
 use App\Livewire\Concerns\ScopedToOrganization;
+use App\Livewire\Concerns\SocialPortal;
 use App\Models\MediaAsset;
 use App\Support\Audit\Audit;
 use Illuminate\Contracts\View\View;
@@ -22,7 +23,7 @@ use Livewire\WithPagination;
 #[Title('Media library')]
 class Media extends Component
 {
-    use ScopedToOrganization, WithFileUploads, WithPagination;
+    use ScopedToOrganization, SocialPortal, WithFileUploads, WithPagination;
 
     /** @var list<TemporaryUploadedFile> */
     public array $uploads = [];

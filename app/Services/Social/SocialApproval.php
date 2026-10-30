@@ -6,6 +6,7 @@ use App\Models\BusinessProfile;
 use App\Models\Organization;
 use App\Models\User;
 use App\Services\Account\Impersonation;
+use App\Services\Social\House\HouseSocial;
 
 /**
  * Who must approve a post before it goes out (spec §41). With the default "owner" setting, posts by
@@ -34,11 +35,19 @@ class SocialApproval
 
     public function isOwner(Organization $organization, User $user): bool
     {
+        // SureHelp's own accounts (D104): staff who manage social media act as the owner.
+        if ($organization->is_internal) {
+            return $user->role === 'admin' && $user->can('social.manage', $organization);
+        }
+
         return ! $this->byOurTeam() && $user->organizationRole($organization) === 'owner';
     }
 
     public function needsApproval(Organization $organization, User $author, string $source = 'manual'): bool
     {
+        if ($organization->is_internal) {
+            return $source === 'autopilot' && (bool) app(HouseSocial::class)->settings()['approval'];
+        }
         if ($this->mode($organization) === 'off' && $source !== 'ai') {
             return false;
         }

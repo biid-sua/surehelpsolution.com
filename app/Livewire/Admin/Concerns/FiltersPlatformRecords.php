@@ -70,6 +70,6 @@ trait FiltersPlatformRecords
     /** @return Collection<int, Organization> */
     protected function businessOptions(): Collection
     {
-        return Organization::query()->orderBy('name')->get(['id', 'ulid', 'name']);
+        return Organization::query()->external()->orderBy('name')->get(['id', 'ulid', 'name']);
     }
 }

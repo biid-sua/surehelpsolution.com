@@ -39,7 +39,7 @@ class SavePost
      *
      * @throws ValidationException
      */
-    public function handle(Organization $organization, ?SocialPost $post, array $data, User $actor, string $intent): SocialPost
+    public function handle(Organization $organization, ?SocialPost $post, array $data, User $actor, string $intent, ?string $source = null, ?string $autopilotSlot = null): SocialPost
     {
         if ($post && ! $post->status->isEditable()) {
             throw ValidationException::withMessages(['post' => ['This post has already gone out and can\'t be changed.']]);
@@ -58,15 +58,20 @@ class SavePost
         }
 
         $byTeam = $this->approval->byOurTeam();
-        $needsApproval = $publishing && $this->approval->needsApproval($organization, $actor, $post->source ?? 'manual');
+        $needsApproval = $publishing && $this->approval->needsApproval($organization, $actor, $post->source ?? $source ?? 'manual');
         $status = match (true) {
             ! $publishing => SocialPostStatus::Draft,
             $needsApproval => SocialPostStatus::InReview,
             default => SocialPostStatus::Scheduled,
         };
 
-        $post = DB::transaction(function () use ($organization, $post, $data, $actor, $accounts, $media, $link, $when, $status, $byTeam) {
-            $post ??= new SocialPost(['organization_id' => $organization->id, 'created_by_user_id' => $actor->id]);
+        $post = DB::transaction(function () use ($organization, $post, $data, $actor, $accounts, $media, $link, $when, $status, $byTeam, $source, $autopilotSlot) {
+            if (! $post) {
+                $post = new SocialPost(['organization_id' => $organization->id, 'created_by_user_id' => $actor->id]);
+                // Set by SureHelp's own scheduler (D104), never from form input.
+                $post->source = $source ?? $post->source;
+                $post->autopilot_slot = $autopilotSlot;
+            }
             $post->fill([
                 'body' => trim((string) $data['body']),
                 'link_url' => $link,

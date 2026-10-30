@@ -1,7 +1,7 @@
 <div>
     <x-ui.page-header :title="$post ? 'Social post' : 'New social post'" description="Write once, post everywhere. Each network gets checked before anything is scheduled.">
         <x-slot:actions>
-            <x-ui.button variant="secondary" icon="arrow-left" :href="route('app.social.index')">All posts</x-ui.button>
+            <x-ui.button variant="secondary" icon="arrow-left" :href="$this->socialRoute('index')">All posts</x-ui.button>
         </x-slot:actions>
     </x-ui.page-header>
 
@@ -92,7 +92,7 @@
     @if ($accounts->isEmpty())
         <x-ui.card>
             <x-ui.empty-state icon="megaphone" title="Connect an account first" description="Connect Facebook, Instagram, LinkedIn or Google Business Profile, then come back to write your post." />
-            <div class="mt-4 text-center"><x-ui.button :href="route('app.social.accounts')">Connect accounts</x-ui.button></div>
+            <div class="mt-4 text-center"><x-ui.button :href="$this->socialRoute('accounts')">Connect accounts</x-ui.button></div>
         </x-ui.card>
     @else
         <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
@@ -146,7 +146,7 @@
                                             <span wire:loading wire:target="writeWithAi">Writing…</span>
                                         </x-ui.button>
                                     </div>
-                                    <p class="text-xs text-subtle">Written for each network you picked, from your business details and <a href="{{ route('app.social.accounts') }}#brand-voice" class="text-brand-300 hover:underline">brand voice</a>. Read it before you post.</p>
+                                    <p class="text-xs text-subtle">Written for each network you picked, from your business details and <a href="{{ $this->socialRoute('accounts') }}#brand-voice" class="text-brand-300 hover:underline">brand voice</a>. Read it before you post.</p>
                                 @endif
                             </div>
                         </div>

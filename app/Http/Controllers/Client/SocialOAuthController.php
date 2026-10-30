@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SocialAccount;
 use App\Services\Billing\Entitlements;
 use App\Services\Billing\FeatureAccess;
+use App\Services\Social\House\HouseSocial;
 use App\Services\Social\SocialManager;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentOrganization;
@@ -16,6 +17,9 @@ use Illuminate\Support\Str;
 /**
  * Connects a business's social accounts through OAuth (spec §41). Tokens are exchanged on the server
  * and stored encrypted; the browser only ever sees the network's consent screen.
+ *
+ * The same flow runs under /admin for SureHelp's own accounts (D104): the business is then
+ * SureHelp's internal one, and only staff who may manage social media can start it.
  */
 class SocialOAuthController extends Controller
 {
@@ -25,6 +29,7 @@ class SocialOAuthController extends Controller
 
     public function redirect(Request $request, CurrentOrganization $current, FeatureAccess $features, string $connector): RedirectResponse
     {
+        $this->useHouseWhenAdmin($request, $current);
         // Facebook and LinkedIn are only for posting; Google is for posting or reviews.
         abort_unless($connector === 'google' || (($org = $current->get()) && $features->allows($org, 'social_publishing')), 403);
         $adapter = $this->social->connector($connector);
@@ -37,17 +42,22 @@ class SocialOAuthController extends Controller
             'organization_id' => $current->id(),
             'user_id' => $request->user()->id,
             'at' => now()->timestamp,
-            'back' => $request->query('back') === 'reviews' ? 'app.reviews' : 'app.social.accounts',
+            'back' => $this->isHouse($request) ? 'admin.social.accounts' : ($request->query('back') === 'reviews' ? 'app.reviews' : 'app.social.accounts'),
         ]);
 
-        return redirect()->away($adapter->authorizationUrl($this->redirectUri($connector), $state));
+        return redirect()->away($adapter->authorizationUrl($this->redirectUri($request, $connector), $state));
     }
 
     public function callback(Request $request, CurrentOrganization $current, Entitlements $entitlements, Audit $audit, FeatureAccess $features, string $connector): RedirectResponse
     {
+        $this->useHouseWhenAdmin($request, $current);
         abort_unless($connector === 'google' || (($org = $current->get()) && $features->allows($org, 'social_publishing')), 403);
         $pending = $request->session()->pull(self::SESSION_KEY);
-        $back = redirect()->route(is_array($pending) && ($pending['back'] ?? null) === 'app.reviews' ? 'app.reviews' : 'app.social.accounts');
+        $back = redirect()->route(match (true) {
+            $this->isHouse($request) => 'admin.social.accounts',
+            is_array($pending) && ($pending['back'] ?? null) === 'app.reviews' => 'app.reviews',
+            default => 'app.social.accounts',
+        });
 
         // Forged callbacks (CSRF): the state must be the one we issued to this person, for this business, recently.
         $valid = is_array($pending)
@@ -67,7 +77,7 @@ class SocialOAuthController extends Controller
         $adapter = $this->social->connector($connector);
 
         try {
-            $tokens = $adapter->exchangeCode((string) $request->query('code'), $this->redirectUri($connector));
+            $tokens = $adapter->exchangeCode((string) $request->query('code'), $this->redirectUri($request, $connector));
             $found = $adapter->discover($tokens);
         } catch (\Throwable $e) {
             report($e);
@@ -84,7 +94,7 @@ class SocialOAuthController extends Controller
         }
 
         $organization = $current->get();
-        $limit = $entitlements->limit($organization, 'social_accounts');
+        $limit = $organization->is_internal ? null : $entitlements->limit($organization, 'social_accounts');
         $enabled = SocialAccount::query()->forOrganization($organization)->where('is_enabled', true)->count();
         $added = 0;
 
@@ -122,8 +132,23 @@ class SocialOAuthController extends Controller
         return $back->with('success', count($found) > 1 ? $message.' Turn on the ones you want to post to.' : $message);
     }
 
-    private function redirectUri(string $connector): string
+    private function redirectUri(Request $request, string $connector): string
     {
-        return route('app.social.connect.callback', $connector);
+        return route($this->isHouse($request) ? 'admin.social.connect.callback' : 'app.social.connect.callback', $connector);
+    }
+
+    private function isHouse(Request $request): bool
+    {
+        return $request->routeIs('admin.*');
+    }
+
+    /** Admin routes carry no business; SureHelp's own is used, for staff who may manage social media. */
+    private function useHouseWhenAdmin(Request $request, CurrentOrganization $current): void
+    {
+        if (! $this->isHouse($request)) {
+            return;
+        }
+        abort_unless($request->user()?->role === 'admin' && $request->user()->hasPermissionIn('social.manage'), 403);
+        $current->set(app(HouseSocial::class)->organization());
     }
 }

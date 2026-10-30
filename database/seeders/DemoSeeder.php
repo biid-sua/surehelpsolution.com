@@ -2238,6 +2238,8 @@ class DemoSeeder extends Seeder
                         SocialNetwork::Instagram => 'https://www.instagram.com/p/C'.strtoupper(substr(md5($external), 0, 10)).'/',
                         SocialNetwork::GoogleBusiness => 'https://business.google.com/posts/l/'.$external,
                         SocialNetwork::LinkedIn => 'https://www.linkedin.com/feed/update/urn:li:share:'.$external,
+                        SocialNetwork::YouTube => 'https://www.youtube.com/watch?v='.$external,
+                        SocialNetwork::X => 'https://x.com/i/status/'.$external,
                     } : null,
                     'published_at' => $external ? $when : null,
                     'last_error' => match (true) {

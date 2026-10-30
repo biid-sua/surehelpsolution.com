@@ -40,8 +40,8 @@ class Home extends Component
 
         return view('livewire.admin.home', [
             'stats' => [
-                'organizations' => Organization::where('status', OrganizationStatus::Active)->count(),
-                'newOrganizations' => Organization::where('created_at', '>=', now()->startOfMonth())->count(),
+                'organizations' => Organization::external()->where('status', OrganizationStatus::Active)->count(),
+                'newOrganizations' => Organization::external()->where('created_at', '>=', now()->startOfMonth())->count(),
                 'agents' => User::where('role', 'agent')->where('is_active', true)->count(),
                 'callsToday' => CallLog::where('created_at', '>=', $today)->count(),
                 'needsReview' => $needsReview,

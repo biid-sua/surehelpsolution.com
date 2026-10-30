@@ -1847,3 +1847,34 @@ skips the code. The password is always asked.
 sign-in, and it pushes owners to turn it off. Remembering a device keeps the code for new or lost
 devices, where it matters. Keeping the secret server-side (only a hash) means a device can be revoked
 at any time, unlike a long-lived signed cookie.
+
+## D104 — SureHelp's own social media on autopilot, and keys entered in the admin (2026-10-30)
+**Decision:** SureHelp posts to its own Facebook, Instagram, LinkedIn, Google, X and YouTube
+accounts from Admin › Social media, using the same screens, checks and publishing as businesses.
+- **Connections.** Admin › Connections (super admins only) holds the Claude and ChatGPT keys and
+  each network's app ID and secret. They are stored encrypted (`platform_secrets`), never shown
+  again (only the last 4 characters), and override `.env`. Changing a key needs no code or
+  server change. "Test" checks a key and loads that account's models to choose from.
+- **Claude or ChatGPT.** ChatGPT (OpenAI's Responses API) is a second `AiProvider`. The main AI
+  and the one that writes social posts can be chosen separately. Pictures are made by ChatGPT's
+  image model, because Claude doesn't make images.
+- **Videos, X and YouTube.** The media library takes MP4 and MOV videos (`SOCIAL_VIDEO_MAX_MB`,
+  default 100). Video posts go to Facebook, Instagram (as Reels), LinkedIn, YouTube and X, within
+  each network's length limit. YouTube takes only videos; its first line is the title.
+- **SureHelp is an internal business.** `organizations.is_internal` marks it. It is left out of
+  every admin list, count, search and report, and has every feature with no plan limits.
+- **The schedule.** Admin › Social media › Schedule sets the times each day, the days, the
+  accounts, the mix of text, picture and video posts, where pictures come from (library only;
+  library first and ChatGPT when every picture was used in the last 30 days; always new), the
+  topics and the voice. Every 15 minutes `social:house-schedule` writes the posts due in the next
+  24 hours, one per time (`social_posts.autopilot_slot` is unique). Media is used least recently
+  used first. Text that breaks a network's rules leaves that account out.
+- **Approval switch.** Off by default: posts go out at their time. On: they wait under Posts until
+  a staff member approves them. Either way they can be edited or cancelled until they go out.
+- Staff need `social.view` to see it and `social.manage` to change it. Redirect URLs for SureHelp
+  are `/admin/social/connect/{network}/callback`.
+
+**Why:** SureHelp needs a steady social presence and the tools already exist for businesses, so
+running them for an internal business costs little and gets every fix both ways. Keys in the admin
+let the owner switch between Claude and ChatGPT, or add a network, without a developer. Posts are
+written a day ahead so there is time to look before they go out.

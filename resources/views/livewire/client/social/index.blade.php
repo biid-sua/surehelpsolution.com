@@ -3,7 +3,7 @@
         @if ($canManage)
             <x-slot:actions>
                 <x-ui.button variant="secondary" icon="sparkles" wire:click="openPlan">Plan the month with AI</x-ui.button>
-                <x-ui.button icon="megaphone" :href="route('app.social.posts.create')">New post</x-ui.button>
+                <x-ui.button icon="megaphone" :href="$this->socialRoute('posts.create')">New post</x-ui.button>
             </x-slot:actions>
         @endif
     </x-ui.page-header>
@@ -71,14 +71,14 @@
                         @endforeach
                     </ul>
                 </div>
-                <x-ui.button icon="megaphone" :href="route('app.social.posts.create', ['openings' => 1])">Post about these openings</x-ui.button>
+                <x-ui.button icon="megaphone" :href="$this->socialRoute('posts.create', ['openings' => 1])">Post about these openings</x-ui.button>
             </div>
         </x-ui.card>
     @endif
 
     @unless ($hasAccounts)
         <x-ui.alert tone="info" class="mb-6" title="Connect your accounts to start posting">
-            You can plan drafts now. <a href="{{ route('app.social.accounts') }}" class="font-semibold underline underline-offset-2">Connect Facebook, Instagram, LinkedIn or Google</a> to publish them.
+            You can plan drafts now. <a href="{{ $this->socialRoute('accounts') }}" class="font-semibold underline underline-offset-2">Connect Facebook, Instagram, LinkedIn or Google</a> to publish them.
         </x-ui.alert>
     @endunless
 
@@ -159,7 +159,7 @@
                                 <ul class="space-y-2">
                                     @foreach ($items->sortBy(fn ($p) => $p->scheduled_at ?? $p->published_at) as $p)
                                         <li>
-                                            <a href="{{ route('app.social.posts.edit', $p) }}" class="block rounded-lg bg-surface-2 px-3 py-2 ring-1 ring-line hover:ring-brand-400">
+                                            <a href="{{ $this->socialRoute('posts.edit', $p) }}" class="block rounded-lg bg-surface-2 px-3 py-2 ring-1 ring-line hover:ring-brand-400">
                                                 <span class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-subtle">
                                                     @foreach ($p->targets->pluck('account.network')->filter()->unique() as $n)<span class="inline-block size-2 rounded-full" style="background: {{ $n->color() }}" title="{{ $n->label() }}"></span>@endforeach
                                                     <span>{{ ($p->scheduled_at ?? $p->published_at)?->setTimezone($timezone)->format('g:ia') }}</span>
@@ -193,13 +193,13 @@
                                         <div class="flex items-center justify-between">
                                             <span @class(['inline-flex size-6 items-center justify-center rounded-full text-xs', 'bg-brand-600 font-semibold text-white' => $key === $today, 'text-muted' => $key !== $today])>{{ $day->day }}</span>
                                             @if ($canManage && $key >= $today)
-                                                <a href="{{ route('app.social.posts.create', ['date' => $key]) }}" class="rounded px-1 text-subtle hover:text-ink" aria-label="New post on {{ $day->format('j F') }}">+</a>
+                                                <a href="{{ $this->socialRoute('posts.create', ['date' => $key]) }}" class="rounded px-1 text-subtle hover:text-ink" aria-label="New post on {{ $day->format('j F') }}">+</a>
                                             @endif
                                         </div>
                                         <ul class="mt-1 space-y-1">
                                             @foreach ($items->take(3) as $p)
                                                 <li>
-                                                    <a href="{{ route('app.social.posts.edit', $p) }}" class="block truncate rounded-md bg-surface-2 px-1.5 py-1 text-xs text-ink ring-1 ring-line hover:ring-brand-400" title="{{ $p->aiLabel() ? $p->aiLabel().' · ' : '' }}{{ $p->status->label() }}: {{ $p->excerpt(200) }}">
+                                                    <a href="{{ $this->socialRoute('posts.edit', $p) }}" class="block truncate rounded-md bg-surface-2 px-1.5 py-1 text-xs text-ink ring-1 ring-line hover:ring-brand-400" title="{{ $p->aiLabel() ? $p->aiLabel().' · ' : '' }}{{ $p->status->label() }}: {{ $p->excerpt(200) }}">
                                                         @foreach ($p->targets->pluck('account.network')->filter()->unique() as $n)<span class="mr-0.5 inline-block size-2 rounded-full" style="background: {{ $n->color() }}"></span>@endforeach
                                                         @if ($p->status->value === 'draft')<span class="font-medium text-subtle">{{ $p->source === 'ai' ? 'AI draft' : 'Draft' }}</span>@endif
                                                         <span class="text-subtle">{{ ($p->scheduled_at ?? $p->published_at)?->setTimezone($timezone)->format('g:ia') }}</span>
@@ -238,7 +238,7 @@
                         @foreach ($posts as $p)
                             <tr wire:key="p-{{ $p->ulid }}">
                                 <td class="whitespace-nowrap text-muted">{{ ($p->scheduled_at ?? $p->published_at)?->setTimezone($timezone)->format('D j M, g:i A') ?? 'Not scheduled' }}</td>
-                                <td><a href="{{ route('app.social.posts.edit', $p) }}" class="font-medium text-ink hover:text-brand-300">{{ $p->excerpt(90) ?: '(photo only)' }}</a></td>
+                                <td><a href="{{ $this->socialRoute('posts.edit', $p) }}" class="font-medium text-ink hover:text-brand-300">{{ $p->excerpt(90) ?: '(photo only)' }}</a></td>
                                 <td>
                                     <div class="flex flex-wrap gap-1">
                                         @foreach ($p->targets as $t)

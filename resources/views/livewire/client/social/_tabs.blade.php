@@ -1,10 +1,13 @@
 {{-- Sub-navigation for the Social section. --}}
 @php
-    $tabs = [
-        'app.social.index' => 'Posts',
-        'app.social.media' => 'Media library',
-        'app.social.accounts' => 'Accounts & settings',
-    ];
+    $portal = $this->socialPortal();
+    $tabs = array_filter([
+        $portal.'.social.index' => 'Posts',
+        // SureHelp's own posting schedule (D104).
+        $portal.'.social.schedule' => $portal === 'admin' ? 'Schedule' : null,
+        $portal.'.social.media' => 'Media library',
+        $portal.'.social.accounts' => $portal === 'admin' ? 'Accounts' : 'Accounts & settings',
+    ]);
 @endphp
 <nav class="mb-6 flex gap-1 overflow-x-auto border-b border-line" aria-label="Social media">
     @foreach ($tabs as $route => $label)

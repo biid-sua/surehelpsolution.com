@@ -41,7 +41,7 @@ class Search extends Component
             $digits = preg_replace('/\D/', '', $term) ?? '';
 
             if ($user->hasPermissionIn('organization.view')) {
-                $results['businesses'] = Organization::query()
+                $results['businesses'] = Organization::query()->external()
                     ->where(fn (Builder $q) => $q->where('name', 'like', $like)->orWhere('ulid', $term)->orWhere('slug', 'like', $like))
                     ->orderBy('name')->limit(self::LIMIT)->get(['id', 'ulid', 'name', 'status', 'timezone']);
             }

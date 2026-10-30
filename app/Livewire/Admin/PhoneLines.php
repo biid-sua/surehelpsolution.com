@@ -223,7 +223,7 @@ class PhoneLines extends Component
             'lines' => $lines,
             'lineStats' => $lines->mapWithKeys(fn (PhoneNumber $l) => [$l->id => $stats->summary($l->organization_id, $from, now())]),
             'overall' => $stats->summary(null, $from, now()),
-            'businesses' => Organization::query()->orderBy('name')->get(['ulid', 'name']),
+            'businesses' => Organization::query()->external()->orderBy('name')->get(['ulid', 'name']),
             'recent' => VoiceCall::withoutGlobalScopes()->with(['answeredBy:id,name', 'placedBy:id,name', 'organization:id,name'])->latest('started_at')->limit(15)->get(),
         ]);
     }

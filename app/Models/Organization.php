@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\AgentAssignmentSource;
 use App\Enums\OrganizationStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -57,6 +58,7 @@ class Organization extends Model
         return [
             'status' => OrganizationStatus::class,
             'is_demo' => 'boolean',
+            'is_internal' => 'boolean',
             'setup_progress' => 'array',
             'setup_completed_at' => 'datetime',
             'signed_up_at' => 'datetime',
@@ -82,6 +84,17 @@ class Organization extends Model
             $organization->status ??= OrganizationStatus::Onboarding;
             $organization->currency ??= 'USD';
         });
+    }
+
+    /**
+     * Real businesses only: leaves out SureHelp's own internal organization (D104), which exists so the
+     * admin console can post on SureHelp's social media.
+     *
+     * @param  Builder<Organization>  $query
+     */
+    public function scopeExternal(Builder $query): void
+    {
+        $query->where('organizations.is_internal', false);
     }
 
     /** The service is running: agents answer and the website tools show (onboarding counts, D45). */

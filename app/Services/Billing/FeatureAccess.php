@@ -42,6 +42,10 @@ class FeatureAccess
 
     public function allows(Organization $organization, string $feature): bool
     {
+        // SureHelp's own internal organization (D104) isn't a customer: nothing is gated.
+        if ($organization->is_internal) {
+            return true;
+        }
         $override = $this->overrides($organization)[$feature] ?? null;
         if ($override !== null) {
             return $override;

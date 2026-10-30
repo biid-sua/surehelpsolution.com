@@ -61,6 +61,7 @@ class PortalNavigation
                 $this->item('Billing', 'card', 'admin.billing', 'admin.billing', 'billing.view'),
                 $this->item('Usage', 'chart', 'admin.usage', 'admin.usage', 'billing.view'),
                 $this->item('SEO service', 'trend-up', 'admin.seo', 'admin.seo', 'seo.manage'),
+                $this->item('Social media', 'megaphone', 'admin.social.index', 'admin.social.*', 'social.view'),
                 $this->item('Website enquiries', 'chat', 'admin.enquiries', 'admin.enquiries', 'marketing.view'),
                 $this->item('Audit log', 'shield', 'admin.audit', 'admin.audit', 'audit_logs.view'),
                 $this->item('Appearance', 'swatch', 'admin.appearance', 'admin.appearance', 'settings.view'),

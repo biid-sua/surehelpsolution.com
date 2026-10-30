@@ -58,13 +58,15 @@ class AiImages
         }
 
         $info = @getimagesizefromstring($bytes) ?: [null, null, 'mime' => 'image/png'];
-        $extension = match ($info['mime'] ?? 'image/png') { 'image/jpeg' => 'jpg', 'image/webp' => 'webp', default => 'png' };
+        $extension = match ($info['mime']) {
+            'image/jpeg' => 'jpg', 'image/webp' => 'webp', default => 'png'
+        };
         $path = 'social/'.$organization->ulid.'/'.Str::ulid().'.'.$extension;
         Storage::disk('local')->put($path, $bytes);
 
         $asset = MediaAsset::create([
             'organization_id' => $organization->id, 'disk' => 'local', 'path' => $path,
-            'original_name' => 'AI picture '.now()->format('Y-m-d H:i').'.'.$extension, 'mime' => $info['mime'] ?? 'image/png',
+            'original_name' => 'AI picture '.now()->format('Y-m-d H:i').'.'.$extension, 'mime' => $info['mime'],
             'size_bytes' => strlen($bytes), 'width' => $info[0], 'height' => $info[1],
             'alt_text' => $alt ? Str::limit($alt, 500, '') : null,
             'source' => MediaAsset::SOURCE_AI, 'ai_prompt' => $prompt,

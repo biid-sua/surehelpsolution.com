@@ -72,3 +72,6 @@ Schedule::call(fn () => Cache::put('scheduler:heartbeat', now()->timestamp, now(
 
 // Businesses' own website domains (D101): watch for the DNS record and the certificate.
 Schedule::command('sites:check-domains')->everyTenMinutes()->withoutOverlapping(15);
+
+// SureHelp's own social media (D104): the AI prepares the next 24 hours of scheduled posts.
+Schedule::command('social:house-schedule')->everyFifteenMinutes()->withoutOverlapping(30);

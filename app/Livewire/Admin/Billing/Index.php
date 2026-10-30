@@ -448,8 +448,8 @@ class Index extends Component
             ],
             'subscriptions' => $current->sortBy(fn (Subscription $s) => $s->organization->name ?? ''),
             'plans' => Plan::query()->ordered()->withCount(['subscriptions' => fn ($q) => $q->where('status', '!=', 'cancelled'), 'subscriptions as ever_count'])->get(),
-            'organizations' => Organization::query()->orderBy('name')->get(['id', 'name']),
-            'unsubscribed' => Organization::query()->whereNotIn('id', $current->pluck('organization_id'))->orderBy('name')->get(['id', 'name']),
+            'organizations' => Organization::query()->external()->orderBy('name')->get(['id', 'name']),
+            'unsubscribed' => Organization::query()->external()->whereNotIn('id', $current->pluck('organization_id'))->orderBy('name')->get(['id', 'name']),
             'methods' => PaymentMethod::cases(),
             'canManage' => auth()->user()->can('billing.manage'),
         ]);
