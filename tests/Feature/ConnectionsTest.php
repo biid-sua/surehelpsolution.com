@@ -86,6 +86,17 @@ class ConnectionsTest extends TestCase
         $this->assertNull(PlatformSecret::find('openai_api_key'));
     }
 
+    public function test_the_cache_keeps_saved_keys_encrypted(): void
+    {
+        config(['cache.default' => 'database']);
+        $this->actingAs($this->staff());
+        Livewire::test(Connections::class)->set('values.openai_api_key', 'sk-test-secret-1234')->call('save', 'ai');
+
+        $this->assertSame('sk-test-secret-1234', app(Store::class)->saved()['openai_api_key']);
+        $this->assertGreaterThan(0, DB::table('cache')->count());
+        $this->assertStringNotContainsString('sk-test-secret', (string) DB::table('cache')->pluck('value')->implode(' '));
+    }
+
     public function test_social_app_credentials_from_the_admin_turn_networks_on(): void
     {
         config(['social.connectors.linkedin.client_id' => null, 'social.connectors.linkedin.client_secret' => null]);

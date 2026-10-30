@@ -19,7 +19,8 @@ return new class extends Migration
             $table->string('name', 100);
             $table->string('ip_address', 45)->nullable();
             $table->timestamp('last_used_at')->nullable();
-            $table->timestamp('expires_at')->index();
+            // dateTime, not timestamp: on MariaDB a NOT NULL timestamp gets an invalid zero default.
+            $table->dateTime('expires_at')->index();
             $table->timestamps();
         });
     }

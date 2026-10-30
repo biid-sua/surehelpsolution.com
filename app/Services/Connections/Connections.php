@@ -6,6 +6,7 @@ use App\Models\PlatformSecret;
 use App\Models\User;
 use App\Support\Audit\Audit;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
 use Throwable;
 
 /**
@@ -15,7 +16,7 @@ use Throwable;
  */
 class Connections
 {
-    private const CACHE = 'platform_secrets.v1';
+    private const CACHE = 'platform_secrets.v2';
 
     /** Tabs on the page, in order. */
     public const TABS = [
@@ -235,13 +236,16 @@ class Connections
     }
 
     /**
-     * Saved values, decrypted (cached, so this costs one cache read per request).
+     * Saved values, decrypted. The cache (one read per request) holds them still encrypted, so the
+     * keys never sit in plain text in the cache store (the database by default).
      *
      * @return array<string, string>
      */
     public function saved(): array
     {
-        return Cache::rememberForever(self::CACHE, fn () => PlatformSecret::query()->get()->mapWithKeys(fn (PlatformSecret $s) => [$s->key => (string) $s->value])->all());
+        $encrypted = Cache::rememberForever(self::CACHE, fn () => PlatformSecret::query()->toBase()->pluck('value', 'key')->all());
+
+        return array_map(fn ($value) => Crypt::decryptString((string) $value), $encrypted);
     }
 
     /** Fill config from the saved values (boot). Quietly does nothing before the table exists. */
