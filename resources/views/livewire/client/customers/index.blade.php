@@ -46,7 +46,7 @@
             <label for="cust-source" class="sh-label">Came from</label>
             <select id="cust-source" wire:model.live="source" class="sh-input">
                 <option value="">Anywhere</option>
-                @foreach (['call' => 'A call', 'website' => 'Your website', 'message' => 'A message', 'chatbot' => 'The AI assistant', 'manual' => 'Added by your team', 'import' => 'An import', 'backfill' => 'Earlier calls'] as $key => $label)
+                @foreach (['call' => 'A call', 'website' => 'Your website', 'lead' => 'A lead source', 'message' => 'A message', 'chatbot' => 'The AI assistant', 'manual' => 'Added by your team', 'import' => 'An import', 'backfill' => 'Earlier calls'] as $key => $label)
                     <option value="{{ $key }}">{{ $label }}</option>
                 @endforeach
             </select>

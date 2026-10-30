@@ -127,6 +127,7 @@ use App\Livewire\Client\Escalations\Index as EscalationsIndex;
 use App\Livewire\Client\Inbox\Assistant as InboxAssistant;
 use App\Livewire\Client\Inbox\Channels as InboxChannels;
 use App\Livewire\Client\Inbox\Index as InboxIndex;
+use App\Livewire\Client\Leads as ClientLeads;
 use App\Livewire\Client\Locations as ClientLocations;
 use App\Livewire\Client\Payments as ClientPayments;
 use App\Livewire\Client\Results as ClientResults;
@@ -324,6 +325,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
     Route::get('/payments', ClientPayments::class)->middleware('can:payments.view')->name('payments');
     Route::get('/payments/connect', PaymentsConnectController::class)->middleware(['can:payments.manage', 'feature:customer_payments'])->name('payments.connect');
     Route::get('/reviews', ClientReviews::class)->middleware(['can:reviews.view', 'feature:reviews'])->name('reviews');
+    Route::get('/leads', ClientLeads::class)->middleware(['can:customers.view', 'feature:lead_response'])->name('leads');   // D109
     Route::get('/escalations', EscalationsIndex::class)->middleware('can:escalations.view')->name('escalations.index');
     Route::middleware('can:customers.view')->group(function () {
         Route::get('/customers', CustomerIndex::class)->name('customers.index');

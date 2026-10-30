@@ -58,6 +58,10 @@ return [
         'label' => 'Dollars report',
         'description' => 'What SureHelp was worth each month in dollars: jobs booked, what the business paid us and the return, on Results, the dashboard and the monthly email.',
     ],
+    'lead_response' => [
+        'label' => 'Instant replies to new leads',
+        'description' => 'New leads from the website form, Facebook, Google, Angi, Thumbtack or Yelp get a text and an email within seconds, and the owner\'s phone rings to connect them.',
+    ],
     'ai_receptionist' => [
         'label' => 'AI receptionist',
         'description' => 'An AI voice answers calls nobody can take (or after hours, or every call): it answers questions, books jobs, takes details and hands urgent calls to the team.',

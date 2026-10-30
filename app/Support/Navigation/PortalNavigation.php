@@ -30,6 +30,7 @@ class PortalNavigation
                 $this->item('AI receptionist', 'phone', 'app.ai-receptionist', 'app.ai-receptionist', 'ai.view', 'ai_receptionist'),
                 $this->item('Calls', 'phone', 'app.calls.index', 'app.calls.*', 'calls.view'),
                 $this->item('Customers', 'users', 'app.customers.index', 'app.customers.*', 'customers.view'),
+                $this->item('Leads', 'sparkles', 'app.leads', 'app.leads', 'customers.view', 'lead_response'),
                 $this->item('Tasks', 'check-circle', 'app.tasks.index', 'app.tasks.*', 'tasks.view'),
                 $this->item('Escalations', 'alert', 'app.escalations.index', 'app.escalations.*', 'escalations.view'),
                 $this->item('Results', 'trend-up', 'app.results', 'app.results*', 'reports.view'),

@@ -27,6 +27,7 @@ class SourceReport
         'facebook' => 'Facebook Messenger',
         'instagram' => 'Instagram',
         'sms' => 'Text messages',
+        'lead_sources' => 'Lead sources (Facebook, Google, Angi…)',
     ];
 
     public const BOOKING_SOURCES = [
@@ -58,6 +59,7 @@ class SourceReport
             $key = match ($customer->source) {
                 'call' => 'phone',
                 'website' => 'website',
+                'lead' => 'lead_sources',
                 'chatbot' => 'web_chat',
                 'message' => $firstChannel[$customer->id] ?? 'web_chat',
                 default => null,

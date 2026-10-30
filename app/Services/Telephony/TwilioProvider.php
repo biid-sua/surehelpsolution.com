@@ -126,6 +126,16 @@ class TwilioProvider implements TelephonyProvider
         $this->send(fn (PendingRequest $http) => $http->asForm()->post("Calls/{$callSid}.json", ['Url' => $url, 'Method' => 'POST']));
     }
 
+    public function placeCall(string $from, string $to, string $url, string $statusUrl): string
+    {
+        $response = $this->send(fn (PendingRequest $http) => $http->asForm()->post('Calls.json', [
+            'From' => $from, 'To' => $to, 'Url' => $url, 'Method' => 'POST', 'Timeout' => 25,
+            'StatusCallback' => $statusUrl, 'StatusCallbackEvent' => 'completed', 'StatusCallbackMethod' => 'POST',
+        ]));
+
+        return (string) $response->json('sid');
+    }
+
     public function sendSms(string $from, string $to, string $body, string $statusUrl): string
     {
         $response = $this->send(fn (PendingRequest $http) => $http->asForm()->post('Messages.json', [

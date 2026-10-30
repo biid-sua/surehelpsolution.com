@@ -40,13 +40,14 @@ enum NotificationEvent: string
     case ReviewReceived = 'review.received';
     case CustomerUnhappy = 'survey.low';
     case CustomerPaid = 'customer.paid';
+    case LeadReceived = 'lead.received';
 
     /**
      * @return list<self>
      */
     public static function available(): array
     {
-        return [self::CallLogged, self::CallMissed, self::FollowUpCreated, self::FollowUpOverdue, self::TaskAssigned, self::EscalationCreated, self::AppointmentCreated, self::AppointmentUpdated, self::AppointmentCancelled, self::IntegrationDisconnected, self::InvoiceIssued, self::PaymentReceived, self::PaymentFailed, self::UsageAlert, self::MonthlyReport, self::SocialApprovalRequested, self::SocialPostFailed, self::SocialAccountDisconnected, self::MessageReceived, self::AssignmentStarted, self::AssignmentChanged, self::TrainingAssigned, self::TrainingDue, self::TrainingCompleted, self::CertificationExpiring, self::SupportUpdate, self::AutomationNotice, self::ReviewReceived, self::CustomerUnhappy, self::CustomerPaid];
+        return [self::CallLogged, self::CallMissed, self::FollowUpCreated, self::FollowUpOverdue, self::TaskAssigned, self::EscalationCreated, self::AppointmentCreated, self::AppointmentUpdated, self::AppointmentCancelled, self::IntegrationDisconnected, self::InvoiceIssued, self::PaymentReceived, self::PaymentFailed, self::UsageAlert, self::MonthlyReport, self::SocialApprovalRequested, self::SocialPostFailed, self::SocialAccountDisconnected, self::MessageReceived, self::AssignmentStarted, self::AssignmentChanged, self::TrainingAssigned, self::TrainingDue, self::TrainingCompleted, self::CertificationExpiring, self::SupportUpdate, self::AutomationNotice, self::ReviewReceived, self::CustomerUnhappy, self::CustomerPaid, self::LeadReceived];
     }
 
     public function isAvailable(): bool
@@ -89,6 +90,7 @@ enum NotificationEvent: string
             self::ReviewReceived => 'New Google review',
             self::CustomerUnhappy => 'Unhappy customer',
             self::CustomerPaid => 'Customer payment received',
+            self::LeadReceived => 'New lead',
         };
     }
 
@@ -125,6 +127,7 @@ enum NotificationEvent: string
             self::ReviewReceived => 'Someone reviewed your business on Google.',
             self::CustomerUnhappy => 'A customer gave 1 to 3 stars in a satisfaction survey.',
             self::CustomerPaid => 'A customer paid a deposit or a payment link.',
+            self::LeadReceived => 'Someone asked for work through your website form or a lead source (Facebook, Google, Angi…).',
             default => '',
         };
     }
@@ -164,6 +167,7 @@ enum NotificationEvent: string
             self::ReviewReceived => 'reviews.view',
             self::CustomerUnhappy => 'customers.view',
             self::CustomerPaid => 'payments.view',
+            self::LeadReceived => 'customers.view',
             default => null,
         };
     }

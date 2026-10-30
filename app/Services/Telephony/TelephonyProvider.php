@@ -66,6 +66,14 @@ interface TelephonyProvider
     public function redirectCall(string $callSid, string $url): void;
 
     /**
+     * Ring a phone from one of our numbers; when it's answered, the call follows the instructions
+     * at $url (D109: a new lead rings the owner, who presses 1 to be connected). Returns the call id.
+     *
+     * @throws TelephonyUnavailable
+     */
+    public function placeCall(string $from, string $to, string $url, string $statusUrl): string;
+
+    /**
      * Send a text from one of our numbers (D61); returns the vendor's message id.
      *
      * @throws TelephonyUnavailable

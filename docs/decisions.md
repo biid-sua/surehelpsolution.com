@@ -1972,3 +1972,22 @@ chooses, under *AI receptionist*.
 **Why:** missed calls are lost jobs, and small businesses can't staff every hour. A backup that
 answers, books and puts urgent callers through sells the service, keeps people first, and builds
 on the assistant, booking rules and phone system already in place.
+
+## D109 — New leads get an answer within seconds (2026-10-30)
+**Decision:** every new lead, from the website form or a business's lead link, becomes a customer,
+a high-priority call-back task and a *New lead* alert. When the business turns it on, the lead
+also gets an instant text and email in the business's name. The owner's phone can ring to connect
+them: press 1 and the lead is called from the business's number.
+- **One way in for lead sources.** A secret lead link per business, fed by Zapier or Make, covers
+  Facebook lead ads, Google, Angi, Thumbtack, Yelp and Nextdoor today, without an app review for
+  each. Native connections can come later.
+- **Fast.** The reply runs right after the request that brought the lead in, not on the next
+  queue run. Leads show the time to the first answer.
+- **Within the rules.** Texts follow D61: no number that texted STOP, "Reply STOP" always included,
+  and none between 9 PM and 8 AM (they wait). The email answers the person's own request. Calls to
+  the owner happen during opening hours by default. Demo businesses send nothing.
+- Feature `lead_response`, open to every business. Nothing is sent until the business turns it on.
+
+**Why:** the business that answers first usually wins the job, and owners can't watch every inbox.
+Answering in seconds and putting the owner on the phone with the lead is a clear, measurable reason
+to buy SureHelp. It builds on texting, tasks, alerts and the phone line already in place.

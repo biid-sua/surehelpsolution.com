@@ -28,7 +28,7 @@ class Customer extends Model
 {
     use BelongsToOrganization, HasFactory, SoftDeletes;
 
-    public const SOURCES = ['call', 'manual', 'import', 'chatbot', 'backfill', 'message', 'website'];
+    public const SOURCES = ['call', 'manual', 'import', 'chatbot', 'backfill', 'message', 'website', 'lead'];   // lead: a lead source (D109)
 
     public const CONTACT_METHODS = ['phone' => 'Phone call', 'sms' => 'Text message', 'email' => 'Email'];
 
