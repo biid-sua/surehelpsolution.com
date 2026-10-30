@@ -7,7 +7,9 @@
 |
 | SureHelp registers one app per network; businesses connect their own accounts through it.
 | A network without credentials is shown as "coming soon" and never contacted.
-| Redirect URIs to register: {APP_URL}/app/social/connect/{meta|linkedin|google}/callback
+| Redirect URIs to register: {APP_URL}/app/social/connect/{connector}/callback for businesses and
+| {APP_URL}/admin/social/connect/{connector}/callback for SureHelp's own accounts (D104). Credentials
+| can also be entered under Admin › Connections.
 |
 */
 
@@ -41,6 +43,19 @@ return [
             // Business Profile API access must be granted to the Google Cloud project first (docs/social.md).
             'enabled' => (bool) env('GOOGLE_BUSINESS_ENABLED', false),
             'scopes' => ['openid', 'email', 'https://www.googleapis.com/auth/business.manage'],
+        ],
+        // YouTube channels (D104): a Google Cloud OAuth client with the YouTube Data API v3 turned on.
+        // Blank: the Google Business Profile client is used.
+        'youtube' => [
+            'client_id' => env('YOUTUBE_CLIENT_ID'),
+            'client_secret' => env('YOUTUBE_CLIENT_SECRET'),
+            'scopes' => ['openid', 'email', 'https://www.googleapis.com/auth/youtube.upload', 'https://www.googleapis.com/auth/youtube.readonly'],
+        ],
+        // X (D104): OAuth 2.0 with PKCE. Posting needs a paid X API plan.
+        'x' => [
+            'client_id' => env('X_CLIENT_ID'),
+            'client_secret' => env('X_CLIENT_SECRET'),
+            'scopes' => ['tweet.read', 'tweet.write', 'users.read', 'media.write', 'offline.access'],
         ],
     ],
 

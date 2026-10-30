@@ -64,6 +64,7 @@ class PortalNavigation
                 $this->item('Website enquiries', 'chat', 'admin.enquiries', 'admin.enquiries', 'marketing.view'),
                 $this->item('Audit log', 'shield', 'admin.audit', 'admin.audit', 'audit_logs.view'),
                 $this->item('Appearance', 'swatch', 'admin.appearance', 'admin.appearance', 'settings.view'),
+                $this->item('Connections', 'link', 'admin.connections', 'admin.connections', 'integrations.manage'),
                 $this->item('System status', 'shield', 'admin.system', 'admin.system', 'settings.view'),
                 $this->item('Demo data', 'sparkles', 'admin.demo-data', 'admin.demo-data', 'settings.view'),
                 $this->item('Agent assignments', 'users', 'agent.assignments', 'agent.assignments|agent.team*', 'agent_assignments.view'),

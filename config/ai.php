@@ -11,6 +11,13 @@
 
 return [
 
+    // Which AI writes for SureHelp's features: claude or openai (ChatGPT). Admin › Connections can
+    // change this and the keys below without touching .env (D104).
+    'provider' => env('AI_PROVIDER', 'claude'),
+
+    // SureHelp's own social posts can use the other one (null: same as `provider`).
+    'social_provider' => env('AI_SOCIAL_PROVIDER'),
+
     'anthropic' => [
         'api_key' => env('ANTHROPIC_API_KEY'),
         'model' => env('AI_MODEL', 'claude-opus-5-5'),
@@ -20,6 +27,15 @@ return [
         'max_tokens' => (int) env('AI_MAX_TOKENS', 16000),
         // Anthropic retries a declined request on its default fallback model (server-side, beta).
         'fallbacks' => (bool) env('AI_FALLBACKS', true),
+    ],
+
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+        // Pick from your account's list under Admin › Connections.
+        'model' => env('OPENAI_MODEL'),
+        // For pictures in social posts; only ChatGPT makes pictures.
+        'image_model' => env('OPENAI_IMAGE_MODEL'),
+        'max_tokens' => (int) env('OPENAI_MAX_TOKENS', 16000),
     ],
 
     'assistant' => [
