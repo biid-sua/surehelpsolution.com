@@ -13,6 +13,14 @@ enum InboxChannel: string
     case Facebook = 'facebook';
     case Instagram = 'instagram';
     case Sms = 'sms';
+    // A call the AI receptionist answered (D108): its transcript; replies can't be sent here.
+    case Phone = 'phone';
+
+    /** Channels a reply can be written on (and the messaging assistant works on). @return list<self> */
+    public static function messaging(): array
+    {
+        return [self::WebChat, self::Facebook, self::Instagram, self::Sms];
+    }
 
     public function label(): string
     {
@@ -21,6 +29,7 @@ enum InboxChannel: string
             self::Facebook => 'Messenger',
             self::Instagram => 'Instagram',
             self::Sms => 'Text message',
+            self::Phone => 'Phone call (AI receptionist)',
         };
     }
 
@@ -31,6 +40,7 @@ enum InboxChannel: string
             self::Facebook => '#0866FF',
             self::Instagram => '#E1306C',
             self::Sms => '#059669',
+            self::Phone => '#0284C7',
         };
     }
 
@@ -42,6 +52,7 @@ enum InboxChannel: string
             self::Facebook => 2000,
             self::Instagram => 1000,
             self::Sms => 1600, // carriers join longer texts from up to 10 parts
+            self::Phone => 1000,
         };
     }
 

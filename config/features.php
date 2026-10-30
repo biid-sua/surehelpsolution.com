@@ -58,6 +58,12 @@ return [
         'label' => 'Dollars report',
         'description' => 'What SureHelp was worth each month in dollars: jobs booked, what the business paid us and the return, on Results, the dashboard and the monthly email.',
     ],
+    'ai_receptionist' => [
+        'label' => 'AI receptionist',
+        'description' => 'An AI voice answers calls nobody can take (or after hours, or every call): it answers questions, books jobs, takes details and hands urgent calls to the team.',
+        // Every call it answers costs AI and phone minutes: only for the businesses staff pick at first.
+        'default_mode' => 'selected',
+    ],
     'white_label' => [
         'label' => 'White-label',
         'description' => 'The business\'s own logo, colour and sender name on customer emails, booking pages and its portal, without SureHelp branding.',

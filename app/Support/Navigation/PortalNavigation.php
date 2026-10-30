@@ -27,6 +27,7 @@ class PortalNavigation
                 $this->item('Calendar', 'calendar', 'app.calendar', 'app.calendar', 'calls.view'),
                 $this->item('Appointments', 'list', 'app.appointments.index', 'app.appointments.*', 'appointments.view'),
                 $this->item('Inbox', 'chat', 'app.inbox.index', 'app.inbox.*', 'messages.view'),
+                $this->item('AI receptionist', 'phone', 'app.ai-receptionist', 'app.ai-receptionist', 'ai.view', 'ai_receptionist'),
                 $this->item('Calls', 'phone', 'app.calls.index', 'app.calls.*', 'calls.view'),
                 $this->item('Customers', 'users', 'app.customers.index', 'app.customers.*', 'customers.view'),
                 $this->item('Tasks', 'check-circle', 'app.tasks.index', 'app.tasks.*', 'tasks.view'),

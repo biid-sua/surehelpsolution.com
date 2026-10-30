@@ -82,7 +82,7 @@
     </div>
 
     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <x-ui.stat label="Calls answered" icon="phone" :value="number_format($r['answered'])" :change="$r['change']['answered'] ?? null" hint="{{ number_format($r['calls']) }} calls in total" />
+        <x-ui.stat label="Calls answered" icon="phone" :value="number_format($r['answered'])" :change="$r['change']['answered'] ?? null" hint="{{ number_format($r['calls']) }} calls in total{{ $r['ai_calls'] ? ', '.number_format($r['ai_calls']).' by the AI receptionist' : '' }}" />
         <x-ui.stat label="Jobs booked" icon="calendar" :value="number_format($r['booked'])" :change="$r['change']['booked'] ?? null" hint="{{ number_format($r['appointments']) }} appointments in the calendar" />
         <x-ui.stat label="New leads" icon="users" :value="number_format($r['leads'])" :change="$r['change']['leads'] ?? null" hint="new callers added to your customers" />
         <x-ui.stat label="After-hours calls caught" icon="clock" :value="$r['after_hours'] === null ? '—' : number_format($r['after_hours'])" :change="$r['change']['after_hours'] ?? null"

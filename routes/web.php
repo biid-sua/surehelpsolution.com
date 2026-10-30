@@ -100,6 +100,7 @@ use App\Livewire\Agent\University\Course as UniversityCourse;
 use App\Livewire\Agent\University\Learning as UniversityLearning;
 use App\Livewire\Agent\University\Lesson as UniversityLesson;
 use App\Livewire\Agent\Workspace as AgentWorkspace;
+use App\Livewire\Client\AiReceptionist as AiReceptionistSettings;
 use App\Livewire\Client\Appointments\Index as AppointmentsIndex;
 use App\Livewire\Client\Billing\Index as ClientBilling;
 use App\Livewire\Client\Business\Automations as BusinessAutomations;
@@ -297,6 +298,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/inbox', InboxIndex::class)->name('inbox.index');
         Route::get('/inbox/channels', InboxChannels::class)->name('inbox.channels');
         Route::get('/inbox/assistant', InboxAssistant::class)->middleware(['can:ai.view', 'feature:ai_assistant'])->name('inbox.assistant');
+        Route::get('/ai-receptionist', AiReceptionistSettings::class)->middleware(['can:ai.view', 'feature:ai_receptionist'])->name('ai-receptionist');
         Route::get('/inbox/{conversation}', InboxIndex::class)->name('inbox.show');
     });
     // Social media (spec §41, D33)

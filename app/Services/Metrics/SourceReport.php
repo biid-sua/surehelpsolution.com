@@ -32,7 +32,7 @@ class SourceReport
     public const BOOKING_SOURCES = [
         'agent' => 'By phone, booked by SureHelp',
         'website' => 'Online booking on your website',
-        'ai' => 'AI assistant',
+        'ai' => 'AI assistant and receptionist',
         'business' => 'By your team',
     ];
 
@@ -73,7 +73,7 @@ class SourceReport
             $bookings[match ($source) {
                 'agent' => 'agent',
                 'website' => 'website',
-                'chatbot', 'ai' => 'ai',
+                'chatbot', 'ai', 'ai_phone' => 'ai',
                 default => 'business',
             }] += (int) $n;
         }

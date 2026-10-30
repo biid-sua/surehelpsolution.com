@@ -18,7 +18,8 @@ use Illuminate\Support\Collection;
 
 /**
  * What SureHelp was worth to a business, in dollars (D107): the jobs we booked, what the business
- * paid us for the same month, and the return. Each booked job is valued at the price of the service
+ * paid us for the same month, and the return. Jobs are those our agents booked on calls and those
+ * the AI receptionist booked (D108). Each booked job is valued at the price of the service
  * booked when it has one, otherwise at the owner's average job value. Counted from real calls,
  * bookings and invoices; only the value of a job is an estimate, and the page says so.
  */
@@ -36,8 +37,8 @@ class ValueReport
      */
     public function compute(Organization $organization, CarbonImmutable $start, CarbonImmutable $end): array
     {
-        $period = $this->value($organization, $this->bookedCalls($organization, $start, $end), withHours: true);
-        $all = $this->value($organization, $this->bookedCalls($organization, null, $end), withHours: false);
+        $period = $this->value($organization, $this->jobs($organization, $start, $end), withHours: true);
+        $all = $this->value($organization, $this->jobs($organization, null, $end), withHours: false);
         [$cost, $source] = $this->cost($organization, $start, $end);
 
         return [
@@ -57,37 +58,53 @@ class ValueReport
         ];
     }
 
-    /** @return Collection<int, CallLog> */
-    private function bookedCalls(Organization $organization, ?CarbonImmutable $start, CarbonImmutable $end): Collection
+    /**
+     * The jobs SureHelp booked: calls our agents logged as booked, and bookings the AI receptionist
+     * made on a call (D108). Each with when it was booked and the booked service's price, if any.
+     *
+     * @return Collection<int, array{at: CarbonImmutable, price: int|null}>
+     */
+    private function jobs(Organization $organization, ?CarbonImmutable $start, CarbonImmutable $end): Collection
     {
         $booked = $this->outcomes->keys($organization, OutcomeCategory::Booked);
-
-        return CallLog::query()->forOrganization($organization)->whereIn('call_outcome', $booked ?: ['-'])
+        $calls = CallLog::query()->forOrganization($organization)->whereIn('call_outcome', $booked ?: ['-'])
             ->when($start, fn ($q) => $q->where('created_at', '>=', $start->utc()))
-            ->where('created_at', '<=', $end->utc())
-            ->orderBy('created_at')->get(['id', 'created_at']);
-    }
+            ->where('created_at', '<=', $end->utc())->get(['id', 'created_at']);
 
-    /**
-     * @param  Collection<int, CallLog>  $calls
-     * @return array{value_cents: int|null, jobs: int, priced: int, estimated: int, after_hours_jobs: int|null, after_hours_cents: int|null, first: CarbonImmutable|null}
-     */
-    private function value(Organization $organization, Collection $calls, bool $withHours): array
-    {
-        $average = $organization->average_job_value_cents ?: null;
         // The price of the service booked on each call, where the service has one.
         $prices = [];
         foreach ($calls->pluck('id')->chunk(500) as $ids) {
             Appointment::query()->forOrganization($organization)->whereIn('call_log_id', $ids->all())->whereNotNull('service_id')
                 ->with('service:id,price_type,price_cents')->get(['id', 'call_log_id', 'service_id'])
                 ->each(function (Appointment $a) use (&$prices) {
-                    $service = $a->service;
-                    if ($service && $service->price_cents && $service->price_type !== ServicePriceType::QuoteRequired) {
-                        $prices[$a->call_log_id] ??= (int) $service->price_cents;
-                    }
+                    $prices[$a->call_log_id] ??= $this->price($a);
                 });
         }
+        $jobs = $calls->map(fn (CallLog $c) => ['at' => CarbonImmutable::instance($c->created_at), 'price' => $prices[$c->id] ?? null]);
 
+        $ai = Appointment::query()->forOrganization($organization)->where('source', 'ai_phone')->where('status', '!=', 'cancelled')
+            ->when($start, fn ($q) => $q->where('created_at', '>=', $start->utc()))
+            ->where('created_at', '<=', $end->utc())
+            ->with('service:id,price_type,price_cents')->get(['id', 'service_id', 'created_at']);
+
+        return $jobs->concat($ai->map(fn (Appointment $a) => ['at' => CarbonImmutable::instance($a->created_at), 'price' => $this->price($a)]))
+            ->sortBy(fn (array $j) => $j['at']->getTimestamp())->values();
+    }
+
+    private function price(Appointment $appointment): ?int
+    {
+        $service = $appointment->service;
+
+        return $service && $service->price_cents && $service->price_type !== ServicePriceType::QuoteRequired ? (int) $service->price_cents : null;
+    }
+
+    /**
+     * @param  Collection<int, array{at: CarbonImmutable, price: int|null}>  $jobs
+     * @return array{value_cents: int|null, jobs: int, priced: int, estimated: int, after_hours_jobs: int|null, after_hours_cents: int|null, first: CarbonImmutable|null}
+     */
+    private function value(Organization $organization, Collection $jobs, bool $withHours): array
+    {
+        $average = $organization->average_job_value_cents ?: null;
         $hours = $withHours && BusinessHour::query()->forOrganization($organization)->exists();
         $timezone = $organization->timezoneOrDefault();
         $total = 0;
@@ -95,15 +112,15 @@ class ValueReport
         $estimated = 0;
         $afterJobs = $hours ? 0 : null;
         $afterCents = $hours ? 0 : null;
-        foreach ($calls as $call) {
-            $cents = $prices[$call->id] ?? $average;
-            if (isset($prices[$call->id])) {
+        foreach ($jobs as $job) {
+            $cents = $job['price'] ?? $average;
+            if ($job['price'] !== null) {
                 $priced++;
             } elseif ($average) {
                 $estimated++;
             }
             $total += (int) $cents;
-            if ($hours && ! $this->hours->isOpenAt($organization, CarbonImmutable::instance($call->created_at)->setTimezone($timezone))) {
+            if ($hours && ! $this->hours->isOpenAt($organization, $job['at']->setTimezone($timezone))) {
                 $afterJobs++;
                 $afterCents += (int) $cents;
             }
@@ -112,12 +129,12 @@ class ValueReport
         return [
             // No value at all when nothing could be priced: "add your average job value" instead of $0.
             'value_cents' => $priced + $estimated > 0 ? $total : null,
-            'jobs' => $calls->count(),
+            'jobs' => $jobs->count(),
             'priced' => $priced,
             'estimated' => $estimated,
             'after_hours_jobs' => $afterJobs,
             'after_hours_cents' => $priced + $estimated > 0 ? $afterCents : null,
-            'first' => $calls->first() ? CarbonImmutable::instance($calls->first()->created_at)->setTimezone($timezone) : null,
+            'first' => $jobs->first() ? $jobs->first()['at']->setTimezone($timezone) : null,
         ];
     }
 

@@ -75,6 +75,10 @@ class VoiceCalls
             'duration_seconds' => $call->answered_at ? max(0, (int) $call->answered_at->diffInSeconds(now())) : null,
         ])->save();
 
+        // A call the AI receptionist answered where the caller never spoke counts as missed (D108).
+        if ($call->ai_conversation_id) {
+            app(AiReceptionist::class)->ended($call);
+        }
         if (($agent = $call->answeredBy ?? $call->placedBy) && ! $this->agentStillOnACall($agent)) {
             if ($agent->phone_status === AgentPresence::BUSY) {
                 $this->presence->set($agent, AgentPresence::WRAP_UP);

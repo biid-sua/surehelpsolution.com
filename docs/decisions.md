@@ -1948,3 +1948,27 @@ feature to the businesses they pick only.
 calls, bookings and invoices. Valuing by service price where known makes the estimate closer to
 their real takings. Picking businesses lets staff try a new feature with a few customers before
 everyone gets it, without inventing a plan for it.
+
+## D108 — The AI receptionist answers calls nobody can take (2026-10-30)
+**Decision:** an AI voice answers a business's calls when its people can't: as a backup when no
+agent is free or picks up, only while the business is closed, or every call first. The business
+chooses, under *AI receptionist*.
+- **One brain.** It reuses the messaging assistant's brain and tools (D38). Each call is a
+  conversation on a new Inbox channel, *Phone call (AI receptionist)*. On the call it answers
+  from the business's own information, books (`ai_phone`), saves details, creates follow-ups and
+  escalates. It adds two phone tools: end the call, and put the caller through to the owner.
+- **Turn by turn over webhooks.** Twilio turns speech into text (`<Gather>`), and Amazon Polly
+  neural voices speak the reply (`<Say>`). No long-running connection, so it works on the current
+  hosting (D6). Twilio's ConversationRelay, a real-time streaming connection, can replace this
+  later for faster replies.
+- **Honest and bounded.** The greeting must say it's a virtual or AI assistant. Two silences, 24
+  turns, the call-length limit or an AI outage end the call kindly with a call-back task. A caller
+  who never speaks is a missed call, as before.
+- **Counted.** Results include its calls and bookings, and the dollars report (D107) values them.
+- **Rolled out carefully.** The feature `ai_receptionist` starts as "Only businesses I pick", since
+  each call costs AI and phone minutes. *Try it* lets an owner practise by typing, with nothing
+  really done.
+
+**Why:** missed calls are lost jobs, and small businesses can't staff every hour. A backup that
+answers, books and puts urgent callers through sells the service, keeps people first, and builds
+on the assistant, booking rules and phone system already in place.
