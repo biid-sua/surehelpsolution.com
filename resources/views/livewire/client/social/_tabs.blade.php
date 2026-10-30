@@ -11,7 +11,7 @@
 @endphp
 <nav class="mb-6 flex gap-1 overflow-x-auto border-b border-line" aria-label="Social media">
     @foreach ($tabs as $route => $label)
-        <a href="{{ route($route) }}" @if (request()->routeIs($route)) aria-current="page" @endif
+        <a href="{{ route($route) }}" wire:navigate @if (request()->routeIs($route)) aria-current="page" @endif
             @class([
                 '-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors',
                 'border-brand-400 text-ink' => request()->routeIs($route),

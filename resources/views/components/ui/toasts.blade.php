@@ -1,5 +1,6 @@
 {{-- Global toast stack. Trigger from PHP: $this->dispatch('toast', type: 'success', message: '…'); from JS: $dispatch('toast', {...}). --}}
-<div x-data="toasts" x-on:toast.window="push($event.detail)"
+{{-- A toast flashed by the last request is read from data-flash: an inline script would be blocked after an in-place page change (D106). --}}
+<div x-data="toasts" x-on:toast.window="push($event.detail)" @if (session('toast')) data-flash="{{ json_encode(session('toast')) }}" @endif
     class="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex flex-col items-center gap-2 p-4 sm:items-end sm:p-6"
     aria-live="polite" aria-atomic="false">
     <template x-for="item in items" :key="item.id">
@@ -15,9 +16,3 @@
         </div>
     </template>
 </div>
-
-@if (session('toast'))
-    <script nonce="{{ Vite::cspNonce() }}">
-        document.addEventListener('alpine:initialized', () => window.dispatchEvent(new CustomEvent('toast', { detail: @js(session('toast')) })));
-    </script>
-@endif
