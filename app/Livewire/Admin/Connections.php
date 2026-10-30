@@ -6,18 +6,21 @@ use App\Exceptions\AiUnavailable;
 use App\Livewire\Concerns\PlatformAdminOnly;
 use App\Services\Ai\Providers\ClaudeProvider;
 use App\Services\Ai\Providers\OpenAiProvider;
+use App\Services\Connections\ConnectionCheck;
 use App\Services\Connections\Connections as Store;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 /**
- * Admin › Connections (D104): AI keys and models, which AI writes, and the social networks' app
- * credentials. Secrets are typed in, saved encrypted and never shown again (only their last four
- * characters). Super admins only: these keys can spend money and post as SureHelp.
+ * Admin › Connections (D104, D105): every outside service's keys and settings, by tab: AI, social
+ * networks, Twilio, email, Stripe, calendars, app notifications and websites. Secrets are typed in,
+ * saved encrypted and never shown again (only their last four characters). Super admins only:
+ * these keys can spend money, call, text and post as SureHelp.
  */
 #[Layout('layouts.portal', ['portal' => 'admin'])]
 #[Title('Connections')]
@@ -31,11 +34,23 @@ class Connections extends Component
     /** @var array<string, list<string>> Models found by "Test", per provider. */
     public array $models = [];
 
+    #[Url]
+    public string $tab = 'ai';
+
     public function mount(Store $store): void
     {
         $this->authorize('integrations.manage');
+        if (! array_key_exists($this->tab, Store::TABS)) {
+            $this->tab = 'ai';
+        }
         foreach (Store::fields() as $key => $field) {
-            $this->values[$key] = ($field['secret'] ?? false) ? '' : (($field['type'] ?? 'text') === 'bool' ? (bool) $store->current($key) : (string) $store->current($key));
+            $current = $store->current($key);
+            $this->values[$key] = match (true) {
+                $field['secret'] ?? false => '',
+                ($field['type'] ?? 'text') === 'bool' => (bool) $current,
+                is_array($current) => implode(', ', $current),
+                default => (string) $current,
+            };
         }
     }
 
@@ -46,8 +61,8 @@ class Connections extends Component
         $this->validate(collect($fields)->mapWithKeys(fn ($f, $key) => ['values.'.$key => match ($f['type'] ?? 'text') {
             'bool' => ['boolean'],
             'select' => ['nullable', 'in:'.implode(',', array_keys($f['options']))],
-            default => ['nullable', 'string', 'max:500'],
-        }])->all());
+            default => [...($f['rules'] ?? ['nullable', 'string']), 'max:'.(($f['type'] ?? 'text') === 'textarea' ? 20000 : 500)],
+        }])->all(), [], collect($fields)->mapWithKeys(fn ($f, $key) => ['values.'.$key => strtolower($f['label'])])->all());
 
         $changed = $store->save(array_intersect_key($this->values, $fields), auth()->user());
         foreach ($fields as $key => $f) {
@@ -97,6 +112,22 @@ class Connections extends Component
         $this->dispatch('toast', type: 'success', message: 'Connected. '.count($this->models[$provider]).' models available: pick one below, then save.');
     }
 
+    /** The other services' "Test" buttons: the values typed, else the ones in use. */
+    public function test(string $group, ConnectionCheck $check, Store $store): void
+    {
+        $this->authorize('integrations.manage');
+        abort_unless(in_array($group, ConnectionCheck::GROUPS, true), 404);
+        if (RateLimiter::tooManyAttempts('connections-test:'.auth()->id(), 10)) {
+            $this->dispatch('toast', type: 'warning', message: 'Please wait a minute before testing again.');
+
+            return;
+        }
+        RateLimiter::hit('connections-test:'.auth()->id(), 60);
+
+        $result = $check->run($group, fn (string $key) => trim((string) ($this->values[$key] ?? '')) ?: (string) $store->current($key), auth()->user());
+        $this->dispatch('toast', type: $result['ok'] ? 'success' : 'warning', message: $result['message']);
+    }
+
     /** Meta lets us check an app ID and secret on their own (an app access token). */
     public function testMeta(): void
     {
@@ -125,13 +156,47 @@ class Connections extends Component
         }
 
         return view('livewire.admin.connections', [
-            'groups' => Store::groups(),
+            'groups' => array_filter(Store::groups(), fn (array $g) => $g['tab'] === $this->tab),
+            'tabs' => Store::TABS,
+            'testable' => ConnectionCheck::GROUPS,
+            'links' => $this->links(),
             'sources' => $sources,
             'masked' => collect(Store::fields())->filter(fn ($f) => $f['secret'] ?? false)->map(fn ($f, $key) => $store->masked($key))->all(),
-            'callbacks' => collect(['meta', 'linkedin', 'google', 'youtube', 'x'])->mapWithKeys(fn ($c) => [$c => [
-                'business' => url('/app/social/connect/'.$c.'/callback'),
-                'surehelp' => url('/admin/social/connect/'.$c.'/callback'),
-            ]])->all(),
         ]);
+    }
+
+    /**
+     * Web addresses to paste into each service's own settings.
+     *
+     * @return array<string, array<string, string>>
+     */
+    private function links(): array
+    {
+        $links = [];
+        foreach (['meta', 'linkedin', 'google', 'youtube', 'x'] as $c) {
+            $links[$c] = [
+                'Redirect URL for SureHelp\'s own accounts' => url('/admin/social/connect/'.$c.'/callback'),
+                'Redirect URL for businesses' => url('/app/social/connect/'.$c.'/callback'),
+            ];
+        }
+        $links['meta']['Webhook URL (Messenger and Instagram messages)'] = route('webhooks.meta');
+        $links['twilio'] = [
+            'TwiML App voice URL' => route('webhooks.voice.outgoing'),
+            'Numbers bought in SureHelp are set up automatically. For a number bought in Twilio, its voice URL' => route('webhooks.voice.incoming'),
+            'and its messaging URL' => route('webhooks.sms.incoming'),
+        ];
+        $links['stripe'] = [
+            'Webhook endpoint (your account)' => route('webhooks.stripe'),
+            'Webhook endpoint (connected accounts)' => route('webhooks.stripe-connect'),
+        ];
+        foreach (['google_calendar' => 'google', 'microsoft_calendar' => 'microsoft'] as $group => $provider) {
+            $links[$group] = [
+                'Redirect URL for businesses' => route('app.integrations.calendar.callback', $provider),
+                'Redirect URL for agents' => route('agent.calendar.callback', $provider),
+            ];
+        }
+        $links['google_calendar']['Redirect URL for Search Console (SEO)'] = route('app.seo.search-console.callback');
+
+        return $links;
     }
 }

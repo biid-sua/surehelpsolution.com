@@ -1878,3 +1878,27 @@ accounts from Admin › Social media, using the same screens, checks and publish
 running them for an internal business costs little and gets every fix both ways. Keys in the admin
 let the owner switch between Claude and ChatGPT, or add a network, without a developer. Posts are
 written a day ahead so there is time to look before they go out.
+
+## D105 — Every outside service is set up in the admin console (2026-10-30)
+**Decision:** Admin › Connections (super admins only) now covers every outside service, by tab:
+AI, social networks, phone and texts (Twilio), email (SMTP, enquiry and alert inboxes), payments
+(Stripe and Stripe Connect), calendars (Google and Microsoft), the mobile app (Firebase, store
+links, versions, app links) and websites (domain, Cloudflare). It builds on D104's encrypted store.
+- Each card says where to find the keys and lists the web addresses to paste into that service
+  (redirect URLs, webhooks, the TwiML App voice URL).
+- **Test** buttons make one harmless call: Twilio (the account and the API key), Stripe (live or
+  test mode), Cloudflare (token and zone), Firebase (a sign-in token). "Send me a test email" goes
+  only to the person pressing it.
+- Values are checked before saving (Twilio IDs, E.164 numbers, emails, ports, the fee between 0
+  and 20%, JSON, versions, IP addresses, domains).
+- Removing a saved value goes back to the `.env` value. Saving restarts the queue workers
+  (`queue:restart`), so jobs use the new keys at once.
+- Google Business Profile uses the Google Calendar client unless it has its own.
+- System status and the go-live checklist point to the admin screen instead of `.env`.
+- Still in `.env`: the server's own settings (`APP_KEY`, `APP_URL`, database, cache, sessions,
+  queue, file storage). They are needed before the database can be read, and `APP_KEY` encrypts
+  the saved keys.
+
+**Why:** the owner should be able to switch providers, rotate a key or turn on a service after an
+approval arrives without a developer or a server login. Keeping one screen with tests and the
+exact addresses to paste removes the most common setup mistakes.

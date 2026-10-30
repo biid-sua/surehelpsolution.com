@@ -1,9 +1,20 @@
 <div>
-    <x-ui.page-header title="Connections" description="Connect Claude or ChatGPT and the social networks from here: no code or server changes. Keys are saved encrypted and never shown again." />
+    <x-ui.page-header title="Connections" description="Every outside service SureHelp uses, set up from here: no code or server changes. Keys are saved encrypted and never shown again." />
+
+    <nav class="mb-6 flex gap-1 overflow-x-auto border-b border-line" aria-label="Connections">
+        @foreach ($tabs as $key => $label)
+            <button type="button" wire:click="$set('tab', '{{ $key }}')" @if ($tab === $key) aria-current="page" @endif
+                @class([
+                    '-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors',
+                    'border-brand-400 text-ink' => $tab === $key,
+                    'border-transparent text-muted hover:text-ink' => $tab !== $key,
+                ])>{{ $label }}</button>
+        @endforeach
+    </nav>
 
     <div class="grid gap-6 xl:grid-cols-2">
         @foreach ($groups as $group => $g)
-            @php($connected = collect($g['fields'])->filter(fn ($f) => ($f['secret'] ?? false))->keys()->every(fn ($k) => $sources[$k] !== null))
+            @php($connected = collect($g['needs'] ?? collect($g['fields'])->filter(fn ($f) => ($f['secret'] ?? false))->keys())->every(fn ($k) => $sources[$k] !== null))
             <x-ui.card wire:key="group-{{ $group }}" :title="$g['label']" :description="$g['help']">
                 <x-slot:actions>
                     @if ($connected)<x-ui.badge tone="success">Set up</x-ui.badge>@else<x-ui.badge>Not set up</x-ui.badge>@endif
@@ -27,6 +38,12 @@
                                     <select id="{{ $id }}" wire:model="values.{{ $key }}" class="sh-input">
                                         @foreach ($field['options'] as $value => $label)<option value="{{ $value }}">{{ $label }}</option>@endforeach
                                     </select>
+                                @elseif (($field['type'] ?? 'text') === 'textarea')
+                                    <textarea id="{{ $id }}" rows="5" wire:model="values.{{ $key }}" class="sh-input font-mono text-xs" autocomplete="off" spellcheck="false"
+                                        placeholder="{{ $masked[$key] ? 'Saved (ends '.$masked[$key].'). Paste a new one to replace it.' : ($field['placeholder'] ?? '') }}"></textarea>
+                                    @if ($sources[$key] === 'saved')
+                                        <x-ui.button type="button" size="sm" variant="ghost" class="mt-1" wire:click="remove('{{ $key }}')" wire:confirm="Remove this {{ strtolower($field['label']) }}? Anything using it stops working.">Remove</x-ui.button>
+                                    @endif
                                 @elseif ($field['secret'] ?? false)
                                     <div class="flex gap-2">
                                         <input id="{{ $id }}" type="password" wire:model="values.{{ $key }}" class="sh-input font-mono" autocomplete="off"
@@ -41,7 +58,8 @@
                                         placeholder="{{ $found->isEmpty() ? 'Press Test above to load your models' : 'Choose or type a model' }}">
                                     <datalist id="{{ $id }}-list">@foreach ($found as $m)<option value="{{ $m }}">@endforeach</datalist>
                                 @else
-                                    <input id="{{ $id }}" type="text" wire:model="values.{{ $key }}" class="sh-input font-mono" autocomplete="off">
+                                    <input id="{{ $id }}" type="{{ ($field['type'] ?? 'text') === 'number' ? 'number' : 'text' }}" @if (($field['type'] ?? 'text') === 'number') step="any" @endif
+                                        wire:model="values.{{ $key }}" class="sh-input font-mono" autocomplete="off" placeholder="{{ $field['placeholder'] ?? '' }}">
                                 @endif
                             @endif
                             @error('values.'.$key)<p class="mt-1 text-sm text-danger">{{ $message }}</p>@enderror
@@ -57,19 +75,26 @@
                         <p class="text-xs text-subtle">Pictures in social posts need ChatGPT: Claude writes text only. You can keep Claude for writing and still connect ChatGPT for pictures.</p>
                     @endif
 
-                    @isset($callbacks[$group])
-                        <div class="rounded-lg bg-surface-2 p-3 text-xs text-muted">
-                            <p class="font-medium text-ink">Redirect URLs to add in the {{ $g['label'] }} app</p>
-                            <p class="mt-1 break-all font-mono">{{ $callbacks[$group]['surehelp'] }}</p>
-                            <p class="break-all font-mono">{{ $callbacks[$group]['business'] }}</p>
-                            <p class="mt-1">The first is for SureHelp's own accounts, the second for businesses'.</p>
+                    @isset($links[$group])
+                        <div class="space-y-2 rounded-lg bg-surface-2 p-3 text-xs text-muted">
+                            <p class="font-medium text-ink">Add these in the {{ $g['label'] }} settings</p>
+                            @foreach ($links[$group] as $label => $url)
+                                <div>
+                                    <p>{{ $label }}</p>
+                                    <p class="break-all font-mono text-ink">{{ $url }}</p>
+                                </div>
+                            @endforeach
                         </div>
                     @endisset
 
                     <div class="flex flex-wrap gap-2">
-                        <x-ui.button type="submit">Save {{ $g['label'] }}</x-ui.button>
+                        <x-ui.button type="submit">Save</x-ui.button>
                         @if ($group === 'meta')
                             <x-ui.button type="button" variant="secondary" wire:click="testMeta">Test</x-ui.button>
+                        @elseif (in_array($group, $testable, true))
+                            <x-ui.button type="button" variant="secondary" wire:click="test('{{ $group }}')" wire:loading.attr="disabled" wire:target="test">
+                                {{ in_array($group, ['mail', 'fcm'], true) ? ($group === 'mail' ? 'Send me a test email' : 'Test the saved key') : 'Test' }}
+                            </x-ui.button>
                         @endif
                     </div>
                 </form>

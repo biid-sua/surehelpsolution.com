@@ -91,10 +91,6 @@ class AppServiceProvider extends ServiceProvider
     {
         // Keys and settings entered under Admin › Connections override .env (D104).
         app(Connections::class)->apply();
-        // Livewire's temporary uploads must allow videos (D104); each screen still checks photo and video sizes.
-        config(['livewire.temporary_file_upload.rules' => ['required', 'file', 'max:'.max(12288, (int) config('social.media.video_max_mb', 100) * 1024)],
-            'livewire.temporary_file_upload.max_upload_time' => 15]);
-
         // After a self-serve trial ended, business-portal actions wait for a plan (D97).
         \Livewire\on('call', function ($component, string $method, $params, $addEffect, callable $returnEarly) {
             if (TrialReadOnly::blocks($component, $method)) {
@@ -110,10 +106,11 @@ class AppServiceProvider extends ServiceProvider
             config(['livewire.asset_url' => $base.'/livewire/livewire'.(config('app.debug') ? '' : '.min').'.js']);
         }
 
-        // Lesson files (Agent University) can be larger than Livewire's 12 MB default. Each form
-        // still validates its own limit and file types.
+        // Lesson files (Agent University) and social videos (D104) can be larger than Livewire's 12 MB
+        // default; the larger of the two applies. Each form still validates its own limit and file types.
+        $uploadMb = max(12, (int) config('training.max_upload_mb'), (int) config('social.media.video_max_mb', 100));
         config([
-            'livewire.temporary_file_upload.rules' => ['required', 'file', 'max:'.(max(12, (int) config('training.max_upload_mb')) * 1024)],
+            'livewire.temporary_file_upload.rules' => ['required', 'file', 'max:'.($uploadMb * 1024)],
             'livewire.temporary_file_upload.max_upload_time' => 15,
         ]);
 

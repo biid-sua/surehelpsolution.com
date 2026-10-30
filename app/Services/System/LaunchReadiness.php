@@ -3,7 +3,9 @@
 namespace App\Services\System;
 
 use App\Models\Plan;
+use App\Services\Ai\Contracts\AiProvider;
 use App\Services\Billing\BillingSettings;
+use App\Services\FcmService;
 use App\Support\DemoGuard;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -157,7 +159,7 @@ class LaunchReadiness
             $this->check($g, 'Nightly database backup', ($last = Cache::get('backup:last')) && now()->timestamp - (int) $last < 2 * 86400,
                 ($last ?? null) ? 'last one '.now()->subSeconds(now()->timestamp - (int) $last)->diffForHumans() : 'none yet',
                 'Runs at 03:15 with the scheduler. Run php artisan backup:database once to check it works, and set BACKUP_DISK=s3 for an off-server copy.', self::WARN),
-            $this->check($g, 'Error alerts by email', filled(config('ops.alert_email')), 'OPS_ALERT_EMAIL', 'Set OPS_ALERT_EMAIL so server errors reach you, and point an uptime monitor at /health.', self::WARN),
+            $this->check($g, 'Error alerts by email', filled(config('ops.alert_email')), 'Admin › Connections › Email', 'Set where server error alerts go under Admin › Connections › Email, and point an uptime monitor at /health.', self::WARN),
             $this->check($g, 'No failed jobs today', $failed === 0, $failed.' in the last 24 hours', 'See php artisan queue:failed, fix the cause, then php artisan queue:retry all.', self::WARN),
         ];
     }
@@ -169,11 +171,11 @@ class LaunchReadiness
         $mailer = (string) config('mail.default');
 
         return [
-            $this->check($g, 'Emails are really sent', ! in_array($mailer, ['log', 'array'], true), 'MAIL_MAILER='.$mailer,
-                'Set MAIL_MAILER (smtp, postmark, resend or ses) and its settings, then send a test with php artisan launch:check --mail=you@example.com.'),
+            $this->check($g, 'Emails are really sent', ! in_array($mailer, ['log', 'array'], true), 'Sending: '.$mailer,
+                'Fill in the mail server under Admin › Connections › Email, then press "Send me a test email".'),
             $this->check($g, 'Sender address', filled(config('mail.from.address')) && ! str_ends_with((string) config('mail.from.address'), '@example.com'),
-                (string) config('mail.from.address'), 'Set MAIL_FROM_ADDRESS to an address on your domain (with SPF and DKIM set up).'),
-            $this->check($g, 'Enquiry inbox', filled(config('mail.contact_to')), 'MAIL_CONTACT_TO / SALES_CHAT_NOTIFY', 'Set MAIL_CONTACT_TO to the inbox that receives website leads.', self::WARN),
+                (string) config('mail.from.address'), 'Set the From address under Admin › Connections › Email to one on your domain (with SPF and DKIM set up).'),
+            $this->check($g, 'Enquiry inbox', filled(config('mail.contact_to')), 'Admin › Connections › Email', 'Set where website enquiries go under Admin › Connections › Email.', self::WARN),
         ];
     }
 
@@ -186,35 +188,35 @@ class LaunchReadiness
         $telephony = config('telephony.driver') === 'twilio';
 
         return [
-            $this->feature($g, 'AI (assistant, sales chat, SEO, social writer)', filled(config('ai.anthropic.api_key')), 'ANTHROPIC_API_KEY',
-                'Create a key at platform.claude.com and set ANTHROPIC_API_KEY. Set SALES_CHAT_MODEL=claude-haiku-5-5 to keep the website chat cheap.'),
+            $this->feature($g, 'AI (assistant, sales chat, SEO, social writer)', app(AiProvider::class)->isConfigured(), 'Admin › Connections › AI',
+                'Add a Claude or ChatGPT key under Admin › Connections › AI.'),
             $this->feature($g, 'Google Calendar sync', filled(config('calendar.providers.google.client_id')) && filled(config('calendar.providers.google.client_secret')),
-                'GOOGLE_CALENDAR_CLIENT_ID / _SECRET', 'Create an OAuth client in Google Cloud and register the redirect URIs (launch:check --urls).'),
+                'Admin › Connections › Calendars', 'Create an OAuth client in Google Cloud, add it under Admin › Connections › Calendars, and register the redirect URLs shown there.'),
             $this->feature($g, 'Microsoft 365 / Outlook sync', filled(config('calendar.providers.microsoft.client_id')) && filled(config('calendar.providers.microsoft.client_secret')),
-                'MICROSOFT_CALENDAR_CLIENT_ID / _SECRET', 'Register an app in Microsoft Entra and add the redirect URIs.'),
+                'Admin › Connections › Calendars', 'Register an app in Microsoft Entra, add it under Admin › Connections › Calendars, and add the redirect URLs shown there.'),
             $this->feature($g, 'Phone calls (Twilio)', $telephony && filled($twilio['account_sid'] ?? null) && filled($twilio['auth_token'] ?? null)
                 && filled($twilio['api_key'] ?? null) && filled($twilio['api_secret'] ?? null) && filled($twilio['twiml_app_sid'] ?? null),
-                'TELEPHONY_DRIVER=twilio, TWILIO_*', 'Fill in the Twilio account, API key and TwiML App, then point each number at the webhooks (launch:check --urls).'),
-            $this->feature($g, 'Text messages (SMS)', $telephony && (bool) config('telephony.sms'), 'TELEPHONY_SMS',
-                'After A2P 10DLC brand and campaign approval in Twilio, set TELEPHONY_SMS=true.'),
+                'Admin › Connections › Phone and texts', 'Fill in the Twilio account, API key and TwiML App under Admin › Connections › Phone and texts, and choose Twilio for calls.'),
+            $this->feature($g, 'Text messages (SMS)', $telephony && (bool) config('telephony.sms'), 'Admin › Connections › Phone and texts',
+                'After A2P 10DLC brand and campaign approval in Twilio, tick "Texting is on" under Admin › Connections › Phone and texts.'),
             $this->feature($g, 'Card payments (Stripe)', config('billing.gateway') === 'stripe' && filled(config('billing.stripe.secret')) && filled(config('billing.stripe.webhook_secret')),
-                'BILLING_GATEWAY=stripe, STRIPE_SECRET, STRIPE_WEBHOOK_SECRET', 'Optional. Without it, invoices are paid through Payoneer (see docs/billing.md).'),
+                'Admin › Connections › Payments', 'Optional. Add the Stripe keys under Admin › Connections › Payments. Without it, invoices are paid by transfer (see docs/billing.md).'),
             $this->feature($g, 'Customer payments (Stripe Connect)', filled(config('billing.stripe.secret')) && filled(config('billing.stripe.connect_webhook_secret')),
-                'STRIPE_SECRET, STRIPE_CONNECT_WEBHOOK_SECRET', 'Optional (D85). Turn on Connect in Stripe, add the Connect webhook from --urls, then businesses can take deposits and pay links.'),
+                'Admin › Connections › Payments', 'Optional (D85). Turn on Connect in Stripe, add the Connect webhook shown under Admin › Connections › Payments, then businesses can take deposits and pay links.'),
             $this->feature($g, 'Invoice details', filled($billing->get('company_address')) && filled($billing->get('company_email'))
                 && (filled($billing->get('payoneer_payment_link')) || filled($billing->get('bank_details')) || config('billing.gateway') === 'stripe'),
                 'Admin › Billing › Payment settings', 'Fill in your company address, billing email and how clients pay.'),
             $this->feature($g, 'Plans', Schema::hasTable('plans') && Plan::query()->where('is_active', true)->exists(), 'Admin › Billing › Plans',
                 'Create the plans clients subscribe to (keep them in step with the pricing on the website).'),
             $this->feature($g, 'Facebook, Instagram and Messenger', filled(config('social.connectors.meta.client_id')) && filled(config('social.connectors.meta.client_secret')),
-                'META_APP_ID / META_APP_SECRET / META_WEBHOOK_VERIFY_TOKEN', 'Create a Meta app, pass App Review for the page and messaging permissions, and add the webhook.'),
-            $this->feature($g, 'LinkedIn pages', filled(config('social.connectors.linkedin.client_id')), 'LINKEDIN_CLIENT_ID / _SECRET', 'Create a LinkedIn app with Community Management access.'),
-            $this->feature($g, 'Google Business Profile', (bool) config('social.connectors.google.enabled'), 'GOOGLE_BUSINESS_ENABLED',
-                'After Google approves Business Profile API access for your project, set GOOGLE_BUSINESS_ENABLED=true.'),
-            $this->feature($g, 'Phone app push notifications', filled(config('fcm.credentials')) && filled(config('fcm.project_id')), 'FCM_CREDENTIALS / FCM_PROJECT_ID',
-                'Create a Firebase project, upload the APNs key for iOS, and point FCM_CREDENTIALS at the service-account JSON.'),
-            $this->feature($g, 'Mobile app in the stores', filled(config('mobile.ios.store_url')) && filled(config('mobile.android.store_url')), 'MOBILE_IOS_STORE_URL / MOBILE_ANDROID_STORE_URL',
-                'After the store listings go live, add their links (and MOBILE_ANDROID_SHA256, MOBILE_IOS_APP_IDS for app links).'),
+                'Admin › Connections › Social networks', 'Create a Meta app, pass App Review for the page and messaging permissions, and add it under Admin › Connections.'),
+            $this->feature($g, 'LinkedIn pages', filled(config('social.connectors.linkedin.client_id')), 'Admin › Connections › Social networks', 'Create a LinkedIn app with Community Management access and add it under Admin › Connections.'),
+            $this->feature($g, 'Google Business Profile', (bool) config('social.connectors.google.enabled'), 'Admin › Connections › Social networks',
+                'After Google approves Business Profile API access, tick it under Admin › Connections › Social networks.'),
+            $this->feature($g, 'Phone app push notifications', app(FcmService::class)->isConfigured(), 'Admin › Connections › Mobile app',
+                'Create a Firebase project, upload the APNs key for iOS, and paste the service account key under Admin › Connections › Mobile app.'),
+            $this->feature($g, 'Mobile app in the stores', filled(config('mobile.ios.store_url')) && filled(config('mobile.android.store_url')), 'Admin › Connections › Mobile app',
+                'After the store listings go live, add their links and app-link details under Admin › Connections › Mobile app.'),
         ];
     }
 

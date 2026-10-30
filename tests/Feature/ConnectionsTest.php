@@ -42,7 +42,8 @@ class ConnectionsTest extends TestCase
     {
         $admin = $this->staff();
         $this->enableTwoFactor($admin);
-        $this->actingAs($admin)->get(route('admin.connections'))->assertOk()->assertSee('Claude API key')->assertSee('/admin/social/connect/x/callback');
+        $this->actingAs($admin)->get(route('admin.connections'))->assertOk()->assertSee('Claude API key');
+        $this->actingAs($admin)->get(route('admin.connections', ['tab' => 'social']))->assertOk()->assertSee('/admin/social/connect/x/callback');
 
         $manager = $this->staff('operations_manager');
         $this->enableTwoFactor($manager);

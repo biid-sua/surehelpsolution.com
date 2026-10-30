@@ -36,6 +36,8 @@ Each provider chip shows its connection state: *Synced*, *Reconnect* or *Sync er
 
 ## One-time setup (SureHelp, not each business)
 
+> Keys and settings for this are entered under **Admin › Connections** (D105), not in `.env`. The card there lists the web addresses to paste into the service and has a Test button.
+
 Until a provider is configured, businesses see "Coming soon" for it. Replace `https://YOUR-DOMAIN` with the production `APP_URL`.
 
 ### Google

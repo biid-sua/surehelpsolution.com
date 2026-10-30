@@ -35,6 +35,8 @@ At most 320 characters: the title, one line of detail, and a link. Texts come fr
 4. In `.env`, set `TELEPHONY_NOTIFY_FROM=+1…` (with `TELEPHONY_SMS=true`, as for business texting), then run `php artisan config:cache`.
 
 ### Push (Firebase Cloud Messaging HTTP v1)
+
+> Keys and settings for this are entered under **Admin › Connections** (D105), not in `.env`. The card there lists the web addresses to paste into the service and has a Test button.
 Google switched off the old "server key" push API in 2024. The app now uses HTTP v1 with a service account.
 1. In the Firebase console, open the app's project and go to **Project settings › Service accounts › Generate new private key**. This downloads a JSON file.
 2. Put the file on the server outside the web root, for example `storage/app/private/firebase.json`. Then set `FCM_CREDENTIALS=/full/path/to/firebase.json` in `.env`. The variable also accepts the JSON itself, or the JSON in base64. `FCM_PROJECT_ID` is optional and is read from the file.
