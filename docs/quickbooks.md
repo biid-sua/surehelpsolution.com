@@ -1,7 +1,8 @@
 # QuickBooks Online (D110)
 
 Businesses connect their QuickBooks Online company under **Business › Connected apps**. It's the
-first connected app; Jobber, Housecall Pro and ServiceTitan are meant to follow the same pattern.
+first connected app; Jobber ([jobber.md](jobber.md)) follows the same pattern, and Housecall Pro and
+ServiceTitan can too. Matching, sending once and tokens live in `App\Services\Apps\AppRecords`.
 
 ## What it does
 

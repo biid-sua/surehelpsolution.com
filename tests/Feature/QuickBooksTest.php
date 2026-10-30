@@ -193,7 +193,7 @@ class QuickBooksTest extends TestCase
         // Switched off for this business: no page, no sync.
         app(FeatureAccess::class)->saveModes(['quickbooks' => FeatureAccess::SELECTED]);
         app()->forgetScopedInstances();
-        $this->get(route('app.business.apps'))->assertNotFound();
+        $this->get(route('app.business.apps'))->assertOk()->assertDontSee('Connect QuickBooks')->assertSee('finishing the Jobber setup');
         $this->get(route('app.apps.quickbooks.connect'))->assertNotFound();
         $this->paidPayment($ana, 7000);
         $this->assertCount(1, $this->fake()->payments);
@@ -210,8 +210,8 @@ class QuickBooksTest extends TestCase
 
         $connection = $this->connect();
         $this->get(route('app.business.apps'))->assertOk()->assertSee('Rivera Plumbing LLC')->assertSee('Fetch changes now');
-        Livewire::test(ConnectedApps::class)->set('settings.send_new_customers', true)->call('save')->assertDispatched('toast', type: 'success')
-            ->call('syncNow')->assertDispatched('toast', type: 'success');
+        Livewire::test(ConnectedApps::class)->set('settings.quickbooks.send_new_customers', true)->call('save', 'quickbooks')->assertDispatched('toast', type: 'success')
+            ->call('syncNow', 'quickbooks')->assertDispatched('toast', type: 'success');
         $this->assertTrue($connection->fresh()->wants('send_new_customers'));
         $this->assertDatabaseHas('audit_logs', ['action' => 'apps.quickbooks_settings_updated']);
 
@@ -220,7 +220,7 @@ class QuickBooksTest extends TestCase
         app(ProvisionUserTenancy::class)->handle($otherOwner);
         $this->enableTwoFactor($otherOwner);
         $this->actingAs($otherOwner)->get(route('app.business.apps'))->assertOk()->assertDontSee('Rivera Plumbing LLC')->assertSee('Connect QuickBooks');
-        Livewire::test(ConnectedApps::class)->call('save')->assertNotFound();
+        Livewire::test(ConnectedApps::class)->call('save', 'quickbooks')->assertNotFound();
         $this->assertTrue($connection->fresh()->wants('send_new_customers'));
 
         // Staff can't manage connected apps.
@@ -231,7 +231,7 @@ class QuickBooksTest extends TestCase
         $this->get(route('app.apps.quickbooks.connect'))->assertForbidden();
 
         $this->actingAs($this->owner);
-        Livewire::test(ConnectedApps::class)->call('disconnect')->assertRedirect(route('app.business.apps'));
+        Livewire::test(ConnectedApps::class)->call('disconnect', 'quickbooks')->assertRedirect(route('app.business.apps'));
         $this->assertDatabaseCount('app_connections', 0);
         $this->assertSame(['qb-refresh-abc'], $this->fake()->revoked);
         $this->assertDatabaseHas('audit_logs', ['action' => 'apps.quickbooks_disconnected']);

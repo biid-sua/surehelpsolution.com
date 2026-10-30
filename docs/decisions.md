@@ -2012,3 +2012,25 @@ to buy SureHelp. It builds on texting, tasks, alerts and the phone line already 
 **Why:** "Does it work with my system?" is the most common question from US service businesses, and
 QuickBooks is the accounting software most of them use. Money taken through SureHelp landing in
 their books, and their customer list helping the receptionists, makes SureHelp part of how they run.
+
+## D111 — Jobber, the second connected app (2026-10-30)
+**Decision:** a business can connect its Jobber account under *Business › Connected apps*, next to
+QuickBooks (D110).
+- **Bookings go in as requests.** Every booking SureHelp makes (agents, the AI receptionist, online
+  booking) becomes a Jobber *request* from that client, titled with the service and the time, for
+  the office to schedule. A request, not a job: Jobber jobs need prices, visits and team members
+  that the office sets. Bookings copied in from a calendar, imports and anything from Jobber itself
+  aren't sent back.
+- **Clients come in.** Jobber clients with a phone or email come into SureHelp every hour (source
+  `jobber`), the same way as QuickBooks customers: matched by phone or email, blanks filled only,
+  archived clients left out, and no automations or lead counts.
+- **The same rules.** Each record goes once, nothing in Jobber is changed or deleted, sending every
+  new customer is off at first, demo businesses never sync, and losing access asks the owner to
+  connect again. Jobber asking us to slow down is retried later.
+- The matching, sending-once and token handling now live in `AppRecords`, shared by both apps.
+- One Jobber app for all businesses, keyed under *Admin › Connections › Business apps*. Feature
+  `jobber`, open to every business.
+
+**Why:** "Does it work with my system?" comes up most with trades, and Jobber is one of the most used
+job management tools among small US home-service businesses. A booking that lands in Jobber without
+retyping removes the biggest reason an owner would hesitate.

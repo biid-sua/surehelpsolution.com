@@ -92,6 +92,9 @@ class LaunchReadiness
             'QuickBooks Online (developer.intuit.com): redirect URI' => [
                 ['label' => 'Businesses connecting QuickBooks', 'url' => route('app.apps.quickbooks.callback')],
             ],
+            'Jobber (Developer Center): OAuth callback URL' => [
+                ['label' => 'Businesses connecting Jobber', 'url' => route('app.apps.jobber.callback')],
+            ],
             'LinkedIn: authorized redirect URL' => [
                 ['label' => 'LinkedIn pages', 'url' => route('app.social.connect.callback', 'linkedin')],
             ],

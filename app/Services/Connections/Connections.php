@@ -196,6 +196,15 @@ class Connections
                         'options' => ['production' => 'Real companies (Production keys)', 'sandbox' => 'Sample companies (Development keys)']],
                 ],
             ],
+            'jobber' => [
+                'label' => 'Jobber',
+                'tab' => 'apps',
+                'help' => 'An app in the Jobber Developer Center (developer.getjobber.com) with read and write access to clients and requests. Businesses then connect their own Jobber account under Business › Connected apps. Jobber must publish the app before accounts other than your own test account can connect.',
+                'fields' => [
+                    'jobber_client_id' => ['label' => 'Client ID', 'config' => 'apps.jobber.client_id'],
+                    'jobber_client_secret' => ['label' => 'Client secret', 'config' => 'apps.jobber.client_secret', 'secret' => true],
+                ],
+            ],
             'fcm' => [
                 'label' => 'Firebase (mobile app notifications)',
                 'tab' => 'push',

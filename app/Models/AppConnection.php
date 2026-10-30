@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 /**
- * A business's own software connected to SureHelp (D110), starting with QuickBooks Online. One per
+ * A business's own software connected to SureHelp: QuickBooks Online (D110) and Jobber (D111). One per
  * app. Tokens are encrypted at rest and never leave the server.
  *
  * @property string $ulid
@@ -25,6 +25,8 @@ class AppConnection extends Model
 
     public const QUICKBOOKS = 'quickbooks';
 
+    public const JOBBER = 'jobber';
+
     public const ACTIVE = 'active';
 
     public const NEEDS_REAUTH = 'needs_reauth';
@@ -32,6 +34,7 @@ class AppConnection extends Model
     /** What each app sends and receives, and what it starts with. */
     public const DEFAULTS = [
         self::QUICKBOOKS => ['send_payments' => true, 'send_new_customers' => false, 'receive_customers' => true],
+        self::JOBBER => ['send_bookings' => true, 'send_new_customers' => false, 'receive_customers' => true],
     ];
 
     protected $fillable = [

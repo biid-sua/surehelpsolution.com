@@ -2,23 +2,18 @@
 
 namespace App\Services\Apps\QuickBooks;
 
-use App\Enums\CustomerStatus;
-use App\Exceptions\AppAuthorizationLost;
 use App\Exceptions\AppRequestFailed;
 use App\Jobs\SyncToQuickBooks;
 use App\Models\AppConnection;
-use App\Models\AppLink;
 use App\Models\Customer;
 use App\Models\Organization;
 use App\Models\PaymentRequest;
 use App\Models\User;
+use App\Services\Apps\AppRecords;
 use App\Services\Billing\FeatureAccess;
 use App\Support\DemoGuard;
-use App\Support\Phone;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\UniqueConstraintViolationException;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 /**
@@ -30,7 +25,7 @@ use Illuminate\Support\Str;
  */
 class QuickBooks
 {
-    public function __construct(private readonly QuickBooksClient $client) {}
+    public function __construct(private readonly QuickBooksClient $client, private readonly AppRecords $records) {}
 
     public function isConfigured(): bool
     {
@@ -102,11 +97,11 @@ class QuickBooks
     /** The QuickBooks customer for this SureHelp customer: matched by email or name, else added. */
     public function sendCustomer(AppConnection $connection, Customer $customer): string
     {
-        return $this->once($connection, 'customer', $customer->id, function () use ($connection, $customer) {
+        return $this->records->once($connection, 'customer', $customer->id, function () use ($connection, $customer) {
             $token = $this->token($connection);
             $name = $this->displayName($customer);
             $found = $this->client->findCustomer((string) $connection->account_id, $token, $customer->email, $name);
-            if ($found && $this->samePerson($customer, $found)) {
+            if ($found && $this->records->samePerson($customer, $found['PrimaryEmailAddr']['Address'] ?? null, $found['PrimaryPhone']['FreeFormNumber'] ?? $found['Mobile']['FreeFormNumber'] ?? null)) {
                 $connection->log('customer_matched', $customer->fullName());
 
                 return (string) $found['Id'];
@@ -139,7 +134,7 @@ class QuickBooks
             return null;
         }
 
-        return $this->once($connection, 'payment', $payment->id, function () use ($connection, $payment) {
+        return $this->records->once($connection, 'payment', $payment->id, function () use ($connection, $payment) {
             $customerId = $this->sendCustomer($connection, $payment->customer);
             $organization = Organization::query()->findOrFail($payment->organization_id);
             $created = $this->client->createPayment((string) $connection->account_id, $this->token($connection), array_filter([
@@ -175,7 +170,7 @@ class QuickBooks
             $size = min(500, $limit - $seen);
             $page = $this->client->customersChangedSince((string) $connection->account_id, $token, $since, $seen + 1, $size);
             foreach ($page as $row) {
-                $result = $this->receive($connection, $row);
+                $result = ($row['Active'] ?? true) === false || ! isset($row['Id']) ? null : $this->records->receiveCustomer($connection, (string) $row['Id'], $this->localFields($row));
                 if ($result !== null) {
                     $counts[$result]++;
                 }
@@ -189,57 +184,10 @@ class QuickBooks
         }
         $connection->forceFill(['pulled_through' => $through, 'last_synced_at' => now(), 'last_error' => null])->save();
         if ($counts['added'] + $counts['matched'] > 0) {
-            $connection->log('customer_received', collect([
-                $counts['added'] ? $counts['added'].' new '.Str::plural('customer', $counts['added']) : null,
-                $counts['matched'] ? $counts['matched'].' matched to customers you had' : null,
-            ])->filter()->implode(', '));
+            $connection->log('customer_received', $this->records->summary($counts));
         }
 
         return $counts;
-    }
-
-    /**
-     * @param  array<string, mixed>  $row  a QuickBooks Customer
-     * @return 'added'|'matched'|null
-     */
-    private function receive(AppConnection $connection, array $row): ?string
-    {
-        $id = (string) ($row['Id'] ?? '');
-        if ($id === '' || ($row['Active'] ?? true) === false) {
-            return null;
-        }
-        $fields = $this->localFields($row);
-        $linked = AppLink::withoutGlobalScopes()->where('app_connection_id', $connection->id)->where('local_type', 'customer')->where('external_id', $id)->value('local_id');
-        if ($linked) {
-            $customer = Customer::withoutGlobalScopes()->find($linked);
-            $customer && $this->fillBlanks($customer, $fields);
-
-            return null;
-        }
-        $e164 = Phone::normalize($fields['phone'] ?? null);
-        if ($e164 === null && empty($fields['email'])) {
-            return null;   // nothing a receptionist could recognise them by
-        }
-        $customer = Customer::query()->forOrganization($connection->organization_id)
-            ->where(fn ($q) => $q->when($e164, fn ($q) => $q->orWhere('phone_e164', $e164))->when($fields['email'] ?? null, fn ($q, $email) => $q->orWhere('email', Str::lower($email))))
-            ->first();
-        if ($customer) {
-            if (AppLink::withoutGlobalScopes()->where('app_connection_id', $connection->id)->where('local_type', 'customer')->where('local_id', $customer->id)->exists()) {
-                return null;   // already matched to another QuickBooks customer
-            }
-            $this->fillBlanks($customer, $fields);
-            $this->link($connection, 'customer', $customer->id, $id);
-
-            return 'matched';
-        }
-        try {
-            $customer = Customer::create($fields + ['organization_id' => $connection->organization_id, 'status' => CustomerStatus::Customer, 'source' => 'quickbooks']);
-        } catch (UniqueConstraintViolationException) {
-            return null;
-        }
-        $this->link($connection, 'customer', $customer->id, $id);
-
-        return 'added';
     }
 
     /**
@@ -252,7 +200,7 @@ class QuickBooks
         $last = trim((string) ($row['FamilyName'] ?? ''));
         $company = trim((string) ($row['CompanyName'] ?? ''));
         if ($first === '' && $last === '' && $company === '') {
-            [$first, $last] = array_pad(explode(' ', trim((string) ($row['DisplayName'] ?? '')), 2), 2, '');
+            [$first, $last] = AppRecords::splitName((string) ($row['DisplayName'] ?? ''));
         }
         $address = (array) ($row['BillAddr'] ?? []);
 
@@ -263,39 +211,6 @@ class QuickBooks
             'address_line1' => $address['Line1'] ?? '', 'address_line2' => $address['Line2'] ?? '', 'city' => $address['City'] ?? '',
             'state' => $address['CountrySubDivisionCode'] ?? '', 'postal_code' => $address['PostalCode'] ?? '',
         ]), fn ($v) => $v !== '');
-    }
-
-    /** @param  array<string, string>  $fields */
-    private function fillBlanks(Customer $customer, array $fields): void
-    {
-        foreach ($fields as $key => $value) {
-            if (blank($customer->getAttribute($key))) {
-                $customer->setAttribute($key, $value);
-            }
-        }
-        if ($customer->isDirty()) {
-            try {
-                $customer->save();
-            } catch (UniqueConstraintViolationException) {
-                // That phone number belongs to another of their customers: keep this one as it was.
-            }
-        }
-    }
-
-    /**
-     * Found by email, or by name with no email or phone that says it's someone else.
-     *
-     * @param  array<string, mixed>  $found  a QuickBooks Customer
-     */
-    private function samePerson(Customer $customer, array $found): bool
-    {
-        $email = Str::lower((string) ($found['PrimaryEmailAddr']['Address'] ?? ''));
-        if ($customer->email && $email !== '') {
-            return $email === $customer->email;
-        }
-        $phone = Phone::normalize($found['PrimaryPhone']['FreeFormNumber'] ?? $found['Mobile']['FreeFormNumber'] ?? null);
-
-        return ! ($customer->phone_e164 && $phone) || $phone === $customer->phone_e164;
     }
 
     private function displayName(Customer $customer): string
@@ -322,64 +237,8 @@ class QuickBooks
         ], fn ($v) => $v !== null);
     }
 
-    /**
-     * Runs $send once per record: the link remembers what it became in QuickBooks, and a lock stops
-     * two workers sending the same record at the same moment.
-     *
-     * @param  callable(): string  $send
-     */
-    private function once(AppConnection $connection, string $type, int $id, callable $send): string
-    {
-        $find = fn () => AppLink::withoutGlobalScopes()->where('app_connection_id', $connection->id)->where('local_type', $type)->where('local_id', $id)->value('external_id');
-        if ($existing = $find()) {
-            return (string) $existing;
-        }
-
-        return Cache::lock('quickbooks:'.$connection->id.':'.$type.':'.$id, 60)->block(30, function () use ($find, $send, $connection, $type, $id) {
-            if ($existing = $find()) {
-                return (string) $existing;
-            }
-            $external = $send();
-            $this->link($connection, $type, $id, $external);
-
-            return $external;
-        });
-    }
-
-    private function link(AppConnection $connection, string $type, int $id, string $external): void
-    {
-        AppLink::withoutGlobalScopes()->firstOrCreate(
-            ['app_connection_id' => $connection->id, 'local_type' => $type, 'local_id' => $id],
-            ['organization_id' => $connection->organization_id, 'external_id' => $external],
-        );
-    }
-
-    /** A working access token, refreshed when it's about to run out. */
     private function token(AppConnection $connection): string
     {
-        if ($connection->access_token && $connection->token_expires_at?->greaterThan(now()->addMinutes(2))) {
-            return $connection->access_token;
-        }
-        try {
-            if (! $connection->refresh_token) {
-                throw new AppAuthorizationLost('No refresh token.');
-            }
-            $tokens = $this->client->refresh($connection->refresh_token);
-        } catch (AppAuthorizationLost $e) {
-            $this->lost($connection);
-
-            throw $e;
-        }
-        $connection->forceFill([
-            'access_token' => $tokens['access_token'], 'refresh_token' => $tokens['refresh_token'] ?: $connection->refresh_token,
-            'token_expires_at' => now()->addSeconds($tokens['expires_in']),
-        ])->save();
-
-        return $tokens['access_token'];
-    }
-
-    public function lost(AppConnection $connection): void
-    {
-        $connection->forceFill(['status' => AppConnection::NEEDS_REAUTH, 'last_error' => 'QuickBooks no longer accepts our access. Connect it again.'])->save();
+        return $this->records->token($connection, fn (string $refresh) => $this->client->refresh($refresh), 'QuickBooks');
     }
 }

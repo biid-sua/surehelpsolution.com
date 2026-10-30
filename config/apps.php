@@ -5,9 +5,9 @@
 | Connected apps (docs/decisions.md D110)
 |--------------------------------------------------------------------------
 |
-| A business's own software connected to SureHelp. QuickBooks Online first: one Intuit app
-| (developer.intuit.com) for every business, with its keys under Admin › Connections › Business apps.
-| The 'fake' driver keeps everything in memory, for tests and demos.
+| A business's own software connected to SureHelp: QuickBooks Online (D110) and Jobber (D111). One
+| developer app per service for every business, with its keys under Admin › Connections › Business
+| apps. The 'fake' drivers keep everything in memory, for tests and demos.
 |
 */
 
@@ -22,6 +22,15 @@ return [
         'minor_version' => 75,
         // Customers brought in from QuickBooks per run (the rest follow on the next run).
         'pull_limit' => (int) env('QUICKBOOKS_PULL_LIMIT', 2000),
+    ],
+
+    'jobber' => [
+        'driver' => env('JOBBER_DRIVER', 'jobber'),
+        'client_id' => env('JOBBER_CLIENT_ID'),
+        'client_secret' => env('JOBBER_CLIENT_SECRET'),
+        // Jobber dates its GraphQL API; a request names the version it was written for.
+        'api_version' => env('JOBBER_API_VERSION', '2025-01-20'),
+        'pull_limit' => (int) env('JOBBER_PULL_LIMIT', 2000),
     ],
 
 ];

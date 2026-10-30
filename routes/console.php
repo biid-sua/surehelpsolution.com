@@ -78,3 +78,5 @@ Schedule::command('social:house-schedule')->everyFifteenMinutes()->withoutOverla
 
 // QuickBooks Online (D110): customers added or changed there come into SureHelp.
 Schedule::command('apps:quickbooks-pull')->hourlyAt(25)->withoutOverlapping(30);
+// Jobber (D111): clients added or changed there come into SureHelp.
+Schedule::command('apps:jobber-pull')->hourlyAt(35)->withoutOverlapping(30);

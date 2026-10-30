@@ -92,6 +92,7 @@ _As of 2026-10-21. Detailed tracker: [implementation-plan.md](implementation-pla
 - **AI receptionist (D108):** an AI voice answers calls nobody can take (as a backup, after hours, or every call): it answers from the business's details, books, takes details and puts urgent callers through to the owner. Every call is in the Inbox; Results and the dollars report count its bookings. For picked businesses first (*Billing › Feature access*); owners can practise by typing under *AI receptionist*.
 - **Instant replies to new leads (D109):** leads from the website form or a business's lead link (Facebook lead ads, Google, Angi, Thumbtack, Yelp through Zapier or Make) get a text and an email within seconds, and the owner's phone rings to connect them. The team gets a task and an alert; *Leads* shows each lead and how fast it was answered. See [leads.md](leads.md).
 - **QuickBooks Online (D110):** under *Business › Connected apps*, payments taken through SureHelp go into QuickBooks as payments from the customer, and QuickBooks customers come into SureHelp every hour so receptionists know them. Nothing is sent twice. See [quickbooks.md](quickbooks.md).
+- **Jobber (D111):** next to QuickBooks under *Business › Connected apps*: every booking SureHelp makes goes into Jobber as a request from the client, and Jobber clients come into SureHelp every hour. See [jobber.md](jobber.md).
 - **The mobile app was rebuilt** in its own repo (`biid-sua/SHS_Mobile_App`) for businesses, agents and admins, and merged. Its own README lists the store steps.
 
 625 automated tests pass.
