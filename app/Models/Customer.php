@@ -35,13 +35,14 @@ class Customer extends Model
     protected $fillable = [
         'organization_id', 'first_name', 'last_name', 'company', 'phone', 'phone_e164', 'email',
         'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'status', 'source', 'preferred_contact',
-        'sms_consent', 'sms_consent_at', 'email_consent', 'email_consent_at', 'consent_source', 'notes',
+        'sms_consent', 'sms_consent_at', 'email_consent', 'email_consent_at', 'marketing_opt_out_at', 'consent_source', 'notes',
         'last_activity_at', 'created_by_user_id',
     ];
 
     protected function casts(): array
     {
         return [
+            'marketing_opt_out_at' => 'datetime',
             'status' => CustomerStatus::class,
             'sms_consent' => 'boolean',
             'email_consent' => 'boolean',

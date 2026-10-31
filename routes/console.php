@@ -82,3 +82,5 @@ Schedule::command('apps:quickbooks-pull')->hourlyAt(25)->withoutOverlapping(30);
 Schedule::command('apps:jobber-pull')->hourlyAt(35)->withoutOverlapping(30);
 // Housecall Pro (D112): its customers come into SureHelp.
 Schedule::command('apps:housecall-pro-pull')->hourlyAt(45)->withoutOverlapping(30);
+// Service reminders (D116): due ones go out in the business's daytime.
+Schedule::command('marketing:reminders')->hourlyAt(15)->withoutOverlapping(30);

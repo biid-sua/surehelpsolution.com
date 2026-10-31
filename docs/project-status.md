@@ -97,6 +97,7 @@ _As of 2026-10-21. Detailed tracker: [implementation-plan.md](implementation-pla
 - **Zapier app (D113):** an official SureHelp app for Zapier (in `integrations/zapier`): every SureHelp event can start a Zap, and Zaps can add leads (with the instant reply), customers and tasks. Ready to publish with Zapier's CLI. See [zapier.md](zapier.md).
 - **Call tracking (D114):** up to 10 extra numbers, one per marketing channel, answered like the main line; a monthly report of calls, booked jobs, their worth and cost per job by channel. See [call-tracking.md](call-tracking.md).
 - **Estimates and invoices (D115):** estimates sent by text and email that customers accept online, turned into invoices they pay by card through the business's Stripe account, or marked paid by hand. See [estimates.md](estimates.md).
+- **Reminders & win-back (D116):** a reminder N months after each kind of job, and campaigns to past customers, by text and email with consent, unsubscribe and quiet hours; shows who came back. See [outreach.md](outreach.md).
 - **The mobile app was rebuilt** in its own repo (`biid-sua/SHS_Mobile_App`) for businesses, agents and admins, and merged. Its own README lists the store steps.
 
 625 automated tests pass.

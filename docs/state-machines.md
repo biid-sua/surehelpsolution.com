@@ -178,6 +178,17 @@ Invoice (`type = invoice`):
 
 Voiding cancels an open payment request for it.
 
+## Campaign (D116)
+
+`App\Models\Campaign`, changed in `App\Livewire\Client\Outreach` (start) and `App\Services\Marketing\Outreach` (finish).
+
+| From | Allowed to |
+|---|---|
+| `sending` | `sent` (every recipient handled) |
+| `sent` | terminal |
+
+Campaigns are created already `sending`; `draft` is reserved for saving one before sending.
+
 ## Agent assignment
 
 `App\Models\AgentAssignment` constants, changed by `App\Actions\Assignments\AssignAgent`, `ChangeAssignment`

@@ -2110,3 +2110,24 @@ them by text and email, and customers act on them from a link in the business's 
 Closing it inside SureHelp, with the receptionists' calls at the start and pay-by-text at the end,
 moves SureHelp from answering service toward the software they run the business on, and makes it
 much harder to leave.
+
+## D116 — Service reminders and win-back campaigns (2026-10-31)
+**Decision:** **Reminders & win-back** brings past customers back, two ways:
+- **Service reminders.** For each service, the owner picks "remind after N months" (1–36) and an
+  optional message. When a completed job reaches that age, the customer gets a text and/or email,
+  once per job, unless they've booked again since. This is separate from automations (D50), whose
+  waits stop at 30 days.
+- **Campaigns.** A one-off message to a group: customers not back in N months, who had a service,
+  or with a tag. The page shows how many are in the group and how many can get texts. It's sent in
+  batches, and shows how many came back (booked within 30 days).
+- **Marketing rules, stricter than appointment messages:** texts only with the customer's texting
+  consent and never after STOP, with "Reply STOP to opt out"; every email has a one-click
+  unsubscribe link (`marketing_opt_out_at`), which stops reminders and campaigns but not messages
+  about their own appointments; nothing between 8 PM and 9 AM in the business's time zone (a
+  campaign started at night waits for the morning); demo businesses send nothing.
+- Owners (`organization.update`) set reminders and send campaigns; the team (`customers.view`) sees
+  them. Feature `campaigns`, open to everyone.
+
+**Why:** repeat work from past customers is the cheapest revenue a service business has, and owners
+rarely have time to chase it. Reminders and win-back turn SureHelp's customer list into bookings,
+and the "came back" counts show it.

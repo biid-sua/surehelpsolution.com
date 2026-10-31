@@ -48,6 +48,7 @@ use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\Sites\SiteController;
 use App\Http\Controllers\SupportAttachmentController;
 use App\Http\Controllers\SurveyController;
+use App\Http\Controllers\UnsubscribeController;
 use App\Livewire\Account\Notifications as AccountNotifications;
 use App\Livewire\Account\Profile as AccountProfile;
 use App\Livewire\Account\Security as AccountSecurity;
@@ -136,6 +137,7 @@ use App\Livewire\Client\Inbox\Channels as InboxChannels;
 use App\Livewire\Client\Inbox\Index as InboxIndex;
 use App\Livewire\Client\Leads as ClientLeads;
 use App\Livewire\Client\Locations as ClientLocations;
+use App\Livewire\Client\Outreach as ClientOutreach;
 use App\Livewire\Client\Payments as ClientPayments;
 use App\Livewire\Client\Results as ClientResults;
 use App\Livewire\Client\Reviews as ClientReviews;
@@ -181,6 +183,8 @@ Route::middleware('throttle:30,1')->prefix('pay/{token}')->name('pay.')->group(f
     Route::get('/', [PayController::class, 'show'])->name('show');
     Route::post('/', [PayController::class, 'checkout'])->name('checkout');
 });
+// Unsubscribing from a business's reminders and campaigns (D116): signed link from the email.
+Route::get('/unsubscribe/{customer}', UnsubscribeController::class)->middleware(['signed', 'throttle:30,1'])->name('marketing.unsubscribe');
 // Estimates and invoices a business sent its customer (D115): public, by token.
 Route::middleware('throttle:30,1')->prefix('d/{token}')->name('documents.')->group(function () {
     Route::get('/', [DocumentController::class, 'show'])->name('show');
@@ -349,6 +353,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
     Route::get('/payments', ClientPayments::class)->middleware('can:payments.view')->name('payments');
     Route::get('/payments/connect', PaymentsConnectController::class)->middleware(['can:payments.manage', 'feature:customer_payments'])->name('payments.connect');
     Route::get('/reviews', ClientReviews::class)->middleware(['can:reviews.view', 'feature:reviews'])->name('reviews');
+    Route::get('/reminders', ClientOutreach::class)->middleware(['can:customers.view', 'feature:campaigns'])->name('outreach');   // D116
     // Estimates and invoices to customers (D115)
     Route::middleware(['can:payments.view', 'feature:estimates'])->group(function () {
         Route::get('/estimates', ClientDocuments::class)->name('documents.index');

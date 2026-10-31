@@ -82,6 +82,10 @@ return [
         'label' => 'Estimates and invoices',
         'description' => 'Estimates customers accept online, turned into invoices they pay by card (with Deposits and payments) or that are marked paid.',
     ],
+    'campaigns' => [
+        'label' => 'Reminders & win-back',
+        'description' => 'Service reminders some months after a job, and campaigns to past customers by text and email, with who came back.',
+    ],
     'ai_receptionist' => [
         'label' => 'AI receptionist',
         'description' => 'An AI voice answers calls nobody can take (or after hours, or every call): it answers questions, books jobs, takes details and hands urgent calls to the team.',
