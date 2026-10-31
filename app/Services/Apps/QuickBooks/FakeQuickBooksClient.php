@@ -99,6 +99,20 @@ class FakeQuickBooksClient implements QuickBooksClient
         return $this->payments[] = $payment + ['Id' => (string) $this->nextId++];
     }
 
+    public function voidPayment(string $realm, string $token, string $id, string $note): void
+    {
+        $this->guard();
+        foreach ($this->payments as $i => $payment) {
+            if ($payment['Id'] === $id) {
+                $this->payments[$i] = ['TotalAmt' => 0, 'Voided' => true, 'PrivateNote' => $note] + $payment;
+
+                return;
+            }
+        }
+
+        throw new AppRequestFailed('Object Not Found.', '610');
+    }
+
     public function customersChangedSince(string $realm, string $token, ?CarbonInterface $since, int $start, int $max): array
     {
         $this->guard();

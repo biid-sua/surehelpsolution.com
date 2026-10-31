@@ -87,6 +87,17 @@ class QuickBooks
         SyncToQuickBooks::dispatch($connection->id, $subject instanceof PaymentRequest ? 'payment' : 'customer', (int) $subject->getKey())->afterCommit();
     }
 
+    /** A payment SureHelp sent was refunded: void it in QuickBooks too. */
+    public static function refunded(PaymentRequest $payment): void
+    {
+        $connection = AppConnection::withoutGlobalScopes()->where('organization_id', $payment->organization_id)->where('provider', AppConnection::QUICKBOOKS)
+            ->where('status', AppConnection::ACTIVE)->first();
+        if (! $connection || DemoGuard::isDemo($payment->organization_id) || ! self::allowed($connection)) {
+            return;
+        }
+        SyncToQuickBooks::dispatch($connection->id, 'refund', $payment->id)->afterCommit();
+    }
+
     public static function allowed(AppConnection $connection): bool
     {
         $organization = Organization::query()->find($connection->organization_id);
@@ -147,6 +158,22 @@ class QuickBooks
             $connection->log('payment_sent', $payment->amount().' from '.$payment->customer->fullName());
 
             return (string) $created['Id'];
+        });
+    }
+
+    /** Voids the QuickBooks payment for a refunded one, once. Nothing to do if it was never sent. */
+    public function refundPayment(AppConnection $connection, PaymentRequest $payment): void
+    {
+        $sent = $this->records->external($connection, 'payment', $payment->id);
+        if ($sent === null || $payment->status !== PaymentRequest::REFUNDED) {
+            return;
+        }
+        $this->records->once($connection, 'refund', $payment->id, function () use ($connection, $payment, $sent) {
+            $this->client->voidPayment((string) $connection->account_id, $this->token($connection), $sent,
+                'Refunded through SureHelp on '.now()->toDateString().': '.$payment->description);
+            $connection->log('payment_voided', $payment->amount().' to '.($payment->customer?->fullName() ?? 'a customer'));
+
+            return $sent;
         });
     }
 

@@ -2004,7 +2004,8 @@ to buy SureHelp. It builds on texting, tasks, alerts and the phone line already 
 - **New leads stay out by default.** Sending every new SureHelp customer to QuickBooks is a choice,
   off at first, so leads don't fill up the books.
 - **Nothing twice.** Each matched record is kept (`app_links`) and sends are locked per record.
-  Nothing in QuickBooks is changed or deleted.
+  Nothing in QuickBooks is changed or deleted, except that a payment SureHelp sent is voided there
+  when it's refunded through Stripe.
 - One Intuit app for all businesses, keyed under *Admin › Connections › Business apps*. Feature
   `quickbooks`, open to every business. The tables (`app_connections`, `app_links`,
   `app_sync_entries`) are general, so Jobber, Housecall Pro and ServiceTitan can follow the same way.

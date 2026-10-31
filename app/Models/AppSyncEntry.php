@@ -22,6 +22,7 @@ class AppSyncEntry extends Model
         'customer_received' => 'Customer brought in',
         'customer_matched' => 'Customer matched',
         'payment_sent' => 'Payment sent',
+        'payment_voided' => 'Payment voided (refunded)',
         'booking_sent' => 'Booking sent as a request',
         'job_sent' => 'Booking sent as a job',
         'failed' => 'Didn\'t go through',

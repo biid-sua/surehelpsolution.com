@@ -18,7 +18,8 @@ ServiceTitan can too. Matching, sending once and tokens live in `App\Services\Ap
   Results.
 - A name already used in QuickBooks by someone else gets the last four digits of the phone, for
   example "Dee Moss (0170)".
-- Refunds aren't sent yet: the bookkeeper records them in QuickBooks.
+- A payment refunded through Stripe is **voided** in QuickBooks (it stays there at $0, marked void, with
+  a note), once. Refunds of payments that never went to QuickBooks are left alone.
 
 ## Set up (once, by SureHelp staff)
 

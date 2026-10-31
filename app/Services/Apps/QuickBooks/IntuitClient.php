@@ -81,6 +81,15 @@ class IntuitClient implements QuickBooksClient
         return (array) $this->ok($this->api($token)->post($this->url($realm, 'payment'), $payment))->json('Payment');
     }
 
+    public function voidPayment(string $realm, string $token, string $id, string $note): void
+    {
+        // QuickBooks needs the current SyncToken to change a record.
+        $payment = (array) $this->ok($this->api($token)->get($this->url($realm, 'payment/'.rawurlencode($id))))->json('Payment');
+        $this->ok($this->api($token)->post($this->url($realm, 'payment').'&operation=update&include=void', [
+            'Id' => $id, 'SyncToken' => (string) ($payment['SyncToken'] ?? '0'), 'sparse' => true, 'PrivateNote' => $note,
+        ]));
+    }
+
     public function customersChangedSince(string $realm, string $token, ?CarbonInterface $since, int $start, int $max): array
     {
         $where = $since ? " WHERE MetaData.LastUpdatedTime > '".$since->toIso8601String()."'" : '';

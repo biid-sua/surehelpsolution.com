@@ -30,7 +30,7 @@ class SyncToQuickBooks implements ShouldQueue
     /** @var list<int> */
     public array $backoff = [60, 600, 3600];
 
-    /** @param  'customer'|'payment'  $type */
+    /** @param  'customer'|'payment'|'refund'  $type */
     public function __construct(public readonly int $connectionId, public readonly string $type, public readonly int $id) {}
 
     public function handle(QuickBooks $quickBooks): void
@@ -39,7 +39,7 @@ class SyncToQuickBooks implements ShouldQueue
         if (! $connection || ! $connection->isActive() || DemoGuard::isDemo($connection->organization_id) || ! QuickBooks::allowed($connection)) {
             return;
         }
-        $record = $this->type === 'payment'
+        $record = in_array($this->type, ['payment', 'refund'], true)
             ? PaymentRequest::withoutGlobalScopes()->where('organization_id', $connection->organization_id)->find($this->id)
             : Customer::withoutGlobalScopes()->where('organization_id', $connection->organization_id)->find($this->id);
         if (! $record) {
@@ -47,7 +47,11 @@ class SyncToQuickBooks implements ShouldQueue
         }
 
         try {
-            $record instanceof PaymentRequest ? $quickBooks->sendPayment($connection, $record) : $quickBooks->sendCustomer($connection, $record);
+            match (true) {
+                $this->type === 'refund' && $record instanceof PaymentRequest => $quickBooks->refundPayment($connection, $record),
+                $record instanceof PaymentRequest => $quickBooks->sendPayment($connection, $record),
+                default => $quickBooks->sendCustomer($connection, $record),
+            };
         } catch (AppAuthorizationLost) {
             return;   // the connection now asks the owner to connect again
         } catch (AppRequestFailed $e) {

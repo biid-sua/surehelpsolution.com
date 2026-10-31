@@ -15,6 +15,7 @@ use App\Models\PaymentRequest;
 use App\Models\User;
 use App\Notifications\CustomerEmail;
 use App\Notifications\CustomerPaid;
+use App\Services\Apps\QuickBooks\QuickBooks;
 use App\Services\Billing\FeatureAccess;
 use App\Services\Billing\Stripe\StripeApi;
 use App\Services\Business\Branding;
@@ -258,6 +259,7 @@ class CustomerPayments
             return;
         }
         $request->forceFill(['status' => PaymentRequest::REFUNDED])->save();
+        QuickBooks::refunded($request);   // D110
     }
 
     public function cancel(PaymentRequest $request, User $by): void

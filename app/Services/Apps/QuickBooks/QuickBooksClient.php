@@ -38,6 +38,9 @@ interface QuickBooksClient
      */
     public function createPayment(string $realm, string $token, array $payment): array;
 
+    /** Voids a payment (it stays in QuickBooks at $0, marked void), for a refund. */
+    public function voidPayment(string $realm, string $token, string $id, string $note): void;
+
     /**
      * Customers added or changed after $since (all of them when null), oldest change first.
      *

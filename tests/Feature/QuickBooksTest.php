@@ -146,6 +146,32 @@ class QuickBooksTest extends TestCase
         $this->assertSame(['payment_sent', 'payment_sent', 'customer_sent'], $connection->entries()->latest('id')->pluck('action')->all());
     }
 
+    public function test_a_refund_voids_the_payment_in_quickbooks_once(): void
+    {
+        $connection = $this->connect();
+        $ana = Customer::create(['organization_id' => $this->business->id, 'first_name' => 'Ana', 'last_name' => 'Lopez', 'phone' => '5125550147']);
+        $request = $this->paidPayment($ana);
+        $this->assertCount(1, $this->fake()->payments);
+
+        $refund = ['payment_intent' => 'pi_3QabcdefGHIJKLMNOPqrstu', 'refunded' => true];
+        app(CustomerPayments::class)->refunded($refund, 'acct_rivera');
+        $payment = $this->fake()->payments[0];
+        $this->assertSame([true, 0], [$payment['Voided'], $payment['TotalAmt']]);
+        $this->assertStringContainsString('Refunded through SureHelp', $payment['PrivateNote']);
+        $this->assertSame('payment_voided', $connection->entries()->latest('id')->value('action'));
+
+        // Told twice (Stripe retries): still voided once.
+        app(QuickBooks::class)->refundPayment($connection->fresh(), $request->fresh());
+        $this->assertSame(1, $connection->entries()->where('action', 'payment_voided')->count());
+
+        // A refund for a payment that never went to QuickBooks: nothing to do.
+        $connection->forceFill(['settings' => ['send_payments' => false]])->save();
+        $other = $this->paidPayment($ana, 5000);
+        $other->forceFill(['payment_intent_id' => 'pi_other'])->save();
+        app(CustomerPayments::class)->refunded(['payment_intent' => 'pi_other', 'refunded' => true], 'acct_rivera');
+        $this->assertSame(1, $connection->entries()->where('action', 'payment_voided')->count());
+    }
+
     public function test_existing_quickbooks_customers_are_matched_and_taken_names_kept_apart(): void
     {
         $this->fake()->addCustomer(['DisplayName' => 'Cal Diaz', 'PrimaryEmailAddr' => ['Address' => 'cal@diaz.test']]);
