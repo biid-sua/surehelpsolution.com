@@ -2175,8 +2175,10 @@ SOC 2 is the next step on the trust side; it's a company audit rather than a pro
   own it to start with, finish the setup, and invite the business owner under Team.
 - **The agency's brand**: client businesses are white-labelled (D82) automatically, in the
   agency's colour unless the business set its own, with no SureHelp mentions on customer pages.
-- Payouts of the share are handled by SureHelp finance from the dashboard's figure; billing stays
-  with each business.
+- **Statements.** On the 1st, each agency gets a statement for the month before: what its clients
+  paid and its share (`agencies:statements`). SureHelp pays it outside the app and marks it paid
+  with a reference; the agency sees its statements on its dashboard. Billing stays with each
+  business.
 
 **Why:** agencies already hold the relationship with dozens of local businesses and are always
 looking for services to add. Giving them their own brand, one dashboard and a share of the revenue

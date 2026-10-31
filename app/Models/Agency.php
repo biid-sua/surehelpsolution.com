@@ -42,6 +42,12 @@ class Agency extends Model
         return $this->hasMany(Organization::class);
     }
 
+    /** @return HasMany<AgencyStatement, $this> */
+    public function statements(): HasMany
+    {
+        return $this->hasMany(AgencyStatement::class);
+    }
+
     /** The agency a person belongs to (people belong to at most one). */
     public static function of(?User $user): ?self
     {

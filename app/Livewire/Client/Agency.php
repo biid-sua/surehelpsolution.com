@@ -54,6 +54,7 @@ class Agency extends Component
             'agency' => $agency,
             'board' => $desk->dashboard($agency, $start, $start->endOfMonth()),
             'month' => $start,
+            'statements' => $agency->statements()->latest('month')->limit(12)->get(),
             'isOwner' => $agency->members()->whereKey(auth()->id())->wherePivot('role', 'owner')->exists(),
             'zones' => ['America/New_York' => 'Eastern', 'America/Chicago' => 'Central', 'America/Denver' => 'Mountain', 'America/Phoenix' => 'Arizona',
                 'America/Los_Angeles' => 'Pacific', 'America/Anchorage' => 'Alaska', 'Pacific/Honolulu' => 'Hawaii'],

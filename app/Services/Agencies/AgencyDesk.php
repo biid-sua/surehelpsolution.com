@@ -5,6 +5,7 @@ namespace App\Services\Agencies;
 use App\Enums\AgentAssignmentSource;
 use App\Enums\OrganizationStatus;
 use App\Models\Agency;
+use App\Models\AgencyStatement;
 use App\Models\Appointment;
 use App\Models\CallLog;
 use App\Models\Escalation;
@@ -119,6 +120,33 @@ class AgencyDesk
         }
 
         return ['rows' => $rows, 'paid_cents' => $paid, 'commission_cents' => (int) round($paid * (float) $agency->commission_percent / 100)];
+    }
+
+    /**
+     * The statement for a month that has ended: what the agency's clients paid and its share, at the
+     * share it has now. Made once; a statement already there is left as it is.
+     */
+    public function statement(Agency $agency, CarbonImmutable $month): AgencyStatement
+    {
+        $start = $month->startOfMonth();
+        $existing = $agency->statements()->whereDate('month', $start->toDateString())->first();
+        if ($existing) {
+            return $existing;
+        }
+        $board = $this->dashboard($agency, $start, $start->endOfMonth());
+
+        return $agency->statements()->create([
+            'month' => $start->toDateString(), 'clients_paid_cents' => $board['paid_cents'], 'commission_percent' => $agency->commission_percent,
+            'share_cents' => $board['commission_cents'], 'status' => AgencyStatement::DUE,
+        ]);
+    }
+
+    public function markPaid(AgencyStatement $statement, string $reference, User $by): void
+    {
+        abort_unless($statement->status === AgencyStatement::DUE, 422);
+        $statement->forceFill(['status' => AgencyStatement::PAID, 'paid_at' => now(), 'paid_by_user_id' => $by->id, 'reference' => mb_substr(trim($reference), 0, 120) ?: null])->save();
+        $this->audit->record('agency.statement_paid', $statement, new: ['share_cents' => $statement->share_cents, 'reference' => $statement->reference], actor: $by,
+            label: $statement->agency->name.' '.$statement->month->format('F Y'));
     }
 
     private function join(Agency $agency, Organization $organization, User $user): void

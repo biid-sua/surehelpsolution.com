@@ -189,6 +189,15 @@ Voiding cancels an open payment request for it.
 
 Campaigns are created already `sending`; `draft` is reserved for saving one before sending.
 
+## Agency statement (D118)
+
+`App\Models\AgencyStatement`, changed in `App\Services\Agencies\AgencyDesk`.
+
+| From | Allowed to |
+|---|---|
+| `due` | `paid` (staff mark it paid, with a reference) |
+| `paid` | terminal |
+
 ## Agent assignment
 
 `App\Models\AgentAssignment` constants, changed by `App\Actions\Assignments\AssignAgent`, `ChangeAssignment`

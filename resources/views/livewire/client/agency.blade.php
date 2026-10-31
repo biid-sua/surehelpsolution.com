@@ -43,6 +43,20 @@
         </div>
     </x-ui.card>
 
+    <x-ui.card title="Your statements" description="Made on the 1st for the month before; SureHelp pays your share from it." :padding="false" class="mt-6">
+        <ul class="divide-y divide-line text-sm" role="list">
+            @forelse ($statements as $statement)
+                <li class="flex flex-wrap items-center justify-between gap-2 px-5 py-3" wire:key="st-{{ $statement->id }}">
+                    <span class="text-ink">{{ $statement->month->format('F Y') }}</span>
+                    <span class="text-muted">{{ \App\Support\Money::format($statement->share_cents) }} <span class="text-xs text-subtle">of {{ \App\Support\Money::format($statement->clients_paid_cents) }} paid by your clients</span></span>
+                    <x-ui.badge :tone="$statement->status === 'paid' ? 'success' : 'warning'">{{ $statement->status === 'paid' ? 'Paid '.$statement->paid_at?->format('M j') : 'Due' }}</x-ui.badge>
+                </li>
+            @empty
+                <li class="px-5 py-6 text-subtle">Your first statement is made on the 1st of next month.</li>
+            @endforelse
+        </ul>
+    </x-ui.card>
+
     @if ($isOwner)
         <x-ui.card title="Add a client business" description="You'll be its owner to start with: open it to finish the setup, then invite the business owner under Team." class="mt-6">
             <form wire:submit="addBusiness" class="flex flex-wrap items-start gap-2 text-sm">

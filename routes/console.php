@@ -84,3 +84,5 @@ Schedule::command('apps:jobber-pull')->hourlyAt(35)->withoutOverlapping(30);
 Schedule::command('apps:housecall-pro-pull')->hourlyAt(45)->withoutOverlapping(30);
 // Service reminders (D116): due ones go out in the business's daytime.
 Schedule::command('marketing:reminders')->hourlyAt(15)->withoutOverlapping(30);
+// Agency resellers (D118): last month's statement of each agency's share, once the month is over.
+Schedule::command('agencies:statements')->dailyAt('06:40')->withoutOverlapping(30);

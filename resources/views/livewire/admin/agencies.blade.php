@@ -72,6 +72,27 @@
                     </form>
                 </x-ui.card>
 
+                <x-ui.card title="Statements" description="Made on the 1st for the month before. Pay the agency its share, then mark it paid.">
+                    <ul class="divide-y divide-line text-sm" role="list">
+                        @forelse ($current->statements as $statement)
+                            <li class="flex flex-wrap items-center gap-3 py-2" wire:key="st-{{ $statement->id }}">
+                                <span class="w-28 text-ink">{{ $statement->month->format('F Y') }}</span>
+                                <span class="flex-1 text-muted">{{ \App\Support\Money::format($statement->share_cents) }} <span class="text-xs text-subtle">of {{ \App\Support\Money::format($statement->clients_paid_cents) }}</span></span>
+                                @if ($statement->status === 'paid')
+                                    <x-ui.badge tone="success">Paid {{ $statement->paid_at?->format('M j') }}{{ $statement->reference ? ' · '.$statement->reference : '' }}</x-ui.badge>
+                                @else
+                                    <form wire:submit="markPaid({{ $statement->id }})" class="flex items-center gap-2">
+                                        <input type="text" wire:model="references.{{ $statement->id }}" maxlength="120" placeholder="Reference" aria-label="Payment reference" class="sh-input w-36 py-1 text-sm">
+                                        <x-ui.button type="submit" size="sm" variant="secondary">Mark paid</x-ui.button>
+                                    </form>
+                                @endif
+                            </li>
+                        @empty
+                            <li class="py-2 text-subtle">The first statement is made on the 1st of next month.</li>
+                        @endforelse
+                    </ul>
+                </x-ui.card>
+
                 <x-ui.card title="Businesses" description="They see the agency's brand instead of SureHelp's.">
                     <ul class="mb-4 divide-y divide-line text-sm" role="list">
                         @forelse ($current->organizations as $organization)

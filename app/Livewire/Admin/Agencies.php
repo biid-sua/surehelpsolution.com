@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Livewire\Concerns\PlatformAdminOnly;
 use App\Models\Agency;
+use App\Models\AgencyStatement;
 use App\Models\Organization;
 use App\Models\User;
 use App\Services\Agencies\AgencyDesk;
@@ -36,6 +37,9 @@ class Agencies extends Component
     public string $memberRole = 'member';
 
     public string $business = '';   // organization ulid or name
+
+    /** @var array<int, string> payment reference typed per statement id */
+    public array $references = [];
 
     public function mount(): void
     {
@@ -119,6 +123,15 @@ class Agencies extends Component
         app(Branding::class)->forget($organization);
     }
 
+    public function markPaid(int $statementId, AgencyDesk $desk): void
+    {
+        $this->authorize('settings.manage');
+        $agency = $this->agency((string) $this->open);
+        $statement = $agency->statements()->whereKey($statementId)->where('status', AgencyStatement::DUE)->first() ?? abort(404);
+        $desk->markPaid($statement, (string) ($this->references[$statementId] ?? ''), auth()->user());
+        $this->dispatch('toast', type: 'success', message: 'Marked as paid.');
+    }
+
     private function agency(string $ulid): Agency
     {
         return Agency::query()->where('ulid', $ulid)->first() ?? abort(404);
@@ -128,7 +141,7 @@ class Agencies extends Component
     {
         return view('livewire.admin.agencies', [
             'agencies' => Agency::query()->withCount(['organizations', 'members'])->orderBy('name')->get(),
-            'current' => $this->open ? Agency::query()->with(['members', 'organizations'])->where('ulid', $this->open)->first() : null,
+            'current' => $this->open ? Agency::query()->with(['members', 'organizations', 'statements' => fn ($q) => $q->latest('month')->limit(12)])->where('ulid', $this->open)->first() : null,
             'roles' => AgencyDesk::ROLES,
         ]);
     }

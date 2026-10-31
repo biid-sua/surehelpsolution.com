@@ -19,6 +19,14 @@ Everything is audited (`agency.*`).
 - Agency owners: **Add a client business** (name, time zone). They become its owner, finish the
   setup and invite the business owner under *Team*.
 
+## Statements
+
+`agencies:statements` runs daily and, once a month has ended (Eastern time), makes that month's
+statement for each agency (`agency_statements`, once per month): what its clients paid SureHelp and
+the agency's share at its current percentage. Staff pay it outside SureHelp (bank transfer) and
+press **Mark paid** with a reference under *Admin › Agencies*; it's audited as
+`agency.statement_paid`. The agency sees its last 12 statements, due or paid, on its dashboard.
+
 ## How it works
 
 - `agencies`, `agency_user` (role owner|member), `organizations.agency_id`, and

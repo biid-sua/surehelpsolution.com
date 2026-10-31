@@ -6,6 +6,7 @@ use App\Actions\Organizations\ProvisionUserTenancy;
 use App\Livewire\Admin\Agencies;
 use App\Livewire\Client\Agency as AgencyDashboard;
 use App\Models\Agency;
+use App\Models\AgencyStatement;
 use App\Models\CallLog;
 use App\Models\Invoice;
 use App\Models\Organization;
@@ -103,6 +104,30 @@ class AgencyTest extends TestCase
         $this->assertFalse($this->dentist->members()->whereKey($this->agencyOwner->id)->exists());
         $this->assertSame(1, $this->dentist->members()->count());
         $this->assertFalse(app(Branding::class)->for($this->dentist->fresh())['white_label']);
+    }
+
+    public function test_a_monthly_statement_of_the_share_is_made_and_marked_paid(): void
+    {
+        $agency = $this->setUpAgency();
+        Invoice::create(['number' => 'SH-1', 'organization_id' => $this->plumber->id, 'status' => 'paid', 'currency' => 'USD', 'subtotal_cents' => 29900, 'total_cents' => 29900,
+            'amount_paid_cents' => 29900, 'issued_at' => now(), 'due_at' => now(), 'paid_at' => now()]);
+        Invoice::create(['number' => 'SH-2', 'organization_id' => $this->dentist->id, 'status' => 'paid', 'currency' => 'USD', 'subtotal_cents' => 49900, 'total_cents' => 49900,
+            'amount_paid_cents' => 49900, 'issued_at' => now(), 'due_at' => now(), 'paid_at' => now()]);
+
+        $this->travelTo(CarbonImmutable::parse('2026-11-01 12:00', 'UTC'));
+        $this->artisan('agencies:statements')->assertSuccessful();
+        $this->artisan('agencies:statements')->assertSuccessful();   // once per month
+        $statement = AgencyStatement::query()->sole();
+        $this->assertSame(['2026-10-01', 79800, 15960, 'due'], [$statement->month->toDateString(), $statement->clients_paid_cents, $statement->share_cents, $statement->status]);
+
+        $this->actingAs($this->agencyOwner)->get(route('app.agency'))->assertOk()->assertSee('October 2026')->assertSee('$159.60')->assertSee('Due');
+
+        $this->actingAs($this->admin);
+        Livewire::test(Agencies::class)->call('edit', $agency->ulid)->set('references.'.$statement->id, 'ACH 4471')->call('markPaid', $statement->id)->assertDispatched('toast', type: 'success');
+        $this->assertSame(['paid', 'ACH 4471'], [$statement->fresh()->status, $statement->fresh()->reference]);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'agency.statement_paid']);
+        Livewire::test(Agencies::class)->call('edit', $agency->ulid)->call('markPaid', $statement->id)->assertNotFound();   // already paid
+        $this->actingAs($this->agencyOwner)->get(route('app.agency'))->assertSee('Paid Nov 1');
     }
 
     public function test_agency_owners_add_new_client_businesses(): void
