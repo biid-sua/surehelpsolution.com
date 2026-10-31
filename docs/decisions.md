@@ -2091,3 +2091,22 @@ for each one, and it's how most small businesses already connect their software.
 **Why:** owners spend on ads without knowing which ones make the phone ring with real jobs. Showing
 booked jobs and cost per job by channel, next to the dollars report (D107), makes SureHelp the place
 they decide where their marketing money goes.
+
+## D115 — Estimates and invoices to customers (2026-10-31)
+**Decision:** businesses write estimates and invoices in SureHelp (**Estimates & invoices**), send
+them by text and email, and customers act on them from a link in the business's look:
+- **Estimates** list lines (quantity × price), sales tax and a "valid until" date. The customer
+  accepts by typing their name, or declines with an optional reason; the team gets an alert.
+- **An accepted estimate becomes an invoice** in one click, with the same lines and a due date two
+  weeks out. Invoices can also be written from scratch.
+- **Invoices are paid by card** through the business's own Stripe account (D85): paying makes a
+  payment request for the total, so the money, receipts and webhooks work as for pay-by-text. Paid in
+  cash, by check or transfer? The team marks it paid.
+- One table (`job_documents`) for both, numbered EST-1001… and INV-1001… per business. Status
+  changes only in `JobDocuments` (docs/state-machines.md). Texts follow D61; demo businesses send
+  nothing. Staff with `payments.request` write and send them. Feature `estimates`, open to everyone.
+
+**Why:** "call → estimate → job → invoice → paid" is the core money loop of a home-service business.
+Closing it inside SureHelp, with the receptionists' calls at the start and pay-by-text at the end,
+moves SureHelp from answering service toward the software they run the business on, and makes it
+much harder to leave.

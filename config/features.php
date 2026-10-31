@@ -78,6 +78,10 @@ return [
         'label' => 'Call tracking',
         'description' => 'A separate SureHelp number for each ad or marketing channel, with calls, booked jobs and cost per job for each one.',
     ],
+    'estimates' => [
+        'label' => 'Estimates and invoices',
+        'description' => 'Estimates customers accept online, turned into invoices they pay by card (with Deposits and payments) or that are marked paid.',
+    ],
     'ai_receptionist' => [
         'label' => 'AI receptionist',
         'description' => 'An AI voice answers calls nobody can take (or after hours, or every call): it answers questions, books jobs, takes details and hands urgent calls to the team.',

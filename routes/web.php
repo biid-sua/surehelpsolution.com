@@ -34,6 +34,7 @@ use App\Http\Controllers\Client\SocialOAuthController;
 use App\Http\Controllers\Client\SwitchOrganizationController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DemoBookingController;
+use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InboxMediaController;
@@ -127,6 +128,8 @@ use App\Livewire\Client\Customers\Import as CustomerImportPage;
 use App\Livewire\Client\Customers\Index as CustomerIndex;
 use App\Livewire\Client\Customers\Show as CustomerShow;
 use App\Livewire\Client\Dashboard as ClientDashboard;
+use App\Livewire\Client\Documents\Editor as ClientDocumentEditor;
+use App\Livewire\Client\Documents\Index as ClientDocuments;
 use App\Livewire\Client\Escalations\Index as EscalationsIndex;
 use App\Livewire\Client\Inbox\Assistant as InboxAssistant;
 use App\Livewire\Client\Inbox\Channels as InboxChannels;
@@ -177,6 +180,13 @@ Route::get('/health', HealthController::class)->middleware('throttle:60,1')->nam
 Route::middleware('throttle:30,1')->prefix('pay/{token}')->name('pay.')->group(function () {
     Route::get('/', [PayController::class, 'show'])->name('show');
     Route::post('/', [PayController::class, 'checkout'])->name('checkout');
+});
+// Estimates and invoices a business sent its customer (D115): public, by token.
+Route::middleware('throttle:30,1')->prefix('d/{token}')->name('documents.')->group(function () {
+    Route::get('/', [DocumentController::class, 'show'])->name('show');
+    Route::post('/accept', [DocumentController::class, 'accept'])->name('accept');
+    Route::post('/decline', [DocumentController::class, 'decline'])->name('decline');
+    Route::post('/pay', [DocumentController::class, 'pay'])->name('pay');
 });
 // A visitor's demo call with the SureHelp team (D96): see, move or cancel it, by token.
 Route::middleware('throttle:30,1')->prefix('demo/{token}')->name('demo.')->group(function () {
@@ -339,6 +349,12 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
     Route::get('/payments', ClientPayments::class)->middleware('can:payments.view')->name('payments');
     Route::get('/payments/connect', PaymentsConnectController::class)->middleware(['can:payments.manage', 'feature:customer_payments'])->name('payments.connect');
     Route::get('/reviews', ClientReviews::class)->middleware(['can:reviews.view', 'feature:reviews'])->name('reviews');
+    // Estimates and invoices to customers (D115)
+    Route::middleware(['can:payments.view', 'feature:estimates'])->group(function () {
+        Route::get('/estimates', ClientDocuments::class)->name('documents.index');
+        Route::get('/estimates/new', ClientDocumentEditor::class)->middleware('can:payments.request')->name('documents.create');
+        Route::get('/estimates/{document}', ClientDocumentEditor::class)->name('documents.edit');
+    });
     Route::get('/call-tracking', ClientCallTracking::class)->middleware(['can:reports.view', 'feature:call_tracking'])->name('call-tracking');   // D114
     Route::get('/leads', ClientLeads::class)->middleware(['can:customers.view', 'feature:lead_response'])->name('leads');   // D109
     Route::get('/escalations', EscalationsIndex::class)->middleware('can:escalations.view')->name('escalations.index');
