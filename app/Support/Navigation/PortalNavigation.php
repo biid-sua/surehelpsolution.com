@@ -2,6 +2,7 @@
 
 namespace App\Support\Navigation;
 
+use App\Models\Agency;
 use App\Models\User;
 use App\Services\Billing\FeatureAccess;
 use App\Support\Tenancy\CurrentOrganization;
@@ -23,6 +24,7 @@ class PortalNavigation
         return match ($portal) {
             'client' => [
                 // The dashboard opens on the calendar by default, and each person picks its sections (D77).
+                $this->item('Your agency', 'building', 'app.agency', 'app.agency', null),
                 $this->item('Dashboard', 'home', 'app.dashboard', 'app.dashboard', 'dashboard.view'),
                 $this->item('Calendar', 'calendar', 'app.calendar', 'app.calendar', 'calls.view'),
                 $this->item('Appointments', 'list', 'app.appointments.index', 'app.appointments.*', 'appointments.view'),
@@ -58,6 +60,7 @@ class PortalNavigation
                 $this->item('Duty schedule', 'calendar', 'admin.schedule', 'admin.schedule', 'users.view'),
                 $this->item('Calls', 'phone', 'admin.calls', 'admin.calls', 'calls.view'),
                 $this->item('Phone lines', 'phone', 'admin.phone-lines', 'admin.phone-lines', 'settings.view'),
+                $this->item('Agencies', 'building', 'admin.agencies', 'admin.agencies', 'settings.view'),
                 $this->item('Appointments', 'calendar', 'admin.appointments', 'admin.appointments', 'appointments.view'),
                 $this->item('Customers', 'users', 'admin.customers', 'admin.customers', 'customers.view'),
                 $this->item('Call review', 'inbox', 'admin.calls.review', 'admin.calls.review', 'calls.update'),
@@ -105,6 +108,10 @@ class PortalNavigation
 
         foreach ($this->definition($portal) as $item) {
             if ($item['permission'] && ! $user->hasPermissionIn($item['permission'])) {
+                continue;
+            }
+            // Only the agency's own people see its dashboard (D118).
+            if ($item['route'] === 'app.agency' && Agency::of($user) === null) {
                 continue;
             }
 

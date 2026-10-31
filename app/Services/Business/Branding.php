@@ -2,6 +2,7 @@
 
 namespace App\Services\Business;
 
+use App\Models\Agency;
 use App\Models\BusinessProfile;
 use App\Models\Organization;
 use App\Services\Billing\FeatureAccess;
@@ -28,8 +29,14 @@ class Branding
         }
         $profile = BusinessProfile::withoutGlobalScopes()->where('organization_id', $organization->id)->first();
         $name = $profile?->display_name ?: $organization->name;
-        $white = $this->features->allows($organization, 'white_label');
-        $color = $white && self::isColor($profile?->brand_color) ? strtolower((string) $profile->brand_color) : self::DEFAULT_COLOR;
+        // A business an agency looks after (D118) wears the agency's brand, not SureHelp's.
+        $agency = $organization->agency_id ? Agency::query()->find($organization->agency_id) : null;
+        $white = $agency !== null || $this->features->allows($organization, 'white_label');
+        $color = match (true) {
+            $white && self::isColor($profile?->brand_color) => strtolower((string) $profile->brand_color),
+            $agency && self::isColor($agency->brand_color) => strtolower((string) $agency->brand_color),
+            default => self::DEFAULT_COLOR,
+        };
 
         return $this->cache[$organization->id] = [
             'name' => $name,

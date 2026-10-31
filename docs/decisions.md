@@ -2155,3 +2155,24 @@ and the "came back" counts show it.
 promise in a way a practice manager can see and show. Healthcare practices pay more and stay longer,
 and a downloadable consent record answers the first question carriers and lawyers ask.
 SOC 2 is the next step on the trust side; it's a company audit rather than a product feature.
+
+## D118 — Agency resellers (2026-10-31)
+**Decision:** marketing agencies can resell SureHelp to the small businesses they serve.
+- **Set up by SureHelp staff** under *Admin › Agencies*: the agency's name, brand colour, logo and
+  share of what its clients pay (a percentage); its people (existing business-portal accounts, as
+  agency owners or team); and the businesses it looks after.
+- **Its people look after every client business**: they're added to each one as managers (marked
+  with the agency, so they leave when the person or the business leaves the agency), and switch
+  between businesses as any multi-business user does.
+- **"Your agency" dashboard** (only for agency people): each business's calls answered, missed
+  calls, bookings and urgent matters this month, with an Open button; what the businesses paid
+  SureHelp this month and the agency's share. Agency owners can add a new client business: they
+  own it to start with, finish the setup, and invite the business owner under Team.
+- **The agency's brand**: client businesses are white-labelled (D82) automatically, in the
+  agency's colour unless the business set its own, with no SureHelp mentions on customer pages.
+- Payouts of the share are handled by SureHelp finance from the dashboard's figure; billing stays
+  with each business.
+
+**Why:** agencies already hold the relationship with dozens of local businesses and are always
+looking for services to add. Giving them their own brand, one dashboard and a share of the revenue
+makes each agency a sales channel that brings many businesses at once.

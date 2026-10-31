@@ -99,6 +99,7 @@ _As of 2026-10-21. Detailed tracker: [implementation-plan.md](implementation-pla
 - **Estimates and invoices (D115):** estimates sent by text and email that customers accept online, turned into invoices they pay by card through the business's Stripe account, or marked paid by hand. See [estimates.md](estimates.md).
 - **Reminders & win-back (D116):** a reminder N months after each kind of job, and campaigns to past customers, by text and email with consent, unsubscribe and quiet hours; shows who came back. See [outreach.md](outreach.md).
 - **Compliance (D117):** HIPAA mode for healthcare practices (BAA signed in the app; no AI on their calls and messages; alerts with patient details stay in the app; record views audited), and texting and email consent at a glance with a CSV of consent records. See [compliance.md](compliance.md).
+- **Agency resellers (D118):** staff set up agencies with their brand and revenue share; agency people look after all their client businesses from a "Your agency" dashboard, add new ones, and their clients wear the agency's brand. See [agencies.md](agencies.md).
 - **The mobile app was rebuilt** in its own repo (`biid-sua/SHS_Mobile_App`) for businesses, agents and admins, and merged. Its own README lists the store steps.
 
 625 automated tests pass.

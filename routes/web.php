@@ -53,6 +53,7 @@ use App\Http\Controllers\UnsubscribeController;
 use App\Livewire\Account\Notifications as AccountNotifications;
 use App\Livewire\Account\Profile as AccountProfile;
 use App\Livewire\Account\Security as AccountSecurity;
+use App\Livewire\Admin\Agencies as AdminAgencies;
 use App\Livewire\Admin\Appearance as AdminAppearance;
 use App\Livewire\Admin\Appointments\Index as AdminAppointments;
 use App\Livewire\Admin\AuditLogs;
@@ -105,6 +106,7 @@ use App\Livewire\Agent\University\Course as UniversityCourse;
 use App\Livewire\Agent\University\Learning as UniversityLearning;
 use App\Livewire\Agent\University\Lesson as UniversityLesson;
 use App\Livewire\Agent\Workspace as AgentWorkspace;
+use App\Livewire\Client\Agency as ClientAgency;
 use App\Livewire\Client\AiReceptionist as AiReceptionistSettings;
 use App\Livewire\Client\Appointments\Index as AppointmentsIndex;
 use App\Livewire\Client\Billing\Index as ClientBilling;
@@ -355,6 +357,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
     Route::get('/payments', ClientPayments::class)->middleware('can:payments.view')->name('payments');
     Route::get('/payments/connect', PaymentsConnectController::class)->middleware(['can:payments.manage', 'feature:customer_payments'])->name('payments.connect');
     Route::get('/reviews', ClientReviews::class)->middleware(['can:reviews.view', 'feature:reviews'])->name('reviews');
+    Route::get('/agency', ClientAgency::class)->name('agency');   // D118: only for agency people (checked in the page)
     // Compliance (D117): HIPAA mode and consent records
     Route::get('/compliance', ClientCompliance::class)->middleware('can:organization.view')->name('compliance');
     Route::get('/compliance/consent.csv', ConsentExportController::class)->middleware(['can:customers.view', 'throttle:10,1'])->name('compliance.consent-export');
@@ -476,6 +479,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth.home', 'force.password
     Route::get('/appointments', AdminAppointments::class)->middleware('can:appointments.view')->name('appointments');
     Route::get('/customers', AdminCustomers::class)->middleware('can:customers.view')->name('customers');
     Route::get('/seo', AdminSeo::class)->middleware('can:seo.manage')->name('seo');
+    Route::get('/agencies', AdminAgencies::class)->middleware('can:settings.view')->name('agencies');   // D118
     Route::get('/phone-lines', AdminPhoneLines::class)->middleware('can:settings.view')->name('phone-lines');
     Route::get('/appearance', AdminAppearance::class)->middleware('can:settings.view')->name('appearance');
     Route::get('/system', AdminSystemStatus::class)->middleware('can:settings.view')->name('system');

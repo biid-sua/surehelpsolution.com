@@ -126,6 +126,12 @@ class Organization extends Model
         return $this->belongsTo(User::class, 'owner_user_id');
     }
 
+    /** @return BelongsTo<Agency, $this> the agency that looks after this business (D118) */
+    public function agency(): BelongsTo
+    {
+        return $this->belongsTo(Agency::class);
+    }
+
     /**
      * @return BelongsToMany<User, $this>
      */
