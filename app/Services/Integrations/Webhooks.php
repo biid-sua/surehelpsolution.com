@@ -16,6 +16,7 @@ use App\Models\Task;
 use App\Models\VoiceCall;
 use App\Models\WebhookDelivery;
 use App\Models\WebhookEndpoint;
+use App\Services\Apps\HousecallPro\HousecallPro;
 use App\Services\Apps\Jobber\Jobber;
 use App\Services\Apps\QuickBooks\QuickBooks;
 use App\Services\Websites\DnsResolver;
@@ -48,8 +49,8 @@ class Webhooks
     /** Queue the event for every endpoint of the business that wants it. */
     public function dispatch(string $event, Model $subject): int
     {
-        // The business's connected apps take some of the same moments (D110, D111).
-        foreach ([QuickBooks::class, Jobber::class] as $app) {
+        // The business's connected apps take some of the same moments (D110–D112).
+        foreach ([QuickBooks::class, Jobber::class, HousecallPro::class] as $app) {
             try {
                 $app::event($event, $subject);
             } catch (\Throwable $e) {

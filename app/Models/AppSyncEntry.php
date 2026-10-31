@@ -23,6 +23,7 @@ class AppSyncEntry extends Model
         'customer_matched' => 'Customer matched',
         'payment_sent' => 'Payment sent',
         'booking_sent' => 'Booking sent as a request',
+        'job_sent' => 'Booking sent as a job',
         'failed' => 'Didn\'t go through',
     ];
 

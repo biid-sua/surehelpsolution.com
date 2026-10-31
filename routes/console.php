@@ -80,3 +80,5 @@ Schedule::command('social:house-schedule')->everyFifteenMinutes()->withoutOverla
 Schedule::command('apps:quickbooks-pull')->hourlyAt(25)->withoutOverlapping(30);
 // Jobber (D111): clients added or changed there come into SureHelp.
 Schedule::command('apps:jobber-pull')->hourlyAt(35)->withoutOverlapping(30);
+// Housecall Pro (D112): its customers come into SureHelp.
+Schedule::command('apps:housecall-pro-pull')->hourlyAt(45)->withoutOverlapping(30);

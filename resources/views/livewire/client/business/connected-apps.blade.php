@@ -30,6 +30,21 @@
                 'receive_customers' => ['Bring in my Jobber clients', 'Every hour. Only details missing in SureHelp are filled in; what your team typed is kept.'],
             ],
         ],
+        'housecall_pro' => [
+            'title' => 'Housecall Pro',
+            'description' => 'Jobs we book for you go onto your Housecall Pro schedule, and your Housecall Pro customers come into SureHelp so our receptionists know them by name.',
+            'points' => [
+                'Each booking becomes a scheduled job at the customer\'s address, with the service, ready for your team.',
+                'Your Housecall Pro customers are brought in, and matched to the customers you already have by phone or email.',
+                'Nothing in Housecall Pro is changed or deleted, nothing is sent twice, and Housecall Pro doesn\'t text customers about what we add.',
+            ],
+            'admin' => '',
+            'settings' => [
+                'send_bookings' => ['Send bookings to Housecall Pro', 'Every job SureHelp books, on your schedule. Bookings need an address.'],
+                'send_new_customers' => ['Send every new customer to Housecall Pro', 'Off: only customers with a booking are added there, so new leads don\'t fill up your customer list.'],
+                'receive_customers' => ['Bring in my Housecall Pro customers', 'Every hour. Only details missing in SureHelp are filled in; what your team typed is kept.'],
+            ],
+        ],
     ];
 @endphp
 <div>
@@ -44,7 +59,20 @@
                     $connection = $state['connection'];
                 @endphp
                 <x-ui.card :title="$c['title']" :description="$c['description']" wire:key="app-{{ $app }}">
-                    @if (! $connection)
+                    @if (! $connection && $app === 'housecall_pro')
+                        <ul class="mb-4 list-disc space-y-1 pl-5 text-sm text-muted">
+                            @foreach ($c['points'] as $point)<li>{{ $point }}</li>@endforeach
+                        </ul>
+                        <form wire:submit="connectHousecallPro" class="space-y-2">
+                            <label for="hcp-key" class="sh-label">Your Housecall Pro API key</label>
+                            <div class="flex flex-wrap gap-2">
+                                <input id="hcp-key" type="password" wire:model="housecallKey" autocomplete="off" maxlength="200" class="sh-input min-w-[14rem] flex-1 font-mono">
+                                <x-ui.button type="submit" icon="link">Connect Housecall Pro</x-ui.button>
+                            </div>
+                            @error('housecallKey')<p class="text-sm text-danger">{{ $message }}</p>@enderror
+                            <p class="text-xs text-subtle">In Housecall Pro, go to App Store › API, and generate a key. The API is part of Housecall Pro's MAX plan. We keep the key encrypted and never show it again.</p>
+                        </form>
+                    @elseif (! $connection)
                         @if ($state['configured'])
                             <ul class="mb-4 list-disc space-y-1 pl-5 text-sm text-muted">
                                 @foreach ($c['points'] as $point)<li>{{ $point }}</li>@endforeach
@@ -68,6 +96,16 @@
                             <x-ui.alert tone="{{ $connection->isActive() ? 'warning' : 'danger' }}" class="mt-3">{{ $connection->last_error }}</x-ui.alert>
                         @endif
 
+                        @if ($app === 'housecall_pro' && ! $connection->isActive())
+                            <form wire:submit="connectHousecallPro" class="mt-4 space-y-2">
+                                <label for="hcp-key-again" class="sh-label">Paste a new Housecall Pro API key</label>
+                                <div class="flex flex-wrap gap-2">
+                                    <input id="hcp-key-again" type="password" wire:model="housecallKey" autocomplete="off" maxlength="200" class="sh-input min-w-[14rem] flex-1 font-mono">
+                                    <x-ui.button type="submit">Connect again</x-ui.button>
+                                </div>
+                                @error('housecallKey')<p class="text-sm text-danger">{{ $message }}</p>@enderror
+                            </form>
+                        @endif
                         <form wire:submit="save('{{ $app }}')" class="mt-5 space-y-3 text-sm">
                             @foreach ($c['settings'] as $key => [$label, $hint])
                                 <label class="flex items-start gap-2 text-ink">
@@ -79,7 +117,7 @@
                                 <x-ui.button type="submit">Save</x-ui.button>
                                 @if ($connection->isActive())
                                     <x-ui.button type="button" variant="secondary" wire:click="syncNow('{{ $app }}')" icon="refresh">Fetch changes now</x-ui.button>
-                                @else
+                                @elseif ($app !== 'housecall_pro')
                                     <x-ui.button :href="route('app.apps.'.$app.'.connect')" variant="secondary">Connect again</x-ui.button>
                                 @endif
                             </div>
@@ -110,7 +148,7 @@
                 </ul>
             </x-ui.card>
             <x-ui.card title="Coming next">
-                <p class="text-sm text-muted">Housecall Pro and ServiceTitan. Until then, connect them with Zapier or Make under <a href="{{ route('app.business.integrations') }}" wire:navigate class="font-medium text-brand-300 hover:underline">API & webhooks</a>.</p>
+                <p class="text-sm text-muted">ServiceTitan. Until then, connect them with Zapier or Make under <a href="{{ route('app.business.integrations') }}" wire:navigate class="font-medium text-brand-300 hover:underline">API & webhooks</a>.</p>
             </x-ui.card>
         </div>
     </div>

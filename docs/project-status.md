@@ -93,6 +93,7 @@ _As of 2026-10-21. Detailed tracker: [implementation-plan.md](implementation-pla
 - **Instant replies to new leads (D109):** leads from the website form or a business's lead link (Facebook lead ads, Google, Angi, Thumbtack, Yelp through Zapier or Make) get a text and an email within seconds, and the owner's phone rings to connect them. The team gets a task and an alert; *Leads* shows each lead and how fast it was answered. See [leads.md](leads.md).
 - **QuickBooks Online (D110):** under *Business › Connected apps*, payments taken through SureHelp go into QuickBooks as payments from the customer, and QuickBooks customers come into SureHelp every hour so receptionists know them. Nothing is sent twice. See [quickbooks.md](quickbooks.md).
 - **Jobber (D111):** next to QuickBooks under *Business › Connected apps*: every booking SureHelp makes goes into Jobber as a request from the client, and Jobber clients come into SureHelp every hour. See [jobber.md](jobber.md).
+- **Housecall Pro (D112):** the owner pastes a Housecall Pro API key under *Business › Connected apps*; every booking SureHelp makes goes onto their Housecall Pro schedule as a job, and Housecall Pro customers come into SureHelp every hour. See [housecall-pro.md](housecall-pro.md).
 - **The mobile app was rebuilt** in its own repo (`biid-sua/SHS_Mobile_App`) for businesses, agents and admins, and merged. Its own README lists the store steps.
 
 625 automated tests pass.

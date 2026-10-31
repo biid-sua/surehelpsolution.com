@@ -1,7 +1,7 @@
 # Jobber (D111)
 
 Businesses connect their Jobber account under **Business › Connected apps**, next to QuickBooks
-([quickbooks.md](quickbooks.md)). Both use the same tables and the shared `App\Services\Apps\AppRecords`.
+([quickbooks.md](quickbooks.md)) and Housecall Pro ([housecall-pro.md](housecall-pro.md)). All use the same tables and the shared `App\Services\Apps\AppRecords`.
 
 ## What it does
 

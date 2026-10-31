@@ -70,6 +70,10 @@ return [
         'label' => 'Jobber',
         'description' => 'Bookings SureHelp makes go into Jobber as new requests, and Jobber clients come into SureHelp so receptionists know them.',
     ],
+    'housecall_pro' => [
+        'label' => 'Housecall Pro',
+        'description' => 'Bookings SureHelp makes go onto the Housecall Pro schedule as jobs, and Housecall Pro customers come into SureHelp so receptionists know them.',
+    ],
     'ai_receptionist' => [
         'label' => 'AI receptionist',
         'description' => 'An AI voice answers calls nobody can take (or after hours, or every call): it answers questions, books jobs, takes details and hands urgent calls to the team.',

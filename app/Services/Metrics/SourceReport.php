@@ -56,8 +56,8 @@ class SourceReport
         $customers = Customer::query()->forOrganization($organization)->whereBetween('created_at', $window)->get(['id', 'source']);
         $firstChannel = $this->firstChannels($organization, $customers->where('source', 'message')->pluck('id')->all());
         foreach ($customers as $customer) {
-            if (in_array($customer->source, ['quickbooks', 'jobber'], true)) {
-                continue;   // already the business's customers, brought in from a connected app (D110, D111)
+            if (in_array($customer->source, ['quickbooks', 'jobber', 'housecall_pro'], true)) {
+                continue;   // already the business's customers, brought in from a connected app (D110–D112)
             }
             $key = match ($customer->source) {
                 'call' => 'phone',

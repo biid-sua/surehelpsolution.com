@@ -188,8 +188,8 @@ class JobberTest extends TestCase
         $this->assertCount(1, $this->fake()->requests);
         $this->business->forceFill(['is_demo' => false])->save();
 
-        // Both apps switched off for this business: no page, no sync.
-        app(FeatureAccess::class)->saveModes(['jobber' => FeatureAccess::SELECTED, 'quickbooks' => FeatureAccess::SELECTED]);
+        // Every app switched off for this business: no page, no sync.
+        app(FeatureAccess::class)->saveModes(['jobber' => FeatureAccess::SELECTED, 'quickbooks' => FeatureAccess::SELECTED, 'housecall_pro' => FeatureAccess::SELECTED]);
         app()->forgetScopedInstances();
         $this->get(route('app.business.apps'))->assertNotFound();
         $this->get(route('app.apps.jobber.connect'))->assertNotFound();

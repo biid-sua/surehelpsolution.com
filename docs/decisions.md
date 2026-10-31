@@ -2034,3 +2034,23 @@ QuickBooks (D110).
 **Why:** "Does it work with my system?" comes up most with trades, and Jobber is one of the most used
 job management tools among small US home-service businesses. A booking that lands in Jobber without
 retyping removes the biggest reason an owner would hesitate.
+
+## D112 — Housecall Pro, connected with the business's own key (2026-10-31)
+**Decision:** a business can connect Housecall Pro under *Business › Connected apps* by pasting an
+API key made in Housecall Pro (App Store › API, part of its MAX plan).
+- **Bookings go onto the schedule as jobs.** Housecall Pro jobs only need a customer, an address and
+  a time, so every booking SureHelp makes becomes a scheduled job with the service as its line
+  item (and the price, when the service has a fixed or "starting from" price), tagged SureHelp.
+  A booking without any address can't become a job: it's written in the history instead.
+- **Customers come in** every hour, the same way as QuickBooks and Jobber. Housecall Pro can't list
+  only changed customers, so each run reads them newest first, up to a limit; customers already
+  matched only get blanks filled.
+- **No texts from Housecall Pro.** Customers SureHelp adds there have Housecall Pro's own
+  notifications off, so only SureHelp's consent rules decide who gets texts.
+- A key Housecall Pro stops accepting asks the owner to paste a new one. Disconnecting forgets the
+  key; the owner deletes it in Housecall Pro. Feature `housecall_pro`, open to every business.
+
+**Why:** Housecall Pro is, with Jobber, the job software most used by small US home-service
+businesses. Its public API works with each business's own key, so it's available today without a
+partner app or a review, and a booking that lands on their Housecall Pro schedule is the clearest
+proof that SureHelp fits how they work.

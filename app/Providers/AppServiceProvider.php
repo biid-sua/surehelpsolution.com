@@ -12,6 +12,9 @@ use App\Notifications\Channels\PushChannel;
 use App\Notifications\Channels\SmsChannel;
 use App\Services\Ai\AiProviders;
 use App\Services\Ai\Contracts\AiProvider;
+use App\Services\Apps\HousecallPro\FakeHousecallProClient;
+use App\Services\Apps\HousecallPro\HousecallProClient;
+use App\Services\Apps\HousecallPro\RestHousecallProClient;
 use App\Services\Apps\Jobber\FakeJobberClient;
 use App\Services\Apps\Jobber\GraphqlJobberClient;
 use App\Services\Apps\Jobber\JobberClient;
@@ -92,6 +95,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(JobberClient::class, fn () => config('apps.jobber.driver') === 'fake'
             ? $this->app->make(FakeJobberClient::class)
             : $this->app->make(GraphqlJobberClient::class));
+        // Housecall Pro (D112): its REST API, or one kept in memory.
+        $this->app->singleton(HousecallProClient::class, fn () => config('apps.housecall_pro.driver') === 'fake'
+            ? $this->app->make(FakeHousecallProClient::class)
+            : $this->app->make(RestHousecallProClient::class));
         $this->app->bind(PaymentGateway::class, fn () => match (config('billing.gateway')) {
             'stripe' => $this->app->make(StripeGateway::class),
             default => $this->app->make(PayoneerGateway::class),
