@@ -4,6 +4,7 @@ namespace App\Services\Billing;
 
 use App\Models\Organization;
 use App\Models\PlatformSetting;
+use App\Services\Compliance\Hipaa;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -51,6 +52,10 @@ class FeatureAccess
         // SureHelp's own internal organization (D104) isn't a customer: nothing is gated.
         if ($organization->is_internal) {
             return true;
+        }
+        // HIPAA mode (D117): no AI reads a healthcare business's calls or messages.
+        if ($organization->hipaa_mode && in_array($feature, Hipaa::AI_FEATURES, true)) {
+            return false;
         }
         $override = $this->overrides($organization)[$feature] ?? null;
         if ($override !== null) {

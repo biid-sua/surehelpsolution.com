@@ -2131,3 +2131,27 @@ much harder to leave.
 **Why:** repeat work from past customers is the cheapest revenue a service business has, and owners
 rarely have time to chase it. Reminders and win-back turn SureHelp's customer list into bookings,
 and the "came back" counts show it.
+
+## D117 — HIPAA mode and visible consent records (2026-10-31)
+**Decision:** a **Compliance** page with two parts.
+- **HIPAA mode**, for healthcare practices. An owner turns it on by agreeing to the Business
+  Associate Agreement for the business (recorded as a `baa` legal acceptance, with time and IP).
+  While it's on:
+  - no AI reads the practice's calls or messages: the AI receptionist, the AI messaging assistant,
+    agent AI help, and call transcription and summaries are off, because SureHelp's AI providers
+    aren't covered by a BAA;
+  - alerts that carry patient details (calls, messages, appointments, tasks, escalations, leads,
+    payments…) reach email, text and push only as "new activity, sign in to see it" (at most every
+    10 minutes per channel); the full alert stays in the app's own bell;
+  - opening a customer's record is written in the audit log (`customers.viewed`).
+  Recording, two-step sign-in and encrypted storage are unchanged.
+- **Texting and email consent**: how many customers agreed to texts, texted STOP or unsubscribed
+  from offers, whether business texting is registered, the rules SureHelp follows (TCPA, A2P 10DLC,
+  CAN-SPAM, D61 and D116), and a CSV of every customer's consent record.
+- Owners (`organization.update`) switch HIPAA mode; anyone with `organization.view` sees the page;
+  the CSV needs `customers.view` and is audited.
+
+**Why:** the website already promises HIPAA support and a BAA; this makes the product keep that
+promise in a way a practice manager can see and show. Healthcare practices pay more and stay longer,
+and a downloadable consent record answers the first question carriers and lawyers ask.
+SOC 2 is the next step on the trust side; it's a company audit rather than a product feature.

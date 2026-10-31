@@ -10,6 +10,7 @@ use App\Models\Organization;
 use App\Models\PhoneNumber;
 use App\Models\User;
 use App\Models\VoiceCall;
+use App\Services\Compliance\Hipaa;
 use App\Support\Audit\Audit;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -249,7 +250,7 @@ class VoiceCalls
     public function transcriptFinished(VoiceCall $call): void
     {
         $call->refresh();
-        if ($call->summary_status === null && ! empty($call->transcript)) {
+        if ($call->summary_status === null && ! empty($call->transcript) && ! Hipaa::on($call->organization_id)) {
             $call->forceFill(['summary_status' => 'queued'])->save();
             SummarizeVoiceCall::dispatch($call->id);
         }

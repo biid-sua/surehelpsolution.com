@@ -46,6 +46,7 @@ class PortalNavigation
                 $this->item('SEO', 'trend-up', 'app.seo', 'app.seo*', 'seo.view'),
                 $this->item('Billing', 'card', 'app.billing', 'app.billing*', 'billing.view'),
                 $this->item('Team', 'users', 'app.settings.team', 'app.settings.team', 'users.view'),
+                $this->item('Compliance', 'shield', 'app.compliance', 'app.compliance', 'organization.view'),
                 $this->item('Notifications', 'bell', 'app.settings.notifications', 'app.settings.notifications', null),
                 $this->item('Data & privacy', 'shield', 'app.settings.privacy', 'app.settings.privacy*', 'organization.update'),
                 $this->item('Support', 'info', 'app.support', 'app.support*', 'support.view'),

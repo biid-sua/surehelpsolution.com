@@ -1380,6 +1380,9 @@ Indexes: (user_id, status); unique (organization_id, user_id).
 | `is_demo` | tinyint(1) |  | `0` |  |
 | `sample_data` | text | yes |  |  |
 | `is_internal` | tinyint(1) |  | `0` |  |
+| `hipaa_mode` | tinyint(1) |  | `0` |  |
+| `baa_accepted_at` | datetime | yes |  |  |
+| `baa_accepted_by_user_id` | integer | yes |  | → users.id (set null) |
 
 ## password_reset_tokens
 

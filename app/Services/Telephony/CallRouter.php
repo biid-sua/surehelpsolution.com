@@ -70,7 +70,7 @@ class CallRouter
         $twiml = TwiML::make();
         if ($line->record_calls) {
             $twiml->say((string) config('telephony.disclosure'));
-            if (config('telephony.transcribe')) {
+            if (config('telephony.transcribe') && ! $organization->hipaa_mode) {   // no transcripts in HIPAA mode (D117)
                 $twiml->startTranscription([
                     'statusCallbackUrl' => route('webhooks.voice.transcription', $call),
                     'track' => 'both_tracks',

@@ -17,7 +17,7 @@ the docs rather than repeating them.
 | Tables, columns, keys | [docs/schema.md](docs/schema.md) (generated, never edit by hand) |
 | What's done, what's next | [docs/project-status.md](docs/project-status.md), [docs/implementation-plan.md](docs/implementation-plan.md) |
 | Permissions, security, testing, deploy | [docs/permissions.md](docs/permissions.md), [docs/security.md](docs/security.md), [docs/testing.md](docs/testing.md), [docs/deployment.md](docs/deployment.md) |
-| A feature (telephony, inbox, billing, SEO, social, hosted sites, leads, QuickBooks, Jobber, Housecall Pro, Zapier, call tracking, estimates, reminders…) | Its own page in [docs/](docs/) |
+| A feature (telephony, inbox, billing, SEO, social, hosted sites, leads, QuickBooks, Jobber, Housecall Pro, Zapier, call tracking, estimates, reminders, compliance…) | Its own page in [docs/](docs/) |
 
 ## Before every push
 

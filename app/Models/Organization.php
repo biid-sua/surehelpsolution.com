@@ -58,6 +58,8 @@ class Organization extends Model
         return [
             'status' => OrganizationStatus::class,
             'is_demo' => 'boolean',
+            'hipaa_mode' => 'boolean',
+            'baa_accepted_at' => 'datetime',
             'is_internal' => 'boolean',
             'setup_progress' => 'array',
             'setup_completed_at' => 'datetime',

@@ -20,6 +20,7 @@ use App\Http\Controllers\Client\AppointmentExportController;
 use App\Http\Controllers\Client\CalendarEventsController;
 use App\Http\Controllers\Client\CalendarOAuthController;
 use App\Http\Controllers\Client\CallExportController;
+use App\Http\Controllers\Client\ConsentExportController;
 use App\Http\Controllers\Client\CustomerExportController;
 use App\Http\Controllers\Client\DataExportController as ClientDataExportController;
 use App\Http\Controllers\Client\InvoiceController as ClientInvoiceController;
@@ -124,6 +125,7 @@ use App\Livewire\Client\Calendar as ClientCalendar;
 use App\Livewire\Client\Calls\Index as ClientCalls;
 use App\Livewire\Client\Calls\Show as ClientCallShow;
 use App\Livewire\Client\CallTracking as ClientCallTracking;
+use App\Livewire\Client\Compliance as ClientCompliance;
 use App\Livewire\Client\Customers\Duplicates as CustomerDuplicates;
 use App\Livewire\Client\Customers\Import as CustomerImportPage;
 use App\Livewire\Client\Customers\Index as CustomerIndex;
@@ -353,6 +355,9 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
     Route::get('/payments', ClientPayments::class)->middleware('can:payments.view')->name('payments');
     Route::get('/payments/connect', PaymentsConnectController::class)->middleware(['can:payments.manage', 'feature:customer_payments'])->name('payments.connect');
     Route::get('/reviews', ClientReviews::class)->middleware(['can:reviews.view', 'feature:reviews'])->name('reviews');
+    // Compliance (D117): HIPAA mode and consent records
+    Route::get('/compliance', ClientCompliance::class)->middleware('can:organization.view')->name('compliance');
+    Route::get('/compliance/consent.csv', ConsentExportController::class)->middleware(['can:customers.view', 'throttle:10,1'])->name('compliance.consent-export');
     Route::get('/reminders', ClientOutreach::class)->middleware(['can:customers.view', 'feature:campaigns'])->name('outreach');   // D116
     // Estimates and invoices to customers (D115)
     Route::middleware(['can:payments.view', 'feature:estimates'])->group(function () {
