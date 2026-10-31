@@ -308,6 +308,9 @@ A staff member without the permission gets `403`. Dashboard: `dashboard.view`. A
 
 ## 2b. For businesses: API keys and webhooks (D87)
 
+The SureHelp Zapier app (D113) uses these keys and its own endpoints under `/api/v1/client/zapier`;
+see [zapier.md](zapier.md).
+
 Businesses connect their own tools (n8n, Zapier, Make, a CRM) under **Business › API & webhooks**.
 
 ### API keys

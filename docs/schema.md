@@ -2451,6 +2451,7 @@ Indexes: (webhook_endpoint_id, created_at).
 | `last_delivery_at` | datetime | yes |  |  |
 | `created_at` | datetime | yes |  |  |
 | `updated_at` | datetime | yes |  |  |
+| `source` | varchar | yes |  |  |
 
 ## website_checks
 

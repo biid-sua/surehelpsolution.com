@@ -33,6 +33,7 @@ use App\Http\Controllers\Api\TaskController;
 use App\Http\Controllers\Api\TeamController;
 use App\Http\Controllers\Api\ThemeController as ApiThemeController;
 use App\Http\Controllers\Api\TrainingController;
+use App\Http\Controllers\Api\ZapierController;
 use App\Http\Controllers\Chat\SiteToolsController;
 use App\Http\Controllers\Chat\WidgetController;
 use App\Http\Controllers\CspReportController;
@@ -177,6 +178,14 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
         Route::middleware('can:reports.view')->group(function () {
             Route::get('/results', [ResultsController::class, 'show']);
             Route::get('/results/pdf', [ResultsController::class, 'pdf'])->name('api.client.results.pdf');
+        });
+        // The SureHelp Zapier app (D113)
+        Route::prefix('zapier')->middleware('throttle:120,1')->group(function () {
+            Route::get('/me', [ZapierController::class, 'me']);
+            Route::get('/sample', [ZapierController::class, 'sample'])->middleware('can:integrations.manage');
+            Route::post('/hooks', [ZapierController::class, 'subscribe'])->middleware('can:integrations.manage');
+            Route::delete('/hooks/{ulid}', [ZapierController::class, 'unsubscribe'])->middleware('can:integrations.manage');
+            Route::post('/leads', [ZapierController::class, 'lead'])->middleware(['can:customers.create', 'idempotent']);
         });
         Route::get('/business', [ClientBusinessController::class, 'show'])->middleware('can:organization.view');
         Route::get('/services', [ClientBusinessController::class, 'services'])->middleware('can:organization.view');

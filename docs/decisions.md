@@ -2054,3 +2054,22 @@ API key made in Housecall Pro (App Store › API, part of its MAX plan).
 businesses. Its public API works with each business's own key, so it's available today without a
 partner app or a review, and a booking that lands on their Housecall Pro schedule is the clearest
 proof that SureHelp fits how they work.
+
+## D113 — An official SureHelp app on Zapier (2026-10-31)
+**Decision:** SureHelp has its own Zapier app, kept in this repository (`integrations/zapier`) and
+published with Zapier's CLI. It covers every webhook event as a trigger, adding leads, customers and
+tasks as actions, and finding a customer as a search. It signs in with the business's API key (D87).
+- **Triggers are REST hooks.** Turning a Zap on adds a webhook address through
+  `/api/v1/client/zapier/hooks`, turning it off removes it, so events arrive the moment they happen
+  without Zapier polling SureHelp. These addresses are marked as Zapier's, can't be removed by
+  anything else, and use the same safety checks as other webhooks.
+- **"Add Lead" goes through `LeadIntake`**, so any form or lead source on Zapier gets the instant
+  reply (D109).
+- **The Zap sees the event's id** (with the record as `record_id`), because Zapier skips ids it has
+  seen and the same booking can be moved twice.
+- **Examples come from the business's own data** when there are some, so the Zap editor shows real
+  fields.
+
+**Why:** a business's question "does it work with my system?" has a long tail beyond QuickBooks,
+Jobber and Housecall Pro. A listed Zapier app answers it for thousands of tools without a connection
+for each one, and it's how most small businesses already connect their software.

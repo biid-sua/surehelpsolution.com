@@ -39,7 +39,7 @@ class WebhookEndpoint extends Model
     /** Stop after this many failures in a row. */
     public const MAX_FAILURES = 20;
 
-    protected $fillable = ['organization_id', 'url', 'secret', 'events', 'is_active', 'failures', 'disabled_reason', 'last_delivery_at'];
+    protected $fillable = ['organization_id', 'url', 'source', 'secret', 'events', 'is_active', 'failures', 'disabled_reason', 'last_delivery_at'];
 
     protected $hidden = ['secret'];
 
