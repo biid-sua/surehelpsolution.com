@@ -2073,3 +2073,21 @@ tasks as actions, and finding a customer as a search. It signs in with the busin
 **Why:** a business's question "does it work with my system?" has a long tail beyond QuickBooks,
 Jobber and Housecall Pro. A listed Zapier app answers it for thousands of tools without a connection
 for each one, and it's how most small businesses already connect their software.
+
+## D114 — Call tracking by marketing channel (2026-10-31)
+**Decision:** a business can add up to 10 extra SureHelp numbers, each named for one marketing channel
+(Google Ads, Yelp, truck signs, mailers…), under **Call tracking**.
+- **Answered like the main line.** A tracking number copies the main line's transfer number,
+  recording, after-hours and text-back settings, and keeps following them when the main line
+  changes. Texts the business sends still go from the main number.
+- **The report, per month and channel:** calls, answered, booked jobs (calls our receptionists
+  logged as booked), what those jobs were worth (the service's price, else the average job value),
+  and, when the owner enters what the channel costs a month, the cost per call and per booked job.
+- Owners (`organization.update`) add and remove numbers and enter spend; anyone with `reports.view`
+  sees the report. Removed numbers keep their past calls in the report. Demo businesses can't buy
+  numbers. Feature `call_tracking`, open to everyone like other features until staff restrict it to
+  plans; each number has a small monthly cost, so a business can have at most 10.
+
+**Why:** owners spend on ads without knowing which ones make the phone ring with real jobs. Showing
+booked jobs and cost per job by channel, next to the dollars report (D107), makes SureHelp the place
+they decide where their marketing money goes.

@@ -121,6 +121,7 @@ use App\Livewire\Client\Business\Services as BusinessServicesPage;
 use App\Livewire\Client\Calendar as ClientCalendar;
 use App\Livewire\Client\Calls\Index as ClientCalls;
 use App\Livewire\Client\Calls\Show as ClientCallShow;
+use App\Livewire\Client\CallTracking as ClientCallTracking;
 use App\Livewire\Client\Customers\Duplicates as CustomerDuplicates;
 use App\Livewire\Client\Customers\Import as CustomerImportPage;
 use App\Livewire\Client\Customers\Index as CustomerIndex;
@@ -338,6 +339,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
     Route::get('/payments', ClientPayments::class)->middleware('can:payments.view')->name('payments');
     Route::get('/payments/connect', PaymentsConnectController::class)->middleware(['can:payments.manage', 'feature:customer_payments'])->name('payments.connect');
     Route::get('/reviews', ClientReviews::class)->middleware(['can:reviews.view', 'feature:reviews'])->name('reviews');
+    Route::get('/call-tracking', ClientCallTracking::class)->middleware(['can:reports.view', 'feature:call_tracking'])->name('call-tracking');   // D114
     Route::get('/leads', ClientLeads::class)->middleware(['can:customers.view', 'feature:lead_response'])->name('leads');   // D109
     Route::get('/escalations', EscalationsIndex::class)->middleware('can:escalations.view')->name('escalations.index');
     Route::middleware('can:customers.view')->group(function () {

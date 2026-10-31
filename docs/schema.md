@@ -1423,6 +1423,8 @@ Indexes: (tokenable_type, tokenable_id).
 | `after_hours` | varchar |  | `agents` |  |
 | `text_back` | tinyint(1) |  | `0` |  |
 | `text_back_message` | varchar | yes |  |  |
+| `tracking_source` | varchar | yes |  |  |
+| `monthly_spend_cents` | integer | yes |  |  |
 
 Indexes: (organization_id, status).
 

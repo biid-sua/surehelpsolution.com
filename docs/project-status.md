@@ -95,6 +95,7 @@ _As of 2026-10-21. Detailed tracker: [implementation-plan.md](implementation-pla
 - **Jobber (D111):** next to QuickBooks under *Business › Connected apps*: every booking SureHelp makes goes into Jobber as a request from the client, and Jobber clients come into SureHelp every hour. See [jobber.md](jobber.md).
 - **Housecall Pro (D112):** the owner pastes a Housecall Pro API key under *Business › Connected apps*; every booking SureHelp makes goes onto their Housecall Pro schedule as a job, and Housecall Pro customers come into SureHelp every hour. See [housecall-pro.md](housecall-pro.md).
 - **Zapier app (D113):** an official SureHelp app for Zapier (in `integrations/zapier`): every SureHelp event can start a Zap, and Zaps can add leads (with the instant reply), customers and tasks. Ready to publish with Zapier's CLI. See [zapier.md](zapier.md).
+- **Call tracking (D114):** up to 10 extra numbers, one per marketing channel, answered like the main line; a monthly report of calls, booked jobs, their worth and cost per job by channel. See [call-tracking.md](call-tracking.md).
 - **The mobile app was rebuilt** in its own repo (`biid-sua/SHS_Mobile_App`) for businesses, agents and admins, and merged. Its own README lists the store steps.
 
 625 automated tests pass.
