@@ -74,7 +74,8 @@ class Jobber
     /** A SureHelp event (D87) that Jobber may want: queue it for the business's connection. */
     public static function event(string $event, Model $subject): void
     {
-        $setting = ['appointment.booked' => 'send_bookings', 'customer.created' => 'send_new_customers'][$event] ?? null;
+        $setting = ['appointment.booked' => 'send_bookings', 'appointment.rescheduled' => 'send_bookings', 'appointment.cancelled' => 'send_bookings',
+            'customer.created' => 'send_new_customers'][$event] ?? null;
         $organizationId = (int) $subject->getAttribute('organization_id');
         if (! $setting || ($subject instanceof Appointment && in_array($subject->source, self::NOT_SENT, true)) || DemoGuard::isDemo($organizationId)) {
             return;
@@ -84,7 +85,12 @@ class Jobber
         if (! $connection || ! $connection->wants($setting) || ! self::allowed($connection)) {
             return;
         }
-        SyncToJobber::dispatch($connection->id, $subject instanceof Appointment ? 'appointment' : 'customer', (int) $subject->getKey())->afterCommit();
+        $type = match ($event) {
+            'appointment.rescheduled' => 'appointment_moved',
+            'appointment.cancelled' => 'appointment_cancelled',
+            default => $subject instanceof Appointment ? 'appointment' : 'customer',
+        };
+        SyncToJobber::dispatch($connection->id, $type, (int) $subject->getKey())->afterCommit();
     }
 
     public static function allowed(AppConnection $connection): bool
@@ -137,6 +143,12 @@ class Jobber
 
             return $id;
         });
+    }
+
+    /** A booking sent as a request was moved or cancelled: the office changes the request in Jobber. */
+    public function bookingChanged(AppConnection $connection, Appointment $appointment, bool $cancelled): void
+    {
+        $this->records->bookingChanged($connection, $appointment, $cancelled, 'Jobber');
     }
 
     /**

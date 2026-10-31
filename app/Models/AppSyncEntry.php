@@ -25,6 +25,8 @@ class AppSyncEntry extends Model
         'payment_voided' => 'Payment voided (refunded)',
         'booking_sent' => 'Booking sent as a request',
         'job_sent' => 'Booking sent as a job',
+        'booking_updated' => 'Booking moved there too',
+        'booking_changed' => 'Booking changed: task made',
         'failed' => 'Didn\'t go through',
     ];
 

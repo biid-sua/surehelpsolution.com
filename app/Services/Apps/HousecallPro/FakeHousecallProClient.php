@@ -84,6 +84,20 @@ class FakeHousecallProClient implements HousecallProClient
         return (string) end($this->jobs)['id'];
     }
 
+    public function updateSchedule(string $key, string $jobId, string $start, string $end): void
+    {
+        $this->guard($key);
+        foreach ($this->jobs as $i => $job) {
+            if ($job['id'] === $jobId) {
+                $this->jobs[$i]['schedule'] = ['scheduled_start' => $start, 'scheduled_end' => $end, 'arrival_window' => 0];
+
+                return;
+            }
+        }
+
+        throw new AppRequestFailed('Job not found', '404');
+    }
+
     public function customers(string $key, int $page, int $pageSize): array
     {
         $this->guard($key);

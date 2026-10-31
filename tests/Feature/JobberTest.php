@@ -14,6 +14,7 @@ use App\Models\Appointment;
 use App\Models\BusinessService;
 use App\Models\Customer;
 use App\Models\Organization;
+use App\Models\Task;
 use App\Models\User;
 use App\Services\Apps\Jobber\FakeJobberClient;
 use App\Services\Apps\Jobber\GraphqlJobberClient;
@@ -133,6 +134,29 @@ class JobberTest extends TestCase
         // Bookings copied in from a calendar weren't made by SureHelp: not sent.
         $this->book($ana, ['source' => 'calendar']);
         $this->assertCount(2, $this->fake()->requests);
+    }
+
+    public function test_moved_and_cancelled_bookings_ask_the_team_to_change_jobber_too(): void
+    {
+        $connection = $this->connect();
+        $ana = Customer::create(['organization_id' => $this->business->id, 'first_name' => 'Ana', 'last_name' => 'Lopez', 'phone' => '5125550147']);
+        $appointment = $this->book($ana);
+        $this->assertCount(1, $this->fake()->requests);
+
+        $at = CarbonImmutable::parse('2026-10-17 20:00', 'UTC');   // 3 PM in Chicago
+        $appointment->update(['starts_at' => $at, 'ends_at' => $at->addHour(), 'blocked_until' => $at->addHour()]);
+        $task = Task::query()->forOrganization($this->business)->where('title', 'like', '%change it in Jobber too')->sole();
+        $this->assertSame("Ana Lopez's booking moved to Sat, Oct 17, 3:00 PM: change it in Jobber too", $task->title);
+        $this->assertSame($ana->id, $task->customer_id);
+        $this->assertSame('booking_changed', $connection->entries()->latest('id')->value('action'));
+
+        $appointment->update(['status' => AppointmentStatus::Cancelled]);
+        $this->assertSame(1, Task::query()->forOrganization($this->business)->where('title', 'like', '%cancel it in Jobber too')->count());
+
+        // A booking that never went to Jobber makes no task.
+        $calendar = $this->book($ana, ['source' => 'calendar']);
+        $calendar->update(['status' => AppointmentStatus::Cancelled]);
+        $this->assertSame(2, Task::query()->forOrganization($this->business)->where('title', 'like', '%in Jobber too')->count());
     }
 
     public function test_existing_jobber_clients_are_matched_and_failures_are_recorded(): void

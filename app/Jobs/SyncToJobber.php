@@ -30,7 +30,7 @@ class SyncToJobber implements ShouldQueue
     /** @var list<int> */
     public array $backoff = [60, 600, 3600];
 
-    /** @param  'appointment'|'customer'  $type */
+    /** @param  'appointment'|'appointment_moved'|'appointment_cancelled'|'customer'  $type */
     public function __construct(public readonly int $connectionId, public readonly string $type, public readonly int $id) {}
 
     public function handle(Jobber $jobber): void
@@ -39,7 +39,7 @@ class SyncToJobber implements ShouldQueue
         if (! $connection || ! $connection->isActive() || DemoGuard::isDemo($connection->organization_id) || ! Jobber::allowed($connection)) {
             return;
         }
-        $record = $this->type === 'appointment'
+        $record = str_starts_with($this->type, 'appointment')
             ? Appointment::withoutGlobalScopes()->where('organization_id', $connection->organization_id)->find($this->id)
             : Customer::withoutGlobalScopes()->where('organization_id', $connection->organization_id)->find($this->id);
         if (! $record) {
@@ -47,7 +47,11 @@ class SyncToJobber implements ShouldQueue
         }
 
         try {
-            $record instanceof Appointment ? $jobber->sendBooking($connection, $record) : $jobber->sendCustomer($connection, $record);
+            match (true) {
+                $record instanceof Appointment && $this->type !== 'appointment' => $jobber->bookingChanged($connection, $record, $this->type === 'appointment_cancelled'),
+                $record instanceof Appointment => $jobber->sendBooking($connection, $record),
+                default => $jobber->sendCustomer($connection, $record),
+            };
         } catch (AppAuthorizationLost) {
             return;   // the connection now asks the owner to connect again
         } catch (AppRequestFailed $e) {

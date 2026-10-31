@@ -59,6 +59,11 @@ class RestHousecallProClient implements HousecallProClient
         return $id;
     }
 
+    public function updateSchedule(string $key, string $jobId, string $start, string $end): void
+    {
+        $this->ok($this->http($key)->put('/jobs/'.rawurlencode($jobId).'/schedule', ['start_time' => $start, 'end_time' => $end, 'arrival_window' => 0]));
+    }
+
     public function customers(string $key, int $page, int $pageSize): array
     {
         $response = $this->ok($this->http($key)->get('/customers', ['page' => $page, 'page_size' => $pageSize, 'sort_direction' => 'desc']));

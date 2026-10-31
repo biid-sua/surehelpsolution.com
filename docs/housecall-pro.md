@@ -18,7 +18,9 @@ setting up by SureHelp staff.
   not sent.
 - The line item carries the service's price when it's fixed or "starting from", otherwise $0.
 - Not sent: bookings copied in from a calendar, imports, and bookings that came from Housecall Pro.
-  Moves and cancellations aren't sent yet.
+- **Moved later?** The job's schedule moves too (`PUT /jobs/{id}/schedule`). If Housecall Pro refuses,
+  the team gets a task to move it there.
+- **Cancelled later?** The team gets a high-priority task to cancel the job in Housecall Pro.
 
 ## For the business
 

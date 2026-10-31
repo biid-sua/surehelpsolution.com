@@ -4,6 +4,7 @@ namespace App\Services\Apps\HousecallPro;
 
 use App\Enums\ServicePriceType;
 use App\Exceptions\AppAuthorizationLost;
+use App\Exceptions\AppRequestFailed;
 use App\Jobs\SyncToHousecallPro;
 use App\Models\AppConnection;
 use App\Models\Appointment;
@@ -58,7 +59,8 @@ class HousecallPro
     /** A SureHelp event (D87) that Housecall Pro may want: queue it for the business's connection. */
     public static function event(string $event, Model $subject): void
     {
-        $setting = ['appointment.booked' => 'send_bookings', 'customer.created' => 'send_new_customers'][$event] ?? null;
+        $setting = ['appointment.booked' => 'send_bookings', 'appointment.rescheduled' => 'send_bookings', 'appointment.cancelled' => 'send_bookings',
+            'customer.created' => 'send_new_customers'][$event] ?? null;
         $organizationId = (int) $subject->getAttribute('organization_id');
         if (! $setting || ($subject instanceof Appointment && in_array($subject->source, self::NOT_SENT, true)) || DemoGuard::isDemo($organizationId)) {
             return;
@@ -68,7 +70,12 @@ class HousecallPro
         if (! $connection || ! $connection->wants($setting) || ! self::allowed($connection)) {
             return;
         }
-        SyncToHousecallPro::dispatch($connection->id, $subject instanceof Appointment ? 'appointment' : 'customer', (int) $subject->getKey())->afterCommit();
+        $type = match ($event) {
+            'appointment.rescheduled' => 'appointment_moved',
+            'appointment.cancelled' => 'appointment_cancelled',
+            default => $subject instanceof Appointment ? 'appointment' : 'customer',
+        };
+        SyncToHousecallPro::dispatch($connection->id, $type, (int) $subject->getKey())->afterCommit();
     }
 
     public static function allowed(AppConnection $connection): bool
@@ -134,6 +141,25 @@ class HousecallPro
 
                 return $id;
             });
+        });
+    }
+
+    /** A booking sent as a job was moved (the job's schedule follows) or cancelled (the team cancels it there). */
+    public function bookingChanged(AppConnection $connection, Appointment $appointment, bool $cancelled): void
+    {
+        $jobId = $this->records->external($connection, 'appointment', $appointment->id);
+        $this->records->bookingChanged($connection, $appointment, $cancelled, 'Housecall Pro', $jobId === null ? null : function () use ($connection, $appointment, $jobId): bool {
+            try {
+                $this->guarded($connection, function (string $key) use ($appointment, $jobId) {
+                    $this->client->updateSchedule($key, $jobId, $appointment->starts_at->utc()->toIso8601ZuluString(), $appointment->ends_at->utc()->toIso8601ZuluString());
+
+                    return '';
+                });
+
+                return true;
+            } catch (AppRequestFailed) {
+                return false;   // the team gets a task instead
+            }
         });
     }
 

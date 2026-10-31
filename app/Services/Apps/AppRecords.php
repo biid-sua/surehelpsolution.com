@@ -2,11 +2,15 @@
 
 namespace App\Services\Apps;
 
+use App\Actions\Tasks\CreateTask;
 use App\Enums\CustomerStatus;
+use App\Enums\TaskType;
 use App\Exceptions\AppAuthorizationLost;
 use App\Models\AppConnection;
 use App\Models\AppLink;
+use App\Models\Appointment;
 use App\Models\Customer;
+use App\Models\Organization;
 use App\Support\Phone;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Cache;
@@ -126,6 +130,39 @@ class AppRecords
         $phone = Phone::normalize($phone);
 
         return ! ($customer->phone_e164 && $phone) || $phone === $customer->phone_e164;
+    }
+
+    /**
+     * A booking that went to the app was moved or cancelled in SureHelp (D111, D112). When the app
+     * can't be changed from here, the team gets a task to change it there too, once per change.
+     *
+     * @param  callable(): bool|null  $update  tries the change in the app; true when it worked
+     */
+    public function bookingChanged(AppConnection $connection, Appointment $appointment, bool $cancelled, string $appName, ?callable $update = null): void
+    {
+        if ($this->external($connection, 'appointment', $appointment->id) === null) {
+            return;   // never sent: nothing to keep in step
+        }
+        $change = $cancelled ? 'cancelled' : 'moved:'.$appointment->starts_at->getTimestamp();
+        $this->once($connection, $change, $appointment->id, function () use ($connection, $appointment, $cancelled, $appName, $update) {
+            $who = $appointment->customer?->fullName() ?? 'A customer';
+            $when = $appointment->localStart()->format('D, M j, g:i A');
+            if (! $cancelled && $update && $update()) {
+                $connection->log('booking_updated', $who.': moved to '.$when);
+
+                return 'updated';
+            }
+            $organization = Organization::query()->findOrFail($connection->organization_id);
+            app(CreateTask::class)->handle($organization, [
+                'type' => TaskType::Todo, 'priority' => 'high', 'customer_id' => $appointment->customer_id,
+                'title' => $cancelled ? "{$who}'s booking was cancelled: cancel it in {$appName} too" : "{$who}'s booking moved to {$when}: change it in {$appName} too",
+                'description' => 'SureHelp sent this booking to '.$appName.' when it was made. Changes after that need doing there by hand.',
+                'due_at' => now()->addHours(2),
+            ], null, 'app_sync');
+            $connection->log('booking_changed', $who.($cancelled ? ': cancelled' : ': moved to '.$when).' (task made for your team)');
+
+            return 'task';
+        });
     }
 
     /** "2 new customers, 1 matched to customers you had", for the history. @param array{added: int, matched: int} $counts */

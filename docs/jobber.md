@@ -13,7 +13,9 @@ Businesses connect their Jobber account under **Business › Connected apps**, n
 | Jobber → SureHelp | Clients with a phone or email, matched by phone or email, source `jobber` | Every hour, and right after connecting |
 
 - Not sent: bookings copied in from a connected calendar (`calendar`), imports, and bookings that
-  came from Jobber. Moves and cancellations aren't sent yet: the office changes the request in Jobber.
+  came from Jobber.
+- **Moved or cancelled later?** The team gets a high-priority task ("Ana Lopez's booking moved to
+  Sat, Oct 17, 3:00 PM: change it in Jobber too"), once per change, and it shows in *Recent activity*.
 - A customer with no name goes to Jobber with their company or phone number as the name.
 - Archived Jobber clients and clients with no phone or email stay out of SureHelp.
 

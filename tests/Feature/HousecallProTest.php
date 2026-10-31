@@ -13,6 +13,7 @@ use App\Models\Appointment;
 use App\Models\BusinessService;
 use App\Models\Customer;
 use App\Models\Organization;
+use App\Models\Task;
 use App\Models\User;
 use App\Services\Apps\HousecallPro\FakeHousecallProClient;
 use App\Services\Apps\HousecallPro\HousecallPro;
@@ -125,6 +126,22 @@ class HousecallProTest extends TestCase
         $this->assertCount(1, $this->fake()->customers);
         $this->assertCount(2, $this->fake()->customer('hcp_test_key', $customer['id'])['addresses']);
         $this->assertSame(['job_sent', 'job_sent', 'customer_sent'], $connection->entries()->latest('id')->pluck('action')->all());
+    }
+
+    public function test_a_moved_booking_moves_the_job_and_a_cancelled_one_makes_a_task(): void
+    {
+        $connection = $this->connect();
+        $ana = Customer::create(['organization_id' => $this->business->id, 'first_name' => 'Ana', 'last_name' => 'Lopez', 'phone' => '5125550147', 'address_line1' => '12 Oak St']);
+        $appointment = $this->book($ana);
+
+        $at = CarbonImmutable::parse('2026-10-17 20:00', 'UTC');
+        $appointment->update(['starts_at' => $at, 'ends_at' => $at->addHours(2), 'blocked_until' => $at->addHours(2)]);
+        $this->assertSame(['scheduled_start' => '2026-10-17T20:00:00Z', 'scheduled_end' => '2026-10-17T22:00:00Z', 'arrival_window' => 0], $this->fake()->jobs[0]['schedule']);
+        $this->assertSame('booking_updated', $connection->entries()->latest('id')->value('action'));
+        $this->assertSame(0, Task::query()->forOrganization($this->business)->count());
+
+        $appointment->update(['status' => AppointmentStatus::Cancelled]);
+        $this->assertSame("Ana Lopez's booking was cancelled: cancel it in Housecall Pro too", Task::query()->forOrganization($this->business)->sole()->title);
     }
 
     public function test_bookings_without_an_address_and_refusals_are_recorded(): void

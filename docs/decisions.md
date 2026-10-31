@@ -2029,6 +2029,8 @@ QuickBooks (D110).
   new customer is off at first, demo businesses never sync, and losing access asks the owner to
   connect again. Jobber asking us to slow down is retried later.
 - The matching, sending-once and token handling now live in `AppRecords`, shared by both apps.
+- A booking moved or cancelled after it was sent makes a task for the team to change the request
+  in Jobber too (`AppRecords::bookingChanged`), once per change.
 - One Jobber app for all businesses, keyed under *Admin › Connections › Business apps*. Feature
   `jobber`, open to every business.
 
@@ -2048,6 +2050,8 @@ API key made in Housecall Pro (App Store › API, part of its MAX plan).
   matched only get blanks filled.
 - **No texts from Housecall Pro.** Customers SureHelp adds there have Housecall Pro's own
   notifications off, so only SureHelp's consent rules decide who gets texts.
+- A booking moved after it was sent moves the job's schedule too; a cancelled one makes a task for
+  the team to cancel the job there.
 - A key Housecall Pro stops accepting asks the owner to paste a new one. Disconnecting forgets the
   key; the owner deletes it in Housecall Pro. Feature `housecall_pro`, open to every business.
 

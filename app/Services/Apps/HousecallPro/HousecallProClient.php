@@ -32,6 +32,9 @@ interface HousecallProClient
     /** @param  array<string, mixed>  $job */
     public function createJob(string $key, array $job): string;
 
+    /** Moves a job to a new time (start and end in UTC, ISO 8601). */
+    public function updateSchedule(string $key, string $jobId, string $start, string $end): void;
+
     /** @return array{customers: list<array<string, mixed>>, more: bool} newest first */
     public function customers(string $key, int $page, int $pageSize): array;
 }
