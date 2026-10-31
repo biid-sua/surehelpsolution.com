@@ -28,20 +28,21 @@ class Customer extends Model
 {
     use BelongsToOrganization, HasFactory, SoftDeletes;
 
-    public const SOURCES = ['call', 'manual', 'import', 'chatbot', 'backfill', 'message', 'website'];
+    public const SOURCES = ['call', 'manual', 'import', 'chatbot', 'backfill', 'message', 'website', 'lead', 'quickbooks', 'jobber', 'housecall_pro'];   // lead: a lead source (D109); the rest: brought in from that app (D110–D112)
 
     public const CONTACT_METHODS = ['phone' => 'Phone call', 'sms' => 'Text message', 'email' => 'Email'];
 
     protected $fillable = [
         'organization_id', 'first_name', 'last_name', 'company', 'phone', 'phone_e164', 'email',
         'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'status', 'source', 'preferred_contact',
-        'sms_consent', 'sms_consent_at', 'email_consent', 'email_consent_at', 'consent_source', 'notes',
+        'sms_consent', 'sms_consent_at', 'email_consent', 'email_consent_at', 'marketing_opt_out_at', 'consent_source', 'notes',
         'last_activity_at', 'created_by_user_id',
     ];
 
     protected function casts(): array
     {
         return [
+            'marketing_opt_out_at' => 'datetime',
             'status' => CustomerStatus::class,
             'sms_consent' => 'boolean',
             'email_consent' => 'boolean',
@@ -67,9 +68,9 @@ class Customer extends Model
             }
         });
 
-        // Automations (D50): a new customer or lead, but not records copied in by a backfill or import.
+        // Automations (D50): a new customer or lead, but not records copied in by a backfill, an import or a connected app.
         static::created(function (Customer $customer) {
-            if (! in_array($customer->source, ['backfill', 'import'], true)) {
+            if (! in_array($customer->source, ['backfill', 'import', 'quickbooks', 'jobber', 'housecall_pro'], true)) {
                 DB::afterCommit(fn () => app(AutomationEngine::class)->fire('customer_created', $customer));
             }
         });

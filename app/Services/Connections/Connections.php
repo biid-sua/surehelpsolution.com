@@ -26,6 +26,7 @@ class Connections
         'email' => 'Email',
         'payments' => 'Payments',
         'calendars' => 'Calendars',
+        'apps' => 'Business apps',
         'push' => 'Mobile app',
         'websites' => 'Websites',
     ];
@@ -182,6 +183,26 @@ class Connections
                     'microsoft_calendar_tenant' => ['label' => 'Accounts allowed', 'config' => 'calendar.providers.microsoft.tenant', 'type' => 'select',
                         'options' => ['common' => 'Work, school and personal accounts', 'organizations' => 'Work and school accounts only', 'consumers' => 'Personal accounts only']],
                     'calendar_push_enabled' => ['label' => 'Get changes straight away (needs https)', 'config' => 'calendar.push_enabled', 'type' => 'bool'],
+                ],
+            ],
+            'quickbooks' => [
+                'label' => 'QuickBooks Online',
+                'tab' => 'apps',
+                'help' => 'An app at developer.intuit.com with the Accounting scope. Businesses then connect their own QuickBooks company under Business › Connected apps. Use the Development keys with "Sandbox" to try it with Intuit\'s sample companies.',
+                'fields' => [
+                    'quickbooks_client_id' => ['label' => 'Client ID', 'config' => 'apps.quickbooks.client_id'],
+                    'quickbooks_client_secret' => ['label' => 'Client secret', 'config' => 'apps.quickbooks.client_secret', 'secret' => true],
+                    'quickbooks_environment' => ['label' => 'QuickBooks companies', 'config' => 'apps.quickbooks.environment', 'type' => 'select',
+                        'options' => ['production' => 'Real companies (Production keys)', 'sandbox' => 'Sample companies (Development keys)']],
+                ],
+            ],
+            'jobber' => [
+                'label' => 'Jobber',
+                'tab' => 'apps',
+                'help' => 'An app in the Jobber Developer Center (developer.getjobber.com) with read and write access to clients and requests. Businesses then connect their own Jobber account under Business › Connected apps. Jobber must publish the app before accounts other than your own test account can connect.',
+                'fields' => [
+                    'jobber_client_id' => ['label' => 'Client ID', 'config' => 'apps.jobber.client_id'],
+                    'jobber_client_secret' => ['label' => 'Client secret', 'config' => 'apps.jobber.client_secret', 'secret' => true],
                 ],
             ],
             'fcm' => [

@@ -24,7 +24,7 @@ class MonthlyResults extends Notification implements ShouldQueue
     public int $tries = 3;
 
     /**
-     * @param  array{answered: int, booked: int, leads: int, after_hours: int|null, revenue_cents: int|null}  $summary
+     * @param  array{answered: int, booked: int, leads: int, after_hours: int|null, revenue_cents: int|null, value_cents?: int|null, cost_cents?: int|null, multiple?: float|null}  $summary
      */
     public function __construct(public readonly Organization $organization, public readonly string $month, public readonly string $label, public readonly array $summary)
     {
@@ -41,6 +41,14 @@ class MonthlyResults extends Notification implements ShouldQueue
     {
         $s = $this->summary;
         $line = 'In '.$this->label.' we answered '.number_format($s['answered']).' '.Str::plural('call', $s['answered']);
+
+        // The dollars report (D107): the jobs' worth and the return on what the business paid us.
+        if (($s['value_cents'] ?? null) !== null) {
+            $multiple = $s['multiple'] ?? null;
+
+            return $line.' and booked '.Money::format($s['value_cents'], $this->organization->currency).' in jobs for you'
+                .($multiple !== null && $multiple >= 1 ? ': '.($multiple >= 10 ? number_format($multiple) : number_format($multiple, 1)).'× what you paid us.' : '.');
+        }
 
         return $line.($s['revenue_cents'] !== null
             ? ' and booked '.Money::format($s['revenue_cents'], $this->organization->currency).' in jobs for you.'

@@ -154,6 +154,50 @@ and `App\Actions\Billing\RecordPayment`.
 | `paid` | `refunded` (Stripe reports a refund) |
 | `cancelled`, `refunded` | terminal |
 
+## Estimate and invoice to a customer (D115)
+
+`App\Models\JobDocument`, changed only in `App\Services\Documents\JobDocuments`.
+
+Estimate (`type = estimate`):
+
+| From | Allowed to |
+|---|---|
+| `draft` | `sent` (sent by text or email), `invoiced` (turned into an invoice), `void` |
+| `sent` | `accepted` or `declined` (by the customer, until "valid until" has passed), `invoiced`, `void` |
+| `accepted` | `invoiced`, `void` |
+| `declined` | `void` |
+| `invoiced`, `void` | terminal |
+
+Invoice (`type = invoice`):
+
+| From | Allowed to |
+|---|---|
+| `draft` | `sent`, `paid` (marked paid by hand), `void` |
+| `sent` | `paid` (Stripe confirms its payment request, or marked paid by hand), `void` |
+| `paid`, `void` | terminal |
+
+Voiding cancels an open payment request for it.
+
+## Campaign (D116)
+
+`App\Models\Campaign`, changed in `App\Livewire\Client\Outreach` (start) and `App\Services\Marketing\Outreach` (finish).
+
+| From | Allowed to |
+|---|---|
+| `sending` | `sent` (every recipient handled) |
+| `sent` | terminal |
+
+Campaigns are created already `sending`; `draft` is reserved for saving one before sending.
+
+## Agency statement (D118)
+
+`App\Models\AgencyStatement`, changed in `App\Services\Agencies\AgencyDesk`.
+
+| From | Allowed to |
+|---|---|
+| `due` | `paid` (staff mark it paid, with a reference) |
+| `paid` | terminal |
+
 ## Agent assignment
 
 `App\Models\AgentAssignment` constants, changed by `App\Actions\Assignments\AssignAgent`, `ChangeAssignment`

@@ -5,9 +5,9 @@
 | Paid features (spec §30–31, FND-18, docs/decisions.md D46)
 |--------------------------------------------------------------------------
 |
-| Features a plan or an add-on can include. Each one is either open to every business, or only to
-| plans and add-ons that list its key (Admin › Billing › Feature access). Staff can also switch a
-| feature on or off for one business. Everything starts open to everyone, so turning this on never
+| Features a plan or an add-on can include. Each one is open to every business, only to plans and
+| add-ons that list its key, or only to the businesses staff pick (hidden from the rest, D107), set
+| under Admin › Billing › Feature access. Staff can also switch a feature on or off for one business. Everything starts open to everyone, so turning this on never
 | takes anything away by surprise, except a feature with 'default_mode' => 'plan': a new paid service
 | that costs us money to run (D57) starts closed until a plan or add-on includes it.
 |
@@ -53,6 +53,44 @@ return [
         'label' => 'Deposits and payments',
         'description' => 'Take booking deposits and send pay-by-text links, paid into the business\'s own Stripe account.',
         'default_mode' => 'plan',
+    ],
+    'value_report' => [
+        'label' => 'Dollars report',
+        'description' => 'What SureHelp was worth each month in dollars: jobs booked, what the business paid us and the return, on Results, the dashboard and the monthly email.',
+    ],
+    'lead_response' => [
+        'label' => 'Instant replies to new leads',
+        'description' => 'New leads from the website form, Facebook, Google, Angi, Thumbtack or Yelp get a text and an email within seconds, and the owner\'s phone rings to connect them.',
+    ],
+    'quickbooks' => [
+        'label' => 'QuickBooks Online',
+        'description' => 'Payments taken through SureHelp go into QuickBooks, and QuickBooks customers come into SureHelp so receptionists know them.',
+    ],
+    'jobber' => [
+        'label' => 'Jobber',
+        'description' => 'Bookings SureHelp makes go into Jobber as new requests, and Jobber clients come into SureHelp so receptionists know them.',
+    ],
+    'housecall_pro' => [
+        'label' => 'Housecall Pro',
+        'description' => 'Bookings SureHelp makes go onto the Housecall Pro schedule as jobs, and Housecall Pro customers come into SureHelp so receptionists know them.',
+    ],
+    'call_tracking' => [
+        'label' => 'Call tracking',
+        'description' => 'A separate SureHelp number for each ad or marketing channel, with calls, booked jobs and cost per job for each one.',
+    ],
+    'estimates' => [
+        'label' => 'Estimates and invoices',
+        'description' => 'Estimates customers accept online, turned into invoices they pay by card (with Deposits and payments) or that are marked paid.',
+    ],
+    'campaigns' => [
+        'label' => 'Reminders & win-back',
+        'description' => 'Service reminders some months after a job, and campaigns to past customers by text and email, with who came back.',
+    ],
+    'ai_receptionist' => [
+        'label' => 'AI receptionist',
+        'description' => 'An AI voice answers calls nobody can take (or after hours, or every call): it answers questions, books jobs, takes details and hands urgent calls to the team.',
+        // Every call it answers costs AI and phone minutes: only for the businesses staff pick at first.
+        'default_mode' => 'selected',
     ],
     'white_label' => [
         'label' => 'White-label',

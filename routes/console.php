@@ -75,3 +75,14 @@ Schedule::command('sites:check-domains')->everyTenMinutes()->withoutOverlapping(
 
 // SureHelp's own social media (D104): the AI prepares the next 24 hours of scheduled posts.
 Schedule::command('social:house-schedule')->everyFifteenMinutes()->withoutOverlapping(30);
+
+// QuickBooks Online (D110): customers added or changed there come into SureHelp.
+Schedule::command('apps:quickbooks-pull')->hourlyAt(25)->withoutOverlapping(30);
+// Jobber (D111): clients added or changed there come into SureHelp.
+Schedule::command('apps:jobber-pull')->hourlyAt(35)->withoutOverlapping(30);
+// Housecall Pro (D112): its customers come into SureHelp.
+Schedule::command('apps:housecall-pro-pull')->hourlyAt(45)->withoutOverlapping(30);
+// Service reminders (D116): due ones go out in the business's daytime.
+Schedule::command('marketing:reminders')->hourlyAt(15)->withoutOverlapping(30);
+// Agency resellers (D118): last month's statement of each agency's share, once the month is over.
+Schedule::command('agencies:statements')->dailyAt('06:40')->withoutOverlapping(30);

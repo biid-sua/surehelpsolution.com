@@ -31,7 +31,7 @@ class PhoneNumber extends Model
     public const DEFAULT_TEXT_BACK = 'Sorry we missed your call to {business}. We\'ll call you back as soon as we can, or reply here with what you need.';
 
     protected $fillable = [
-        'organization_id', 'provider', 'provider_sid', 'number', 'label', 'transfer_number', 'record_calls', 'after_hours', 'text_back',
+        'organization_id', 'provider', 'provider_sid', 'number', 'label', 'tracking_source', 'monthly_spend_cents', 'transfer_number', 'record_calls', 'after_hours', 'text_back',
         'text_back_message', 'status', 'released_at',
     ];
 
@@ -48,6 +48,7 @@ class PhoneNumber extends Model
             'record_calls' => 'boolean',
             'text_back' => 'boolean',
             'released_at' => 'datetime',
+            'monthly_spend_cents' => 'integer',
         ];
     }
 
@@ -90,6 +91,12 @@ class PhoneNumber extends Model
     public static function pretty(?string $number): string
     {
         return (string) (Phone::display($number) ?? $number);
+    }
+
+    /** A call tracking number (D114): on one marketing channel, answered like the main line. */
+    public function isTracking(): bool
+    {
+        return filled($this->tracking_source);
     }
 
     public function display(): string

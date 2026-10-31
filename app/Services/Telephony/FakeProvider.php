@@ -73,6 +73,17 @@ class FakeProvider implements TelephonyProvider
         $this->redirects[] = ['call' => $callSid, 'url' => $url];
     }
 
+    /** @var list<array{from: string, to: string, url: string, sid: string}> calls placed (demo: nobody's phone rings) */
+    public array $calls = [];
+
+    public function placeCall(string $from, string $to, string $url, string $statusUrl): string
+    {
+        $sid = 'CAfake'.Str::lower(Str::random(26));
+        $this->calls[] = ['from' => $from, 'to' => $to, 'url' => $url, 'sid' => $sid];
+
+        return $sid;
+    }
+
     public function sendSms(string $from, string $to, string $body, string $statusUrl): string
     {
         $sid = 'SMfake'.Str::lower(Str::random(26));

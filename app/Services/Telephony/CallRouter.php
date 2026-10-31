@@ -15,6 +15,9 @@ use DOMElement;
  * Where a call goes (D60, D61), as TwiML. A call to a business's line rings every available agent who
  * serves it at once; whoever answers first gets it. Nobody available or nobody answers: the
  * owner's transfer number if the line has one, then voicemail. Missed calls become call-back tasks.
+ *
+ * The AI receptionist (D108), where the business has it, answers instead: every call ("always"),
+ * while the business is closed ("after_hours"), or whenever no person can ("backup").
  */
 class CallRouter
 {
@@ -52,14 +55,22 @@ class CallRouter
             'customer_id' => $from ? (app(MatchOrCreateCustomer::class)->lookup($organization, $from, null)['customer'] ?? null)?->id : null,
         ]);
 
-        // After hours the line may skip the agents (D61); "agents" answers as during the day.
+        // The AI receptionist first, when it answers every call or the business is closed (D108).
         // A free trial past its included calls, or one that ended, goes straight to the business (D97).
+        $aiMode = $this->aiMode($organization);
+        if ($aiMode === 'always' || ($closed && in_array($aiMode, ['after_hours', 'backup'], true) && $line->after_hours !== 'agents')) {
+            $call->forceFill(['offered_to' => []])->save();
+
+            return app(AiReceptionist::class)->start($call, TwiML::make());
+        }
+
+        // After hours the line may skip the agents (D61); "agents" answers as during the day.
         $agents = ($closed && $line->after_hours !== 'agents') || ! app(Trials::class)->answersCalls($organization)
             ? collect() : $this->presence->availableFor($organization);
         $twiml = TwiML::make();
         if ($line->record_calls) {
             $twiml->say((string) config('telephony.disclosure'));
-            if (config('telephony.transcribe')) {
+            if (config('telephony.transcribe') && ! $organization->hipaa_mode) {   // no transcripts in HIPAA mode (D117)
                 $twiml->startTranscription([
                     'statusCallbackUrl' => route('webhooks.voice.transcription', $call),
                     'track' => 'both_tracks',
@@ -72,6 +83,9 @@ class CallRouter
 
         if ($agents->isEmpty()) {
             $call->forceFill(['offered_to' => []])->save();
+            if ($aiMode === 'backup') {
+                return app(AiReceptionist::class)->start($call, $twiml);   // nobody free: the AI picks up (D108)
+            }
             if ($closed && $line->after_hours === 'voicemail') {
                 return $this->voicemail($call, $twiml)->xml();
             }
@@ -164,6 +178,12 @@ class CallRouter
         if (($params['DialCallStatus'] ?? '') === 'completed' || $call->answered_at !== null) {
             return TwiML::make()->hangup()->xml();
         }
+        // Nobody picked up: the AI receptionist answers instead of the owner or voicemail (D108).
+        $organization = Organization::query()->find($call->organization_id);
+        $aiMode = $organization ? $this->aiMode($organization) : null;
+        if ($aiMode === 'backup' || ($aiMode === 'after_hours' && $call->after_hours)) {
+            return app(AiReceptionist::class)->start($call, TwiML::make());
+        }
 
         return $this->fallback($call, $call->phoneNumber, TwiML::make());
     }
@@ -217,6 +237,18 @@ class CallRouter
     public function voicemailSaved(): string
     {
         return TwiML::make()->say('Thank you. We will get back to you as soon as we can. Goodbye.')->hangup()->xml();
+    }
+
+    /** The caller asked the AI receptionist for a person (D108): put them through to the owner. */
+    public function transferFromAi(VoiceCall $call, PhoneNumber $line, TwiML $twiml): string
+    {
+        return $this->dialOwner($call, $line, $twiml)->xml();
+    }
+
+    /** When the AI receptionist answers this business's calls, or null; never once a trial stopped answering (D97). */
+    private function aiMode(Organization $organization): ?string
+    {
+        return app(Trials::class)->answersCalls($organization) ? app(AiReceptionist::class)->modeFor($organization) : null;
     }
 
     /** Closed now by the business's own hours, holidays and closures. A business with no hours set is never "closed". */

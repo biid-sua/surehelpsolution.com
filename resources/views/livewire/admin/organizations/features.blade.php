@@ -5,7 +5,7 @@
                 <li class="flex flex-wrap items-center gap-3 px-5 py-3" wire:key="org-feature-{{ $key }}">
                     <div class="min-w-0 flex-1">
                         <p class="text-sm font-medium text-ink">{{ $feature['label'] }}</p>
-                        <p class="text-xs text-subtle">{{ $modes[$key] === 'everyone' ? 'Open to every business' : 'Needs a plan or add-on' }}</p>
+                        <p class="text-xs text-subtle">{{ ['everyone' => 'Open to every business', 'plan' => 'Needs a plan or add-on', 'selected' => 'Only for businesses you pick ("Always on")'][$modes[$key]] ?? '' }}</p>
                     </div>
                     <x-ui.badge :tone="$effective[$key] ? 'success' : 'neutral'">{{ $effective[$key] ? 'Has it' : 'Not included' }}</x-ui.badge>
                     <label for="org-feature-{{ $key }}" class="sr-only">{{ $feature['label'] }}</label>

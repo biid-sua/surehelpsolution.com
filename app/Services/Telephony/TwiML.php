@@ -28,9 +28,32 @@ final class TwiML
         return new self;
     }
 
-    public function say(string $text): self
+    public function say(string $text, string $voice = 'Polly.Joanna'): self
     {
-        $this->into($this->root, 'Say', $text, ['voice' => 'Polly.Joanna']);
+        $this->into($this->root, 'Say', $text, ['voice' => $voice]);
+
+        return $this;
+    }
+
+    /**
+     * Listen for the caller's speech (the AI receptionist, D108); what's said inside plays while listening.
+     *
+     * @param  array<string, string|int|bool|null>  $attributes
+     */
+    public function gather(array $attributes, ?string $say = null, string $voice = 'Polly.Joanna'): self
+    {
+        $gather = $this->into($this->root, 'Gather', null, $attributes);
+        if ($say !== null && $say !== '') {
+            $this->into($gather, 'Say', $say, ['voice' => $voice]);
+        }
+
+        return $this;
+    }
+
+    /** Send the call to another set of instructions (used when a reply is ready or to repeat a question). */
+    public function redirect(string $url): self
+    {
+        $this->into($this->root, 'Redirect', $url, ['method' => 'POST']);
 
         return $this;
     }

@@ -6,8 +6,10 @@ use App\Livewire\Concerns\ScopedToOrganization;
 use App\Models\CallLog;
 use App\Models\Organization;
 use App\Models\Review;
+use App\Services\Billing\FeatureAccess;
 use App\Services\Metrics\ResultsReport;
 use App\Services\Metrics\SourceReport;
+use App\Services\Metrics\ValueReport;
 use App\Services\Reviews\ReviewDesk;
 use App\Services\Surveys\SurveyDesk;
 use App\Support\Audit\Audit;
@@ -81,6 +83,8 @@ class Results extends Component
             'isCurrent' => $period['key'] === CarbonImmutable::now($organization->timezoneOrDefault())->format('Y-m'),
             'canEditValue' => auth()->user()->can('organization.update', $organization),
             'reviews' => $this->reviews($organization, $period['start'], $period['end']),
+            // The dollars report (D107), for businesses that have it.
+            'value' => app(FeatureAccess::class)->allows($organization, 'value_report') ? app(ValueReport::class)->compute($organization, $period['start'], $period['end']) : null,
             'surveys' => app(SurveyDesk::class)->summary($organization, CarbonImmutable::instance($period['start'])->utc(), CarbonImmutable::instance($period['end'])->utc()),
         ]);
     }

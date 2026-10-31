@@ -14,6 +14,12 @@
         'app.business.calendars' => 'Calendar sync',
         'app.business.integrations' => 'API & webhooks',
     ];
+    // Connected apps (D110, D111) only where the business can use one.
+    $current = app(\App\Support\Tenancy\CurrentOrganization::class)->get();
+    $features = app(\App\Services\Billing\FeatureAccess::class);
+    if ($current && collect(array_keys(\App\Livewire\Client\Business\ConnectedApps::APPS))->contains(fn ($app) => $features->allows($current, $app))) {
+        $tabs['app.business.apps'] = 'Connected apps';
+    }
 @endphp
 <nav class="mb-6 flex gap-1 overflow-x-auto border-b border-line" aria-label="Business settings">
     @foreach ($tabs as $route => $label)

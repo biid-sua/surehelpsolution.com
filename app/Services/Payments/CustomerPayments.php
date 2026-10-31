@@ -15,9 +15,11 @@ use App\Models\PaymentRequest;
 use App\Models\User;
 use App\Notifications\CustomerEmail;
 use App\Notifications\CustomerPaid;
+use App\Services\Apps\QuickBooks\QuickBooks;
 use App\Services\Billing\FeatureAccess;
 use App\Services\Billing\Stripe\StripeApi;
 use App\Services\Business\Branding;
+use App\Services\Documents\JobDocuments;
 use App\Services\Integrations\Webhooks;
 use App\Services\Telephony\Texting;
 use App\Support\Audit\Audit;
@@ -242,6 +244,7 @@ class CustomerPayments
             $this->timeline->handle($request->customer, TimelineEventType::NoteAdded, 'Paid '.$request->amount(), $request->description, $request->appointment, ['payment' => $request->ulid]);
         }
         $this->notify->handle($organization, new CustomerPaid($request), 'payments.view');
+        app(JobDocuments::class)->paidOnline($request);   // an invoice paid by card (D115)
         app(Webhooks::class)->dispatch('payment.paid', $request);
         $this->audit->record('payments.paid', $request, new: ['amount' => $request->amount()], organization: $organization, label: $request->description);
     }
@@ -256,6 +259,7 @@ class CustomerPayments
             return;
         }
         $request->forceFill(['status' => PaymentRequest::REFUNDED])->save();
+        QuickBooks::refunded($request);   // D110
     }
 
     public function cancel(PaymentRequest $request, User $by): void

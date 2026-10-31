@@ -27,12 +27,13 @@ class SourceReport
         'facebook' => 'Facebook Messenger',
         'instagram' => 'Instagram',
         'sms' => 'Text messages',
+        'lead_sources' => 'Lead sources (Facebook, Google, Angi…)',
     ];
 
     public const BOOKING_SOURCES = [
         'agent' => 'By phone, booked by SureHelp',
         'website' => 'Online booking on your website',
-        'ai' => 'AI assistant',
+        'ai' => 'AI assistant and receptionist',
         'business' => 'By your team',
     ];
 
@@ -55,9 +56,13 @@ class SourceReport
         $customers = Customer::query()->forOrganization($organization)->whereBetween('created_at', $window)->get(['id', 'source']);
         $firstChannel = $this->firstChannels($organization, $customers->where('source', 'message')->pluck('id')->all());
         foreach ($customers as $customer) {
+            if (in_array($customer->source, ['quickbooks', 'jobber', 'housecall_pro'], true)) {
+                continue;   // already the business's customers, brought in from a connected app (D110–D112)
+            }
             $key = match ($customer->source) {
                 'call' => 'phone',
                 'website' => 'website',
+                'lead' => 'lead_sources',
                 'chatbot' => 'web_chat',
                 'message' => $firstChannel[$customer->id] ?? 'web_chat',
                 default => null,
@@ -73,7 +78,7 @@ class SourceReport
             $bookings[match ($source) {
                 'agent' => 'agent',
                 'website' => 'website',
-                'chatbot', 'ai' => 'ai',
+                'chatbot', 'ai', 'ai_phone' => 'ai',
                 default => 'business',
             }] += (int) $n;
         }

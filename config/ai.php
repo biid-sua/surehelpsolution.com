@@ -54,4 +54,11 @@ return [
     'agent_assist_model' => env('AGENT_ASSIST_MODEL'),
     'agent_assist_daily' => (int) env('AGENT_ASSIST_DAILY', 300),   // per business
 
+    // The AI receptionist on calls (D108): replies must come back within a few seconds, so it thinks
+    // briefly. Leave the model empty to use the main one.
+    'receptionist' => [
+        'effort' => env('AI_RECEPTIONIST_EFFORT', 'low'),
+        'model' => env('AI_RECEPTIONIST_MODEL'),
+    ],
+
 ];

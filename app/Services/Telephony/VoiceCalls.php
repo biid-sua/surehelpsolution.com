@@ -10,6 +10,7 @@ use App\Models\Organization;
 use App\Models\PhoneNumber;
 use App\Models\User;
 use App\Models\VoiceCall;
+use App\Services\Compliance\Hipaa;
 use App\Support\Audit\Audit;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -75,6 +76,10 @@ class VoiceCalls
             'duration_seconds' => $call->answered_at ? max(0, (int) $call->answered_at->diffInSeconds(now())) : null,
         ])->save();
 
+        // A call the AI receptionist answered where the caller never spoke counts as missed (D108).
+        if ($call->ai_conversation_id) {
+            app(AiReceptionist::class)->ended($call);
+        }
         if (($agent = $call->answeredBy ?? $call->placedBy) && ! $this->agentStillOnACall($agent)) {
             if ($agent->phone_status === AgentPresence::BUSY) {
                 $this->presence->set($agent, AgentPresence::WRAP_UP);
@@ -245,7 +250,7 @@ class VoiceCalls
     public function transcriptFinished(VoiceCall $call): void
     {
         $call->refresh();
-        if ($call->summary_status === null && ! empty($call->transcript)) {
+        if ($call->summary_status === null && ! empty($call->transcript) && ! Hipaa::on($call->organization_id)) {
             $call->forceFill(['summary_status' => 'queued'])->save();
             SummarizeVoiceCall::dispatch($call->id);
         }

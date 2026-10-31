@@ -23,7 +23,45 @@
 
     {{-- The headline: what it was worth --}}
     <div class="mb-6 rounded-[var(--radius-card)] border border-brand-500/40 bg-gradient-to-br from-brand-500/15 to-accent-500/10 p-6">
-        @if ($r['revenue_cents'] !== null)
+        @if ($value && $value['value_cents'] !== null)
+            {{-- The dollars report (D107) --}}
+            <p class="text-sm font-medium text-muted">What SureHelp was worth to you in {{ $period['label'] }}</p>
+            <p class="mt-1 text-4xl font-semibold tracking-tight text-ink tabular-nums">{{ $money($value['value_cents']) }}</p>
+            <p class="mt-1 text-sm text-muted">
+                {{ number_format($value['jobs']) }} {{ \Illuminate\Support\Str::plural('job', $value['jobs']) }} booked{{ $value['priced_jobs'] || $value['estimated_jobs'] ? ':' : '.' }}
+                {{ collect([
+                    $value['priced_jobs'] ? number_format($value['priced_jobs']).' at your service prices' : null,
+                    $value['estimated_jobs'] ? number_format($value['estimated_jobs']).' at your average job value'.($r['job_value_cents'] ? ' of '.$money($r['job_value_cents']) : '') : null,
+                ])->filter()->implode(', ') }}{{ $value['priced_jobs'] || $value['estimated_jobs'] ? '.' : '' }}
+                @if ($value['unvalued_jobs']) {{ number_format($value['unvalued_jobs']) }} more had no price, so they aren't counted. @endif
+            </p>
+            <dl class="mt-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <div>
+                    <dt class="text-xs font-medium uppercase tracking-wide text-subtle">You paid SureHelp</dt>
+                    <dd class="mt-1 text-xl font-semibold text-ink tabular-nums">{{ $value['cost_cents'] !== null ? $money($value['cost_cents']) : '—' }}</dd>
+                    <dd class="text-xs text-subtle">{{ ['invoices' => 'invoiced for this month', 'plan' => 'your plan\'s monthly price'][$value['cost_source']] ?? 'no plan or invoice yet' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium uppercase tracking-wide text-subtle">Your return</dt>
+                    <dd class="mt-1 text-xl font-semibold text-ink tabular-nums">{{ $value['multiple'] !== null ? ($value['multiple'] >= 10 ? number_format($value['multiple']) : number_format($value['multiple'], 1)).'×' : '—' }}</dd>
+                    <dd class="text-xs text-subtle">{{ $value['multiple'] !== null ? 'what you paid us' : 'shown once there is a plan' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium uppercase tracking-wide text-subtle">Booked while you were closed</dt>
+                    <dd class="mt-1 text-xl font-semibold text-ink tabular-nums">{{ $value['after_hours_value_cents'] !== null ? $money($value['after_hours_value_cents']) : '—' }}</dd>
+                    <dd class="text-xs text-subtle">{{ $value['after_hours_jobs'] === null ? 'set your hours to see this' : number_format($value['after_hours_jobs']).' '.\Illuminate\Support\Str::plural('job', $value['after_hours_jobs']).' after hours' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium uppercase tracking-wide text-subtle">Since {{ $value['since']?->format('F Y') ?? 'you joined' }}</dt>
+                    <dd class="mt-1 text-xl font-semibold text-ink tabular-nums">{{ $value['since_value_cents'] !== null ? $money($value['since_value_cents']) : '—' }}</dd>
+                    <dd class="text-xs text-subtle">booked for you in total</dd>
+                </div>
+            </dl>
+            <p class="mt-4 text-xs text-subtle">Job values are estimates from your service prices and average job value. Calls, bookings and what you paid are counted from your records.</p>
+        @elseif ($value)
+            <p class="text-sm font-medium text-muted">What SureHelp was worth to you in {{ $period['label'] }}</p>
+            <p class="mt-1 text-lg text-ink">{{ number_format($value['jobs']) }} {{ \Illuminate\Support\Str::plural('job', $value['jobs']) }} booked. Add your average job value, or prices to your services, to see what they're worth.</p>
+        @elseif ($r['revenue_cents'] !== null)
             <p class="text-sm font-medium text-muted">Estimated revenue from jobs we booked</p>
             <p class="mt-1 text-4xl font-semibold tracking-tight text-ink tabular-nums">{{ $money($r['revenue_cents']) }}</p>
             <p class="mt-1 text-sm text-muted">{{ number_format($r['booked']) }} {{ \Illuminate\Support\Str::plural('job', $r['booked']) }} booked × {{ $money($r['job_value_cents']) }} average job value</p>
@@ -44,7 +82,7 @@
     </div>
 
     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <x-ui.stat label="Calls answered" icon="phone" :value="number_format($r['answered'])" :change="$r['change']['answered'] ?? null" hint="{{ number_format($r['calls']) }} calls in total" />
+        <x-ui.stat label="Calls answered" icon="phone" :value="number_format($r['answered'])" :change="$r['change']['answered'] ?? null" hint="{{ number_format($r['calls']) }} calls in total{{ $r['ai_calls'] ? ', '.number_format($r['ai_calls']).' by the AI receptionist' : '' }}" />
         <x-ui.stat label="Jobs booked" icon="calendar" :value="number_format($r['booked'])" :change="$r['change']['booked'] ?? null" hint="{{ number_format($r['appointments']) }} appointments in the calendar" />
         <x-ui.stat label="New leads" icon="users" :value="number_format($r['leads'])" :change="$r['change']['leads'] ?? null" hint="new callers added to your customers" />
         <x-ui.stat label="After-hours calls caught" icon="clock" :value="$r['after_hours'] === null ? '—' : number_format($r['after_hours'])" :change="$r['change']['after_hours'] ?? null"

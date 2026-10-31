@@ -10,6 +10,7 @@ use App\Services\Ai\Assistant\BusinessBrain;
 use App\Services\Ai\Contracts\AiProvider;
 use App\Services\Ai\Data\AiRequest;
 use App\Services\Calls\CallOutcomes;
+use App\Services\Compliance\Hipaa;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -30,6 +31,7 @@ class AgentAssist
         $used = AiRun::withoutGlobalScopes()->where('organization_id', $organization->id)->where('mode', 'assist')->where('created_at', '>=', now()->startOfDay())->count();
 
         return match (true) {
+            Hipaa::on($organization) => 'AI help is off for this business (HIPAA mode).',
             ! $this->ai->isConfigured() => 'AI help isn\'t switched on yet.',
             $used >= (int) config('ai.agent_assist_daily', 300) => 'Today\'s AI help for this business is used up. Use the knowledge list.',
             default => null,

@@ -58,6 +58,9 @@ class SendReply
             return $message;
         }
 
+        if ($conversation->channel === InboxChannel::Phone) {
+            throw ValidationException::withMessages(['reply' => ['This was a phone call with the AI receptionist. Call or text them back instead.']]);
+        }
         $window = $conversation->channel->replyWindow($conversation->last_inbound_at, ! $byAi);
         if (! $window['allowed']) {
             throw ValidationException::withMessages(['reply' => [(string) $window['reason']]]);
