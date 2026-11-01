@@ -1,4 +1,4 @@
-<x-ui.card :padding="false" title="Feature access" description="Switch each feature on or off for every business. A feature that's off is hidden everywhere (menu, pages, the app and upgrade offers) until you switch it on, and then businesses that get it see it marked New. While it's on, choose who gets it: every business, only plans and add-ons that include its key, or only businesses you pick. You can also switch a feature on or off for one business on its page.">
+<x-ui.card :padding="false" title="Feature access" description="Switch each feature on or off for every business. A feature that's off is hidden everywhere (menu, pages, the app and upgrade offers) until you switch it on, and then businesses that get it see it marked New. While it's on, choose who gets it: every business, only plans and add-ons that include its key, or only businesses you pick (hidden from the rest). You can also switch a feature on or off for one business on its page.">
     <form wire:submit="save">
         <div class="flex flex-wrap items-center gap-3 border-b border-line px-5 py-3">
             <p class="text-sm text-muted"><span class="font-semibold text-ink">{{ $counts['on'] }}</span> on · <span class="font-semibold text-ink">{{ $counts['off'] }}</span> off</p>
@@ -53,8 +53,8 @@
                                 <label for="audience-{{ $key }}" class="sr-only">Who gets {{ $feature['label'] }}</label>
                                 <select id="audience-{{ $key }}" wire:model.live="audiences.{{ $key }}" class="sh-input py-1.5 text-sm" @disabled(! $canManage || ! $on)>
                                     <option value="everyone">Every business</option>
-                                    <option value="plan">Only plans / add-ons that include it</option>
-                                    <option value="selected">Only businesses I pick (hidden from the rest)</option>
+                                    <option value="plan">Plans / add-ons with it</option>
+                                    <option value="selected">Businesses I pick</option>
                                 </select>
                                 @if ($on && $wasOff[$key])
                                     <label class="mt-2 flex items-center gap-2 text-xs text-muted">
@@ -85,7 +85,7 @@
         </x-ui.table>
         @if ($canManage)
             <div class="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-4">
-                <p class="text-xs text-subtle">Switching a feature off, or to "only plans" or "only businesses I pick", takes it away from the others at once. Their settings and data are kept for when it's back.</p>
+                <p class="text-xs text-subtle">Switching a feature off, or to "Plans / add-ons with it" or "Businesses I pick", takes it away from the others at once. Their settings and data are kept for when it's back.</p>
                 <div class="flex items-center gap-3">
                     @if ($dirty)<span class="text-xs text-amber-300">You have changes to save</span>@endif
                     <x-ui.button type="submit" size="sm">Save</x-ui.button>
@@ -99,7 +99,7 @@
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h3 class="text-sm font-semibold text-ink">Businesses with {{ $catalog[$picking]['label'] }}</h3>
-                    <p class="text-xs text-subtle">Ticked businesses have it whatever their plan, while the feature is on. Save "Only businesses I pick" above to hide it from everyone else.</p>
+                    <p class="text-xs text-subtle">Ticked businesses have it whatever their plan, while the feature is on. Save "Businesses I pick" above to hide it from everyone else.</p>
                 </div>
                 <x-ui.button type="button" size="sm" variant="ghost" wire:click="pickFor(null)">Done</x-ui.button>
             </div>
