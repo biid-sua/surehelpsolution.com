@@ -33,6 +33,9 @@ class ContentSecurityPolicyTest extends TestCase
             $this->assertStringContainsString("base-uri 'self'", $header);
             $this->assertStringContainsString('report-uri /api/csp-report', $header);
             $this->assertStringNotContainsString("script-src 'self' 'unsafe-inline'", $header);
+            // Everything comes from this site (D120): no outside script, style or font hosts.
+            $this->assertDoesNotMatchRegularExpression('/(script|style|font)-src[^;]*https:/', $header, $path);
+            $this->assertDoesNotMatchRegularExpression('~<(script|link)[^>]+(src|href)="https://~', $response->getContent(), $path);
 
             // Every executable inline script on the page carries this request's nonce; no inline handlers.
             preg_match_all('/<script(?![^>]*\bsrc=)(?![^>]*application\/ld\+json)([^>]*)>/i', $response->getContent(), $scripts);

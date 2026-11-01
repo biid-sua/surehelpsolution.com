@@ -2207,3 +2207,17 @@ makes each agency a sales channel that brings many businesses at once.
 the rest over time. One switch per feature, which takes nothing away for good and turns a launch
 into an announcement, makes that safe and gives businesses a reason to look at what's new.
 
+## D120 — The public website loads nothing from outside services (2026-11-01)
+**Decision:** the marketing website's Bootstrap 5.3.2, AOS 2.3.1, Font Awesome 6.0.0 and Roboto font,
+and its stock photos, are served from our own server instead of jsDelivr, unpkg, cdnjs, Google Fonts
+and Pexels. The same versions are kept, so nothing looks or behaves differently.
+- The libraries come from npm (exact versions in `package.json`) and `npm run website:vendor` copies
+  them into `public/vendor`, which is committed like `public/assets`. Run it again after changing one of
+  those versions. The photos are in `public/assets/img/stock`.
+- The security policy (D67) no longer allows any outside script, style or font host, and a test checks
+  that pages don't link to one.
+
+**Why:** if a CDN is slow, down or blocked, or changes a file, the site looks broken or worse. Serving
+our own copies removes that risk, avoids sharing visitors' addresses with those services, and lets the
+security policy be strict.
+

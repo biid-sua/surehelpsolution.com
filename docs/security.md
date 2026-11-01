@@ -11,7 +11,7 @@ Pages also get a **Content-Security-Policy**, built by `App\Support\Security\Con
 
 | What | Allowed from | Why |
 |---|---|---|
-| Scripts | this site; inline scripts carrying this request's nonce; the website's CDNs (jsDelivr, unpkg, cdnjs) | injected `<script>` tags and inline `onclick` handlers don't run |
+| Scripts | this site; inline scripts carrying this request's nonce (no outside CDNs, D120) | injected `<script>` tags and inline `onclick` handlers don't run |
 | `'unsafe-eval'` | — | Alpine (inside Livewire) evaluates `x-data` / `x-on` attributes |
 | Styles | this site, inline styles, Google Fonts, the CDNs | colours and sizes set in `style` attributes |
 | Images, audio, video | this site, `data:`, `blob:`, any HTTPS | social avatars, uploaded media, call recordings |
