@@ -16,7 +16,9 @@ use App\Services\Setup\SetupProgress;
 use App\Support\Audit\Audit;
 use App\Support\Calendar\CalendarSources;
 use App\Support\Dashboard\DashboardLayout;
+use Illuminate\Auth\Middleware\Authorize;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -118,6 +120,11 @@ class Dashboard extends Component
             'schedule' => $shown->has('schedule') ? $metrics->todaysSchedule($organization) : collect(),
             'recentCalls' => $shown->has('recent_calls') ? $metrics->recentCalls($organization) : collect(),
             'hasSamples' => app(SampleData::class)->has($organization),
+            // Features just switched on that this person hasn't closed the card for (D119).
+            'newFeatures' => collect(app(FeatureAccess::class)->newFor($organization, $user->features_seen_at))
+                ->map(fn (string $key) => app(FeatureAccess::class)->catalog()[$key] + ['key' => $key])
+                ->map(fn (array $f) => $f + ['url' => isset($f['route']) && Route::has($f['route']) && $this->canOpen($f['route']) ? route($f['route']) : null])
+                ->all(),
             // "This month so far: $X booked for you" (D107), for businesses that have the dollars report.
             'value' => $user->can('reports.view', $organization) && app(FeatureAccess::class)->allows($organization, 'value_report')
                 ? app(ValueReport::class)->compute($organization, now($organization->timezoneOrDefault())->startOfMonth()->toImmutable(), now($organization->timezoneOrDefault())->toImmutable()) : null,
@@ -135,6 +142,22 @@ class Dashboard extends Component
                 ? Escalation::query()->forOrganization($organization)->active()->count()
                 : 0,
         ]);
+    }
+
+    /** Close "New in SureHelp" until something else is switched on (D119). */
+    public function dismissNewFeatures(): void
+    {
+        $this->organization();
+        auth()->user()->forceFill(['features_seen_at' => now()])->save();
+    }
+
+    /** Linked only when this person may open the page: the route's own `can:` checks decide. */
+    private function canOpen(string $route): bool
+    {
+        $middleware = Route::getRoutes()->getByName($route)?->gatherMiddleware() ?? [];
+
+        return collect($middleware)->filter(fn ($m) => is_string($m) && (str_starts_with($m, 'can:') || str_starts_with($m, Authorize::class.':')))
+            ->every(fn (string $m) => auth()->user()->hasPermissionIn(Str::before(Str::after($m, ':'), ',')));
     }
 
     /** Show or hide a section of this person's dashboard (D77). */

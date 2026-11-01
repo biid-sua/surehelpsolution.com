@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Route;
 class PortalNavigation
 {
     /**
-     * @return list<array{label: string, icon: string, route: ?string, active: string, permission: ?string, status: string, feature?: ?string}>
+     * @return list<array{label: string, icon: string, route: ?string, active: string, permission: ?string, status: string, feature?: ?string, upsell?: bool}>
      */
     public function definition(string $portal): array
     {
@@ -39,13 +39,13 @@ class PortalNavigation
                 $this->item('Reminders & win-back', 'megaphone', 'app.outreach', 'app.outreach', 'customers.view', 'campaigns'),
                 $this->item('Estimates & invoices', 'list', 'app.documents.index', 'app.documents.*', 'payments.view', 'estimates'),
                 $this->item('Call tracking', 'phone', 'app.call-tracking', 'app.call-tracking', 'reports.view', 'call_tracking'),
-                $this->item('Payments', 'card', 'app.payments', 'app.payments*', 'payments.view'),
+                $this->item('Payments', 'card', 'app.payments', 'app.payments*', 'payments.view', 'customer_payments', upsell: false),
                 $this->item('Reviews', 'star', 'app.reviews', 'app.reviews', 'reviews.view', 'reviews'),
                 $this->item('Social', 'megaphone', 'app.social.index', 'app.social.*', 'social.view', 'social_publishing'),
                 $this->item('Business', 'building', 'app.business.profile', 'app.business.*', 'organization.view'),
                 $this->item('Website builder', 'sparkles', 'app.site', 'app.site*', 'integrations.view', 'website_builder'),
                 $this->item('Website', 'globe', 'app.website', 'app.website*', 'integrations.view', 'website_tools'),
-                $this->item('SEO', 'trend-up', 'app.seo', 'app.seo*', 'seo.view'),
+                $this->item('SEO', 'trend-up', 'app.seo', 'app.seo*', 'seo.view', 'seo_service', upsell: false),
                 $this->item('Billing', 'card', 'app.billing', 'app.billing*', 'billing.view'),
                 $this->item('Team', 'users', 'app.settings.team', 'app.settings.team', 'users.view'),
                 $this->item('Compliance', 'shield', 'app.compliance', 'app.compliance', 'organization.view'),
@@ -122,7 +122,11 @@ class PortalNavigation
             if (! empty($item['feature']) && $organization && app(FeatureAccess::class)->hidden($organization, $item['feature'])) {
                 continue;
             }
-            $item['locked'] = ! empty($item['feature']) && $organization && ! app(FeatureAccess::class)->allows($organization, $item['feature']);
+            $has = empty($item['feature']) || ! $organization || app(FeatureAccess::class)->allows($organization, $item['feature']);
+            // A page that explains the feature itself to those without it (Payments, SEO) isn't marked.
+            $item['locked'] = ! $has && ($item['upsell'] ?? true);
+            // Just switched on for this business (D119): marked "New" for a while.
+            $item['new'] = $has && ! empty($item['feature']) && app(FeatureAccess::class)->isNew($item['feature']);
             $item['current'] = $item['route'] !== null && request()->routeIs(...explode('|', $item['active']));
             $items[] = $item;
         }
@@ -130,8 +134,8 @@ class PortalNavigation
         return $items;
     }
 
-    private function item(string $label, string $icon, string $route, string $active, ?string $permission, ?string $feature = null): array
+    private function item(string $label, string $icon, string $route, string $active, ?string $permission, ?string $feature = null, bool $upsell = true): array
     {
-        return compact('label', 'icon', 'route', 'active', 'permission', 'feature') + ['status' => 'live'];
+        return compact('label', 'icon', 'route', 'active', 'permission', 'feature', 'upsell') + ['status' => 'live'];
     }
 }

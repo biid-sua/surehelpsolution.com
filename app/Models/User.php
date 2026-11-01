@@ -29,6 +29,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $last_summary_on
  * @property string|null $theme own colour theme (D59); null follows the default
  * @property Carbon|null $theme_chosen_at
+ * @property Carbon|null $features_seen_at when they last closed the "New in SureHelp" card (D119)
  * @property array<mixed>|null $dashboard_layout own dashboard sections (D77), rows of {key, visible} as saved; null is the default. Read it through DashboardLayout, which drops anything malformed
  * @property string $phone_status softphone readiness (D60): offline, available, away, busy, wrap_up
  * @property Carbon|null $phone_status_at
@@ -112,6 +113,7 @@ class User extends Authenticatable
             'last_login_at' => 'datetime',
             'session_epoch' => 'integer',
             'last_summary_on' => 'date',
+            'features_seen_at' => 'datetime',
         ];
     }
 

@@ -386,7 +386,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/business/phone', BusinessPhoneLinePage::class)->name('business.phone');
         Route::get('/business/knowledge', BusinessKnowledgePage::class)->middleware('can:knowledge_base.view')->name('business.knowledge');
         Route::get('/business/rules', BusinessRulesPage::class)->name('business.rules');
-        Route::get('/business/automations', BusinessAutomations::class)->name('business.automations');
+        Route::get('/business/automations', BusinessAutomations::class)->middleware('feature:automations')->name('business.automations');
         Route::get('/business/branding', BusinessBranding::class)->name('business.branding');
         Route::get('/business/integrations', BusinessIntegrations::class)->middleware('can:integrations.manage')->name('business.integrations');
         Route::get('/business/apps', BusinessConnectedApps::class)->middleware('can:integrations.manage')->name('business.apps');

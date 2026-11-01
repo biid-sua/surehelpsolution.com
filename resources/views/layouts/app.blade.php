@@ -14,10 +14,6 @@
   <!-- Favicon -->
   <link rel="icon" href="{{ asset('assets/img/favicon.png') }}">
   
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="apple-touch-icon" href="{{ asset('assets/img/favicon.png') }}">
 
   <!-- Colour theme (D59): the default an administrator picked (Admin › Appearance), or the visitor's own
@@ -48,19 +44,19 @@
   <link href="{{ asset('assets/css/site-themes.css') }}" rel="stylesheet">
 
   <!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="{{ asset('vendor/bootstrap/bootstrap.min.css') }}" rel="stylesheet">
   
   <!-- Custom CSS -->
   <link href="{{ asset('assets/css/style.css') }}" rel="stylesheet">
   
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <!-- Roboto, served from this site -->
+  <link href="{{ asset('vendor/roboto/roboto.css') }}" rel="stylesheet">
   
   <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ asset('vendor/fontawesome/css/all.min.css') }}">
   
   <!-- AOS Animation Library -->
-  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <link href="{{ asset('vendor/aos/aos.css') }}" rel="stylesheet">
 
   <style>
     /* Navbar: blur on ::before (not on .navbar) so mega-menu glass can also blur page content. */
@@ -1037,8 +1033,8 @@
 @endif
 
 <!-- Additional Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script src="{{ asset('vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ asset('vendor/aos/aos.js') }}"></script>
 
 <script nonce="{{ Vite::cspNonce() }}">
   // Initialize AOS

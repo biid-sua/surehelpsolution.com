@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Http\Middleware\AccountGate;
+use App\Http\Middleware\RequireFeature;
 use App\Http\Middleware\ResolveOrganization;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\TrialReadOnly;
@@ -159,6 +160,8 @@ class AppServiceProvider extends ServiceProvider
             ResolveOrganization::class,
             RoleMiddleware::class,
             Authorize::class,
+            // A feature switched off (or out of the plan) while a page is open stops working at once (D119).
+            RequireFeature::class,
         ]);
 
         // Brute-force protection for web and API login: 5 attempts per minute

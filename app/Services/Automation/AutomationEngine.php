@@ -80,6 +80,11 @@ class AutomationEngine
         if (! $type || ! $subject->getAttribute('organization_id')) {
             return 0;
         }
+        // Automations switched off for this business (D119): nothing new is scheduled.
+        $organization = Organization::query()->find($subject->getAttribute('organization_id'));
+        if (! $organization || ! $this->features->allows($organization, 'automations')) {
+            return 0;
+        }
         $automations = Automation::withoutGlobalScopes()->where('organization_id', $subject->getAttribute('organization_id'))
             ->where('trigger', $trigger)->where('is_active', true)->get();
         $scheduled = 0;
@@ -210,10 +215,12 @@ class AutomationEngine
         $automation = $run->automation;
         $subject = $run->subject();
 
+        $organization = Organization::query()->find($run->organization_id);
         $reason = match (true) {
             ! $automation || ! $automation->is_active => 'The automation was switched off.',
             ! $subject => 'What it was about no longer exists.',
-            ! Organization::query()->find($run->organization_id)?->isServing() => 'The business\'s service is paused.',
+            ! $organization?->isServing() => 'The business\'s service is paused.',
+            ! $this->features->allows($organization, 'automations') => 'Automations are switched off for this business.',
             default => null,
         };
         if ($reason !== null) {

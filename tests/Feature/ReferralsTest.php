@@ -86,7 +86,9 @@ class ReferralsTest extends TestCase
         $this->assertSame(1, BillingCredit::query()->count());
 
         $this->actingAs($this->owner);
-        Livewire::test(ClientBilling::class)->assertSee('Refer a business, get a month free')->assertSee('ref='.$code);
+        Livewire::test(ClientBilling::class)->assertSee('Refer a business, get a month free')->assertSee('ref='.$code)
+            // The Copy button gets the link as working script, not an unprocessed @js(...).
+            ->assertDontSee('writeText(@js', false)->assertSee("navigator.clipboard.writeText('", false);
     }
 
     public function test_unknown_or_own_codes_are_ignored(): void

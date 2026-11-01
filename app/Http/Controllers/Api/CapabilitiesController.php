@@ -39,6 +39,8 @@ class CapabilitiesController extends Controller
                 'role' => $user->organizationRole($organization),
                 'is_owner' => $organization->owner_user_id === $user->id,
                 'features' => collect(array_keys($features->catalog()))->mapWithKeys(fn (string $f) => [$f => $features->allows($organization, $f)])->all(),
+                // Features just switched on for this business (D119), to point out as "New".
+                'new_features' => $features->newFor($organization),
                 'limits' => collect(self::LIMITS)->mapWithKeys(fn (string $l) => [$l => $entitlements->limit($organization, $l)])->all(),
                 'plan' => $subscription ? [
                     'name' => $subscription->plan->name,

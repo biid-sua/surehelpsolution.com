@@ -2183,3 +2183,41 @@ SOC 2 is the next step on the trust side; it's a company audit rather than a pro
 **Why:** agencies already hold the relationship with dozens of local businesses and are always
 looking for services to add. Giving them their own brand, one dashboard and a share of the revenue
 makes each agency a sales channel that brings many businesses at once.
+
+## D119 — Switch each feature on or off for every business (2026-11-01)
+**Decision:** staff can switch any feature on or off for all businesses at once, under
+*Admin › Billing › Feature access*, and bring it back later as something new.
+- **Off is off for everyone.** A feature that's off is hidden everywhere: no menu item or tab, no
+  "Upgrade" offer, its pages answer 404 (also for a page left open, since the feature check now runs
+  on every Livewire update), the app gets `false`, and its background work stops (automations
+  aren't scheduled or run). It beats a plan, an add-on and a business's own "Always on". Nothing is
+  deleted, so switching it back restores what each business had set up.
+- **While it's on**, who gets it is chosen as before: every business, plans and add-ons that include
+  it (D46), or only the businesses staff pick (D107). That choice is kept while it's off.
+- **Coming back as New.** Switching a feature on from off marks it *New* for 30 days for the
+  businesses that have it: a badge in the menu, a *New in SureHelp* card on the dashboard (closed with
+  *Got it*, until the next one) and `new_features` in `/api/v1/me/capabilities` (additive). Staff can
+  untick *Show it as New* to bring it back quietly.
+- **More features can be switched.** Automations joined the list, and SEO, Payments and Branding pages
+  disappear when their feature is off. The list is grouped by kind, with *All on* / *All off*, an
+  On / Off filter and a search. A future feature can ship off (`default_mode: off`) and be launched
+  from this page when it's ready.
+
+**Why:** before going live, the owner wants to offer a smaller, well-tested set of features and add
+the rest over time. One switch per feature, which takes nothing away for good and turns a launch
+into an announcement, makes that safe and gives businesses a reason to look at what's new.
+
+## D120 — The public website loads nothing from outside services (2026-11-01)
+**Decision:** the marketing website's Bootstrap 5.3.2, AOS 2.3.1, Font Awesome 6.0.0 and Roboto font,
+and its stock photos, are served from our own server instead of jsDelivr, unpkg, cdnjs, Google Fonts
+and Pexels. The same versions are kept, so nothing looks or behaves differently.
+- The libraries come from npm (exact versions in `package.json`) and `npm run website:vendor` copies
+  them into `public/vendor`, which is committed like `public/assets`. Run it again after changing one of
+  those versions. The photos are in `public/assets/img/stock`.
+- The security policy (D67) no longer allows any outside script, style or font host, and a test checks
+  that pages don't link to one.
+
+**Why:** if a CDN is slow, down or blocked, or changes a file, the site looks broken or worse. Serving
+our own copies removes that risk, avoids sharing visitors' addresses with those services, and lets the
+security policy be strict.
+

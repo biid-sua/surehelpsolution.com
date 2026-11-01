@@ -1946,7 +1946,7 @@
             <div class="testimonial-card">
                 <div class="testimonial-header">
                     <div class="client-info">
-                        <div class="client-image"><img src="https://images.pexels.com/photos/8961065/pexels-photo-8961065.jpeg?auto=compress&cs=tinysrgb&w=100" alt="Mike Johnson"></div>
+                        <div class="client-image"><img src="{{ asset('assets/img/stock/pexels-8961065-100.jpg') }}" alt="Mike Johnson"></div>
                         <div class="client-details"><h4>Mike Johnson</h4><p>Mike's Plumbing - Los Angeles, CA</p></div>
                         </div>
                     <div class="rating"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
@@ -1961,7 +1961,7 @@
             <div class="testimonial-card">
                 <div class="testimonial-header">
                     <div class="client-info">
-                        <div class="client-image"><img src="https://images.pexels.com/photos/3992874/pexels-photo-3992874.jpeg?auto=compress&cs=tinysrgb&w=100" alt="Isabella Martinez"></div>
+                        <div class="client-image"><img src="{{ asset('assets/img/stock/pexels-3992874-100.jpg') }}" alt="Isabella Martinez"></div>
                         <div class="client-details"><h4>Isabella Martinez</h4><p>Bella's Hair Studio - Miami, FL</p></div>
                         </div>
                     <div class="rating"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
@@ -1976,7 +1976,7 @@
             <div class="testimonial-card">
                 <div class="testimonial-header">
                     <div class="client-info">
-                        <div class="client-image"><img src="https://images.pexels.com/photos/5327585/pexels-photo-5327585.jpeg?auto=compress&cs=tinysrgb&w=100" alt="Dr. Sarah Chen"></div>
+                        <div class="client-image"><img src="{{ asset('assets/img/stock/pexels-5327585-100.jpg') }}" alt="Dr. Sarah Chen"></div>
                         <div class="client-details"><h4>Dr. Sarah Chen</h4><p>Downtown Dental - Chicago, IL</p></div>
                         </div>
                     <div class="rating"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>

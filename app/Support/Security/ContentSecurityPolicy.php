@@ -5,8 +5,8 @@ namespace App\Support\Security;
 use Illuminate\Support\Facades\Vite;
 
 /**
- * Builds the Content-Security-Policy header (D67). Scripts run only with this request's nonce, from
- * this site or from the website's CDNs, so injected <script> tags and inline event handlers don't run.
+ * Builds the Content-Security-Policy header (D67). Scripts run only with this request's nonce or from
+ * this site (D120: no outside CDNs), so injected <script> tags and inline event handlers don't run.
  * Alpine (inside Livewire) evaluates its attributes, which needs 'unsafe-eval'; inline style attributes
  * stay allowed because the design uses them for colours and sizes.
  */
@@ -21,8 +21,8 @@ class ContentSecurityPolicy
         $directives = [
             'default-src' => ["'self'"],
             'script-src' => ["'self'", $nonce ? "'nonce-{$nonce}'" : null, "'unsafe-eval'", ...$cdns, ...$hot],
-            'style-src' => ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', ...$cdns, ...$hot],
-            'font-src' => ["'self'", 'data:', 'https://fonts.gstatic.com', ...$cdns],
+            'style-src' => ["'self'", "'unsafe-inline'", ...$cdns, ...$hot],
+            'font-src' => ["'self'", 'data:', ...$cdns],
             'img-src' => ["'self'", 'data:', 'blob:', 'https:'],
             'media-src' => ["'self'", 'blob:', 'https:'],
             'connect-src' => ["'self'", ...(array) config('csp.connect', []), ...$hot, ...array_map(fn ($u) => preg_replace('~^http~', 'ws', $u), $hot)],

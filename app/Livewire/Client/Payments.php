@@ -52,6 +52,7 @@ class Payments extends Component
     {
         $organization = $this->organization();
         $this->authorize('payments.view', $organization);
+        abort_if(app(FeatureAccess::class)->hidden($organization, 'customer_payments'), 404);   // D119
         $account = $payments->account($organization);
         if ($account && request()->boolean('connected')) {
             $payments->refresh($account);

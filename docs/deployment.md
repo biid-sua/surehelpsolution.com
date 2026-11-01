@@ -15,6 +15,7 @@ PHP extensions: besides Laravel's defaults, `zip` is required (business data exp
    composer install --no-dev --optimize-autoloader
    ```
    **Front-end assets:** build locally with `npm ci && npm run build` and upload the `public/build/` folder. It isn't in Git, and the server needs no Node.
+   The public website's libraries, font and photos are in Git under `public/vendor/` and `public/assets/img/stock/` (D120); upload them with the rest of `public/`.
 4. Run:
    ```
    php artisan migrate --force
