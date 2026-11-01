@@ -12,15 +12,28 @@ use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 /**
- * Which paid features are open to everyone, which need a plan or add-on that includes them (D46), and
- * which only the businesses staff pick get, hidden from the rest (D107). A tab of Admin › Billing.
+ * Every feature businesses can have, switched on or off for everyone (D119), and while on, who gets
+ * it: every business, plans and add-ons that include it (D46), or only the businesses staff pick,
+ * hidden from the rest (D107). A feature switched back on is announced to businesses as "New".
+ * A tab of Admin › Billing.
  */
 class Features extends Component
 {
     use PlatformAdminOnly;
 
-    /** @var array<string, string> feature => everyone | plan | selected */
-    public array $modes = [];
+    /** @var array<string, bool> feature => on */
+    public array $active = [];
+
+    /** @var array<string, string> feature => everyone | plan | selected (kept while it's off) */
+    public array $audiences = [];
+
+    /** @var array<string, bool> feature => tell businesses it's new when it's switched on */
+    public array $announce = [];
+
+    /** all | on | off */
+    public string $show = 'all';
+
+    public string $find = '';
 
     /** The feature whose businesses are being picked. */
     public ?string $picking = null;
@@ -30,19 +43,49 @@ class Features extends Component
     public function mount(FeatureAccess $features): void
     {
         $this->authorize('billing.view');
-        $this->modes = $features->modes();
+        $this->load($features);
+    }
+
+    private function load(FeatureAccess $features): void
+    {
+        $this->audiences = $features->audiences();
+        foreach ($features->modes() as $key => $mode) {
+            $this->active[$key] = $mode !== FeatureAccess::OFF;
+            $this->announce[$key] = true;
+        }
     }
 
     public function save(FeatureAccess $features, Audit $audit): void
     {
         $this->authorize('billing.manage');
+        $this->validate([
+            'active.*' => ['boolean'],
+            'audiences.*' => ['in:'.implode(',', FeatureAccess::AUDIENCES)],
+        ]);
         $before = $features->modes();
-        $features->saveModes($this->modes);
+        $announced = $features->configure(
+            array_map(fn ($v) => (bool) $v, $this->active),
+            $this->audiences,
+            array_map(fn ($v) => (bool) $v, $this->announce),
+        );
         $after = $features->modes();
-        $audit->record('features.modes_changed', null, $before, $after);
-        $this->modes = $after;
+        if ($before !== $after) {
+            $audit->record('features.modes_changed', null, $before, $after);
+        }
+        $this->load($features);
 
-        $this->dispatch('toast', type: 'success', message: 'Feature access saved.');
+        $this->dispatch('toast', type: 'success', message: $announced === []
+            ? 'Feature access saved.'
+            : 'Saved. Businesses that have it will see '.implode(', ', array_map(fn ($k) => $features->label($k), $announced)).' as new.');
+    }
+
+    /** Switch every feature on or off at once (saved with Save). */
+    public function setAll(bool $on): void
+    {
+        $this->authorize('billing.manage');
+        foreach (array_keys($this->active) as $key) {
+            $this->active[$key] = $on;
+        }
     }
 
     public function pickFor(?string $feature, FeatureAccess $features): void
@@ -72,19 +115,38 @@ class Features extends Component
     {
         $plans = Plan::query()->where('is_active', true)->ordered()->get(['id', 'name', 'features']);
         $addons = Addon::query()->where('is_active', true)->ordered()->get(['id', 'name', 'slug']);
+        $catalog = $features->catalog();
+        $saved = $features->modes();
         $includedBy = [];
-        foreach (array_keys($features->catalog()) as $key) {
+        foreach (array_keys($catalog) as $key) {
             $includedBy[$key] = [
                 ...$plans->filter(fn (Plan $p) => in_array($key, $p->features ?? [], true))->pluck('name')->all(),
                 ...$addons->where('slug', $key)->map(fn (Addon $a) => $a->name.' (add-on)')->all(),
             ];
         }
 
-        $picked = collect(array_keys($features->catalog()))->mapWithKeys(fn ($key) => [$key => $features->switchedOn($key)])->all();
+        $picked = collect(array_keys($catalog))->mapWithKeys(fn ($key) => [$key => $features->switchedOn($key)])->all();
         $pickedNames = Organization::query()->external()->whereIn('id', collect($picked)->flatten()->unique()->all())->pluck('name', 'id');
 
+        $find = mb_strtolower(trim($this->find));
+        $listed = collect($catalog)
+            ->filter(fn (array $f, string $key) => match ($this->show) {
+                'on' => (bool) ($this->active[$key] ?? true),
+                'off' => ! ($this->active[$key] ?? true),
+                default => true,
+            })
+            ->filter(fn (array $f, string $key) => $find === '' || str_contains(mb_strtolower($f['label'].' '.$f['description'].' '.$key), $find))
+            ->groupBy(fn (array $f) => $f['group'] ?? 'Other', true);
+
         return view('livewire.admin.billing.features', [
-            'catalog' => $features->catalog(),
+            'catalog' => $catalog,
+            'groups' => $listed,
+            'counts' => ['on' => count(array_filter($saved, fn ($m) => $m !== FeatureAccess::OFF)), 'off' => count(array_filter($saved, fn ($m) => $m === FeatureAccess::OFF))],
+            'wasOff' => array_map(fn ($m) => $m === FeatureAccess::OFF, $saved),
+            'isNew' => collect(array_keys($catalog))->mapWithKeys(fn ($k) => [$k => $features->isNew($k)])->all(),
+            'launches' => $features->launches(),
+            'dirty' => collect(array_keys($catalog))->contains(fn ($k) => (bool) ($this->active[$k] ?? true) !== ($saved[$k] !== FeatureAccess::OFF)
+                || (($this->active[$k] ?? true) && ($this->audiences[$k] ?? null) !== $features->audiences()[$k])),
             'includedBy' => $includedBy,
             'picked' => array_map(fn (array $ids) => array_values(array_filter(array_map(fn ($id) => $pickedNames[$id] ?? null, $ids))), $picked),
             'pickedIds' => $this->picking ? $picked[$this->picking] : [],

@@ -185,7 +185,7 @@ class ValueReportTest extends TestCase
 
         // Staff switch the dollars report to "only businesses I pick" and pick one.
         $this->actingAs($admin);
-        Livewire::test(Features::class)->set('modes.value_report', 'selected')->call('save')
+        Livewire::test(Features::class)->set('audiences.value_report', 'selected')->call('save')
             ->call('pickFor', 'value_report')->assertSee('Chosen Co')->assertSee('Other Co')
             ->call('togglePick', $chosen->id)->assertDispatched('toast', type: 'success')
             ->assertSee('1 picked: Chosen Co');
@@ -213,7 +213,7 @@ class ValueReportTest extends TestCase
         // A page behind a feature for picked businesses answers 404 to the rest, and leaves the menu.
         app()->forgetScopedInstances();
         $this->actingAs($admin);
-        Livewire::test(Features::class)->set('modes.website_tools', 'selected')->call('save');
+        Livewire::test(Features::class)->set('audiences.website_tools', 'selected')->call('save');
         app()->forgetScopedInstances();
         $this->actingAs($other)->get(route('app.website'))->assertNotFound();
         $this->actingAs($other)->get(route('app.dashboard'))->assertOk()->assertDontSee(route('app.website').'"', false);

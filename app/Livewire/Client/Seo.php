@@ -56,6 +56,8 @@ class Seo extends Component
     {
         $organization = $this->organization();
         $this->authorize('seo.view', $organization);
+        // Switched off for everyone, or kept for picked businesses (D107, D119): it doesn't exist here.
+        abort_if(app(FeatureAccess::class)->hidden($organization, 'seo_service'), 404);
         $this->tab = array_key_exists($this->tab, self::TABS) ? $this->tab : 'overview';
         $settings = $organization->seo_settings ?? [];
         $this->autopilot = (bool) ($settings['autopilot'] ?? true);

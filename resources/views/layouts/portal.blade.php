@@ -75,7 +75,7 @@
                             ])>
                             <x-ui.icon :name="$item['icon']" @class(['size-5', 'text-brand-300' => $item['current']]) />
                             <span class="flex-1">{{ $item['label'] }}</span>
-                            @if (! empty($item['locked']))<span class="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-300" title="Not in your plan">Upgrade</span>@endif
+                            @if (! empty($item['locked']))<span class="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-300" title="Not in your plan">Upgrade</span>@elseif (! empty($item['new']))<span class="rounded-full bg-brand-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-brand-300" title="New in SureHelp">New</span>@endif
                         </a>
                     @endif
                 @endforeach

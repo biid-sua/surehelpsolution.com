@@ -57,7 +57,7 @@ class FeatureAccessTest extends TestCase
         $this->actingAs($this->admin);
         $test = Livewire::test(AdminFeatures::class);
         foreach ($features as $feature) {
-            $test->set("modes.$feature", 'plan');
+            $test->set("audiences.$feature", 'plan');
         }
         $test->call('save');
         app()->forgetScopedInstances();

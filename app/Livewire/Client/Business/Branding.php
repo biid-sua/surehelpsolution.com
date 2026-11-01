@@ -38,6 +38,7 @@ class Branding extends Component
     public function mount(): void
     {
         $this->authorize('organization.view', $this->organization());
+        abort_if(app(FeatureAccess::class)->hidden($this->organization(), 'white_label'), 404);   // D119
         $profile = BusinessProfile::query()->forOrganization($this->organization())->first();
         $this->color = Brand::isColor($profile?->brand_color) ? (string) $profile->brand_color : Brand::DEFAULT_COLOR;
         $this->sender = (string) $profile?->email_sender_name;

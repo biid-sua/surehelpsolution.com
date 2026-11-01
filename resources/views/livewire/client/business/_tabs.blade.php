@@ -20,6 +20,12 @@
     if ($current && collect(array_keys(\App\Livewire\Client\Business\ConnectedApps::APPS))->contains(fn ($app) => $features->allows($current, $app))) {
         $tabs['app.business.apps'] = 'Connected apps';
     }
+    // A feature switched off for everyone, or kept for picked businesses, isn't shown at all (D107, D119).
+    foreach (['app.business.emails' => 'customer_emails', 'app.business.automations' => 'automations', 'app.business.calendars' => 'calendar_sync', 'app.business.branding' => 'white_label'] as $route => $feature) {
+        if ($current && $features->hidden($current, $feature)) {
+            unset($tabs[$route]);
+        }
+    }
 @endphp
 <nav class="mb-6 flex gap-1 overflow-x-auto border-b border-line" aria-label="Business settings">
     @foreach ($tabs as $route => $label)

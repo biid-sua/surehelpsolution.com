@@ -2503,6 +2503,7 @@ Indexes: unique (subscription_id, metric, period_start).
 | `sms_code_attempts` | integer |  | `0` |  |
 | `dashboard_layout` | text | yes |  |  |
 | `is_demo` | tinyint(1) |  | `0` |  |
+| `features_seen_at` | datetime | yes |  |  |
 
 ## voice_calls
 

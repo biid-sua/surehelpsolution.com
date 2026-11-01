@@ -35,6 +35,27 @@
     @if (session('status'))
         <x-ui.alert tone="success" class="mb-6">{{ session('status') }}</x-ui.alert>
     @endif
+    @if ($newFeatures !== [])
+        <x-ui.card class="mb-6" title="New in SureHelp" description="Just switched on for {{ $organization->name }}.">
+            <x-slot:actions>
+                <x-ui.button size="sm" variant="ghost" wire:click="dismissNewFeatures">Got it</x-ui.button>
+            </x-slot:actions>
+            <ul class="grid gap-3 sm:grid-cols-2" role="list">
+                @foreach ($newFeatures as $feature)
+                    <li wire:key="new-{{ $feature['key'] }}" class="rounded-lg border border-line bg-surface-2 p-3">
+                        <p class="flex items-center gap-2 text-sm font-semibold text-ink">
+                            <span class="rounded-full bg-brand-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-brand-300">New</span>
+                            {{ $feature['label'] }}
+                        </p>
+                        <p class="mt-1 text-xs text-muted">{{ $feature['description'] }}</p>
+                        @if ($feature['url'])
+                            <a href="{{ $feature['url'] }}" class="mt-2 inline-block text-sm font-medium text-brand-300 hover:text-brand-200">Try it</a>
+                        @endif
+                    </li>
+                @endforeach
+            </ul>
+        </x-ui.card>
+    @endif
     @if ($hasSamples)
         <x-ui.alert tone="info" class="mb-6" title="You're looking at sample data">
             To show you what SureHelp does, we added a few example customers, answered calls, bookings and follow-ups. They aren't real people and nobody is contacted.
