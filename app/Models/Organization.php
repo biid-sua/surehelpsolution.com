@@ -58,6 +58,8 @@ class Organization extends Model
         return [
             'status' => OrganizationStatus::class,
             'is_demo' => 'boolean',
+            'hipaa_mode' => 'boolean',
+            'baa_accepted_at' => 'datetime',
             'is_internal' => 'boolean',
             'setup_progress' => 'array',
             'setup_completed_at' => 'datetime',
@@ -122,6 +124,12 @@ class Organization extends Model
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_user_id');
+    }
+
+    /** @return BelongsTo<Agency, $this> the agency that looks after this business (D118) */
+    public function agency(): BelongsTo
+    {
+        return $this->belongsTo(Agency::class);
     }
 
     /**

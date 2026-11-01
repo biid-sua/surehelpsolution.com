@@ -100,7 +100,7 @@ class SourceReportTest extends TestCase
         $this->customer('call', '2026-09-12 10:00');
 
         $s = $this->october();
-        $this->assertSame(['phone' => 2, 'website' => 1, 'web_chat' => 1, 'facebook' => 0, 'instagram' => 1, 'sms' => 1], $s['leads']);
+        $this->assertSame(['phone' => 2, 'website' => 1, 'web_chat' => 1, 'facebook' => 0, 'instagram' => 1, 'sms' => 1, 'lead_sources' => 0], $s['leads']);
         $this->assertSame([6, 2, 2], [$s['leads_total'], $s['added_by_team'], $s['website_leads']]);
         $this->assertSame(200, $s['change']['leads_total']);   // 6 vs 2 in September
     }

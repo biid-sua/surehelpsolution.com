@@ -1923,3 +1923,263 @@ and a thin bar in the brand colour shows while the page loads.
 items low in the menu scrolled out of sight after each click. Changing pages in place keeps the
 person's place and feels quicker. Removing inline scripts keeps the security policy strict
 (no `'unsafe-inline'`, a fresh nonce per response) while making that possible.
+
+## D107 — The dollars report, and features for picked businesses only (2026-10-30)
+**Decision:** businesses see what SureHelp was worth to them in dollars, and staff can give any
+feature to the businesses they pick only.
+- **What a job is worth:** each job booked on a call is valued at the price of the service booked,
+  when it has one (fixed, "starting from" or a hidden price). Otherwise the owner's average job
+  value applies. Jobs with neither are counted but not valued, and a month with no value shows
+  "add your average job value" instead of $0.
+- **What they paid:** that month's invoices, or the current plan's monthly price when there is no
+  invoice. A yearly invoice is spread over its months. Void invoices don't count.
+- **The return:** value divided by what they paid ("4×"). The report also shows jobs booked while
+  the business was closed, and the total since the first booking.
+- **Where it shows:** the top of Results, a one-line card on the dashboard, the monthly email
+  headline and PDF, the app's Results (an added `value` field), and for staff the business's admin
+  page (always, with a note when the business doesn't see it).
+- It is the feature `value_report`, open to every business by default.
+- **Features for picked businesses:** Billing › Feature access gains a third choice, "Only
+  businesses I pick". Picked businesses have the feature (a staff override, as on the business's
+  page). Everyone else doesn't see it at all: no menu item and no "Upgrade" badge, and its pages
+  answer 404. Picking and unpicking are recorded in the audit log.
+
+**Why:** owners renew when they can see the return in dollars, and the numbers already existed in
+calls, bookings and invoices. Valuing by service price where known makes the estimate closer to
+their real takings. Picking businesses lets staff try a new feature with a few customers before
+everyone gets it, without inventing a plan for it.
+
+## D108 — The AI receptionist answers calls nobody can take (2026-10-30)
+**Decision:** an AI voice answers a business's calls when its people can't: as a backup when no
+agent is free or picks up, only while the business is closed, or every call first. The business
+chooses, under *AI receptionist*.
+- **One brain.** It reuses the messaging assistant's brain and tools (D38). Each call is a
+  conversation on a new Inbox channel, *Phone call (AI receptionist)*. On the call it answers
+  from the business's own information, books (`ai_phone`), saves details, creates follow-ups and
+  escalates. It adds two phone tools: end the call, and put the caller through to the owner.
+- **Turn by turn over webhooks.** Twilio turns speech into text (`<Gather>`), and Amazon Polly
+  neural voices speak the reply (`<Say>`). No long-running connection, so it works on the current
+  hosting (D6). Twilio's ConversationRelay, a real-time streaming connection, can replace this
+  later for faster replies.
+- **Honest and bounded.** The greeting must say it's a virtual or AI assistant. Two silences, 24
+  turns, the call-length limit or an AI outage end the call kindly with a call-back task. A caller
+  who never speaks is a missed call, as before.
+- **Counted.** Results include its calls and bookings, and the dollars report (D107) values them.
+- **Rolled out carefully.** The feature `ai_receptionist` starts as "Only businesses I pick", since
+  each call costs AI and phone minutes. *Try it* lets an owner practise by typing, with nothing
+  really done.
+
+**Why:** missed calls are lost jobs, and small businesses can't staff every hour. A backup that
+answers, books and puts urgent callers through sells the service, keeps people first, and builds
+on the assistant, booking rules and phone system already in place.
+
+## D109 — New leads get an answer within seconds (2026-10-30)
+**Decision:** every new lead, from the website form or a business's lead link, becomes a customer,
+a high-priority call-back task and a *New lead* alert. When the business turns it on, the lead
+also gets an instant text and email in the business's name. The owner's phone can ring to connect
+them: press 1 and the lead is called from the business's number.
+- **One way in for lead sources.** A secret lead link per business, fed by Zapier or Make, covers
+  Facebook lead ads, Google, Angi, Thumbtack, Yelp and Nextdoor today, without an app review for
+  each. Native connections can come later.
+- **Fast.** The reply runs right after the request that brought the lead in, not on the next
+  queue run. Leads show the time to the first answer.
+- **Within the rules.** Texts follow D61: no number that texted STOP, "Reply STOP" always included,
+  and none between 9 PM and 8 AM (they wait). The email answers the person's own request. Calls to
+  the owner happen during opening hours by default. Demo businesses send nothing.
+- Feature `lead_response`, open to every business. Nothing is sent until the business turns it on.
+
+**Why:** the business that answers first usually wins the job, and owners can't watch every inbox.
+Answering in seconds and putting the owner on the phone with the lead is a clear, measurable reason
+to buy SureHelp. It builds on texting, tasks, alerts and the phone line already in place.
+
+## D110 — QuickBooks Online, the first connected app (2026-10-30)
+**Decision:** a business can connect its QuickBooks Online company under *Business › Connected apps*.
+- **Payments go in.** Deposits and pay-by-text payments taken through SureHelp (D85) are added as
+  payments from that customer, left unapplied so the bookkeeper applies them to the invoice. The
+  paying customer is matched in QuickBooks by email or name, or added.
+- **Customers come in.** QuickBooks customers with a phone or email are brought into SureHelp every
+  hour (source `quickbooks`), matched to existing customers by phone or email. SureHelp only fills
+  in blanks; it never overwrites what the team typed, and they don't count as new leads or start
+  automations.
+- **New leads stay out by default.** Sending every new SureHelp customer to QuickBooks is a choice,
+  off at first, so leads don't fill up the books.
+- **Nothing twice.** Each matched record is kept (`app_links`) and sends are locked per record.
+  Nothing in QuickBooks is changed or deleted, except that a payment SureHelp sent is voided there
+  when it's refunded through Stripe.
+- One Intuit app for all businesses, keyed under *Admin › Connections › Business apps*. Feature
+  `quickbooks`, open to every business. The tables (`app_connections`, `app_links`,
+  `app_sync_entries`) are general, so Jobber, Housecall Pro and ServiceTitan can follow the same way.
+
+**Why:** "Does it work with my system?" is the most common question from US service businesses, and
+QuickBooks is the accounting software most of them use. Money taken through SureHelp landing in
+their books, and their customer list helping the receptionists, makes SureHelp part of how they run.
+
+## D111 — Jobber, the second connected app (2026-10-30)
+**Decision:** a business can connect its Jobber account under *Business › Connected apps*, next to
+QuickBooks (D110).
+- **Bookings go in as requests.** Every booking SureHelp makes (agents, the AI receptionist, online
+  booking) becomes a Jobber *request* from that client, titled with the service and the time, for
+  the office to schedule. A request, not a job: Jobber jobs need prices, visits and team members
+  that the office sets. Bookings copied in from a calendar, imports and anything from Jobber itself
+  aren't sent back.
+- **Clients come in.** Jobber clients with a phone or email come into SureHelp every hour (source
+  `jobber`), the same way as QuickBooks customers: matched by phone or email, blanks filled only,
+  archived clients left out, and no automations or lead counts.
+- **The same rules.** Each record goes once, nothing in Jobber is changed or deleted, sending every
+  new customer is off at first, demo businesses never sync, and losing access asks the owner to
+  connect again. Jobber asking us to slow down is retried later.
+- The matching, sending-once and token handling now live in `AppRecords`, shared by both apps.
+- A booking moved or cancelled after it was sent makes a task for the team to change the request
+  in Jobber too (`AppRecords::bookingChanged`), once per change.
+- One Jobber app for all businesses, keyed under *Admin › Connections › Business apps*. Feature
+  `jobber`, open to every business.
+
+**Why:** "Does it work with my system?" comes up most with trades, and Jobber is one of the most used
+job management tools among small US home-service businesses. A booking that lands in Jobber without
+retyping removes the biggest reason an owner would hesitate.
+
+## D112 — Housecall Pro, connected with the business's own key (2026-10-31)
+**Decision:** a business can connect Housecall Pro under *Business › Connected apps* by pasting an
+API key made in Housecall Pro (App Store › API, part of its MAX plan).
+- **Bookings go onto the schedule as jobs.** Housecall Pro jobs only need a customer, an address and
+  a time, so every booking SureHelp makes becomes a scheduled job with the service as its line
+  item (and the price, when the service has a fixed or "starting from" price), tagged SureHelp.
+  A booking without any address can't become a job: it's written in the history instead.
+- **Customers come in** every hour, the same way as QuickBooks and Jobber. Housecall Pro can't list
+  only changed customers, so each run reads them newest first, up to a limit; customers already
+  matched only get blanks filled.
+- **No texts from Housecall Pro.** Customers SureHelp adds there have Housecall Pro's own
+  notifications off, so only SureHelp's consent rules decide who gets texts.
+- A booking moved after it was sent moves the job's schedule too; a cancelled one makes a task for
+  the team to cancel the job there.
+- A key Housecall Pro stops accepting asks the owner to paste a new one. Disconnecting forgets the
+  key; the owner deletes it in Housecall Pro. Feature `housecall_pro`, open to every business.
+
+**Why:** Housecall Pro is, with Jobber, the job software most used by small US home-service
+businesses. Its public API works with each business's own key, so it's available today without a
+partner app or a review, and a booking that lands on their Housecall Pro schedule is the clearest
+proof that SureHelp fits how they work.
+
+## D113 — An official SureHelp app on Zapier (2026-10-31)
+**Decision:** SureHelp has its own Zapier app, kept in this repository (`integrations/zapier`) and
+published with Zapier's CLI. It covers every webhook event as a trigger, adding leads, customers and
+tasks as actions, and finding a customer as a search. It signs in with the business's API key (D87).
+- **Triggers are REST hooks.** Turning a Zap on adds a webhook address through
+  `/api/v1/client/zapier/hooks`, turning it off removes it, so events arrive the moment they happen
+  without Zapier polling SureHelp. These addresses are marked as Zapier's, can't be removed by
+  anything else, and use the same safety checks as other webhooks.
+- **"Add Lead" goes through `LeadIntake`**, so any form or lead source on Zapier gets the instant
+  reply (D109).
+- **The Zap sees the event's id** (with the record as `record_id`), because Zapier skips ids it has
+  seen and the same booking can be moved twice.
+- **Examples come from the business's own data** when there are some, so the Zap editor shows real
+  fields.
+
+**Why:** a business's question "does it work with my system?" has a long tail beyond QuickBooks,
+Jobber and Housecall Pro. A listed Zapier app answers it for thousands of tools without a connection
+for each one, and it's how most small businesses already connect their software.
+
+## D114 — Call tracking by marketing channel (2026-10-31)
+**Decision:** a business can add up to 10 extra SureHelp numbers, each named for one marketing channel
+(Google Ads, Yelp, truck signs, mailers…), under **Call tracking**.
+- **Answered like the main line.** A tracking number copies the main line's transfer number,
+  recording, after-hours and text-back settings, and keeps following them when the main line
+  changes. Texts the business sends still go from the main number.
+- **The report, per month and channel:** calls, answered, booked jobs (calls our receptionists
+  logged as booked), what those jobs were worth (the service's price, else the average job value),
+  and, when the owner enters what the channel costs a month, the cost per call and per booked job.
+- Owners (`organization.update`) add and remove numbers and enter spend; anyone with `reports.view`
+  sees the report. Removed numbers keep their past calls in the report. Demo businesses can't buy
+  numbers. Feature `call_tracking`, open to everyone like other features until staff restrict it to
+  plans; each number has a small monthly cost, so a business can have at most 10.
+
+**Why:** owners spend on ads without knowing which ones make the phone ring with real jobs. Showing
+booked jobs and cost per job by channel, next to the dollars report (D107), makes SureHelp the place
+they decide where their marketing money goes.
+
+## D115 — Estimates and invoices to customers (2026-10-31)
+**Decision:** businesses write estimates and invoices in SureHelp (**Estimates & invoices**), send
+them by text and email, and customers act on them from a link in the business's look:
+- **Estimates** list lines (quantity × price), sales tax and a "valid until" date. The customer
+  accepts by typing their name, or declines with an optional reason; the team gets an alert.
+- **An accepted estimate becomes an invoice** in one click, with the same lines and a due date two
+  weeks out. Invoices can also be written from scratch.
+- **Invoices are paid by card** through the business's own Stripe account (D85): paying makes a
+  payment request for the total, so the money, receipts and webhooks work as for pay-by-text. Paid in
+  cash, by check or transfer? The team marks it paid.
+- One table (`job_documents`) for both, numbered EST-1001… and INV-1001… per business. Status
+  changes only in `JobDocuments` (docs/state-machines.md). Texts follow D61; demo businesses send
+  nothing. Staff with `payments.request` write and send them. Feature `estimates`, open to everyone.
+
+**Why:** "call → estimate → job → invoice → paid" is the core money loop of a home-service business.
+Closing it inside SureHelp, with the receptionists' calls at the start and pay-by-text at the end,
+moves SureHelp from answering service toward the software they run the business on, and makes it
+much harder to leave.
+
+## D116 — Service reminders and win-back campaigns (2026-10-31)
+**Decision:** **Reminders & win-back** brings past customers back, two ways:
+- **Service reminders.** For each service, the owner picks "remind after N months" (1–36) and an
+  optional message. When a completed job reaches that age, the customer gets a text and/or email,
+  once per job, unless they've booked again since. This is separate from automations (D50), whose
+  waits stop at 30 days.
+- **Campaigns.** A one-off message to a group: customers not back in N months, who had a service,
+  or with a tag. The page shows how many are in the group and how many can get texts. It's sent in
+  batches, and shows how many came back (booked within 30 days).
+- **Marketing rules, stricter than appointment messages:** texts only with the customer's texting
+  consent and never after STOP, with "Reply STOP to opt out"; every email has a one-click
+  unsubscribe link (`marketing_opt_out_at`), which stops reminders and campaigns but not messages
+  about their own appointments; nothing between 8 PM and 9 AM in the business's time zone (a
+  campaign started at night waits for the morning); demo businesses send nothing.
+- Owners (`organization.update`) set reminders and send campaigns; the team (`customers.view`) sees
+  them. Feature `campaigns`, open to everyone.
+
+**Why:** repeat work from past customers is the cheapest revenue a service business has, and owners
+rarely have time to chase it. Reminders and win-back turn SureHelp's customer list into bookings,
+and the "came back" counts show it.
+
+## D117 — HIPAA mode and visible consent records (2026-10-31)
+**Decision:** a **Compliance** page with two parts.
+- **HIPAA mode**, for healthcare practices. An owner turns it on by agreeing to the Business
+  Associate Agreement for the business (recorded as a `baa` legal acceptance, with time and IP).
+  While it's on:
+  - no AI reads the practice's calls or messages: the AI receptionist, the AI messaging assistant,
+    agent AI help, and call transcription and summaries are off, because SureHelp's AI providers
+    aren't covered by a BAA;
+  - alerts that carry patient details (calls, messages, appointments, tasks, escalations, leads,
+    payments…) reach email, text and push only as "new activity, sign in to see it" (at most every
+    10 minutes per channel); the full alert stays in the app's own bell;
+  - opening a customer's record is written in the audit log (`customers.viewed`).
+  Recording, two-step sign-in and encrypted storage are unchanged.
+- **Texting and email consent**: how many customers agreed to texts, texted STOP or unsubscribed
+  from offers, whether business texting is registered, the rules SureHelp follows (TCPA, A2P 10DLC,
+  CAN-SPAM, D61 and D116), and a CSV of every customer's consent record.
+- Owners (`organization.update`) switch HIPAA mode; anyone with `organization.view` sees the page;
+  the CSV needs `customers.view` and is audited.
+
+**Why:** the website already promises HIPAA support and a BAA; this makes the product keep that
+promise in a way a practice manager can see and show. Healthcare practices pay more and stay longer,
+and a downloadable consent record answers the first question carriers and lawyers ask.
+SOC 2 is the next step on the trust side; it's a company audit rather than a product feature.
+
+## D118 — Agency resellers (2026-10-31)
+**Decision:** marketing agencies can resell SureHelp to the small businesses they serve.
+- **Set up by SureHelp staff** under *Admin › Agencies*: the agency's name, brand colour, logo and
+  share of what its clients pay (a percentage); its people (existing business-portal accounts, as
+  agency owners or team); and the businesses it looks after.
+- **Its people look after every client business**: they're added to each one as managers (marked
+  with the agency, so they leave when the person or the business leaves the agency), and switch
+  between businesses as any multi-business user does.
+- **"Your agency" dashboard** (only for agency people): each business's calls answered, missed
+  calls, bookings and urgent matters this month, with an Open button; what the businesses paid
+  SureHelp this month and the agency's share. Agency owners can add a new client business: they
+  own it to start with, finish the setup, and invite the business owner under Team.
+- **The agency's brand**: client businesses are white-labelled (D82) automatically, in the
+  agency's colour unless the business set its own, with no SureHelp mentions on customer pages.
+- **Statements.** On the 1st, each agency gets a statement for the month before: what its clients
+  paid and its share (`agencies:statements`). SureHelp pays it outside the app and marks it paid
+  with a reference; the agency sees its statements on its dashboard. Billing stays with each
+  business.
+
+**Why:** agencies already hold the relationship with dozens of local businesses and are always
+looking for services to add. Giving them their own brand, one dashboard and a share of the revenue
+makes each agency a sales channel that brings many businesses at once.

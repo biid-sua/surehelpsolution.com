@@ -9,6 +9,7 @@ use App\Actions\Tasks\CreateTask;
 use App\Enums\AppointmentStatus;
 use App\Enums\EscalationPriority;
 use App\Enums\EscalationType;
+use App\Enums\InboxChannel;
 use App\Enums\TaskType;
 use App\Exceptions\SlotUnavailable;
 use App\Models\AiAssistant;
@@ -207,7 +208,7 @@ class AssistantTools
                 'address' => $input['address'] ?? null,
                 'notes' => trim('Booked by the AI assistant ('.$conversation->channel->label().'). '.($input['notes'] ?? '')),
                 'status' => $assistant->bookings_need_confirmation ? AppointmentStatus::Pending : AppointmentStatus::Confirmed,
-            ], null, 'ai', strict: true);
+            ], null, $conversation->channel === InboxChannel::Phone ? 'ai_phone' : 'ai', strict: true);   // D108: booked on a call
         } catch (SlotUnavailable $e) {
             $other = array_map(fn ($s) => $s->format('D j M g:i A').' (starts_at "'.$s->format('Y-m-d H:i').'")', $e->suggestions);
 

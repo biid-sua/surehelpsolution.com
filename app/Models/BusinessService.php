@@ -31,11 +31,13 @@ class BusinessService extends Model
     protected $fillable = [
         'organization_id', 'location_id', 'name', 'description', 'category', 'duration_minutes', 'buffer_minutes',
         'price_type', 'price_cents', 'currency', 'is_active', 'is_bookable', 'required_fields', 'agent_instructions', 'sort_order',
+        'reminder_months', 'reminder_text',
     ];
 
     protected function casts(): array
     {
         return [
+            'reminder_months' => 'integer',
             'price_type' => ServicePriceType::class,
             'price_cents' => 'integer',
             'duration_minutes' => 'integer',

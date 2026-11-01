@@ -39,3 +39,9 @@ While `npm run dev` runs, the Vite dev server in `public/hot` is added automatic
 | `CSP_REPORT` | `true` | browsers report blocked items to `/api/csp-report`; they go to the security log (`storage/logs/security.log`, `csp.violation`) |
 
 After deploying, watch the security log for `csp.violation` entries for a few days. A real page broken by the policy shows the same page and directive again and again. Injection attempts show unfamiliar sources.
+
+## HIPAA mode (D117)
+
+Healthcare businesses can turn on HIPAA mode under **Compliance**: no AI processing of their calls or
+messages, alerts with patient details only inside the app, and every record view audited. See
+[compliance.md](compliance.md).

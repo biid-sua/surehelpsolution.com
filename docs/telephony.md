@@ -107,6 +107,51 @@ Each line chooses what happens outside the business's opening hours, holidays an
 
 A business that hasn't set any opening hours is treated as always open. Calls that arrive while the business is closed are marked "after hours" in the call lists.
 
+## The AI receptionist (D108)
+
+An AI voice can answer a business's calls when its people can't. It is the feature
+`ai_receptionist`, which starts as "Only businesses I pick" (*Admin › Billing › Feature access ›
+Choose businesses*), because every call it answers uses AI and phone minutes.
+
+**When it answers** (the business chooses under *AI receptionist*):
+
+| Choice | What happens |
+|---|---|
+| Off | As before: agents, then the owner's phone or voicemail |
+| When nobody can answer | If no agent is free or nobody picks up, and while the business is closed, the AI answers instead of the owner's phone or voicemail |
+| Only when you're closed | While the business is closed, the AI answers; during its hours nothing changes |
+| Answer every call first | The AI answers straight away and puts callers through when they need a person |
+
+A free trial past its included calls, or one that ended, never reaches the AI (D97).
+
+**What it does on a call**
+- It greets the caller, saying it's a virtual or AI assistant. The greeting can be changed, but it
+  must keep saying so.
+- It answers from the business's details, services, hours, knowledge base, rules and the
+  guidelines taught to the messaging assistant. It uses the same brain and tools (D38).
+- It checks free times and books (source `ai_phone`, shown as "AI assistant and receptionist"),
+  saves the caller's details, creates follow-up tasks and raises escalations.
+- When the caller asks for a person, or for an emergency, it puts them through to the line's
+  transfer number. Without one, or with transfers off, it hands over: an escalation, then "someone
+  will call you back".
+- It ends the call with a goodbye when the caller is done.
+- Guards: two silences in a row, more than 24 turns or the business's longest-call limit (2 to
+  20 minutes) end the call kindly with a call-back task. If the AI is unavailable, it apologises
+  and leaves a call-back task. A caller who never speaks counts as a missed call.
+
+**How it works.** Twilio listens (`<Gather input="speech">`) and turns the caller's speech into
+text. Each turn posts to `/api/webhooks/voice/calls/{call}/ai` (signed like every voice webhook).
+The reply is read aloud by an Amazon Polly neural voice (`<Say>`). Each turn is one request, so it
+runs on any PHP host with no long-running connection. Expect a second or two of pause while it
+thinks; `AI_RECEPTIONIST_EFFORT` (default `low`) and `AI_RECEPTIONIST_MODEL` tune that.
+
+**Where calls show up.** Each call is an Inbox conversation on the *Phone call (AI receptionist)*
+channel, with the whole transcript. Replies can't be sent there, only team notes. Results count
+its calls and bookings, and the dollars report (D107) values its bookings.
+
+**Trying it.** *AI receptionist › Try it* runs the same receptionist by typing. Nothing is booked,
+saved or handed over.
+
 ## Agents calling customers
 
 - **Where:**

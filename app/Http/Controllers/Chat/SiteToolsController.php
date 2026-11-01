@@ -4,18 +4,16 @@ namespace App\Http\Controllers\Chat;
 
 use App\Actions\Appointments\BookAppointment;
 use App\Actions\Customers\MatchOrCreateCustomer;
-use App\Actions\Tasks\CreateTask;
 use App\Enums\AppointmentStatus;
-use App\Enums\TaskType;
 use App\Exceptions\SlotUnavailable;
 use App\Http\Controllers\Controller;
 use App\Models\BusinessService;
 use App\Models\ChatWidget;
 use App\Services\Billing\FeatureAccess;
+use App\Services\Leads\LeadIntake;
 use App\Services\Payments\CustomerPayments;
 use App\Services\Rules\BusinessRules;
 use App\Services\Scheduling\Availability;
-use App\Services\Tasks\CallbackDueTime;
 use App\Support\CustomerLocale;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
@@ -126,7 +124,7 @@ class SiteToolsController extends Controller
         ]), 201);
     }
 
-    public function lead(Request $request, MatchOrCreateCustomer $customers, CreateTask $tasks, CallbackDueTime $callbackDue, string $key): JsonResponse
+    public function lead(Request $request, LeadIntake $intake, string $key): JsonResponse
     {
         $widget = $this->widget($request, $key, 'lead');
         $data = $this->payload($request);
@@ -139,22 +137,12 @@ class SiteToolsController extends Controller
             return $this->error($request, $widget, __('Tell us how we can help.'));
         }
 
-        $organization = $widget->organization;
-        $contact = $this->contact($data);
         $this->count($request, $widget);
-        $customer = $customers->handle($organization, $contact, 'website')['customer'] ?? null;
-        $callBack = $contact['phone'] !== null;
-        $page = Str::limit((string) ($data['page'] ?? ''), 300, '');
-
-        $tasks->handle($organization, [
-            'type' => $callBack ? TaskType::Callback : TaskType::FollowUp,
-            'title' => Str::limit('Website enquiry from '.$contact['name'], 250, ''),
-            'description' => $message.($page !== '' ? "\n\nSent from: {$page}" : '')
-                ."\n\n".collect(['Phone' => $contact['phone'], 'Email' => $contact['email']])->filter()->map(fn ($v, $k) => "{$k}: {$v}")->implode("\n"),
-            'priority' => 'high',
-            'due_at' => $callBack ? $callbackDue->for($organization) : now()->addDay(),
-            'customer_id' => $customer?->id,
-        ], null, 'website');
+        // A customer, a call-back task, an alert for the team and, when the business has it on, an
+        // instant text and email back (D109).
+        $intake->receive($widget->organization, 'website', $this->contact($data) + [
+            'message' => $message, 'page' => Str::limit((string) ($data['page'] ?? ''), 300, ''),
+        ]);
 
         return $this->json($request, $widget, ['message' => __('Thanks! We\'ve got your message and will get back to you soon.')], 201);
     }

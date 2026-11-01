@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
+use App\Models\Organization;
+use App\Services\Billing\FeatureAccess;
 use App\Services\Metrics\ResultsPdf;
 use App\Services\Metrics\ResultsReport;
 use App\Services\Metrics\SourceReport;
+use App\Services\Metrics\ValueReport;
 use App\Support\Tenancy\CurrentOrganization;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
@@ -61,8 +64,36 @@ class ResultsController extends Controller
                 'social_messages' => $s['social_messages'],
                 'change' => $s['change'],
             ],
+            // The dollars report (D107); null for businesses that don't have it. Added, not changed (D7).
+            'value' => $this->value($organization, $period),
             'pdf_url' => route('api.client.results.pdf', ['month' => $period['key']]),
         ]);
+    }
+
+    /**
+     * @param  array{start: CarbonImmutable, end: CarbonImmutable}  $period
+     * @return array<string, mixed>|null
+     */
+    private function value(Organization $organization, array $period): ?array
+    {
+        if (! app(FeatureAccess::class)->allows($organization, 'value_report')) {
+            return null;
+        }
+        $v = app(ValueReport::class)->compute($organization, $period['start'], $period['end']);
+
+        return [
+            'value_cents' => $v['value_cents'],
+            'jobs' => $v['jobs'],
+            'priced_jobs' => $v['priced_jobs'],
+            'estimated_jobs' => $v['estimated_jobs'],
+            'after_hours_jobs' => $v['after_hours_jobs'],
+            'after_hours_value_cents' => $v['after_hours_value_cents'],
+            'cost_cents' => $v['cost_cents'],
+            'cost_source' => $v['cost_source'],
+            'multiple' => $v['multiple'],
+            'since_value_cents' => $v['since_value_cents'],
+            'since' => $v['since']?->format('Y-m'),
+        ];
     }
 
     public function pdf(Request $request, CurrentOrganization $current, ResultsPdf $pdf): Response

@@ -9,6 +9,7 @@ use App\Models\BusinessHour;
 use App\Models\CallLog;
 use App\Models\Customer;
 use App\Models\Organization;
+use App\Models\VoiceCall;
 use App\Services\Business\BusinessHours;
 use App\Services\Calls\CallOutcomes;
 use Carbon\CarbonImmutable;
@@ -39,7 +40,7 @@ class ResultsReport
 
     /**
      * @return array{
-     *     calls: int, answered: int, after_hours: int|null, leads: int, booked: int, appointments: int,
+     *     calls: int, ai_calls: int, ai_booked: int, answered: int, after_hours: int|null, leads: int, booked: int, appointments: int,
      *     revenue_cents: int|null, job_value_cents: int|null,
      *     outcomes: array<string, array{label: string, count: int}>,
      *     appointment_outcomes: array<string, array{label: string, count: int}>,
@@ -78,8 +79,14 @@ class ResultsReport
             }
         }
 
-        $answered = $calls->count() - $outcomes[OutcomeCategory::Missed->value]['count'] - $outcomes[OutcomeCategory::Spam->value]['count'];
-        $booked = $outcomes[OutcomeCategory::Booked->value]['count'];
+        // Calls the AI receptionist answered and the jobs it booked count too (D108).
+        $window = [$start->utc(), $end->utc()];
+        $aiCalls = VoiceCall::query()->forOrganization($organization)->whereNotNull('ai_conversation_id')->whereBetween('started_at', $window)
+            ->where('status', '!=', VoiceCall::MISSED)->count();
+        $aiBooked = Appointment::query()->forOrganization($organization)->where('source', 'ai_phone')->whereBetween('created_at', $window)
+            ->where('status', '!=', 'cancelled')->count();
+        $answered = $calls->count() - $outcomes[OutcomeCategory::Missed->value]['count'] - $outcomes[OutcomeCategory::Spam->value]['count'] + $aiCalls;
+        $booked = $outcomes[OutcomeCategory::Booked->value]['count'] + $aiBooked;
         $jobValue = $organization->average_job_value_cents;
 
         $reasons = $calls->filter(fn (CallLog $c) => filled($c->reason_for_call) && $categoryOf($c) !== OutcomeCategory::Spam)
@@ -98,7 +105,9 @@ class ResultsReport
         }
 
         $result = [
-            'calls' => $calls->count(),
+            'calls' => $calls->count() + $aiCalls,
+            'ai_calls' => $aiCalls,
+            'ai_booked' => $aiBooked,
             'answered' => max(0, $answered),
             'after_hours' => $afterHours,
             // New callers who became customer records while we answered for you.

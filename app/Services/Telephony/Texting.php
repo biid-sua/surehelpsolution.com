@@ -42,7 +42,8 @@ class Texting
 
     public function lineFor(Organization $organization): ?PhoneNumber
     {
-        return PhoneNumber::query()->forOrganization($organization)->active()->orderBy('id')->first();
+        // The main line, not a call tracking number (D114).
+        return PhoneNumber::query()->forOrganization($organization)->active()->orderByRaw('tracking_source IS NOT NULL')->orderBy('id')->first();
     }
 
     public function optedOut(int $organizationId, string $phone): bool

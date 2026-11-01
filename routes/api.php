@@ -33,11 +33,14 @@ use App\Http\Controllers\Api\TaskController;
 use App\Http\Controllers\Api\TeamController;
 use App\Http\Controllers\Api\ThemeController as ApiThemeController;
 use App\Http\Controllers\Api\TrainingController;
+use App\Http\Controllers\Api\ZapierController;
 use App\Http\Controllers\Chat\SiteToolsController;
 use App\Http\Controllers\Chat\WidgetController;
 use App\Http\Controllers\CspReportController;
 use App\Http\Controllers\SalesChatController;
 use App\Http\Controllers\Webhooks\CalendarWebhookController;
+use App\Http\Controllers\Webhooks\LeadCallController;
+use App\Http\Controllers\Webhooks\LeadWebhookController;
 use App\Http\Controllers\Webhooks\MetaWebhookController;
 use App\Http\Controllers\Webhooks\SmsWebhookController;
 use App\Http\Controllers\Webhooks\StripeConnectWebhookController;
@@ -89,6 +92,12 @@ Route::prefix('webhooks/voice')->name('webhooks.voice.')->middleware([VerifyTele
     Route::post('/calls/{voiceCall}/agent', [VoiceWebhookController::class, 'agentLeg'])->name('agent-leg');
     Route::post('/calls/{voiceCall}/dial-finished', [VoiceWebhookController::class, 'dialFinished'])->name('dial-finished');
     Route::post('/calls/{voiceCall}/transfer', [VoiceWebhookController::class, 'transfer'])->name('transfer');
+    Route::post('/calls/{voiceCall}/ai', [VoiceWebhookController::class, 'ai'])->name('ai');   // the AI receptionist (D108)
+    // The call that connects the owner to a new lead (D109).
+    Route::post('/leads/{lead}/whisper', [LeadCallController::class, 'whisper'])->name('lead-whisper');
+    Route::post('/leads/{lead}/connect', [LeadCallController::class, 'connect'])->name('lead-connect');
+    Route::post('/leads/{lead}/dialed', [LeadCallController::class, 'dialed'])->name('lead-dialed');
+    Route::post('/leads/{lead}/status', [LeadCallController::class, 'status'])->name('lead-status');
     Route::post('/calls/{voiceCall}/hold', [VoiceWebhookController::class, 'hold'])->name('hold');
     Route::post('/calls/{voiceCall}/join', [VoiceWebhookController::class, 'join'])->name('join');
     Route::post('/calls/{voiceCall}/owner-finished', [VoiceWebhookController::class, 'ownerFinished'])->name('owner-finished');
@@ -96,6 +105,10 @@ Route::prefix('webhooks/voice')->name('webhooks.voice.')->middleware([VerifyTele
     Route::post('/calls/{voiceCall}/recording', [VoiceWebhookController::class, 'recording'])->name('recording');
     Route::post('/calls/{voiceCall}/transcription', [VoiceWebhookController::class, 'transcription'])->name('transcription');
 });
+
+// New leads from lead sources (D109): Facebook lead ads, Google, Angi, Thumbtack, Yelp… sent by a
+// connector such as Zapier or Make to the business's own secret link.
+Route::post('/leads/{token}', LeadWebhookController::class)->middleware('throttle:60,1')->where('token', '[A-Za-z0-9]{40}')->name('leads.webhook');
 
 // Texts to SureHelp numbers and delivery reports (signed by Twilio, D61).
 Route::prefix('webhooks/sms')->name('webhooks.sms.')->middleware([VerifyTelephonyWebhook::class, 'throttle:1200,1'])->group(function () {
@@ -165,6 +178,14 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.active', 'throttle:api'])-
         Route::middleware('can:reports.view')->group(function () {
             Route::get('/results', [ResultsController::class, 'show']);
             Route::get('/results/pdf', [ResultsController::class, 'pdf'])->name('api.client.results.pdf');
+        });
+        // The SureHelp Zapier app (D113)
+        Route::prefix('zapier')->middleware('throttle:120,1')->group(function () {
+            Route::get('/me', [ZapierController::class, 'me']);
+            Route::get('/sample', [ZapierController::class, 'sample'])->middleware('can:integrations.manage');
+            Route::post('/hooks', [ZapierController::class, 'subscribe'])->middleware('can:integrations.manage');
+            Route::delete('/hooks/{ulid}', [ZapierController::class, 'unsubscribe'])->middleware('can:integrations.manage');
+            Route::post('/leads', [ZapierController::class, 'lead'])->middleware(['can:customers.create', 'idempotent']);
         });
         Route::get('/business', [ClientBusinessController::class, 'show'])->middleware('can:organization.view');
         Route::get('/services', [ClientBusinessController::class, 'services'])->middleware('can:organization.view');

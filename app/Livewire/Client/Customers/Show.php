@@ -11,7 +11,9 @@ use App\Livewire\Concerns\ScopedToOrganization;
 use App\Models\AutomationRun;
 use App\Models\Customer;
 use App\Models\Tag;
+use App\Services\Compliance\Hipaa;
 use App\Services\Payments\CustomerPayments;
+use App\Support\Audit\Audit;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
@@ -44,7 +46,11 @@ class Show extends Component
     {
         $this->ulid = $customer;
         $this->authorize('customers.view', $this->organization());
-        $this->customer(); // 404 for unknown or other businesses' customers
+        $customer = $this->customer(); // 404 for unknown or other businesses' customers
+        // HIPAA mode (D117): who opened a patient's record is kept.
+        if (Hipaa::on($this->organization())) {
+            app(Audit::class)->record('customers.viewed', $customer, label: $customer->fullName());
+        }
     }
 
     /**

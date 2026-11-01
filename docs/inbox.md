@@ -33,6 +33,8 @@ Replies the business sends from Facebook's or Instagram's own inbox arrive as ec
 
 ## The AI assistant
 
+The same assistant answers phone calls as the AI receptionist (D108): see [telephony.md](telephony.md). Its calls appear here on the *Phone call (AI receptionist)* channel, where only team notes can be added.
+
 **What it knows** (`BusinessBrain`):
 - The business profile, address, service area and emergency instructions.
 - Weekly hours, services with price labels, durations, required details and internal agent instructions.

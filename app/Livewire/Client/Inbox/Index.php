@@ -281,7 +281,10 @@ class Index extends Component
             ],
             'channels' => InboxChannel::cases(),
             'members' => $organization->members()->wherePivot('status', 'active')->orderBy('name')->get(['users.id', 'users.name']),
-            'window' => $current?->channel->replyWindow($current->last_inbound_at, true),
+            // A call the AI receptionist answered (D108) can't be replied to here; team notes still can.
+            'window' => $current?->channel === InboxChannel::Phone
+                ? ['allowed' => false, 'human_agent_tag' => false, 'reason' => 'This was a phone call with the AI receptionist. Call or text them back.']
+                : $current?->channel->replyWindow($current->last_inbound_at, true),
             'aiMode' => $current ? ($ai->isConfigured() ? $assistant->modeFor($current->channel) : 'off') : 'off',
             'canSend' => auth()->user()->can('messages.send', $organization),
             'canText' => app(Texting::class)->lineFor($organization) !== null,

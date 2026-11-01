@@ -5,10 +5,12 @@ namespace App\Livewire\Client;
 use App\Livewire\Concerns\ScopedToOrganization;
 use App\Models\BusinessProfile;
 use App\Models\Escalation;
+use App\Services\Billing\FeatureAccess;
 use App\Services\Billing\Trials;
 use App\Services\Business\BusinessHours;
 use App\Services\Metrics\ClientMetrics;
 use App\Services\Metrics\DashboardAlerts;
+use App\Services\Metrics\ValueReport;
 use App\Services\Setup\SampleData;
 use App\Services\Setup\SetupProgress;
 use App\Support\Audit\Audit;
@@ -116,6 +118,9 @@ class Dashboard extends Component
             'schedule' => $shown->has('schedule') ? $metrics->todaysSchedule($organization) : collect(),
             'recentCalls' => $shown->has('recent_calls') ? $metrics->recentCalls($organization) : collect(),
             'hasSamples' => app(SampleData::class)->has($organization),
+            // "This month so far: $X booked for you" (D107), for businesses that have the dollars report.
+            'value' => $user->can('reports.view', $organization) && app(FeatureAccess::class)->allows($organization, 'value_report')
+                ? app(ValueReport::class)->compute($organization, now($organization->timezoneOrDefault())->startOfMonth()->toImmutable(), now($organization->timezoneOrDefault())->toImmutable()) : null,
             'canRemoveSamples' => auth()->user()->can('organization.update', $organization) && ! app(Trials::class)->ended($organization),
             'away' => (function () use ($organization) {
                 $profile = BusinessProfile::query()->forOrganization($organization)->first();

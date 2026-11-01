@@ -4,6 +4,7 @@ namespace App\Services\Billing;
 
 use App\Models\Organization;
 use App\Models\PlatformSetting;
+use App\Services\Compliance\Hipaa;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -13,7 +14,8 @@ use Illuminate\Support\Facades\Schema;
  *  1. A staff override for this business (on or off) wins.
  *     After a self-serve trial ended without a plan, nothing else is on (D97).
  *  2. A feature open to everyone (the default) is allowed.
- *  3. Otherwise the business's plan or one of its active add-ons must include the feature key.
+ *  3. A feature for selected businesses only (D107) is allowed only where staff switched it on (1).
+ *  4. Otherwise the business's plan or one of its active add-ons must include the feature key.
  *
  * Checked on the server, where the work happens: pages, background jobs and public endpoints.
  * Request-scoped and memoised.
@@ -23,6 +25,11 @@ class FeatureAccess
     public const EVERYONE = 'everyone';
 
     public const PLAN = 'plan';
+
+    /** Only the businesses staff pick; everyone else doesn't see it at all (D107). */
+    public const SELECTED = 'selected';
+
+    public const MODES = [self::EVERYONE, self::PLAN, self::SELECTED];
 
     /** @var array<string, string>|null */
     private ?array $modes = null;
@@ -46,6 +53,10 @@ class FeatureAccess
         if ($organization->is_internal) {
             return true;
         }
+        // HIPAA mode (D117): no AI reads a healthcare business's calls or messages.
+        if ($organization->hipaa_mode && in_array($feature, Hipaa::AI_FEATURES, true)) {
+            return false;
+        }
         $override = $this->overrides($organization)[$feature] ?? null;
         if ($override !== null) {
             return $override;
@@ -55,6 +66,9 @@ class FeatureAccess
         }
         if ($this->mode($feature) === self::EVERYONE) {
             return true;
+        }
+        if ($this->mode($feature) === self::SELECTED) {
+            return false;
         }
 
         return $this->entitlements->allows($organization, $feature);
@@ -70,8 +84,14 @@ class FeatureAccess
         return $this->modes()[$feature] ?? self::EVERYONE;
     }
 
+    /** A feature for selected businesses that this one doesn't have: hidden, not offered as an upgrade. */
+    public function hidden(Organization $organization, string $feature): bool
+    {
+        return $this->mode($feature) === self::SELECTED && ! $this->allows($organization, $feature);
+    }
+
     /**
-     * @return array<string, string> feature => everyone | plan
+     * @return array<string, string> feature => everyone | plan | selected
      */
     public function modes(): array
     {
@@ -80,8 +100,9 @@ class FeatureAccess
             $saved = is_string($saved) ? (json_decode($saved, true) ?: []) : (array) $saved;
             $this->modes = [];
             foreach (array_keys($this->catalog()) as $key) {
-                $default = ($this->catalog()[$key]['default_mode'] ?? self::EVERYONE) === self::PLAN ? self::PLAN : self::EVERYONE;
-                $this->modes[$key] = ($saved[$key] ?? $default) === self::PLAN ? self::PLAN : self::EVERYONE;
+                $default = $this->catalog()[$key]['default_mode'] ?? self::EVERYONE;
+                $mode = $saved[$key] ?? $default;
+                $this->modes[$key] = in_array($mode, self::MODES, true) ? $mode : self::EVERYONE;
             }
         }
 
@@ -95,7 +116,8 @@ class FeatureAccess
     {
         $clean = [];
         foreach (array_keys($this->catalog()) as $key) {
-            $clean[$key] = ($modes[$key] ?? self::EVERYONE) === self::PLAN ? self::PLAN : self::EVERYONE;
+            $mode = $modes[$key] ?? self::EVERYONE;
+            $clean[$key] = in_array($mode, self::MODES, true) ? $mode : self::EVERYONE;
         }
         PlatformSetting::put('features.modes', $clean);
         $this->modes = null;
@@ -110,6 +132,30 @@ class FeatureAccess
     {
         return $this->overrides[$organization->id] ??= DB::table('organization_features')->where('organization_id', $organization->id)
             ->pluck('enabled', 'feature')->map(fn ($v) => (bool) $v)->all();
+    }
+
+    /**
+     * Businesses that have a feature switched on by staff (the picked ones, in "selected" mode).
+     *
+     * @return list<int>
+     */
+    public function switchedOn(string $feature): array
+    {
+        return DB::table('organization_features')->where('feature', $feature)->where('enabled', true)->pluck('organization_id')->map(fn ($id) => (int) $id)->all();
+    }
+
+    /** Switch a feature on for one business, or back to following its plan. */
+    public function pick(Organization $organization, string $feature, bool $on, ?int $by): void
+    {
+        if ($on) {
+            DB::table('organization_features')->updateOrInsert(
+                ['organization_id' => $organization->id, 'feature' => $feature],
+                ['enabled' => true, 'set_by' => $by, 'updated_at' => now(), 'created_at' => now()],
+            );
+        } else {
+            DB::table('organization_features')->where('organization_id', $organization->id)->where('feature', $feature)->delete();
+        }
+        $this->forget($organization);
     }
 
     public function forget(Organization $organization): void

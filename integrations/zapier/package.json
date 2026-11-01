@@ -1,0 +1,16 @@
+{
+  "name": "surehelp-zapier",
+  "version": "1.0.0",
+  "description": "SureHelp for Zapier: triggers for calls, bookings, customers, payments and more; actions to add leads, customers and tasks.",
+  "main": "index.js",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "zapier-platform-core": "15.19.0"
+  }
+}

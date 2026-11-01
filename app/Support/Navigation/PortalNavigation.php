@@ -2,6 +2,7 @@
 
 namespace App\Support\Navigation;
 
+use App\Models\Agency;
 use App\Models\User;
 use App\Services\Billing\FeatureAccess;
 use App\Support\Tenancy\CurrentOrganization;
@@ -23,15 +24,21 @@ class PortalNavigation
         return match ($portal) {
             'client' => [
                 // The dashboard opens on the calendar by default, and each person picks its sections (D77).
+                $this->item('Your agency', 'building', 'app.agency', 'app.agency', null),
                 $this->item('Dashboard', 'home', 'app.dashboard', 'app.dashboard', 'dashboard.view'),
                 $this->item('Calendar', 'calendar', 'app.calendar', 'app.calendar', 'calls.view'),
                 $this->item('Appointments', 'list', 'app.appointments.index', 'app.appointments.*', 'appointments.view'),
                 $this->item('Inbox', 'chat', 'app.inbox.index', 'app.inbox.*', 'messages.view'),
+                $this->item('AI receptionist', 'phone', 'app.ai-receptionist', 'app.ai-receptionist', 'ai.view', 'ai_receptionist'),
                 $this->item('Calls', 'phone', 'app.calls.index', 'app.calls.*', 'calls.view'),
                 $this->item('Customers', 'users', 'app.customers.index', 'app.customers.*', 'customers.view'),
+                $this->item('Leads', 'sparkles', 'app.leads', 'app.leads', 'customers.view', 'lead_response'),
                 $this->item('Tasks', 'check-circle', 'app.tasks.index', 'app.tasks.*', 'tasks.view'),
                 $this->item('Escalations', 'alert', 'app.escalations.index', 'app.escalations.*', 'escalations.view'),
                 $this->item('Results', 'trend-up', 'app.results', 'app.results*', 'reports.view'),
+                $this->item('Reminders & win-back', 'megaphone', 'app.outreach', 'app.outreach', 'customers.view', 'campaigns'),
+                $this->item('Estimates & invoices', 'list', 'app.documents.index', 'app.documents.*', 'payments.view', 'estimates'),
+                $this->item('Call tracking', 'phone', 'app.call-tracking', 'app.call-tracking', 'reports.view', 'call_tracking'),
                 $this->item('Payments', 'card', 'app.payments', 'app.payments*', 'payments.view'),
                 $this->item('Reviews', 'star', 'app.reviews', 'app.reviews', 'reviews.view', 'reviews'),
                 $this->item('Social', 'megaphone', 'app.social.index', 'app.social.*', 'social.view', 'social_publishing'),
@@ -41,6 +48,7 @@ class PortalNavigation
                 $this->item('SEO', 'trend-up', 'app.seo', 'app.seo*', 'seo.view'),
                 $this->item('Billing', 'card', 'app.billing', 'app.billing*', 'billing.view'),
                 $this->item('Team', 'users', 'app.settings.team', 'app.settings.team', 'users.view'),
+                $this->item('Compliance', 'shield', 'app.compliance', 'app.compliance', 'organization.view'),
                 $this->item('Notifications', 'bell', 'app.settings.notifications', 'app.settings.notifications', null),
                 $this->item('Data & privacy', 'shield', 'app.settings.privacy', 'app.settings.privacy*', 'organization.update'),
                 $this->item('Support', 'info', 'app.support', 'app.support*', 'support.view'),
@@ -52,6 +60,7 @@ class PortalNavigation
                 $this->item('Duty schedule', 'calendar', 'admin.schedule', 'admin.schedule', 'users.view'),
                 $this->item('Calls', 'phone', 'admin.calls', 'admin.calls', 'calls.view'),
                 $this->item('Phone lines', 'phone', 'admin.phone-lines', 'admin.phone-lines', 'settings.view'),
+                $this->item('Agencies', 'building', 'admin.agencies', 'admin.agencies', 'settings.view'),
                 $this->item('Appointments', 'calendar', 'admin.appointments', 'admin.appointments', 'appointments.view'),
                 $this->item('Customers', 'users', 'admin.customers', 'admin.customers', 'customers.view'),
                 $this->item('Call review', 'inbox', 'admin.calls.review', 'admin.calls.review', 'calls.update'),
@@ -101,10 +110,18 @@ class PortalNavigation
             if ($item['permission'] && ! $user->hasPermissionIn($item['permission'])) {
                 continue;
             }
+            // Only the agency's own people see its dashboard (D118).
+            if ($item['route'] === 'app.agency' && Agency::of($user) === null) {
+                continue;
+            }
 
             $item['url'] = $item['route'] && Route::has($item['route']) ? route($item['route']) : null;
-            // A paid feature this business doesn't have: still listed, marked "Upgrade" (D46).
+            // A paid feature this business doesn't have: still listed, marked "Upgrade" (D46), unless
+            // it is only for businesses staff picked, which the rest don't see at all (D107).
             $organization = app(CurrentOrganization::class)->get();
+            if (! empty($item['feature']) && $organization && app(FeatureAccess::class)->hidden($organization, $item['feature'])) {
+                continue;
+            }
             $item['locked'] = ! empty($item['feature']) && $organization && ! app(FeatureAccess::class)->allows($organization, $item['feature']);
             $item['current'] = $item['route'] !== null && request()->routeIs(...explode('|', $item['active']));
             $items[] = $item;

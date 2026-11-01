@@ -20,11 +20,14 @@ use App\Http\Controllers\Client\AppointmentExportController;
 use App\Http\Controllers\Client\CalendarEventsController;
 use App\Http\Controllers\Client\CalendarOAuthController;
 use App\Http\Controllers\Client\CallExportController;
+use App\Http\Controllers\Client\ConsentExportController;
 use App\Http\Controllers\Client\CustomerExportController;
 use App\Http\Controllers\Client\DataExportController as ClientDataExportController;
 use App\Http\Controllers\Client\InvoiceController as ClientInvoiceController;
 use App\Http\Controllers\Client\InvoicePaymentController as ClientInvoicePaymentController;
+use App\Http\Controllers\Client\JobberController;
 use App\Http\Controllers\Client\PaymentsConnectController;
+use App\Http\Controllers\Client\QuickBooksController;
 use App\Http\Controllers\Client\ResultsCsvController;
 use App\Http\Controllers\Client\ResultsPdfController;
 use App\Http\Controllers\Client\SearchConsoleController;
@@ -32,6 +35,7 @@ use App\Http\Controllers\Client\SocialOAuthController;
 use App\Http\Controllers\Client\SwitchOrganizationController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DemoBookingController;
+use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InboxMediaController;
@@ -45,9 +49,11 @@ use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\Sites\SiteController;
 use App\Http\Controllers\SupportAttachmentController;
 use App\Http\Controllers\SurveyController;
+use App\Http\Controllers\UnsubscribeController;
 use App\Livewire\Account\Notifications as AccountNotifications;
 use App\Livewire\Account\Profile as AccountProfile;
 use App\Livewire\Account\Security as AccountSecurity;
+use App\Livewire\Admin\Agencies as AdminAgencies;
 use App\Livewire\Admin\Appearance as AdminAppearance;
 use App\Livewire\Admin\Appointments\Index as AdminAppointments;
 use App\Livewire\Admin\AuditLogs;
@@ -100,11 +106,14 @@ use App\Livewire\Agent\University\Course as UniversityCourse;
 use App\Livewire\Agent\University\Learning as UniversityLearning;
 use App\Livewire\Agent\University\Lesson as UniversityLesson;
 use App\Livewire\Agent\Workspace as AgentWorkspace;
+use App\Livewire\Client\Agency as ClientAgency;
+use App\Livewire\Client\AiReceptionist as AiReceptionistSettings;
 use App\Livewire\Client\Appointments\Index as AppointmentsIndex;
 use App\Livewire\Client\Billing\Index as ClientBilling;
 use App\Livewire\Client\Business\Automations as BusinessAutomations;
 use App\Livewire\Client\Business\Branding as BusinessBranding;
 use App\Livewire\Client\Business\Calendars as BusinessCalendarsPage;
+use App\Livewire\Client\Business\ConnectedApps as BusinessConnectedApps;
 use App\Livewire\Client\Business\CustomerEmails as BusinessCustomerEmails;
 use App\Livewire\Client\Business\Hours as BusinessHoursPage;
 use App\Livewire\Client\Business\Integrations as BusinessIntegrations;
@@ -117,16 +126,22 @@ use App\Livewire\Client\Business\Services as BusinessServicesPage;
 use App\Livewire\Client\Calendar as ClientCalendar;
 use App\Livewire\Client\Calls\Index as ClientCalls;
 use App\Livewire\Client\Calls\Show as ClientCallShow;
+use App\Livewire\Client\CallTracking as ClientCallTracking;
+use App\Livewire\Client\Compliance as ClientCompliance;
 use App\Livewire\Client\Customers\Duplicates as CustomerDuplicates;
 use App\Livewire\Client\Customers\Import as CustomerImportPage;
 use App\Livewire\Client\Customers\Index as CustomerIndex;
 use App\Livewire\Client\Customers\Show as CustomerShow;
 use App\Livewire\Client\Dashboard as ClientDashboard;
+use App\Livewire\Client\Documents\Editor as ClientDocumentEditor;
+use App\Livewire\Client\Documents\Index as ClientDocuments;
 use App\Livewire\Client\Escalations\Index as EscalationsIndex;
 use App\Livewire\Client\Inbox\Assistant as InboxAssistant;
 use App\Livewire\Client\Inbox\Channels as InboxChannels;
 use App\Livewire\Client\Inbox\Index as InboxIndex;
+use App\Livewire\Client\Leads as ClientLeads;
 use App\Livewire\Client\Locations as ClientLocations;
+use App\Livewire\Client\Outreach as ClientOutreach;
 use App\Livewire\Client\Payments as ClientPayments;
 use App\Livewire\Client\Results as ClientResults;
 use App\Livewire\Client\Reviews as ClientReviews;
@@ -171,6 +186,15 @@ Route::get('/health', HealthController::class)->middleware('throttle:60,1')->nam
 Route::middleware('throttle:30,1')->prefix('pay/{token}')->name('pay.')->group(function () {
     Route::get('/', [PayController::class, 'show'])->name('show');
     Route::post('/', [PayController::class, 'checkout'])->name('checkout');
+});
+// Unsubscribing from a business's reminders and campaigns (D116): signed link from the email.
+Route::get('/unsubscribe/{customer}', UnsubscribeController::class)->middleware(['signed', 'throttle:30,1'])->name('marketing.unsubscribe');
+// Estimates and invoices a business sent its customer (D115): public, by token.
+Route::middleware('throttle:30,1')->prefix('d/{token}')->name('documents.')->group(function () {
+    Route::get('/', [DocumentController::class, 'show'])->name('show');
+    Route::post('/accept', [DocumentController::class, 'accept'])->name('accept');
+    Route::post('/decline', [DocumentController::class, 'decline'])->name('decline');
+    Route::post('/pay', [DocumentController::class, 'pay'])->name('pay');
 });
 // A visitor's demo call with the SureHelp team (D96): see, move or cancel it, by token.
 Route::middleware('throttle:30,1')->prefix('demo/{token}')->name('demo.')->group(function () {
@@ -278,6 +302,16 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/callback', [SearchConsoleController::class, 'callback'])->name('callback');
         Route::post('/disconnect', [SearchConsoleController::class, 'disconnect'])->name('disconnect');
     });
+    // QuickBooks Online (D110)
+    Route::middleware(['can:integrations.manage', 'feature:quickbooks'])->prefix('apps/quickbooks')->name('apps.quickbooks.')->group(function () {
+        Route::get('/connect', [QuickBooksController::class, 'redirect'])->name('connect');
+        Route::get('/callback', [QuickBooksController::class, 'callback'])->name('callback');
+    });
+    // Jobber (D111)
+    Route::middleware(['can:integrations.manage', 'feature:jobber'])->prefix('apps/jobber')->name('apps.jobber.')->group(function () {
+        Route::get('/connect', [JobberController::class, 'redirect'])->name('connect');
+        Route::get('/callback', [JobberController::class, 'callback'])->name('callback');
+    });
     Route::middleware('can:support.view')->group(function () {
         Route::get('/support', ClientSupport::class)->name('support');
         Route::get('/support/attachments/{message}', SupportAttachmentController::class)->whereNumber('message')->name('support.attachment');
@@ -297,6 +331,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/inbox', InboxIndex::class)->name('inbox.index');
         Route::get('/inbox/channels', InboxChannels::class)->name('inbox.channels');
         Route::get('/inbox/assistant', InboxAssistant::class)->middleware(['can:ai.view', 'feature:ai_assistant'])->name('inbox.assistant');
+        Route::get('/ai-receptionist', AiReceptionistSettings::class)->middleware(['can:ai.view', 'feature:ai_receptionist'])->name('ai-receptionist');
         Route::get('/inbox/{conversation}', InboxIndex::class)->name('inbox.show');
     });
     // Social media (spec §41, D33)
@@ -322,6 +357,19 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
     Route::get('/payments', ClientPayments::class)->middleware('can:payments.view')->name('payments');
     Route::get('/payments/connect', PaymentsConnectController::class)->middleware(['can:payments.manage', 'feature:customer_payments'])->name('payments.connect');
     Route::get('/reviews', ClientReviews::class)->middleware(['can:reviews.view', 'feature:reviews'])->name('reviews');
+    Route::get('/agency', ClientAgency::class)->name('agency');   // D118: only for agency people (checked in the page)
+    // Compliance (D117): HIPAA mode and consent records
+    Route::get('/compliance', ClientCompliance::class)->middleware('can:organization.view')->name('compliance');
+    Route::get('/compliance/consent.csv', ConsentExportController::class)->middleware(['can:customers.view', 'throttle:10,1'])->name('compliance.consent-export');
+    Route::get('/reminders', ClientOutreach::class)->middleware(['can:customers.view', 'feature:campaigns'])->name('outreach');   // D116
+    // Estimates and invoices to customers (D115)
+    Route::middleware(['can:payments.view', 'feature:estimates'])->group(function () {
+        Route::get('/estimates', ClientDocuments::class)->name('documents.index');
+        Route::get('/estimates/new', ClientDocumentEditor::class)->middleware('can:payments.request')->name('documents.create');
+        Route::get('/estimates/{document}', ClientDocumentEditor::class)->name('documents.edit');
+    });
+    Route::get('/call-tracking', ClientCallTracking::class)->middleware(['can:reports.view', 'feature:call_tracking'])->name('call-tracking');   // D114
+    Route::get('/leads', ClientLeads::class)->middleware(['can:customers.view', 'feature:lead_response'])->name('leads');   // D109
     Route::get('/escalations', EscalationsIndex::class)->middleware('can:escalations.view')->name('escalations.index');
     Route::middleware('can:customers.view')->group(function () {
         Route::get('/customers', CustomerIndex::class)->name('customers.index');
@@ -341,6 +389,7 @@ Route::prefix('app')->name('app.')->middleware(['auth.home', 'force.password.cha
         Route::get('/business/automations', BusinessAutomations::class)->name('business.automations');
         Route::get('/business/branding', BusinessBranding::class)->name('business.branding');
         Route::get('/business/integrations', BusinessIntegrations::class)->middleware('can:integrations.manage')->name('business.integrations');
+        Route::get('/business/apps', BusinessConnectedApps::class)->middleware('can:integrations.manage')->name('business.apps');
         Route::get('/business/emails', BusinessCustomerEmails::class)->middleware('feature:customer_emails')->name('business.emails');
         Route::get('/business/calendars', BusinessCalendarsPage::class)->middleware(['can:integrations.view', 'feature:calendar_sync'])->name('business.calendars');
         Route::get('/website', ClientWebsite::class)->middleware(['can:integrations.view', 'feature:website_tools'])->name('website');
@@ -430,6 +479,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth.home', 'force.password
     Route::get('/appointments', AdminAppointments::class)->middleware('can:appointments.view')->name('appointments');
     Route::get('/customers', AdminCustomers::class)->middleware('can:customers.view')->name('customers');
     Route::get('/seo', AdminSeo::class)->middleware('can:seo.manage')->name('seo');
+    Route::get('/agencies', AdminAgencies::class)->middleware('can:settings.view')->name('agencies');   // D118
     Route::get('/phone-lines', AdminPhoneLines::class)->middleware('can:settings.view')->name('phone-lines');
     Route::get('/appearance', AdminAppearance::class)->middleware('can:settings.view')->name('appearance');
     Route::get('/system', AdminSystemStatus::class)->middleware('can:settings.view')->name('system');

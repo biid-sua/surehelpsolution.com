@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\VoiceCall;
 use App\Services\Telephony\AgentPresence;
+use App\Services\Telephony\AiReceptionist;
 use App\Services\Telephony\CallRouter;
 use App\Services\Telephony\VoiceCalls;
 use Illuminate\Http\Request;
@@ -76,6 +77,12 @@ class VoiceWebhookController extends Controller
     public function dialFinished(Request $request, VoiceCall $voiceCall): Response
     {
         return $this->twiml($this->router->dialFinished($voiceCall, $request->all()));
+    }
+
+    /** The caller spoke (or didn't) to the AI receptionist (D108). */
+    public function ai(Request $request, VoiceCall $voiceCall): Response
+    {
+        return $this->twiml(app(AiReceptionist::class)->turn($voiceCall, $request->all()));
     }
 
     public function transfer(VoiceCall $voiceCall): Response

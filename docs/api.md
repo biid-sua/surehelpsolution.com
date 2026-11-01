@@ -255,7 +255,7 @@ Social endpoints need the `social_publishing` feature (`403` with `feature` othe
 |---|---|---|
 | GET | `/client/calls/{call_id}` | One call (API-6), `calls.view` → `data.call`: `id`, `created_at`, `caller{name, phone, email}`, `customer{id, name}`, `reason`, `outcome`, `outcome_label`, `status`, `agent_name`, `notes`, `service{date, window, location}`, `tasks[]` (with `tasks.view`), `phone_call` (calls on a SureHelp line): `direction`, `status`, `status_label`, `other_party`, `after_hours`, `started_at`, `answered_at`, `ended_at`, `wait_seconds`, `duration_seconds`, `transferred_to`, `can_hear`; and, with `calls.recording.view` only, `recording{url, seconds, expires_in}`, `summary` and `transcript[]` (`speaker`, `text`, `at`) |
 | GET | `/recordings/{id}?…signature` | The `recording.url` above: a signed link valid 15 minutes (`MOBILE_RECORDING_LINK_MINUTES`) that an audio player opens **without** the token. It still checks the person may hear it; each play is audited. Fetch the call again for a fresh link |
-| GET | `/client/results` | Results for a month (API-10), `reports.view`. `month?` = `YYYY-MM` (this month by default) → `data.month`, `label`, `is_current`, `currency`, `summary` (`calls`, `answered`, `after_hours`, `leads`, `booked`, `appointments`, `job_value_cents`, `revenue_cents`, `change{…%}`), `call_outcomes[]`, `appointment_outcomes[]`, `reasons[]`, `busiest`, `heatmap` (7 days × 24 hours, Sunday first, business timezone), `sources` (leads and bookings by source, website and social numbers, D68), `pdf_url` |
+| GET | `/client/results` | Results for a month (API-10), `reports.view`. `month?` = `YYYY-MM` (this month by default) → `data.month`, `label`, `is_current`, `currency`, `summary` (`calls`, `answered`, `after_hours`, `leads`, `booked`, `appointments`, `job_value_cents`, `revenue_cents`, `change{…%}`), `call_outcomes[]`, `appointment_outcomes[]`, `reasons[]`, `busiest`, `heatmap` (7 days × 24 hours, Sunday first, business timezone), `sources` (leads and bookings by source, website and social numbers, D68), `value` (the dollars report, D107: `value_cents`, `jobs`, `priced_jobs`, `estimated_jobs`, `after_hours_jobs`, `after_hours_value_cents`, `cost_cents`, `cost_source` `invoices`/`plan`, `multiple`, `since_value_cents`, `since`; `null` when the business doesn't have it), `pdf_url` |
 | GET | `/client/results/pdf` | The monthly report PDF (`month?`), with the token like any other call |
 
 ### Agent workspace — role `agent` or `admin`
@@ -308,6 +308,9 @@ A staff member without the permission gets `403`. Dashboard: `dashboard.view`. A
 
 ## 2b. For businesses: API keys and webhooks (D87)
 
+The SureHelp Zapier app (D113) uses these keys and its own endpoints under `/api/v1/client/zapier`;
+see [zapier.md](zapier.md).
+
 Businesses connect their own tools (n8n, Zapier, Make, a CRM) under **Business › API & webhooks**.
 
 ### API keys
@@ -348,6 +351,7 @@ Businesses connect their own tools (n8n, Zapier, Make, a CRM) under **Business �
 
 | Date | Change |
 |---|---|
+| 2026-10-30 | `value` on `GET /client/results`: the dollars report (D107), `null` when the business doesn't have it. Additive. |
 | 2026-10-28 | For the mobile app (D102): `trial` and `credits` on `GET /client/billing` (additive); `GET /client/billing/plans`; `POST /client/billing/trial/keep`, `/trial/start`; `POST /client/billing/credits`. |
 | 2026-10-21 | For the mobile app (D76): `call_id` on `POST /client/tasks`; `customer.tag_list` with ids; `business` on `/agent/clients` and agent call logs; `GET /agent/call-logs/{id}`; the business's hours, briefing, services and knowledge on `GET /agent/companies/{id}`; `search` on `GET /admin/users`; `options` on `GET /client/social/posts/{id}`. All additive. |
 | 2026-11-12 | For the mobile app (D74): agents' shift requests, quality reviews and availability; `GET /client/search`; `GET /openapi.json`. |

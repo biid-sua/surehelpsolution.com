@@ -14,6 +14,25 @@
         </x-ui.alert>
     @endif
 
+    {{-- What SureHelp was worth to this business (D107) --}}
+    <x-ui.card class="mb-6" title="Value to this business" :description="$value['shown'] ? 'The business sees this on Results, its dashboard and the monthly email.' : 'Only staff see this: the dollars report is off for this business (Billing › Feature access).'">
+        <dl class="grid gap-4 sm:grid-cols-2">
+            @foreach (['last', 'this'] as $when)
+                @php $v = $value[$when]; @endphp
+                <div>
+                    <dt class="text-xs font-medium uppercase tracking-wide text-subtle">{{ $v['label'] }}</dt>
+                    <dd class="mt-1 text-xl font-semibold text-ink tabular-nums">{{ $v['value_cents'] !== null ? \App\Support\Money::format($v['value_cents'], $organization->currency) : '—' }}</dd>
+                    <dd class="text-xs text-subtle">
+                        {{ number_format($v['jobs']) }} {{ \Illuminate\Support\Str::plural('job', $v['jobs']) }} booked
+                        @if ($v['cost_cents'] !== null) · paid {{ \App\Support\Money::format($v['cost_cents'], $organization->currency) }}@endif
+                        @if ($v['multiple'] !== null) · {{ $v['multiple'] >= 10 ? number_format($v['multiple']) : number_format($v['multiple'], 1) }}× return @endif
+                        @if ($v['value_cents'] === null && $v['jobs'] > 0) · no job value or service prices yet @endif
+                    </dd>
+                </div>
+            @endforeach
+        </dl>
+    </x-ui.card>
+
     <div class="grid gap-6 lg:grid-cols-3">
         <div class="space-y-6 lg:col-span-2">
             {{-- Business details --}}

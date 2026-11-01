@@ -11,6 +11,7 @@ use App\Models\Customer;
 use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\MonthlyResults;
+use App\Services\Billing\FeatureAccess;
 use App\Services\Metrics\ResultsReport;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -126,7 +127,7 @@ class ResultsTest extends TestCase
         $this->actingAs($owner);
 
         $this->get(route('app.results', ['month' => '2026-10']))->assertOk()
-            ->assertSee('Results')->assertSee('$750')->assertSee('3 jobs booked × $250 average job value')->assertSee('After-hours calls caught');
+            ->assertSee('Results')->assertSee('$750')->assertSee('3 at your average job value of $250')->assertSee('After-hours calls caught');
         Livewire::test(Results::class, ['month' => '2026-10'])->set('jobValue', 'abc')->call('saveJobValue')->assertHasErrors('jobValue')
             ->set('jobValue', '400')->call('saveJobValue')->assertHasNoErrors()->assertSee('$1,200');
 
@@ -136,7 +137,13 @@ class ResultsTest extends TestCase
 
         // Without a job value there's no revenue figure, only a prompt.
         $org->forceFill(['average_job_value_cents' => null])->save();
-        $this->get(route('app.results', ['month' => '2026-10']))->assertSee('Tell us your average job value');
+        $this->get(route('app.results', ['month' => '2026-10']))->assertSee('Add your average job value');
+
+        // Without the dollars report (D107), the plain revenue estimate is shown.
+        $org->forceFill(['average_job_value_cents' => 25000])->save();
+        app(FeatureAccess::class)->saveModes(['value_report' => FeatureAccess::SELECTED]);
+        app()->forgetScopedInstances();
+        $this->get(route('app.results', ['month' => '2026-10']))->assertSee('3 jobs booked × $250 average job value')->assertDontSee('What SureHelp was worth');
     }
 
     public function test_staff_see_results_but_only_owners_set_the_job_value(): void

@@ -24,6 +24,9 @@ use Illuminate\Support\Str;
  * @property int|null $wait_seconds
  * @property int|null $duration_seconds
  * @property int|null $recording_seconds
+ * @property int|null $ai_conversation_id the AI receptionist's conversation, when it answered (D108)
+ * @property int $ai_turns
+ * @property int $ai_silences
  */
 class VoiceCall extends Model
 {
@@ -79,6 +82,8 @@ class VoiceCall extends Model
             'wait_seconds' => 'integer',
             'duration_seconds' => 'integer',
             'recording_seconds' => 'integer',
+            'ai_turns' => 'integer',
+            'ai_silences' => 'integer',
         ];
     }
 
@@ -92,6 +97,12 @@ class VoiceCall extends Model
     public function getRouteKeyName(): string
     {
         return 'ulid';
+    }
+
+    /** @return BelongsTo<Conversation, $this> */
+    public function aiConversation(): BelongsTo
+    {
+        return $this->belongsTo(Conversation::class, 'ai_conversation_id')->withoutGlobalScopes();
     }
 
     /** @return BelongsTo<PhoneNumber, $this> */

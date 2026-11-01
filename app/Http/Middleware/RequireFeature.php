@@ -10,7 +10,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * `feature:calendar_sync` on a business-portal route: the current business must have the paid
- * feature (D46). Pages send people to Billing to see their options; the API answers 403.
+ * feature (D46). Pages send people to Billing to see their options; the API answers 403. A feature
+ * kept for picked businesses answers 404 to the rest (D107).
  */
 class RequireFeature
 {
@@ -28,6 +29,8 @@ class RequireFeature
             return $next($request);
         }
         $feature = $options[0];
+        // Only for the businesses staff picked (D107): to everyone else it doesn't exist.
+        abort_if($organization && $this->features->hidden($organization, $feature), 404);
 
         $message = $this->features->label($feature).' isn\'t included in your plan.';
         if ($request->expectsJson() || $request->is('api/*')) {

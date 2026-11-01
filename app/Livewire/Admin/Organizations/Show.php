@@ -11,8 +11,11 @@ use App\Models\AgentAssignment;
 use App\Models\Organization;
 use App\Models\User;
 use App\Services\Admin\ClientHealth;
+use App\Services\Billing\FeatureAccess;
+use App\Services\Metrics\ValueReport;
 use App\Services\Setup\SetupProgress;
 use App\Support\Audit\Audit;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
@@ -183,6 +186,17 @@ class Show extends Component
         return view('livewire.admin.organizations.show', [
             'organization' => $organization,
             'health' => app(ClientHealth::class)->for($organization),
+            // What we were worth to them (D107), last month and this month so far; staff always see it.
+            'value' => (function () use ($organization) {
+                $now = CarbonImmutable::now($organization->timezoneOrDefault());
+                $report = app(ValueReport::class);
+
+                return [
+                    'last' => $report->compute($organization, $now->subMonthNoOverflow()->startOfMonth(), $now->subMonthNoOverflow()->endOfMonth()) + ['label' => $now->subMonthNoOverflow()->format('F')],
+                    'this' => $report->compute($organization, $now->startOfMonth(), $now) + ['label' => $now->format('F').' so far'],
+                    'shown' => app(FeatureAccess::class)->allows($organization, 'value_report'),
+                ];
+            })(),
             'agents' => $assigned,
             'availableAgents' => User::where('role', 'agent')->where('is_active', true)
                 ->whereNotIn('id', $assigned->pluck('id'))

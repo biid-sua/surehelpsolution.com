@@ -47,7 +47,7 @@ class PhoneLine extends Component
 
     private function line(): ?PhoneNumber
     {
-        return PhoneNumber::query()->forOrganization($this->organization())->active()->orderBy('id')->first();
+        return PhoneNumber::query()->forOrganization($this->organization())->active()->whereNull('tracking_source')->orderBy('id')->first();
     }
 
     public function save(Audit $audit): void
@@ -75,8 +75,12 @@ class PhoneLine extends Component
 
         $fields = ['transfer_number', 'after_hours', 'record_calls', 'text_back', 'text_back_message'];
         $old = $line->only($fields);
-        $line->forceFill(['transfer_number' => $transfer, 'after_hours' => $this->afterHours, 'record_calls' => $this->recordCalls,
-            'text_back' => $this->textBack, 'text_back_message' => trim($this->textBackMessage) ?: null])->save();
+        $settings = ['transfer_number' => $transfer, 'after_hours' => $this->afterHours, 'record_calls' => $this->recordCalls,
+            'text_back' => $this->textBack, 'text_back_message' => trim($this->textBackMessage) ?: null];
+        $line->forceFill($settings)->save();
+        // Call tracking numbers (D114) are answered exactly like the main line.
+        PhoneNumber::query()->forOrganization($this->organization())->active()->whereNotNull('tracking_source')->get()
+            ->each(fn (PhoneNumber $tracking) => $tracking->forceFill($settings)->save());
         $audit->record('phone_line.updated', $line, $old, $line->only($fields), organization: $organization, label: $line->display());
         $this->dispatch('toast', type: 'success', message: 'Phone line settings saved.');
     }

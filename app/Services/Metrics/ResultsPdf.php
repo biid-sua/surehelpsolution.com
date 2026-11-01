@@ -3,6 +3,7 @@
 namespace App\Services\Metrics;
 
 use App\Models\Organization;
+use App\Services\Billing\FeatureAccess;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 /**
@@ -21,6 +22,7 @@ class ResultsPdf
             'period' => $period,
             'r' => $this->report->compute($organization, $period['start'], $period['end']),
             's' => $this->sources->compute($organization, $period['start'], $period['end']),
+            'value' => app(FeatureAccess::class)->allows($organization, 'value_report') ? app(ValueReport::class)->compute($organization, $period['start'], $period['end']) : null,
         ])->setPaper('letter')->output();
     }
 

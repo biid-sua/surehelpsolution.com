@@ -65,6 +65,7 @@
                 <div class="mt-4 rounded-xl border border-line p-4" wire:key="wh-{{ $endpoint->id }}">
                     <div class="flex flex-wrap items-center gap-2">
                         <p class="min-w-0 flex-1 truncate font-mono text-sm text-ink">{{ $endpoint->url }}</p>
+                        @if ($endpoint->source === 'zapier')<x-ui.badge tone="info">Added by a Zap</x-ui.badge>@endif
                         <x-ui.badge :tone="$endpoint->is_active ? 'success' : 'warning'">{{ $endpoint->is_active ? 'On' : 'Off' }}</x-ui.badge>
                     </div>
                     @if ($endpoint->disabled_reason)<p class="mt-1 text-xs text-danger">{{ $endpoint->disabled_reason }}</p>@endif
