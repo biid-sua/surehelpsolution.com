@@ -378,7 +378,7 @@ body.hg::before { content: ''; position: fixed; inset: 0; pointer-events: none; 
 /* ---------------- Small screens ---------------- */
 @media (max-width: 980px) {
     .hg-main { padding: 4px 12px 16px; }
-    .hg-top { padding: 10px 14px; }
+    .hg-top { padding: 6px 14px; }
     .hg-top .hg-btn { display: none; }
     .hg-intro { flex-direction: column-reverse; gap: 0; }
     .hg-intro-art { width: min(52vw, 210px); margin-bottom: -10px; }
@@ -392,7 +392,7 @@ body.hg::before { content: ''; position: fixed; inset: 0; pointer-events: none; 
     .hg-intro-cta .hg-btn-play { width: 100%; min-height: 58px; font-size: 22px; }
     .hg-toast { font-size: 13px; padding: 5px 10px; }
     .hg-toasts { gap: 4px; left: 8px; bottom: 8px; }
-    .hg-play { height: auto; min-height: 0; }
+    .hg-play { height: auto; min-height: 0; gap: 8px; }
     .hg-hud { flex-wrap: wrap; gap: 8px; }
     .hg-stat { min-width: 0; flex: 1 1 30%; padding: 6px 10px 6px 6px; }
     .hg-stat b { font-size: 22px; }
@@ -403,10 +403,21 @@ body.hg::before { content: ''; position: fixed; inset: 0; pointer-events: none; 
     .hg-timer { width: 52px; height: 52px; } .hg-timer b { font-size: 19px; }
     .hg-stage { grid-template-columns: 1fr; }
     .hg-svg-wrap { flex: none; aspect-ratio: 8 / 5; }
-    .hg-phone { min-height: 330px; border-radius: 30px; }
-    .hg-ava { min-height: 330px; }
+    .hg-phone { min-height: 262px; border-radius: 30px; }
+    .hg-ava { min-height: 262px; }
     .hg-ring { width: 88px; height: 88px; } .hg-avatar { width: 68px; height: 68px; font-size: 26px; }
     .hg-round { width: 60px; height: 60px; }
+    .hg-phone { padding: 34px 14px 14px; border-width: 7px; }
+    .hg-phone-notch { top: 6px; height: 18px; width: 72px; } .hg-phone-status { top: 6px; font-size: 12px; }
+    .hg-call { gap: 4px; }
+    .hg-call-label { display: none; }
+    .hg-ring { width: 74px; height: 74px; margin: 0; } .hg-avatar { width: 58px; height: 58px; font-size: 22px; }
+    .hg-caller { font-size: 21px; line-height: 1.1; }
+    .hg-call-btns { margin-top: 2px; gap: 40px; } .hg-round { width: 56px; height: 56px; } .hg-round svg { width: 24px; height: 24px; }
+    .hg-say { padding: 8px 12px; font-size: 14px; } .hg-choices button { min-height: 42px; font-size: 15px; }
+    .hg-phone-idle > b { font-size: 52px; } .hg-lock-card { margin-top: 10px; }
+    .hg-job { padding: 8px 12px; gap: 4px 10px; } .hg-job span { font-size: 17px; } .hg-job b { font-size: 21px; }
+    .hg-stat { padding: 4px 8px 4px 5px; gap: 7px; } .hg-combo { padding: 4px 12px; }
     .hg-res-card { padding: 28px 18px; }
     .hg-stars svg { width: 56px; height: 56px; } .hg-stars svg:nth-child(2) { width: 72px; height: 72px; }
     .hg-stars { margin-top: -60px; }
