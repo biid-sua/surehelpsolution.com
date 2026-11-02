@@ -3,18 +3,36 @@
 namespace App\Http\Controllers;
 
 use App\Models\Plan;
+use App\Support\Ui\SiteDesigns;
 use Illuminate\Support\Facades\Schema;
 
 class HomeController extends Controller
 {
     /**
-     * Display the landing page. Its pricing section lists the plans from Admin › Billing › Plans (D98).
+     * Display the landing page in the design chosen in Admin › Appearance (D121). Its pricing section
+     * lists the plans from Admin › Billing › Plans (D98).
      */
-    public function index()
+    public function index(SiteDesigns $designs)
+    {
+        return $this->home($designs->view($designs->current()));
+    }
+
+    /**
+     * A design shown through a signed preview link before it goes live, kept out of search results.
+     */
+    public function preview(SiteDesigns $designs, string $design)
+    {
+        abort_unless($designs->exists($design), 404);
+
+        return $this->home($designs->view($design), preview: true)
+            ->header('X-Robots-Tag', 'noindex, nofollow');
+    }
+
+    private function home(string $view, bool $preview = false)
     {
         $plans = rescue(fn () => Schema::hasTable('plans') ? Plan::query()->onWebsite()->ordered()->get() : collect(), collect(), report: false);
 
-        return view('home', ['plans' => $plans]);
+        return response()->view($view, ['plans' => $plans, 'preview' => $preview]);
     }
 
     /**

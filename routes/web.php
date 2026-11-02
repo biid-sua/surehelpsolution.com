@@ -176,6 +176,7 @@ Route::get('/site/{subdomain}/{page?}', [SiteController::class, 'show'])->where(
     ->middleware('throttle:240,1')->name('sites.path');
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/preview/home/{design}', [HomeController::class, 'preview'])->middleware(['signed', 'throttle:60,1'])->name('home.preview');
 // Search engines (D58): the sitemap and robots.txt are built from the routes.
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])->name('seo.sitemap');
 Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('seo.robots');

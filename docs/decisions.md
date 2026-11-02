@@ -2221,3 +2221,24 @@ and Pexels. The same versions are kept, so nothing looks or behaves differently.
 our own copies removes that risk, avoids sharing visitors' addresses with those services, and lets the
 security policy be strict.
 
+## D121 — A new home page design, switched on when we're ready (2026-11-02)
+**Decision:** the home page has two designs. **Classic** is the page we launched with and stays live.
+**Modern** is a redesign: a light, editorial layout with a live-call preview, a missed-call savings
+calculator worked out from the visitor's own numbers, feature cards, the plans from Admin › Billing ›
+Plans, privacy links, questions and answers, and a shorter contact form with the same consent boxes.
+- **Switching** is under *Admin › Appearance › Home page design*. It applies to every visitor at once,
+  can be undone at any time, needs settings access and is recorded in the audit log.
+- **Previewing** before switching: each design has a signed link that works for 14 days and can be shared
+  with the team. Preview pages say they're a preview and are kept out of search engines (`noindex` and
+  `/preview/` in robots.txt).
+- **Self-contained.** Modern has its own styles and script (`resources/css/home-modern.css`,
+  `resources/js/home-modern.js`, built by Vite), uses Inter and Fraunces from npm, and loads nothing from
+  outside (D120, D67). It doesn't use the Classic page's colour themes or Bootstrap. Other public pages
+  keep the Classic look for now.
+- **Honest content.** It uses only claims the Classic page already made (live in about 48 hours, 30-day
+  money-back guarantee) or features that exist; no invented reviews or numbers.
+
+**Why:** the owner wants a more polished, professional home page but to choose the moment it goes live.
+Building it as a second design with a switch and a private preview lets the team review it on the real
+site, launch it with one click, and go back just as easily.
+

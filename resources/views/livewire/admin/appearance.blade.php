@@ -70,7 +70,38 @@
         </x-ui.card>
     </div>
 
-    <x-ui.card class="mt-6" title="Public website" description="The colours of the home page and every other public page.">
+    <x-ui.card class="mt-6" title="Home page design" description="Which layout visitors see on the home page. Preview a design before you switch; the preview link works for 14 days and can be shared with your team.">
+        <form wire:submit="saveDesign" class="space-y-5">
+            <div class="grid gap-3 md:grid-cols-2" role="radiogroup" aria-label="Home page design">
+                @foreach ($designs as $key => $design)
+                    <label wire:key="d-{{ $key }}" @class([
+                        'flex cursor-pointer flex-col gap-2 rounded-xl border p-4 transition-colors hover:border-brand-400',
+                        'border-brand-400 ring-1 ring-brand-400' => $siteDesign === $key,
+                        'border-line-strong' => $siteDesign !== $key,
+                    ])>
+                        <input type="radio" name="siteDesign" value="{{ $key }}" wire:model.live="siteDesign" class="sr-only" @disabled(! $canManage)>
+                        <span class="flex items-center justify-between gap-2">
+                            <span class="text-sm font-medium text-ink">{{ $design['label'] }}</span>
+                            @if ($liveDesign === $key)<x-ui.badge tone="success">Live</x-ui.badge>@elseif ($siteDesign === $key)<x-ui.badge tone="brand">Selected</x-ui.badge>@endif
+                        </span>
+                        <span class="text-sm text-muted">{{ $design['description'] }}</span>
+                        <a href="{{ $previewUrls[$key] }}" target="_blank" rel="noopener" class="w-max text-sm text-brand-300 hover:underline">Preview {{ $design['label'] }}</a>
+                    </label>
+                @endforeach
+            </div>
+            @error('siteDesign')<p class="mt-1 text-xs text-danger">{{ $message }}</p>@enderror
+            @if ($canManage)
+                <div class="flex flex-wrap items-center gap-3">
+                    <x-ui.button type="submit" :disabled="$siteDesign === $liveDesign">{{ $siteDesign === $liveDesign ? 'This design is live' : 'Make '.($designs[$siteDesign]['label'] ?? 'it').' live' }}</x-ui.button>
+                    <span class="text-sm text-muted">The change is immediate for every visitor, and you can switch back at any time.</span>
+                </div>
+            @else
+                <p class="text-sm text-muted">Only administrators with settings access can change the design.</p>
+            @endif
+        </form>
+    </x-ui.card>
+
+    <x-ui.card class="mt-6" title="Public website" description="The colours of the public pages. The Modern home page design has its own colours.">
         <form wire:submit="saveSite" class="space-y-5">
             <div>
                 <p class="sh-label">Default colour</p>

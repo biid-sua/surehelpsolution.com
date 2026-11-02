@@ -51,7 +51,11 @@ The values below are the default **Midnight** theme.
   `[data-theme="dark|light|ocean|forest|sunset"]`; `system` follows the device. The same palettes, as plain
   values for the mobile app, are in `config/themes.php` (`colors`); `ThemesTest` checks they match the CSS.
 - **Public website themes (D59, D93):** `public/assets/css/site-themes.css`, keyed by `[data-site-theme]`.
-  The default and whether visitors may change it are set under *Admin › Appearance*.
+  The default and whether visitors may change it are set under *Admin › Appearance*. They apply to the
+  Classic home page and the other public pages.
+- **Modern home page (D121):** `resources/views/home-modern.blade.php` with its own tokens on `:root` in
+  `resources/css/home-modern.css` (paper, navy ink, the logo's mint; Inter for text, Fraunces italic for
+  display words). Chosen under *Admin › Appearance › Home page design*.
 - **White-label (D82):** a business's logo, colours and sender name apply to *its own* customer-facing
   pages and emails (`App\Services\Branding`), never to the portals' tokens.
 - **Charts and calendars** read the tokens too (`--fc-*` variables for FullCalendar in `app.css`).
