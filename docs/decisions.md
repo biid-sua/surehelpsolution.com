@@ -2271,3 +2271,11 @@ It's linked from the Modern home page and footer, and listed in the sitemap.
 answering versus ignoring, and then the relief of having someone answer, which makes the case for Sure Help
 better than any claim, and gives the sales team something shareable.
 
+## D123 — Landing page: tighter "Go Live" process section, growth-framed calculator (2026-10-20)
+
+- **Spacing:** the three process cards now size to their content and match each other's height, with no fixed minimum height. List lines sit closer together, the gaps between steps on mobile are smaller, and the call-to-action box lost its stray bottom margin. One small-phone `!important` override in `style.css` was fighting the page's own rules, so it's gone.
+- **Feature cards:** less padding in the cards and between their parts (icon, title, list, button), and a smaller icon: 56px, down from 80px (48px on small phones, down from 60px). The gap between a section's heading and its content is 2rem, down from 9rem: the heading's bottom margin went from 5rem to 2rem, and the feature grid's top margin from 4rem to 0. In the testimonials call-to-action box, the top margin went from 4rem to 0 and the buttons have 1.5rem of space above them (up from 0.5rem).
+- **Mega menu hover:** a hovered, focused or clicked menu item gets a faint glass tint in the site theme's colours. Its text stays light, and its icon tile fills with the primary-to-secondary gradient and shows a white icon. Before, the item went half-white behind white text, and its tile turned bright Bootstrap blue with a dark-navy icon on top. Clicking turned the whole item solid blue.
+- **Calculator wording:** "Calculate Your Loss" is now "See Your Growth Potential". The modal, its results ("Monthly/Yearly Opportunity") and the `/roi-calculator` page talk about revenue you could gain, not revenue you're losing. The calculator's button and modal changed from a red-orange "warning" gradient to emerald, to match.
+
+**Why:** the big gaps made the section look unfinished, and loss framing set a negative tone right beside the main sign-up button. The maths is unchanged.

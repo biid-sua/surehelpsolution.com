@@ -343,15 +343,23 @@
 
     .mega-menu .dropdown-item {
       transition: all 0.3s ease;
-      border: 0px solid transparent;
+      border: 1px solid transparent;
       background: transparent;
       color: rgba(248, 250, 252, 0.95);
     }
 
-    .mega-menu .dropdown-item:hover {
-      background: rgba(255, 255, 255, 0.52);
-      border-color: var(--bs-primary-border-subtle);
-      transform: translateX(5px);
+    /* Hover, keyboard focus and click share one look: a faint glass tint in the site theme, text stays light
+       (Bootstrap's defaults would turn it near-white on hover and solid blue on click). */
+    .mega-menu .dropdown-item:hover,
+    .mega-menu .dropdown-item:focus,
+    .mega-menu .dropdown-item:focus-visible,
+    .mega-menu .dropdown-item:active,
+    .mega-menu .dropdown-item.active {
+      background: linear-gradient(135deg, rgba(var(--site-primary-rgb), 0.22) 0%, rgba(var(--site-accent-rgb), 0.10) 100%);
+      border-color: rgba(var(--site-accent-rgb), 0.35);
+      color: #fff;
+      transform: translateX(4px);
+      outline: none;
     }
 
     .mega-menu .dropdown-header {
@@ -372,7 +380,22 @@
     }
 
     .mega-menu .dropdown-item i {
-      color: rgba(44, 44, 84, 0.96) !important;
+      background: rgba(var(--site-primary-rgb), 0.18);
+      color: var(--site-soft) !important;
+    }
+
+    .mega-menu .dropdown-item:hover i,
+    .mega-menu .dropdown-item:focus-visible i,
+    .mega-menu .dropdown-item:active i,
+    .mega-menu .dropdown-item.active i {
+      background: linear-gradient(135deg, var(--site-primary) 0%, var(--site-secondary) 100%);
+      color: #fff !important;
+      box-shadow: 0 6px 16px rgba(var(--site-primary-rgb), 0.35);
+    }
+
+    .mega-menu .dropdown-item:hover h6,
+    .mega-menu .dropdown-item:focus-visible h6 {
+      color: #fff;
     }
 
     .btn-outline-primary {

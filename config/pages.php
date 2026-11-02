@@ -291,10 +291,10 @@ return [
     'roi-calculator' => [
         'group' => 'resources',
         'title' => 'ROI Calculator',
-        'subtitle' => 'Measure what missed calls cost your business',
+        'subtitle' => 'See how much more your business could earn when every call is answered',
         'calculator' => true,
         'sections' => [
-            ['icon' => 'fa-info-circle', 'heading' => 'How it works', 'text' => ['Enter how many calls you miss in a month, what a new customer is worth to you, and how many of those callers would have booked. The result is an estimate of the revenue going to voicemail. Nothing you enter is sent anywhere.']],
+            ['icon' => 'fa-info-circle', 'heading' => 'How it works', 'text' => ['Enter how many calls you could answer in a month, what a new customer is worth to you, and how many of those callers would book. The result is an estimate of the extra revenue SureHelp can help you capture. Nothing you enter is sent anywhere.']],
         ],
     ],
 
