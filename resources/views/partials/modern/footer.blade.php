@@ -21,6 +21,7 @@
                 <h4>Company</h4>
                 <ul>
                     <li><a href="{{ route('legal.faq') }}">FAQ</a></li>
+                    @if (config('game.enabled'))<li><a href="{{ route('game') }}">Play the missed-call game</a></li>@endif
                     <li><a href="{{ route('pages.show', 'help-center') }}">Help center</a></li>
                     <li><a href="{{ $home }}#contact">Contact</a></li>
                     <li><a href="{{ route('login') }}">Sign in</a></li>
