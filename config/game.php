@@ -19,7 +19,8 @@ return [
 
     'brand' => [
         'name' => 'Sure Help',
-        'logo' => 'assets/img/logo-on-light.png',     // under public/
+        'logo' => 'assets/img/logo-on-light.png',     // under public/, for light backgrounds
+        'logo_dark' => 'assets/img/logo.png',         // for the game's dark screens
         'receptionist' => 'Ava',
         // Colours as hex. ink = text and dark panels, accent = money earned and buttons, paper = background.
         'colors' => [

@@ -2258,7 +2258,11 @@ plumber fixing leaks under a sink while the phone rings:
 - **Branding in one file:** `config/game.php` holds the brand name, receptionist's name, colours, logo,
   round lengths and the buttons; `GAME_ENABLED=false` hides the page and its links. The game is vanilla
   JavaScript (`resources/js/game.js`) with synthesized sounds (mute button), works with mouse, touch and
-  keyboard (A answer, D decline, 1–3 choose, T take), respects reduced motion and follows the CSP (D67).
+  keyboard (A answer, D decline, 1–3 choose, T take, F fix), respects reduced motion and follows the CSP (D67).
+- **Arcade look:** a dark neon theme in the brand colours with the Lilita One game font (from npm), a
+  detailed under-sink scene with rising water, spraying leaks, sparks, coins flying to the score, combos for
+  quick fixes, screen shake on losses, a 3-2-1 countdown, a synthesized music loop, a ringing phone, an
+  animated receptionist with "Booked" stamps, and a results screen with stars, a best score and confetti.
 - **Honest:** the money is made up and the page says so; no real results are claimed.
 
 It's linked from the Modern home page and footer, and listed in the sitemap.
