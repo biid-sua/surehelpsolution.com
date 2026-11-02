@@ -2245,3 +2245,25 @@ Plans, privacy links, questions and answers, and a shorter contact form with the
 Building it as a second design with a switch and a private preview lets the team review it on the real
 site, launch it with one click, and go back just as easily.
 
+## D122 — "Hands Full", a missed-call game on the website (2026-11-02)
+**Decision:** the public website has a 60-second browser game at `/missed-call-game`. The visitor plays a
+plumber fixing leaks under a sink while the phone rings:
+- **On their own,** answering a call stops the work (the leaks keep coming and water damage costs money),
+  and ignoring a call loses that customer's job. Earned money shows in green, lost money in red.
+- **After 20 seconds** (and again at 40 if they say no) they're offered Sure Help. Saying yes switches the
+  phone for the receptionist (Ava): she answers each call in a speech bubble, books jobs, screens sales calls
+  and offers urgent calls to the player (or texts them and books the first slot).
+- **The results** compare earned and lost money per minute on their own and with Sure Help, with buttons to
+  start a free trial or book a demo (tracking tags `utm_source=game`), play again or share.
+- **Branding in one file:** `config/game.php` holds the brand name, receptionist's name, colours, logo,
+  round lengths and the buttons; `GAME_ENABLED=false` hides the page and its links. The game is vanilla
+  JavaScript (`resources/js/game.js`) with synthesized sounds (mute button), works with mouse, touch and
+  keyboard (A answer, D decline, 1–3 choose, T take), respects reduced motion and follows the CSP (D67).
+- **Honest:** the money is made up and the page says so; no real results are claimed.
+
+It's linked from the Modern home page and footer, and listed in the sitemap.
+
+**Why:** owners understand a missed call best when it happens to them. A minute of play shows the cost of
+answering versus ignoring, and then the relief of having someone answer, which makes the case for Sure Help
+better than any claim, and gives the sales team something shareable.
+

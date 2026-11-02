@@ -28,6 +28,9 @@ class SitemapController extends Controller
             $urls[] = [route('pages.show', $slug), $siteUpdated, $priority];
         }
         $urls[] = [route('legal.faq'), $siteUpdated, '0.8'];
+        if (config('game.enabled')) {
+            $urls[] = [route('game'), filemtime(resource_path('views/game.blade.php')) ?: $siteUpdated, '0.6'];
+        }
         foreach (['terms-of-use', 'privacy-policy', 'data-processing-addendum', 'business-associate-agreement', 'data-security', 'cookie-notice'] as $legal) {
             $urls[] = [route('legal.'.$legal), filemtime(resource_path("views/legal/{$legal}.blade.php")) ?: $siteUpdated, '0.3'];
         }

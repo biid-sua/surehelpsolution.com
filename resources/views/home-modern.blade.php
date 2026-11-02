@@ -500,6 +500,19 @@
         </div>
     </section>
 
+    {{-- The missed-call game (D122) --}}
+    @if (config('game.enabled'))
+    <section class="sec" aria-labelledby="game-title" style="padding-bottom: 0">
+        <div class="wrap">
+            <a class="game-band rv" href="{{ route('game') }}">
+                <span class="ico">{{ $icon('phone') }}</span>
+                <span><b id="game-title">Hands full? Play the 60-second missed-call game.</b><span>Fix the leaks while the phone rings, then see what changes when {{ config('game.brand.receptionist') }} answers.</span></span>
+                <span class="btn btn-primary btn-sm">Play now {{ $icon('arrow') }}</span>
+            </a>
+        </div>
+    </section>
+    @endif
+
     {{-- Final call to action --}}
     <section class="sec" aria-labelledby="final-title">
         <div class="final">

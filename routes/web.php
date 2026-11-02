@@ -36,6 +36,7 @@ use App\Http\Controllers\Client\SwitchOrganizationController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DemoBookingController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\GameController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InboxMediaController;
@@ -176,6 +177,8 @@ Route::get('/site/{subdomain}/{page?}', [SiteController::class, 'show'])->where(
     ->middleware('throttle:240,1')->name('sites.path');
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+// The missed-call game (D122): a short browser game that shows what answering every call is worth.
+Route::get('/'.config('game.path', 'missed-call-game'), GameController::class)->name('game');
 Route::get('/preview/home/{design}', [HomeController::class, 'preview'])->middleware(['signed', 'throttle:60,1'])->name('home.preview');
 Route::post('/preview/end', [HomeController::class, 'endPreview'])->middleware('throttle:60,1')->name('home.preview.end');
 // Search engines (D58): the sitemap and robots.txt are built from the routes.

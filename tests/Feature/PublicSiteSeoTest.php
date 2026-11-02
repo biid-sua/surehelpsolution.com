@@ -105,7 +105,7 @@ class PublicSiteSeoTest extends TestCase
         $this->assertContains(route('home'), $locs);
         $this->assertContains(route('pages.show', 'call-answering'), $locs);
         $this->assertContains(route('legal.faq'), $locs);
-        $this->assertCount(1 + count(config('pages')) + 1 + 6, $locs);
+        $this->assertCount(1 + count(config('pages')) + 1 + 6 + 1, $locs);   // home, menu pages, FAQ, legal, the game (D122)
         foreach ($locs as $loc) {
             $this->assertDoesNotMatchRegularExpression('#/(app|admin|agent|account|login)\b#', $loc);
             $this->get($loc)->assertOk();
