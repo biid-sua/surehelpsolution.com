@@ -82,7 +82,7 @@ class Appearance extends Component
         $label = $designs->all()[$this->siteDesign]['label'];
         $audit->record('ui.site_design_changed', null, ['design' => $before], ['design' => $this->siteDesign], label: $label);
 
-        $this->dispatch('toast', type: 'success', message: "Home page design saved. Every visitor now sees {$label}.");
+        $this->dispatch('toast', type: 'success', message: "Website design saved. Every visitor now sees {$label}.");
     }
 
     public function saveDefault(Themes $themes, Audit $audit): void

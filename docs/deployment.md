@@ -24,9 +24,9 @@ PHP extensions: besides Laravel's defaults, `zip` is required (business data exp
    ```
 5. Smoke-test: log in as admin, agent and client; save a call log; open the client dashboard.
 
-## Release "home page design" (D121): specific notes
+## Release "website design" (D121): specific notes
 
-- **Assets:** run `npm ci && npm run build` and upload `public/build/` (the Modern home page has its own styles, script and fonts; a new npm package, `@fontsource-variable/fraunces`).
+- **Assets:** run `npm ci && npm run build` and upload `public/build/` (the Modern design has its own styles, script and fonts; a new npm package, `@fontsource-variable/fraunces`).
 - No migrations. The live home page doesn't change: Classic stays until an administrator switches in Admin › Appearance.
 
 ## Release 2026-10-03 (P1-0 hotfixes + P1-1 to P1-3) — specific notes

@@ -13,7 +13,8 @@ use Tests\TestCase;
 
 /**
  * The home page's designs (D121): Classic stays live until an administrator switches to Modern in
- * Admin › Appearance; until then Modern is only seen through a signed, unindexed preview link.
+ * Admin › Appearance, for the home page and the other public pages; until then Modern is only seen
+ * through a signed, unindexed preview link, which keeps it on for the rest of the visit.
  */
 class HomeDesignTest extends TestCase
 {
@@ -38,7 +39,22 @@ class HomeDesignTest extends TestCase
         app(SiteDesigns::class)->set('modern');
 
         $this->get('/')->assertOk()->assertSee(self::MODERN)->assertDontSee(self::CLASSIC)
-            ->assertSee('index, follow', false)->assertDontSee('Preview of a home page design');
+            ->assertSee('index, follow', false)->assertDontSee("You're previewing", false);
+    }
+
+    public function test_the_other_public_pages_follow_the_live_design(): void
+    {
+        foreach (['/call-answering', '/home-property-services', '/privacy-policy', '/faq', '/business-associate-agreement'] as $path) {
+            $this->get($path)->assertOk()->assertSee('legal-pages.css', false)->assertDontSee('<body class="hm">', false);
+        }
+
+        app(SiteDesigns::class)->set('modern');
+
+        foreach (['/call-answering', '/home-property-services', '/privacy-policy', '/faq', '/business-associate-agreement'] as $path) {
+            $this->get($path)->assertOk()->assertSee('<body class="hm">', false)->assertDontSee('legal-pages.css', false)
+                ->assertDontSee('bootstrap.min.css', false)->assertSee('legal-pages-wrapper', false)
+                ->assertSee(route('home').'#pricing', false)->assertSee('index, follow', false);
+        }
     }
 
     public function test_the_modern_design_lists_the_website_plans_and_keeps_the_contact_form_consent(): void
@@ -51,13 +67,26 @@ class HomeDesignTest extends TestCase
             ->assertSee('name="privacy"', false)->assertSee('name="sms_consent"', false);
     }
 
-    public function test_a_preview_link_shows_a_design_before_it_goes_live_and_is_kept_out_of_search(): void
+    public function test_a_preview_link_shows_a_design_on_every_page_until_the_preview_ends(): void
     {
-        $url = app(SiteDesigns::class)->previewUrl('modern');
+        $this->get(app(SiteDesigns::class)->previewUrl('modern'))->assertRedirect(route('home'));
 
-        $this->get($url)->assertOk()->assertSee(self::MODERN)->assertSee('Preview of a home page design')
+        $this->get('/')->assertOk()->assertSee(self::MODERN)->assertSee("You're previewing the Modern design", false)
             ->assertHeader('X-Robots-Tag', 'noindex, nofollow')->assertSee('noindex, nofollow', false);
-        $this->get('/')->assertSee(self::CLASSIC);
+        $this->get('/privacy-policy')->assertOk()->assertSee('<body class="hm">', false)->assertSee('noindex, nofollow', false);
+        $this->assertSame('classic', app(SiteDesigns::class)->current(), 'Previewing changes nothing for visitors.');
+
+        $this->post(route('home.preview.end'))->assertRedirect(route('home'));
+        $this->get('/')->assertSee(self::CLASSIC)->assertDontSee("You're previewing", false);
+        $this->get('/privacy-policy')->assertDontSee('<body class="hm">', false);
+    }
+
+    public function test_previewing_classic_while_modern_is_live_and_bad_links(): void
+    {
+        app(SiteDesigns::class)->set('modern');
+        $this->get(app(SiteDesigns::class)->previewUrl('classic'))->assertRedirect(route('home'));
+        $this->get('/')->assertSee(self::CLASSIC)->assertSee("You're previewing the Classic design", false);
+        $this->get('/faq')->assertSee('legal-pages.css', false)->assertSee('noindex, nofollow', false);
 
         $this->get(route('home.preview', ['design' => 'modern']))->assertForbidden();
         $this->get(app(SiteDesigns::class)->previewUrl('nope'))->assertNotFound();
@@ -76,7 +105,7 @@ class HomeDesignTest extends TestCase
     {
         $this->actingAs($this->admin);
         Livewire::test(Appearance::class)->assertSet('siteDesign', 'classic')
-            ->assertSee('Preview Modern')
+            ->assertSee('Preview Modern')->assertSee('Website design')
             ->set('siteDesign', 'modern')->call('saveDesign')->assertHasNoErrors()->assertDispatched('toast');
 
         $this->assertSame('modern', app(SiteDesigns::class)->current());

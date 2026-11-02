@@ -70,9 +70,9 @@
         </x-ui.card>
     </div>
 
-    <x-ui.card class="mt-6" title="Home page design" description="Which layout visitors see on the home page. Preview a design before you switch; the preview link works for 14 days and can be shared with your team.">
+    <x-ui.card class="mt-6" title="Website design" description="Which design visitors see on the home page and every other public page. Preview a design before you switch: the link works for 14 days, can be shared with your team, and keeps the design on while you click around the site.">
         <form wire:submit="saveDesign" class="space-y-5">
-            <div class="grid gap-3 md:grid-cols-2" role="radiogroup" aria-label="Home page design">
+            <div class="grid gap-3 md:grid-cols-2" role="radiogroup" aria-label="Website design">
                 @foreach ($designs as $key => $design)
                     <label wire:key="d-{{ $key }}" @class([
                         'flex cursor-pointer flex-col gap-2 rounded-xl border p-4 transition-colors hover:border-brand-400',

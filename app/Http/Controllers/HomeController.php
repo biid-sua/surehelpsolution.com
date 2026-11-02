@@ -14,18 +14,31 @@ class HomeController extends Controller
      */
     public function index(SiteDesigns $designs)
     {
-        return $this->home($designs->view($designs->current()));
+        $previewing = $designs->previewing();
+
+        return $previewing
+            ? $this->home($designs->view($previewing), preview: true)->header('X-Robots-Tag', 'noindex, nofollow')
+            : $this->home($designs->view($designs->current()));
     }
 
     /**
-     * A design shown through a signed preview link before it goes live, kept out of search results.
+     * A design shown through a signed preview link before it goes live. The design stays on for the
+     * rest of the visit, so the other public pages can be checked in it too; kept out of search results.
      */
     public function preview(SiteDesigns $designs, string $design)
     {
         abort_unless($designs->exists($design), 404);
+        $designs->startPreview($design);
 
-        return $this->home($designs->view($design), preview: true)
-            ->header('X-Robots-Tag', 'noindex, nofollow');
+        return redirect()->route('home');
+    }
+
+    /** Leave a preview and go back to the live design. */
+    public function endPreview(SiteDesigns $designs)
+    {
+        $designs->endPreview();
+
+        return redirect()->route('home');
     }
 
     private function home(string $view, bool $preview = false)

@@ -1,4 +1,4 @@
-// The Modern home page (D121): header, mobile menu, the hero's live call, the savings calculator,
+// The Modern website design (D121): header, mobile menu, the hero's live call, the savings calculator,
 // monthly/annual prices and reveal-on-scroll. No libraries; everything works without it, just stiller.
 document.documentElement.classList.add('js');
 
