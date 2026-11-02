@@ -44,12 +44,12 @@
     <div class="container">
         @if ($page['calculator'] ?? false)
             <div class="legal-card" data-aos="fade-up" id="roi-calculator">
-                <h2 class="section-title"><i class="fas fa-calculator"></i> Calculate your loss</h2>
+                <h2 class="section-title"><i class="fas fa-chart-line"></i> See your growth potential</h2>
                 <div class="section-content">
                     <div class="row g-4 align-items-center">
                         <div class="col-lg-7">
                             <div class="roi-field mb-4">
-                                <label for="roi-calls">Calls you miss each month <span id="roi-calls-value">20</span></label>
+                                <label for="roi-calls">Calls you could answer each month <span id="roi-calls-value">20</span></label>
                                 <input type="range" class="form-range" id="roi-calls" min="1" max="200" value="20">
                             </div>
                             <div class="roi-field mb-4">
@@ -57,17 +57,17 @@
                                 <input type="range" class="form-range" id="roi-value" min="25" max="2000" step="25" value="250">
                             </div>
                             <div class="roi-field">
-                                <label for="roi-rate">Callers who would have booked <span><span id="roi-rate-value">30</span>%</span></label>
+                                <label for="roi-rate">Callers who would book <span><span id="roi-rate-value">30</span>%</span></label>
                                 <input type="range" class="form-range" id="roi-rate" min="5" max="80" step="5" value="30">
                             </div>
                         </div>
                         <div class="col-lg-5">
                             <div class="roi-result mb-3">
-                                <div>Revenue lost per month</div>
+                                <div>Extra revenue per month</div>
                                 <div class="amount" id="roi-monthly">$1,500</div>
                             </div>
                             <div class="roi-result">
-                                <div>Revenue lost per year</div>
+                                <div>Extra revenue per year</div>
                                 <div class="amount" id="roi-yearly">$18,000</div>
                             </div>
                         </div>

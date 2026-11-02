@@ -1033,11 +1033,6 @@ h6 {
   .showcase-grid {
     grid-template-columns: 1fr;
   }
-
-  .timeline-step {
-    padding: 2rem 1rem !important;
-    margin: 0 !important;
-  }
 }
 
 .timeline-container {

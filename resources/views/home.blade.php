@@ -88,7 +88,7 @@
 
         .section-header {
             text-align: center;
-            margin-bottom: 5rem;
+            margin-bottom: 2rem;
             opacity: 0;
             transform: translateY(30px);
             animation: fadeInUp 1s ease-out 0.2s forwards;
@@ -148,7 +148,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
             gap: 2rem;
-            margin-top: 4rem;
+            margin-top: 0;
         }
 
         .feature-card {
@@ -156,7 +156,7 @@
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 24px;
-            padding: 2rem 2.5rem;
+            padding: 1.5rem 1.75rem;
             position: relative;
             overflow: hidden;
             transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
@@ -218,14 +218,14 @@
         }
 
         .feature-icon {
-            width: 80px;
-            height: 80px;
+            width: 56px;
+            height: 56px;
             background: linear-gradient(135deg, var(--site-primary) 0%, var(--site-secondary) 50%, var(--site-soft) 100%);
-            border-radius: 20px;
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
+            font-size: 1.4rem;
             color: white;
             transition: all 0.3s ease;
             position: relative;
@@ -278,19 +278,35 @@
             list-style: none;
         }
 
+        .feature-card { display: flex; flex-direction: column; }
+        .feature-card .demo-button { margin-top: auto; align-self: flex-start; }
+        .feature-card .feature-icon-container { margin-bottom: 1rem; }
+        .feature-card .feature-icon { margin-bottom: 0; }
+        .feature-card .feature-title { margin-top: 0; margin-bottom: 0.6rem; }
+        .feature-card .demo-button { padding: 0.65rem 1.5rem; }
+
+        .feature-card .feature-list {
+            margin: 1rem 0 1.25rem;
+            padding: 0;
+        }
+
         .feature-list-item {
             display: flex;
             align-items: center;
-            margin-bottom: 0.5rem;
-            padding: 0.5rem 0;
+            margin: 0;
+            padding: 0.2rem 0;
             position: relative;
             transition: all 0.3s ease;
             border-radius: 8px;
         }
 
+        .feature-list-item + .feature-list-item {
+            margin-top: 0.15rem;
+        }
+
         .feature-list-item:hover {
             background: rgba(255, 255, 255, 0.05);
-            padding-left: 1rem;
+            padding-left: 0.75rem;
         }
 
         .check-icon {
@@ -301,7 +317,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-right: 1rem;
+            margin-right: 0.75rem;
             font-size: 0.8rem;
             color: white;
             transition: all 0.3s ease;
@@ -474,7 +490,7 @@
             }
             
             .feature-card {
-                padding: 2.5rem 2rem;
+                padding: 1.5rem;
             }
         }
 
@@ -489,7 +505,7 @@
             }
             
             .feature-card {
-                padding: 2rem 1.5rem;
+                padding: 1.25rem;
             }
             
             .section-title {
@@ -521,13 +537,14 @@
             }
             
             .feature-card {
-                padding: 1.5rem 1rem;
+                padding: 1.25rem 1rem;
             }
-            
+
             .feature-icon {
-                width: 60px;
-                height: 60px;
-                font-size: 1.5rem;
+                width: 48px;
+                height: 48px;
+                border-radius: 12px;
+                font-size: 1.2rem;
             }
             
             .feature-title {
@@ -538,9 +555,8 @@
                 grid-template-columns: 1fr;
             }
 
-            .timeline-step {
-                padding: 2rem 1rem!important;
-                margin: 0!important;
+            .timeline-content {
+                padding: 1.5rem 1rem;
             }
         }
         /* How It Works */
@@ -558,21 +574,28 @@
                         radial-gradient(circle at 75% 75%, rgba(236,72,153,.1) 0%, transparent 50%);
             pointer-events: none;
         }
-        .timeline-container { position: relative; max-width: 100%; margin: 4rem auto; padding: 0; display: flex; justify-content: space-between; align-items: flex-start; }
+        .how-it-works-section .section-header.mb-5 { margin-bottom: 2.5rem !important; }
+        .timeline-container { position: relative; max-width: 100%; margin: 0 auto; padding: 0; display: flex; justify-content: space-between; align-items: stretch; }
         .timeline-container::before { content: ''; position: absolute; top: 40px; left: 50px; right: 50px; height: 4px; background: linear-gradient(90deg, rgba(var(--site-primary-rgb), .3) 0%, rgba(var(--site-secondary-rgb), .3) 50%, rgba(236,72,153,.3) 100%); z-index: 0; }
-        .timeline-step { position: relative; flex: 1; max-width: 350px; margin: 0 1rem; opacity: 0; transform: translateY(30px); animation: fadeInUp 0.6s ease-out forwards; z-index: 1; }
-        .timeline-icon { position: relative; margin: 0 auto 2rem; width: fit-content; }
+        .timeline-step { position: relative; flex: 1; max-width: 360px; margin: 0 1rem; display: flex; flex-direction: column; opacity: 0; transform: translateY(30px); animation: fadeInUp 0.6s ease-out forwards; z-index: 1; }
+        .timeline-icon { position: relative; margin: 0 auto 1.5rem; width: fit-content; }
         .icon-circle { width: 80px; height: 80px; background: linear-gradient(135deg, var(--site-primary) 0%, var(--site-secondary) 50%, var(--site-soft) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: white; position: relative; transition: all 0.3s ease; margin: 0 auto; box-shadow: 0 10px 20px rgba(0,0,0,.2); }
         .icon-circle::before { content: ''; position: absolute; top: -5px; left: -5px; right: -5px; bottom: -5px; background: linear-gradient(135deg, var(--site-primary) 0%, var(--site-secondary) 50%, var(--site-soft) 100%); border-radius: 50%; z-index: -1; opacity: .3; transition: all .3s ease; }
         .timeline-step:hover .icon-circle::before { transform: scale(1.2); }
         .step-number { position: absolute; top: -10px; right: -10px; width: 35px; height: 35px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--site-primary); border: 3px solid var(--site-primary); z-index: 2; }
-        .timeline-content { background: rgba(255,255,255,.05); border-radius: 20px; padding: 2rem 1rem; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.1); transition: all .3s ease; text-align: center; min-height: 100px; }
+        .timeline-content { flex: 1; background: rgba(255,255,255,.05); border-radius: 20px; padding: 1.75rem 1.5rem; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.1); transition: all .3s ease; text-align: center; min-height: 0; }
         .timeline-content:hover { transform: translateY(-5px); background: rgba(255,255,255,.08); box-shadow: 0 20px 40px rgba(0,0,0,.2); }
-        .timeline-content h3 { font-size: 1.5rem; margin-bottom: 1.5rem; color: white; }
+        .timeline-content h3 { font-size: 1.4rem; margin-bottom: 1rem; color: white; }
         .timeline-list { list-style: none; padding: 0; margin: 0; text-align: left; }
-        .timeline-list li { display: flex; align-items: center; margin-bottom: 1rem; padding: .5rem; border-radius: 10px; transition: all .3s ease; }
-        .timeline-list li:hover { background: rgba(255,255,255,.05); transform: translateX(10px); }
-        @media (max-width: 991px) { .timeline-container { flex-direction: column; align-items: center; } .timeline-container::before{display:none;} .timeline-step { width:100%; padding:2rem 1.5rem; margin:3rem 0; } .timeline-list {max-width:400px; margin:0 auto;} }
+        .timeline-list li { display: flex; align-items: flex-start; gap: .6rem; margin: 0; padding: .45rem .5rem; line-height: 1.45; border-radius: 10px; transition: all .3s ease; }
+        .timeline-list li + li { margin-top: .15rem; }
+        .timeline-list li i { flex-shrink: 0; margin-top: .2em; color: var(--site-accent); }
+        .timeline-list li:hover { background: rgba(255,255,255,.05); transform: translateX(6px); }
+        .how-it-works-section .cta-container { margin-top: 3rem !important; padding: 2.25rem 2rem; }
+        .how-it-works-section .cta-title { margin-bottom: 1.25rem; }
+        .how-it-works-section .cta-buttons { display: flex; flex-wrap: wrap; margin-bottom: 0; }
+        @media (max-width: 991px) { .timeline-container { flex-direction: column; align-items: center; } .timeline-container::before{display:none;} .timeline-step { width:100%; max-width:480px; padding:0; margin:0 0 2rem; } .timeline-step:last-child { margin-bottom:0; } .timeline-icon { margin-bottom:1rem; } .timeline-list {max-width:400px; margin:0 auto;} }
+        @media (max-width: 768px) { .how-it-works-section .cta-container { margin-top: 2.5rem !important; padding: 1.75rem 1.25rem; } .how-it-works-section .cta-title { font-size: 1.6rem; } .how-it-works-section .cta-buttons > * { width: 100%; max-width: 320px; justify-content: center; } }
 
         /* Testimonials */
         .testimonials-section { position: relative; background: linear-gradient(135deg, var(--site-bg-1) 0%, var(--site-bg-2) 50%, var(--site-bg-3) 100%); color: white; overflow: hidden; padding-bottom: 60px; }
@@ -590,8 +613,8 @@
         .testimonial-results { display:flex; gap:1rem; flex-wrap:wrap; }
         .result-badge { background: linear-gradient(135deg, rgba(var(--site-primary-rgb), .2) 0%, rgba(236,72,153,.2) 100%); border-radius:50px; padding:.5rem 1rem; display:flex; align-items:center; gap:.5rem; font-size:.9rem; color:white; border:1px solid rgba(255,255,255,.1); transition: all .3s ease; }
         .result-badge:hover { transform: translateY(-2px); background: linear-gradient(135deg, rgba(var(--site-primary-rgb), .3) 0%, rgba(236,72,153,.3) 100%); }
-        .testimonial-cta { text-align:center; margin-top:4rem; padding:3rem; background: rgba(255,255,255,.05); border-radius:20px; backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,.1); }
-        .testimonial-cta .cta-buttons { display:flex; justify-content:center; align-items:center; gap:1.25rem; flex-wrap:wrap; padding-top: .5rem; }
+        .testimonial-cta { text-align:center; margin-top:0; padding:3rem; background: rgba(255,255,255,.05); border-radius:20px; backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,.1); }
+        .testimonial-cta .cta-buttons { display:flex; justify-content:center; align-items:center; gap:1.25rem; flex-wrap:wrap; padding-top: 1.5rem; }
         .testimonial-cta .cta-button { padding: 0.9rem 1.5rem; }
         .new-company-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin: 2rem 0 0; }
         .new-company-item { background: rgba(255,255,255,.05); border-radius: 14px; padding: 1rem 1.1rem; border: 1px solid rgba(255,255,255,.1); text-align: left; color: rgba(255,255,255,.9); display: flex; align-items: center; gap: .6rem; }
@@ -890,7 +913,7 @@
 
          /* ROI Calculator Button */
           .roi-calculator-btn {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             color: white;
             border: none;
             padding: 15px 30px;
@@ -902,7 +925,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
             position: relative;
             overflow: hidden;
           }
@@ -924,7 +947,7 @@
 
           .roi-calculator-btn:hover {
             transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 12px 35px rgba(255, 107, 107, 0.4);
+            box-shadow: 0 12px 35px rgba(16, 185, 129, 0.4);
           }
 
           .roi-calculator-btn i {
@@ -970,7 +993,7 @@
           }
 
           .roi-modal .modal-title i {
-            color: #ff6b6b;
+            color: #10b981;
             font-size: 1.8rem;
           }
 
@@ -1120,7 +1143,7 @@
           }
 
           .function-btn {
-            background: linear-gradient(145deg, #ff6b6b, #ee5a24);
+            background: linear-gradient(145deg, #10b981, #059669);
             color: white;
             font-size: 0.9rem;
           }
@@ -1249,7 +1272,7 @@
           }
 
           .results-header i {
-            color: #ff6b6b;
+            color: #10b981;
             font-size: 1.8rem;
           }
 
@@ -1278,7 +1301,7 @@
             left: 0;
             right: 0;
             height: 3px;
-            background: linear-gradient(90deg, #ff6b6b, #ee5a24);
+            background: linear-gradient(90deg, #10b981, #059669);
           }
 
           .result-card:hover {
@@ -1292,7 +1315,7 @@
 
           .result-icon i {
             font-size: 2.5rem;
-            color: #ff6b6b;
+            color: #10b981;
           }
 
           .result-content h5 {
@@ -1305,17 +1328,17 @@
           .result-amount {
             font-size: 2rem;
             font-weight: 700;
-            color: #ff6b6b;
+            color: #10b981;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
           }
 
           /* Impact Message */
           .impact-message {
-            background: linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(238, 90, 36, 0.1) 100%);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
             border-radius: 15px;
             padding: 1.5rem;
             margin-bottom: 2rem;
-            border: 1px solid rgba(255, 107, 107, 0.3);
+            border: 1px solid rgba(16, 185, 129, 0.3);
             display: flex;
             align-items: center;
             gap: 1rem;
@@ -1323,7 +1346,7 @@
 
           .impact-icon i {
             font-size: 2rem;
-            color: #ff6b6b;
+            color: #10b981;
           }
 
           .impact-text h5 {
@@ -1345,7 +1368,7 @@
           }
 
           .cta-section .btn {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             border: none;
             padding: 15px 30px;
             border-radius: 50px;
@@ -1356,12 +1379,12 @@
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
           }
 
           .cta-section .btn:hover {
             transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 12px 35px rgba(255, 107, 107, 0.4);
+            box-shadow: 0 12px 35px rgba(16, 185, 129, 0.4);
             color: white;
           }
 
@@ -1458,12 +1481,12 @@
           }
 
           .btn-floating {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             color: white;
             border: none;
             border-radius: 50px;
             padding: 15px 20px;
-            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
@@ -1475,7 +1498,7 @@
 
           .btn-floating:hover {
             transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 12px 35px rgba(255, 107, 107, 0.5);
+            box-shadow: 0 12px 35px rgba(16, 185, 129, 0.5);
             color: white;
           }
 
@@ -1489,13 +1512,13 @@
 
           @keyframes pulse {
             0% {
-              box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+              box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
             }
             50% {
-              box-shadow: 0 8px 25px rgba(255, 107, 107, 0.6), 0 0 0 10px rgba(255, 107, 107, 0.1);
+              box-shadow: 0 8px 25px rgba(16, 185, 129, 0.6), 0 0 0 10px rgba(16, 185, 129, 0.1);
             }
             100% {
-              box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+              box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
             }
           }
 
@@ -1855,10 +1878,10 @@
                 <div class="timeline-content">
                     <h3>Setup & Script <span class="text-gradient">(Day 1)</span></h3>
                         <ul class="timeline-list">
-                        <li><span><i class="fas fa-check-circle"></i>&nbsp;&nbsp;Configure call forwarding system</span></li>
-                        <li><span><i class="fas fa-check-circle"></i>&nbsp;&nbsp;Create custom call scripts</span></li>
-                        <li><span><i class="fas fa-check-circle"></i>&nbsp;&nbsp;Train agents on your brand voice</span></li>
-                        <li><span><i class="fas fa-check-circle"></i>&nbsp;&nbsp;Run test calls for quality assurance</span></li>
+                        <li><i class="fas fa-check-circle" aria-hidden="true"></i><span>Configure call forwarding system</span></li>
+                        <li><i class="fas fa-check-circle" aria-hidden="true"></i><span>Create custom call scripts</span></li>
+                        <li><i class="fas fa-check-circle" aria-hidden="true"></i><span>Train agents on your brand voice</span></li>
+                        <li><i class="fas fa-check-circle" aria-hidden="true"></i><span>Run test calls for quality assurance</span></li>
                         </ul>
                 </div>
             </div>
@@ -1871,10 +1894,10 @@
                 <div class="timeline-content">
                     <h3>Go Live <span class="text-gradient">(Day 2)</span></h3>
                         <ul class="timeline-list">
-                        <li><span><i class="fas fa-check-circle"></i>&nbsp;&nbsp;Begin handling real customer calls</span></li>
-                        <li><span><i class="fas fa-check-circle"></i>&nbsp;&nbsp;Monitor call quality in real-time</span></li>
-                        <li><span><i class="fas fa-check-circle"></i>&nbsp;&nbsp;Track performance metrics</span></li>
-                        <li><span><i class="fas fa-check-circle"></i>&nbsp;&nbsp;Receive detailed call reports</span></li>
+                        <li><i class="fas fa-check-circle" aria-hidden="true"></i><span>Begin handling real customer calls</span></li>
+                        <li><i class="fas fa-check-circle" aria-hidden="true"></i><span>Monitor call quality in real-time</span></li>
+                        <li><i class="fas fa-check-circle" aria-hidden="true"></i><span>Track performance metrics</span></li>
+                        <li><i class="fas fa-check-circle" aria-hidden="true"></i><span>Receive detailed call reports</span></li>
                         </ul>
                 </div>
             </div>
@@ -1887,10 +1910,10 @@
                 <div class="timeline-content">
                     <h3>Optimize & Scale <span class="text-gradient">(Ongoing)</span></h3>
                         <ul class="timeline-list">
-                        <li><i class="fas fa-check-circle"></i><span>&nbsp;&nbsp;Refine scripts based on feedback</span></li>
-                        <li><i class="fas fa-check-circle"></i><span>&nbsp;&nbsp;Scale service as you grow</span></li>
-                        <li><i class="fas fa-check-circle"></i><span>&nbsp;&nbsp;Regular performance reviews</span></li>
-                        <li><i class="fas fa-check-circle"></i><span>&nbsp;&nbsp;Continuous agent training</span></li>
+                        <li><i class="fas fa-check-circle" aria-hidden="true"></i><span>Refine scripts based on feedback</span></li>
+                        <li><i class="fas fa-check-circle" aria-hidden="true"></i><span>Scale service as you grow</span></li>
+                        <li><i class="fas fa-check-circle" aria-hidden="true"></i><span>Regular performance reviews</span></li>
+                        <li><i class="fas fa-check-circle" aria-hidden="true"></i><span>Continuous agent training</span></li>
                         </ul>
                 </div>
             </div>
@@ -1901,8 +1924,8 @@
             <div class="cta-buttons" style="justify-content: center; align-items: center; gap: 1rem;">
                 <a href="#contact" class="cta-button"><span>Get Started Today</span><i class="fas fa-arrow-right"></i></a>
                 <button type="button" class="roi-calculator-btn" data-bs-toggle="modal" data-bs-target="#roiCalculatorModal">
-                    <i class="fas fa-calculator"></i>
-                    <span>Calculate Your Loss</span>
+                    <i class="fas fa-chart-line"></i>
+                    <span>See Your Growth Potential</span>
                 </button>
             </div>
         </div>
@@ -2122,7 +2145,7 @@
   <div class="floating-roi-btn d-md-none">
     <button type="button" class="btn btn-floating" data-bs-toggle="modal" data-bs-target="#roiCalculatorModal">
       <i class="fas fa-calculator"></i>
-      <span class="floating-text">Calculate Loss</span>
+      <span class="floating-text">Growth Potential</span>
     </button>
   </div>
 
@@ -2135,7 +2158,7 @@
         <!-- Modal Header -->
         <div class="modal-header">
           <h5 class="modal-title" id="roiCalculatorModalLabel">
-            <i class="fas fa-calculator"></i> ROI Calculator - Calculate Your Lost Revenue
+            <i class="fas fa-calculator"></i> Growth Calculator: What Every Answered Call Is Worth
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
@@ -2147,8 +2170,8 @@
             <!-- Intro -->
             <div class="calculator-intro">
               <p class="intro-text">
-                Every missed call is a missed opportunity. Calculate how much revenue you're losing
-                when potential customers can't reach you.
+                Every call you answer is a chance to grow. See how much extra revenue you could capture
+                when every customer can reach you, day or night.
               </p>
             </div>
 
@@ -2159,8 +2182,8 @@
                 <!-- Display -->
                 <div class="calculator-display">
                   <div class="display-screen">
-                    <div class="display-line" id="displayLine1">ROI Calculator</div>
-                    <div class="display-line" id="displayLine2">Missed Calls Per Month</div>
+                    <div class="display-line" id="displayLine1">Growth Calculator</div>
+                    <div class="display-line" id="displayLine2">Calls Per Month</div>
                     <div class="display-line" id="displayLine3">0</div>
                   </div>
                 </div>
@@ -2214,14 +2237,14 @@
             <!-- Results -->
             <div class="calculation-results" id="calculationResults" style="display: none;">
               <div class="results-header">
-                <h4><i class="fas fa-chart-line"></i> Your Revenue Loss Analysis</h4>
+                <h4><i class="fas fa-chart-line"></i> Your Revenue Opportunity</h4>
               </div>
 
               <div class="results-grid">
                 <div class="result-card monthly-loss">
                   <div class="result-icon"><i class="fas fa-calendar-alt"></i></div>
                   <div class="result-content">
-                    <h5>Monthly Loss</h5>
+                    <h5>Monthly Opportunity</h5>
                     <div class="result-amount" id="monthlyLoss">$0</div>
                   </div>
                 </div>
@@ -2229,7 +2252,7 @@
                 <div class="result-card yearly-loss">
                   <div class="result-icon"><i class="fas fa-chart-bar"></i></div>
                   <div class="result-content">
-                    <h5>Yearly Loss</h5>
+                    <h5>Yearly Opportunity</h5>
                     <div class="result-amount" id="yearlyLoss">$0</div>
                   </div>
                 </div>
@@ -2245,7 +2268,7 @@
 
               <!-- Impact Message -->
               <div class="impact-message">
-                <div class="impact-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="impact-icon"><i class="fas fa-lightbulb"></i></div>
                 <div class="impact-text">
                   <h5>This is money you could be earning!</h5>
                   <p>
@@ -2322,7 +2345,7 @@
             setField('missedCalls');
 
             // Initialize calculator display
-            updateDisplay('ROI Calculator', 'Missed Calls Per Month', '0');
+            updateDisplay('Growth Calculator', 'Calls Per Month', '0');
           });
 
           // Update calculator display
@@ -2343,7 +2366,7 @@
             currentValue = document.getElementById(fieldName).value || '';
             
             const fieldLabels = {
-              'missedCalls': 'Missed Calls/Month',
+              'missedCalls': 'Calls/Month',
               'avgCallValue': 'Avg Call Value ($)',
               'conversionRate': 'Conversion Rate (%)'
             };
@@ -2375,7 +2398,7 @@
           // Get field label
           function getFieldLabel(fieldName) {
             const labels = {
-              'missedCalls': 'Missed Calls/Month',
+              'missedCalls': 'Calls/Month',
               'avgCallValue': 'Avg Call Value ($)',
               'conversionRate': 'Conversion Rate (%)'
             };
@@ -2386,7 +2409,7 @@
           function clearCalculator() {
             currentValue = '';
             displayValue = '0';
-            updateDisplay('ROI Calculator', 'Missed Calls Per Month', '0');
+            updateDisplay('Growth Calculator', 'Calls Per Month', '0');
             // Keep field selection but clear current input display only
           }
 
@@ -2412,7 +2435,7 @@
             document.getElementById('conversionRate').value = '25';
             document.getElementById('calculationResults').style.display = 'none';
             syncFieldButtons();
-            updateDisplay('ROI Calculator', 'Missed Calls Per Month', '0');
+            updateDisplay('Growth Calculator', 'Calls Per Month', '0');
             // Re-select default field
             setField('missedCalls');
           }
@@ -2442,7 +2465,7 @@
               document.getElementById('calculationResults').style.display = 'block';
               
               // Update display
-              updateDisplay('Calculation Complete', `Monthly Loss: $${Math.round(monthlyLoss).toLocaleString()}`, `Yearly Loss: $${Math.round(yearlyLoss).toLocaleString()}`);
+              updateDisplay('Calculation Complete', `Monthly Gain: $${Math.round(monthlyLoss).toLocaleString()}`, `Yearly Gain: $${Math.round(yearlyLoss).toLocaleString()}`);
 
               // Scroll to results
               setTimeout(() => {
@@ -2460,7 +2483,7 @@
               calculateROI();
             } else {
               calculationResults.style.display = 'none';
-              updateDisplay('ROI Calculator', 'Missed Calls Per Month', '0');
+              updateDisplay('Growth Calculator', 'Calls Per Month', '0');
             }
           }
 
@@ -2536,7 +2559,7 @@
 
             modal.addEventListener('shown.bs.modal', function() {
               // Initialize calculator display
-              updateDisplay('ROI Calculator', 'Missed Calls Per Month', '0');
+              updateDisplay('Growth Calculator', 'Calls Per Month', '0');
             });
           });
 
