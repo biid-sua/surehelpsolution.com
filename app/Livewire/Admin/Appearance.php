@@ -6,6 +6,7 @@ use App\Livewire\Concerns\PlatformAdminOnly;
 use App\Models\User;
 use App\Notifications\ThemeReset;
 use App\Support\Audit\Audit;
+use App\Support\Ui\SiteDesigns;
 use App\Support\Ui\Themes;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Notification;
@@ -18,7 +19,8 @@ use Livewire\Component;
  * Admin › Appearance (D59): the colour theme everyone sees unless they picked their own. Changing
  * the default never touches personal choices; resetting them is a separate, deliberate action
  * with a reason, typed confirmation, an audit entry and a notice to each person affected. The public
- * website has its own default colour and a switch for the visitors' colour picker.
+ * website has its own default colour and a switch for the visitors' colour picker, and the home page
+ * can be switched between its designs (D121).
  */
 #[Layout('layouts.portal', ['portal' => 'admin'])]
 #[Title('Appearance')]
@@ -32,6 +34,8 @@ class Appearance extends Component
 
     public bool $sitePicker = true;
 
+    public string $siteDesign = '';
+
     public string $resetScope = 'one';
 
     public string $resetEmail = '';
@@ -40,9 +44,10 @@ class Appearance extends Component
 
     public string $resetConfirm = '';
 
-    public function mount(Themes $themes): void
+    public function mount(Themes $themes, SiteDesigns $designs): void
     {
         $this->authorize('settings.view');
+        $this->siteDesign = $designs->current();
         $this->default = $themes->default();
         $this->siteDefault = $themes->siteDefault();
         $this->sitePicker = $themes->sitePickerVisible();
@@ -61,6 +66,23 @@ class Appearance extends Component
         $this->dispatch('toast', type: 'success', message: $this->sitePicker
             ? "Website colours saved. New visitors see {$label}; visitors who picked their own colour keep it."
             : "Website colours saved. Every visitor now sees {$label} and the colour picker is hidden.");
+    }
+
+    public function saveDesign(SiteDesigns $designs, Audit $audit): void
+    {
+        $this->authorize('settings.manage');
+        $this->validate(['siteDesign' => ['required', Rule::in(array_keys($designs->all()))]]);
+        $before = $designs->current();
+        if ($before === $this->siteDesign) {
+            $this->dispatch('toast', type: 'info', message: 'Visitors already see this design.');
+
+            return;
+        }
+        $designs->set($this->siteDesign);
+        $label = $designs->all()[$this->siteDesign]['label'];
+        $audit->record('ui.site_design_changed', null, ['design' => $before], ['design' => $this->siteDesign], label: $label);
+
+        $this->dispatch('toast', type: 'success', message: "Website design saved. Every visitor now sees {$label}.");
     }
 
     public function saveDefault(Themes $themes, Audit $audit): void
@@ -109,9 +131,12 @@ class Appearance extends Component
         $this->dispatch('toast', type: 'success', message: $people->count().' '.str('person')->plural($people->count()).' now see the default theme. Each was told why.');
     }
 
-    public function render(Themes $themes): View
+    public function render(Themes $themes, SiteDesigns $designs): View
     {
         return view('livewire.admin.appearance', [
+            'designs' => $designs->all(),
+            'liveDesign' => $designs->current(),
+            'previewUrls' => collect($designs->all())->mapWithKeys(fn ($d, $key) => [$key => $designs->previewUrl($key)]),
             'themes' => $themes->portal(),
             'siteThemes' => $themes->site(),
             'chosen' => User::query()->whereNotNull('theme')->selectRaw('theme, COUNT(*) as people')->groupBy('theme')->pluck('people', 'theme'),

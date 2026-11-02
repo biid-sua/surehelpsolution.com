@@ -11,7 +11,7 @@ use Illuminate\Http\Response;
  */
 class SitemapController extends Controller
 {
-    public const PRIVATE_PATHS = ['/app/', '/admin/', '/agent/', '/account/', '/api/', '/appointment/', '/invitations/', '/media/', '/livewire/'];
+    public const PRIVATE_PATHS = ['/app/', '/admin/', '/agent/', '/account/', '/api/', '/appointment/', '/invitations/', '/media/', '/livewire/', '/preview/'];
 
     public function sitemap(): Response
     {
